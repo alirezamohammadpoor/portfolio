@@ -40,10 +40,10 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
   return (
     <div className="flex h-[calc(100dvh-var(--header-height))] flex-col justify-end desktop:flex-row desktop:justify-start">
       {/* Project info — updates on scroll */}
-      <div className="desktop:w-1/2 desktop:flex desktop:items-center desktop:justify-center">
+      <div className="desktop:w-1/2 desktop:flex desktop:items-center">
         <Link
           href={`/project/${activeProject?.slug?.current}`}
-          className="block py-2 desktop:py-0"
+          className="block w-full px-6 py-2 desktop:py-0"
         >
           <ProjectCard project={activeProject} index={activeIndex} />
         </Link>
