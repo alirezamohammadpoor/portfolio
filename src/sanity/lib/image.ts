@@ -9,3 +9,8 @@ const builder = createImageUrlBuilder({ projectId, dataset })
 export const urlFor = (source: SanityImageSource) => {
   return builder.image(source)
 }
+
+export function fileUrl(ref: string): string {
+  const [, id, ext] = ref.split('-');
+  return `https://cdn.sanity.io/files/${projectId}/${dataset}/${id}.${ext}`;
+}

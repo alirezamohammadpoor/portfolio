@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
-import { urlFor } from "@/sanity/lib/image";
+import { urlFor, fileUrl } from "@/sanity/lib/image";
 
 interface MediaPanelProps {
   coverMedia: PROJECTS_QUERY_RESULT[number]["coverMedia"];
@@ -9,10 +9,11 @@ interface MediaPanelProps {
 }
 
 export default function MediaPanel({ coverMedia, title, priority = false }: MediaPanelProps) {
-  if (coverMedia?.type === "video" && coverMedia.video?.asset) {
+  if (coverMedia?.type === "video" && coverMedia.video?.asset?._ref) {
     return (
       <div className="relative w-full overflow-hidden bg-tertiary h-full">
         <video
+          src={fileUrl(coverMedia.video.asset._ref)}
           className="h-full w-full object-cover"
           autoPlay
           muted

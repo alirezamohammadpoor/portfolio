@@ -47,13 +47,31 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
-  a {
-    color: inherit;
-    text-decoration: none;
-  }
-
   ::selection {
     background-color: var(--color-pistachio);
     color: var(--color-primary);
+  }
+
+  * {
+    scrollbar-width: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+  }
+
+  @keyframes gsap-fallback {
+    to {
+      visibility: visible;
+    }
+  }
+
+  .gsap-hidden {
+    visibility: hidden;
+    animation: gsap-fallback 0s 3s forwards;
+  }
+
+  .nastaliq-font {
+    font-family: var(--font-nastaliq), serif;
   }
 }
