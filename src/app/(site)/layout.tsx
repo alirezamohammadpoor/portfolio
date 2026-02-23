@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { nhaas, nastaliq } from "@/lib/fonts";
 import Header from "@/components/layout/Header";
 import GsapProvider from "@/components/layout/GsapProvider";
@@ -30,6 +31,7 @@ export default function SiteLayout({
             <TransitionOverlay />
           </TransitionProvider>
         </GsapProvider>
+        <Analytics />
       </body>
     </html>
   );
