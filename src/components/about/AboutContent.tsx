@@ -160,7 +160,7 @@ export default function AboutContent({
           {email && (
             <Link
               href={`mailto:${email}`}
-              className="text-sub desktop:text-h3 uppercase text-primary hover:text-pomegranate"
+              className="text-sub desktop:text-body uppercase text-primary hover:text-pomegranate"
             >
               Email
             </Link>
@@ -170,7 +170,7 @@ export default function AboutContent({
               href={linkedinUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sub desktop:text-h3 uppercase text-primary hover:text-pomegranate"
+              className="text-sub desktop:text-body uppercase text-primary hover:text-pomegranate"
             >
               LinkedIn
             </Link>

@@ -1,16 +1,29 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { client } from "@/sanity/lib/client";
-import { PROJECT_BY_SLUG_QUERY } from "@/sanity/lib/queries";
+import { sanityFetch } from "@/sanity/lib/live";
+import {
+  PROJECT_BY_SLUG_QUERY,
+  PROJECT_SLUGS_QUERY,
+} from "@/sanity/lib/queries";
 import ProjectPageClient from "@/components/project/ProjectPageClient";
 
 interface ProjectPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export async function generateMetadata({ params }: ProjectPageProps): Promise<Metadata> {
+export async function generateStaticParams() {
+  return client.fetch(PROJECT_SLUGS_QUERY);
+}
+
+export async function generateMetadata({
+  params,
+}: ProjectPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const project = await client.fetch(PROJECT_BY_SLUG_QUERY, { slug });
+  const { data: project } = await sanityFetch({
+    query: PROJECT_BY_SLUG_QUERY,
+    params: { slug },
+  });
 
   if (!project) return {};
 
@@ -22,7 +35,10 @@ export async function generateMetadata({ params }: ProjectPageProps): Promise<Me
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const { slug } = await params;
-  const project = await client.fetch(PROJECT_BY_SLUG_QUERY, { slug });
+  const { data: project } = await sanityFetch({
+    query: PROJECT_BY_SLUG_QUERY,
+    params: { slug },
+  });
 
   if (!project) notFound();
 

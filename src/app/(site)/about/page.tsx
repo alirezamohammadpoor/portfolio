@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { client } from "@/sanity/lib/client";
+import { sanityFetch } from "@/sanity/lib/live";
 import { ABOUT_QUERY } from "@/sanity/lib/queries";
 import AboutContent from "@/components/about/AboutContent";
 
@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AboutPage() {
-  const about = await client.fetch(ABOUT_QUERY);
+  const { data: about } = await sanityFetch({ query: ABOUT_QUERY });
 
   return (
     <div>

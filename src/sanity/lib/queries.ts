@@ -81,3 +81,11 @@ export const JOURNAL_POST_BY_SLUG_QUERY = defineQuery(`
     }
   }
 `);
+
+export const PROJECT_SLUGS_QUERY = defineQuery(
+  `*[_type == "project" && defined(slug.current)]{ "slug": slug.current }`
+);
+
+export const JOURNAL_POST_SLUGS_QUERY = defineQuery(
+  `*[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current }`
+);
