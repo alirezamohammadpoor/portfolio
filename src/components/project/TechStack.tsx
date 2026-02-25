@@ -3,9 +3,5 @@ interface TechStackProps {
 }
 
 export default function TechStack({ items }: TechStackProps) {
-  return (
-    <p className="mt-2 text-body text-primary">
-      {items.join(", ")}
-    </p>
-  );
+  return <p className="mt-2 text-sub text-primary">{items.join(", ")}</p>;
 }

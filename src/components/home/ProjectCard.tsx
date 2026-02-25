@@ -1,20 +1,29 @@
+"use client";
+
+import { useRef } from "react";
+import { useTitleAnimation, useBodyAnimation } from "@/hooks/useTextAnimation";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 
 interface ProjectCardProps {
   project: PROJECTS_QUERY_RESULT[number];
-  index: number;
 }
 
-export default function ProjectCard({ project, index }: ProjectCardProps) {
+export default function ProjectCard({ project }: ProjectCardProps) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const descRef = useRef<HTMLParagraphElement>(null);
+
+  useTitleAnimation(titleRef, cardRef, { delay: 1 });
+  useBodyAnimation(descRef, cardRef, { delay: 1.3 });
+
   return (
-    <div>
-      <div className="flex items-baseline justify-between">
-        <h2 className="text-h1 text-primary">{project.title}</h2>
-        <span className="text-h1 text-primary">
-          {String(index + 1).padStart(2, "0")}
-        </span>
-      </div>
-      <p className="mt-4 text-body text-primary">{project.shortDescription}</p>
+    <div ref={cardRef}>
+      <h2 ref={titleRef} className="text-h1 text-primary">
+        {project.title}
+      </h2>
+      <p ref={descRef} className="mt-4 text-body text-primary">
+        {project.shortDescription}
+      </p>
     </div>
   );
 }

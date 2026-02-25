@@ -1,3 +1,4 @@
+@import "lenis/dist/lenis.css";
 @import "tailwindcss";
 
 @theme {
@@ -7,8 +8,9 @@
   --color-primary: #1a1a1a;
   --color-secondary: #999999;
   --color-tertiary: #e2e2e2;
-  --color-pistachio: #93c572;
+  --color-pistachio: #bedcaa;
   --color-pomegranate: #c0392b;
+  --color-lightpistachio: #d8eacc;
 
   --text-display: 3.5rem;
   --text-display--line-height: 4rem;
@@ -43,6 +45,7 @@
 
   body {
     min-height: 100vh;
+    overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -73,5 +76,70 @@
 
   .nastaliq-font {
     font-family: var(--font-nastaliq), serif;
+  }
+}
+
+/* Link underline animation — slides in from left, out to right */
+.link-underline {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 2px;
+}
+
+.link-underline::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background-color: var(--color-primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 1s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.link-underline:hover::after {
+  transform: scaleX(1);
+}
+
+/* Page transitions (View Transitions API) */
+@keyframes page-exit {
+  to {
+    transform: scale(0.9) translateY(-150px);
+    opacity: 0.5;
+  }
+}
+
+@keyframes page-slide-in {
+  from {
+    transform: translateY(100vh);
+  }
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+  }
+}
+
+::view-transition-old(root) {
+  animation: page-exit 1.2s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+}
+
+::view-transition-new(root) {
+  animation:
+    page-slide-in 1s cubic-bezier(0.76, 0, 0.24, 1),
+    page-enter 0.5s ease;
+}
+
+::view-transition-group(root) {
+  background-color: black;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
   }
 }

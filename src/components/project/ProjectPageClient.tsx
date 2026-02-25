@@ -2,13 +2,18 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import NextLink from "next/link";
+import { Link } from "next-view-transitions";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { SplitText } from "gsap/SplitText";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { urlFor } from "@/sanity/lib/image";
 import { usePageTransition } from "@/context/TransitionContext";
+import {
+  useTitleAnimation,
+  useBodyAnimation,
+  useInlineAnimation,
+} from "@/hooks/useTextAnimation";
 import Footer from "@/components/layout/Footer";
 import DetailsDrawer from "@/components/project/DetailsDrawer";
 import TechStack from "@/components/project/TechStack";
@@ -36,7 +41,10 @@ export default function ProjectPageClient({ project }: ProjectPageClientProps) {
   // After reel: just original images
   const displayImages = useMemo(() => {
     if (!isReeling || originalCount <= 1) return images;
-    return [...images, ...images.map((img, i) => ({ ...img, _key: `${img._key}-dup-${i}` }))];
+    return [
+      ...images,
+      ...images.map((img, i) => ({ ...img, _key: `${img._key}-dup-${i}` })),
+    ];
   }, [images, isReeling, originalCount]);
 
   // Disable browser scroll restoration so reload starts at top
@@ -66,15 +74,24 @@ export default function ProjectPageClient({ project }: ProjectPageClientProps) {
   // Waits for clone transition to finish before starting
   useGSAP(
     () => {
-      if (!galleryRef.current || !isReeling || isTransitioning || originalCount <= 1) return;
+      if (
+        !galleryRef.current ||
+        !isReeling ||
+        isTransitioning ||
+        originalCount <= 1
+      )
+        return;
 
       // The duplicate of image 1 starts at index = originalCount
       // We need to scroll so that element is at the top of the viewport
-      const duplicateFirst = galleryRef.current.children[originalCount] as HTMLElement;
+      const duplicateFirst = galleryRef.current.children[
+        originalCount
+      ] as HTMLElement;
       if (!duplicateFirst) return;
 
       requestAnimationFrame(() => {
-        const targetScroll = duplicateFirst.offsetTop - galleryRef.current!.offsetTop;
+        const targetScroll =
+          duplicateFirst.offsetTop - galleryRef.current!.offsetTop;
         window.scrollTo(0, 0);
 
         const obj = { value: 0 };
@@ -95,89 +112,15 @@ export default function ProjectPageClient({ project }: ProjectPageClientProps) {
   );
 
   // Text panel animations — wait for gallery reel to finish
-  useGSAP(
-    () => {
-      if (isReeling || isTransitioning) return;
+  const skip = isReeling || isTransitioning;
+  const deps = [isReeling, isTransitioning];
 
-      // Title — chars drop in
-      if (titleRef.current) {
-        SplitText.create(titleRef.current, {
-          type: "words, chars",
-          autoSplit: true,
-          mask: "chars",
-          charsClass: "char",
-          onSplit: (self) =>
-            gsap.from(self.chars, {
-              duration: 2,
-              yPercent: -120,
-              scale: 1.2,
-              stagger: 0.01,
-              ease: "expo.out",
-            }),
-        });
-      }
+  useTitleAnimation(titleRef, panelRef, { duration: 2, skip, dependencies: deps });
+  useBodyAnimation(descRef, panelRef, { duration: 2, delay: 0.3, skip, dependencies: deps });
+  useBodyAnimation(techRef, panelRef, { duration: 2, delay: 0.5, skip, dependencies: deps });
+  useInlineAnimation(linksRef, panelRef, "a", { duration: 2, delay: 0.7, skip, dependencies: deps });
 
-      // Description — lines slide up
-      if (descRef.current) {
-        SplitText.create(descRef.current, {
-          type: "lines, words",
-          autoSplit: true,
-          mask: "lines",
-          linesClass: "line",
-          onSplit: (self) =>
-            gsap.from(self.lines, {
-              duration: 2,
-              yPercent: 105,
-              stagger: 0.04,
-              ease: "expo.out",
-              delay: 0.3,
-            }),
-        });
-      }
-
-      // Tech stack — lines slide up
-      if (techRef.current) {
-        SplitText.create(techRef.current, {
-          type: "lines, words",
-          autoSplit: true,
-          mask: "lines",
-          linesClass: "line",
-          onSplit: (self) =>
-            gsap.from(self.lines, {
-              duration: 2,
-              yPercent: 105,
-              stagger: 0.04,
-              ease: "expo.out",
-              delay: 0.5,
-            }),
-        });
-      }
-
-      // Links — each link individually so flex gap is preserved
-      if (linksRef.current) {
-        const links = linksRef.current.querySelectorAll("a");
-        links.forEach((link) => {
-          SplitText.create(link, {
-            type: "lines, words",
-            autoSplit: true,
-            mask: "lines",
-            linesClass: "line",
-            onSplit: (self) =>
-              gsap.from(self.lines, {
-                duration: 2,
-                yPercent: 105,
-                stagger: 0.04,
-                ease: "expo.out",
-                delay: 0.7,
-              }),
-          });
-        });
-      }
-    },
-    { scope: panelRef, dependencies: [isReeling, isTransitioning] },
-  );
-
-  const hidePanel = isReeling || isTransitioning;
+  const hidePanel = skip;
 
   return (
     <>
@@ -207,27 +150,30 @@ export default function ProjectPageClient({ project }: ProjectPageClientProps) {
             {project.caseStudy?.slug?.current && (
               <Link
                 href={`/journal/${project.caseStudy.slug.current}`}
-                className="text-sub uppercase text-primary hover:text-pomegranate"
+                className="link-underline text-sub uppercase text-primary hover:text-pomegranate"
               >
                 Case study
               </Link>
             )}
             {project.siteUrl && (
-              <Link
+              <NextLink
                 href={project.siteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sub uppercase text-primary hover:text-pomegranate"
+                className="link-underline text-sub uppercase text-primary hover:text-pomegranate"
               >
                 Visit website
-              </Link>
+              </NextLink>
             )}
           </div>
         </div>
       </div>
 
       {/* Gallery */}
-      <div ref={galleryRef} className={`flex flex-col gap-2 px-6 pb-10 desktop:ml-[50%] desktop:w-1/2${isTransitioning ? " invisible" : ""}`}>
+      <div
+        ref={galleryRef}
+        className={`flex flex-col gap-2 px-6 pb-10 desktop:ml-[50%] desktop:w-1/2${isTransitioning ? " invisible" : ""}`}
+      >
         {displayImages.map((image, i) => (
           <div
             key={image._key}
@@ -242,6 +188,7 @@ export default function ProjectPageClient({ project }: ProjectPageClientProps) {
                 className="object-cover"
                 sizes="100vw"
                 priority={i < originalCount}
+                fetchPriority="high"
               />
             )}
           </div>
@@ -257,6 +204,7 @@ export default function ProjectPageClient({ project }: ProjectPageClientProps) {
         caseStudySlug={project.caseStudy?.slug?.current ?? undefined}
         onDetailsToggle={() => setDetailsOpen((prev) => !prev)}
         detailsOpen={detailsOpen}
+        visible={!hidePanel}
       />
     </>
   );

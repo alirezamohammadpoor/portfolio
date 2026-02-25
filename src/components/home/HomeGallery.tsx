@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { Link } from "next-view-transitions";
+import Lenis from "lenis";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
@@ -17,41 +18,70 @@ interface HomeGalleryProps {
 
 export default function HomeGallery({ projects }: HomeGalleryProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const router = useRouter();
   const { startTransition } = usePageTransition();
 
+  // Lenis smooth snap for gallery
   useEffect(() => {
-    const slides = slideRefs.current.filter(Boolean) as HTMLAnchorElement[];
-    if (!slides.length) return;
+    if (!wrapperRef.current || !contentRef.current) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            const idx = slides.indexOf(entry.target as HTMLAnchorElement);
-            if (idx !== -1) setActiveIndex(idx);
-          }
-        }
-      },
-      { root: scrollRef.current, threshold: 0.6 }
-    );
+    const lenis = new Lenis({
+      wrapper: wrapperRef.current,
+      content: contentRef.current,
+      orientation: "vertical",
+      infinite: true,
+      syncTouch: true,
+    });
 
-    slides.forEach((slide) => observer.observe(slide));
-    return () => observer.disconnect();
+    const slideCount = slideRefs.current.filter(Boolean).length;
+    const slideHeight = wrapperRef.current.clientHeight;
+    let snapTimer: ReturnType<typeof setTimeout>;
+
+    // Track active slide + snap after scroll settles
+    let currentIndex = 0;
+    lenis.on("scroll", () => {
+      const rawIndex = Math.round(lenis.scroll / slideHeight);
+      const index = ((rawIndex % slideCount) + slideCount) % slideCount;
+      if (index !== currentIndex) {
+        currentIndex = index;
+        setActiveIndex(index);
+      }
+
+      // Debounced snap: wait for scroll to settle, then glide to nearest
+      clearTimeout(snapTimer);
+      snapTimer = setTimeout(() => {
+        const nearestIndex = Math.round(lenis.scroll / slideHeight);
+        const target = nearestIndex * slideHeight;
+        lenis.scrollTo(target, {
+          duration: 0.2,
+          easing: (t: number) => t * t,
+        });
+      }, 200);
+    });
+
+    // RAF loop
+    function raf(time: number) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+    requestAnimationFrame(raf);
+
+    return () => {
+      clearTimeout(snapTimer);
+      lenis.destroy();
+    };
   }, [projects]);
 
   // Gallery slides — slide up and fade in
   useGSAP(
     () => {
-      if (!scrollRef.current) return;
-      const slides = scrollRef.current.children;
+      if (!contentRef.current) return;
+      const slides = contentRef.current.querySelectorAll(":scope > a");
       if (!slides.length) return;
-
-      // Reset scroll so displaced slides don't cause snap to jump
-      scrollRef.current.scrollTop = 0;
 
       gsap.fromTo(
         slides,
@@ -62,24 +92,35 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
           duration: 0.8,
           ease: "power3.out",
           stagger: 0.1,
+          delay: 1,
         },
       );
     },
-    { scope: scrollRef },
+    { scope: contentRef },
   );
 
-  const activeProject = projects[activeIndex];
+  const activeProject = projects[activeIndex] ?? projects[0];
 
   const handleProjectClick = useCallback(
-    (e: React.MouseEvent<HTMLAnchorElement>, project: PROJECTS_QUERY_RESULT[number]) => {
+    (
+      e: React.MouseEvent<HTMLAnchorElement>,
+      project: PROJECTS_QUERY_RESULT[number],
+    ) => {
       // Only intercept image covers — video covers navigate normally
-      if (project.coverMedia?.type !== "image" || !project.coverMedia.image?.asset) return;
+      if (
+        project.coverMedia?.type !== "image" ||
+        !project.coverMedia.image?.asset
+      )
+        return;
 
       e.preventDefault();
 
       const img = e.currentTarget.querySelector("img");
       const rect = (img ?? e.currentTarget).getBoundingClientRect();
-      const imageUrl = urlFor(project.coverMedia.image).width(1200).quality(85).url();
+      const imageUrl = urlFor(project.coverMedia.image)
+        .width(1200)
+        .quality(85)
+        .url();
       const href = `/project/${project.slug?.current}`;
 
       startTransition(imageUrl, {
@@ -105,37 +146,63 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
   );
 
   return (
-    <div ref={containerRef} className="flex h-[calc(100dvh-var(--header-height))] flex-col justify-end desktop:flex-row desktop:justify-start">
+    <div
+      ref={containerRef}
+      className="flex h-[calc(100dvh-var(--header-height))] flex-col justify-end desktop:flex-row desktop:justify-start"
+    >
       {/* Project info — updates on scroll */}
       <div className="desktop:w-1/2 desktop:flex desktop:items-center">
         <Link
           href={`/project/${activeProject?.slug?.current}`}
           className="block w-full px-6 py-2 desktop:py-0"
         >
-          <ProjectCard project={activeProject} index={activeIndex} />
+          <ProjectCard project={activeProject} />
         </Link>
       </div>
 
-      {/* Cover image gallery — native snap scroll */}
+      {/* Cover image gallery — Lenis infinite snap */}
       <div
-        ref={scrollRef}
-        className="h-[50dvh] overflow-y-auto snap-y snap-mandatory desktop:w-1/2 desktop:h-full"
+        ref={wrapperRef}
+        data-lenis-prevent
+        className="h-[50dvh] overflow-hidden desktop:w-1/2 desktop:h-full"
       >
-        {projects.map((project, index) => (
-          <Link
-            key={project._id}
-            ref={(el) => { slideRefs.current[index] = el; }}
-            href={`/project/${project.slug?.current}`}
-            className="block h-full snap-start"
-            onClick={(e) => handleProjectClick(e, project)}
-          >
-            <MediaPanel
-              coverMedia={project.coverMedia}
-              title={project.title ?? ""}
-              priority={index === 0}
-            />
-          </Link>
-        ))}
+        <div ref={contentRef}>
+          {/* Original slides */}
+          {projects.map((project, index) => (
+            <Link
+              key={project._id}
+              ref={(el) => {
+                slideRefs.current[index] = el;
+              }}
+              href={`/project/${project.slug?.current}`}
+              className="block h-[50dvh] desktop:h-[calc(100dvh-var(--header-height))]"
+              onClick={(e) => handleProjectClick(e, project)}
+            >
+              <MediaPanel
+                coverMedia={project.coverMedia}
+                title={project.title ?? ""}
+                priority={index === 0}
+              />
+            </Link>
+          ))}
+          {/* Clone for infinite loop — overflow hidden so it doesn't add scroll height */}
+          <div className="h-[50dvh] overflow-hidden desktop:h-[calc(100dvh-var(--header-height))]">
+            {projects.map((project) => (
+              <Link
+                key={`clone-${project._id}`}
+                href={`/project/${project.slug?.current}`}
+                className="block h-[50dvh] desktop:h-[calc(100dvh-var(--header-height))]"
+                onClick={(e) => handleProjectClick(e, project)}
+              >
+                <MediaPanel
+                  coverMedia={project.coverMedia}
+                  title={project.title ?? ""}
+                  priority={false}
+                />
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

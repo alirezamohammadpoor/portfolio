@@ -1,9 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
-import { SplitText } from "gsap/SplitText";
+import { useTitleAnimation, useBodyAnimation } from "@/hooks/useTextAnimation";
 import type { JOURNAL_POSTS_QUERY_RESULT } from "@/sanity/types";
 import JournalCard from "./JournalCard";
 
@@ -16,46 +14,8 @@ export default function JournalContent({ posts }: JournalContentProps) {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const descRef = useRef<HTMLParagraphElement>(null);
 
-  useGSAP(
-    () => {
-      // Title — chars drop in
-      if (titleRef.current) {
-        SplitText.create(titleRef.current, {
-          type: "words, chars",
-          autoSplit: true,
-          mask: "chars",
-          charsClass: "char",
-          onSplit: (self) =>
-            gsap.from(self.chars, {
-              duration: 2,
-              yPercent: -120,
-              scale: 1.2,
-              stagger: 0.01,
-              ease: "expo.out",
-            }),
-        });
-      }
-
-      // Description — lines slide up
-      if (descRef.current) {
-        SplitText.create(descRef.current, {
-          type: "lines, words",
-          autoSplit: true,
-          mask: "lines",
-          linesClass: "line",
-          onSplit: (self) =>
-            gsap.from(self.lines, {
-              duration: 2,
-              yPercent: 105,
-              stagger: 0.04,
-              ease: "expo.out",
-              delay: 0.3,
-            }),
-        });
-      }
-    },
-    { scope: sectionRef },
-  );
+  useTitleAnimation(titleRef, sectionRef, { duration: 2, delay: 1 });
+  useBodyAnimation(descRef, sectionRef, { duration: 2, delay: 1.3 });
 
   return (
     <section ref={sectionRef} className="py-6 px-6">

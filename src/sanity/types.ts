@@ -324,7 +324,7 @@ export declare const internalGroqTypeReferenceTo: unique symbol;
 
 // Source: src/sanity/lib/queries.ts
 // Variable: ABOUT_QUERY
-// Query: *[_type == "about"][0] {    heading,    bio,    portrait,    skills,    email,    linkedinUrl  }
+// Query: *[_type == "about"][0] {    heading,    bio,    portrait,    email,    linkedinUrl  }
 export type ABOUT_QUERY_RESULT = {
   heading: string | null;
   bio: Array<{
@@ -352,14 +352,13 @@ export type ABOUT_QUERY_RESULT = {
     crop?: SanityImageCrop;
     _type: "image";
   } | null;
-  skills: Array<string> | null;
   email: string | null;
   linkedinUrl: string | null;
 } | null;
 
 // Source: src/sanity/lib/queries.ts
 // Variable: PROJECTS_QUERY
-// Query: *[_type == "project"] | order(order asc) {    _id,    title,    slug,    shortDescription,    fullDescription,    techStack,    metrics,    siteUrl,    caseStudy->{ _id, slug },    coverMedia,    images,    videos,    order  }
+// Query: *[_type == "project"] | order(order asc) {   _id,  title,  slug,  shortDescription,  fullDescription,  techStack,  siteUrl,  caseStudy->{ _id, slug },  coverMedia,  images,  videos,  order }
 export type PROJECTS_QUERY_RESULT = Array<{
   _id: string;
   title: string | null;
@@ -367,7 +366,6 @@ export type PROJECTS_QUERY_RESULT = Array<{
   shortDescription: string | null;
   fullDescription: string | null;
   techStack: Array<string> | null;
-  metrics: Array<string> | null;
   siteUrl: string | null;
   caseStudy: {
     _id: string;
@@ -407,7 +405,7 @@ export type PROJECTS_QUERY_RESULT = Array<{
 
 // Source: src/sanity/lib/queries.ts
 // Variable: PROJECT_BY_SLUG_QUERY
-// Query: *[_type == "project" && slug.current == $slug][0] {    _id,    title,    slug,    shortDescription,    fullDescription,    techStack,    metrics,    siteUrl,    caseStudy->{ _id, slug },    coverMedia,    images,    videos,    order  }
+// Query: *[_type == "project" && slug.current == $slug][0] {   _id,  title,  slug,  shortDescription,  fullDescription,  techStack,  siteUrl,  caseStudy->{ _id, slug },  coverMedia,  images,  videos,  order }
 export type PROJECT_BY_SLUG_QUERY_RESULT = {
   _id: string;
   title: string | null;
@@ -415,7 +413,6 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
   shortDescription: string | null;
   fullDescription: string | null;
   techStack: Array<string> | null;
-  metrics: Array<string> | null;
   siteUrl: string | null;
   caseStudy: {
     _id: string;
@@ -455,7 +452,7 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
 
 // Source: src/sanity/lib/queries.ts
 // Variable: JOURNAL_POSTS_QUERY
-// Query: *[_type == "journalPost"] | order(publishedAt desc) {    _id,    title,    slug,    excerpt,    coverImage,    tags,    publishedAt,    relatedProject->{      _id,      title,      slug    }  }
+// Query: *[_type == "journalPost"] | order(publishedAt desc) {   _id,  title,  slug,  excerpt,  coverImage,  tags,  publishedAt,  relatedProject->{ _id, title, slug } }
 export type JOURNAL_POSTS_QUERY_RESULT = Array<{
   _id: string;
   title: string | null;
@@ -479,12 +476,26 @@ export type JOURNAL_POSTS_QUERY_RESULT = Array<{
 
 // Source: src/sanity/lib/queries.ts
 // Variable: JOURNAL_POST_BY_SLUG_QUERY
-// Query: *[_type == "journalPost" && slug.current == $slug][0] {    _id,    title,    slug,    excerpt,    body,    coverImage,    tags,    publishedAt,    relatedProject->{      _id,      title,      slug    }  }
+// Query: *[_type == "journalPost" && slug.current == $slug][0] {   _id,  title,  slug,  excerpt,  coverImage,  tags,  publishedAt,  relatedProject->{ _id, title, slug }, body }
 export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
   _id: string;
   title: string | null;
   slug: Slug | null;
   excerpt: string | null;
+  coverImage: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+  } | null;
+  tags: Array<string> | null;
+  publishedAt: string | null;
+  relatedProject: {
+    _id: string;
+    title: string | null;
+    slug: Slug | null;
+  } | null;
   body: Array<
     | {
         children?: Array<{
@@ -521,30 +532,32 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
         _key: string;
       }
   > | null;
-  coverImage: {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    _type: "image";
-  } | null;
-  tags: Array<string> | null;
-  publishedAt: string | null;
-  relatedProject: {
-    _id: string;
-    title: string | null;
-    slug: Slug | null;
-  } | null;
 } | null;
+
+// Source: src/sanity/lib/queries.ts
+// Variable: PROJECT_SLUGS_QUERY
+// Query: *[_type == "project" && defined(slug.current)]{ "slug": slug.current }
+export type PROJECT_SLUGS_QUERY_RESULT = Array<{
+  slug: string | null;
+}>;
+
+// Source: src/sanity/lib/queries.ts
+// Variable: JOURNAL_POST_SLUGS_QUERY
+// Query: *[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current }
+export type JOURNAL_POST_SLUGS_QUERY_RESULT = Array<{
+  slug: string | null;
+}>;
 
 // Query TypeMap
 import "@sanity/client";
 declare module "@sanity/client" {
   interface SanityQueries {
-    '\n  *[_type == "about"][0] {\n    heading,\n    bio,\n    portrait,\n    skills,\n    email,\n    linkedinUrl\n  }\n': ABOUT_QUERY_RESULT;
-    '\n  *[_type == "project"] | order(order asc) {\n    _id,\n    title,\n    slug,\n    shortDescription,\n    fullDescription,\n    techStack,\n    metrics,\n    siteUrl,\n    caseStudy->{ _id, slug },\n    coverMedia,\n    images,\n    videos,\n    order\n  }\n': PROJECTS_QUERY_RESULT;
-    '\n  *[_type == "project" && slug.current == $slug][0] {\n    _id,\n    title,\n    slug,\n    shortDescription,\n    fullDescription,\n    techStack,\n    metrics,\n    siteUrl,\n    caseStudy->{ _id, slug },\n    coverMedia,\n    images,\n    videos,\n    order\n  }\n': PROJECT_BY_SLUG_QUERY_RESULT;
-    '\n  *[_type == "journalPost"] | order(publishedAt desc) {\n    _id,\n    title,\n    slug,\n    excerpt,\n    coverImage,\n    tags,\n    publishedAt,\n    relatedProject->{\n      _id,\n      title,\n      slug\n    }\n  }\n': JOURNAL_POSTS_QUERY_RESULT;
-    '\n  *[_type == "journalPost" && slug.current == $slug][0] {\n    _id,\n    title,\n    slug,\n    excerpt,\n    body,\n    coverImage,\n    tags,\n    publishedAt,\n    relatedProject->{\n      _id,\n      title,\n      slug\n    }\n  }\n': JOURNAL_POST_BY_SLUG_QUERY_RESULT;
+    '\n  *[_type == "about"][0] {\n    heading,\n    bio,\n    portrait,\n    email,\n    linkedinUrl\n  }\n': ABOUT_QUERY_RESULT;
+    '\n  *[_type == "project"] | order(order asc) { \n  _id,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  images,\n  videos,\n  order\n }\n': PROJECTS_QUERY_RESULT;
+    '\n  *[_type == "project" && slug.current == $slug][0] { \n  _id,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  images,\n  videos,\n  order\n }\n': PROJECT_BY_SLUG_QUERY_RESULT;
+    '\n  *[_type == "journalPost"] | order(publishedAt desc) { \n  _id,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug }\n }\n': JOURNAL_POSTS_QUERY_RESULT;
+    '\n  *[_type == "journalPost" && slug.current == $slug][0] { \n  _id,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug }\n, body }\n': JOURNAL_POST_BY_SLUG_QUERY_RESULT;
+    '*[_type == "project" && defined(slug.current)]{ "slug": slug.current }': PROJECT_SLUGS_QUERY_RESULT;
+    '*[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current }': JOURNAL_POST_SLUGS_QUERY_RESULT;
   }
 }

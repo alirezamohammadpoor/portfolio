@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { draftMode } from "next/headers";
+import { ViewTransitions } from "next-view-transitions";
 import { Analytics } from "@vercel/analytics/next";
 import { VisualEditing } from "next-sanity/visual-editing";
 import { nhaas, nastaliq } from "@/lib/fonts";
@@ -27,19 +28,24 @@ export default async function SiteLayout({
   const { isEnabled: isDraftMode } = await draftMode();
 
   return (
-    <html lang="en" className={`${nhaas.variable} ${nastaliq.variable}`}>
-      <body className="font-sans">
-        <GsapProvider>
-          <TransitionProvider>
-            <Header />
-            <main className="pt-[var(--header-height)] min-h-[calc(100dvh-var(--header-height))]">{children}</main>
-            <TransitionOverlay />
-          </TransitionProvider>
-        </GsapProvider>
-        <SanityLive />
-        {isDraftMode && <VisualEditing />}
-        <Analytics />
-      </body>
-    </html>
+    <ViewTransitions>
+      <html lang="en" className={`${nhaas.variable} ${nastaliq.variable}`}>
+        <head>
+          <link rel="preconnect" href="https://cdn.sanity.io" />
+        </head>
+        <body className="font-sans">
+          <GsapProvider>
+            <TransitionProvider>
+              <Header />
+              <main className="pt-[var(--header-height)] min-h-[calc(100dvh-var(--header-height))]">{children}</main>
+              <TransitionOverlay />
+            </TransitionProvider>
+          </GsapProvider>
+          <SanityLive />
+          {isDraftMode && <VisualEditing />}
+          <Analytics />
+        </body>
+      </html>
+    </ViewTransitions>
   );
 }

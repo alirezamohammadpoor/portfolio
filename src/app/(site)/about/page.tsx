@@ -16,7 +16,6 @@ export default async function AboutPage() {
         heading={about?.heading}
         bio={about?.bio ?? []}
         portrait={about?.portrait}
-        skills={about?.skills}
         email={about?.email}
         linkedinUrl={about?.linkedinUrl}
       />

@@ -5,9 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import type { PortableTextBlock } from "next-sanity";
 import { PortableText } from "next-sanity";
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
-import { SplitText } from "gsap/SplitText";
+import {
+  useTitleAnimation,
+  useBodyAnimation,
+  useInlineAnimation,
+} from "@/hooks/useTextAnimation";
 import type { ABOUT_QUERY_RESULT } from "@/sanity/types";
 import { urlFor } from "@/sanity/lib/image";
 
@@ -18,7 +20,6 @@ interface AboutContentProps {
   heading?: string | null;
   bio: AboutBio;
   portrait?: AboutPortrait;
-  skills?: string[] | null;
   email?: string | null;
   linkedinUrl?: string | null;
 }
@@ -27,95 +28,20 @@ export default function AboutContent({
   heading,
   bio,
   portrait,
-  skills,
   email,
   linkedinUrl,
 }: AboutContentProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const bioRef = useRef<HTMLDivElement>(null);
-  const skillsRef = useRef<HTMLParagraphElement>(null);
   const linksRef = useRef<HTMLDivElement>(null);
 
-  useGSAP(
-    () => {
-      // Title — chars drop in
-      if (titleRef.current) {
-        SplitText.create(titleRef.current, {
-          type: "words, chars",
-          autoSplit: true,
-          mask: "chars",
-          charsClass: "char",
-          onSplit: (self) =>
-            gsap.from(self.chars, {
-              duration: 2,
-              yPercent: -120,
-              scale: 1.2,
-              stagger: 0.01,
-              ease: "expo.out",
-            }),
-        });
-      }
-
-      // Bio — lines slide up
-      if (bioRef.current) {
-        SplitText.create(bioRef.current, {
-          type: "lines, words",
-          autoSplit: true,
-          mask: "lines",
-          linesClass: "line",
-          onSplit: (self) =>
-            gsap.from(self.lines, {
-              duration: 2,
-              yPercent: 105,
-              stagger: 0.04,
-              ease: "expo.out",
-              delay: 0.3,
-            }),
-        });
-      }
-
-      // Skills — lines slide up
-      if (skillsRef.current) {
-        SplitText.create(skillsRef.current, {
-          type: "lines, words",
-          autoSplit: true,
-          mask: "lines",
-          linesClass: "line",
-          onSplit: (self) =>
-            gsap.from(self.lines, {
-              duration: 2,
-              yPercent: 105,
-              stagger: 0.04,
-              ease: "expo.out",
-              delay: 0.5,
-            }),
-        });
-      }
-
-      // Links — each link individually
-      if (linksRef.current) {
-        const links = linksRef.current.querySelectorAll("a");
-        links.forEach((link) => {
-          SplitText.create(link, {
-            type: "lines, words",
-            autoSplit: true,
-            mask: "lines",
-            linesClass: "line",
-            onSplit: (self) =>
-              gsap.from(self.lines, {
-                duration: 2,
-                yPercent: 105,
-                stagger: 0.04,
-                ease: "expo.out",
-                delay: 0.7,
-              }),
-          });
-        });
-      }
-    },
-    { scope: sectionRef },
-  );
+  useTitleAnimation(titleRef, sectionRef, { duration: 2, delay: 1 });
+  useBodyAnimation(bioRef, sectionRef, { duration: 2, delay: 1.3 });
+  useInlineAnimation(linksRef, sectionRef, "a, span[data-animate]", {
+    duration: 2,
+    delay: 1.7,
+  });
 
   return (
     <section
@@ -150,27 +76,22 @@ export default function AboutContent({
           <PortableText value={bio as PortableTextBlock[]} />
         </div>
 
-        {skills && skills.length > 0 && (
-          <p ref={skillsRef} className="mt-6 text-sub text-secondary">
-            {skills.join(", ")}
-          </p>
-        )}
-
         <div ref={linksRef} className="mt-16 flex gap-8">
           {email && (
-            <Link
+            <a
               href={`mailto:${email}`}
-              className="text-sub desktop:text-body uppercase text-primary hover:text-pomegranate"
+              data-animate
+              className="link-underline text-sub desktop:text-body uppercase text-primary hover:text-pomegranate"
             >
               Email
-            </Link>
+            </a>
           )}
           {linkedinUrl && (
             <Link
               href={linkedinUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sub desktop:text-body uppercase text-primary hover:text-pomegranate"
+              className="link-underline text-sub desktop:text-body uppercase text-primary hover:text-pomegranate"
             >
               LinkedIn
             </Link>

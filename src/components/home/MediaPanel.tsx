@@ -8,13 +8,18 @@ interface MediaPanelProps {
   priority?: boolean;
 }
 
-export default function MediaPanel({ coverMedia, title, priority = false }: MediaPanelProps) {
+export default function MediaPanel({
+  coverMedia,
+  title,
+  priority = false,
+}: MediaPanelProps) {
   if (coverMedia?.type === "video" && coverMedia.video?.asset?._ref) {
     return (
       <div className="relative w-full overflow-hidden bg-tertiary h-full">
         <video
           src={fileUrl(coverMedia.video.asset._ref)}
           className="h-full w-full object-cover"
+          aria-label={`${title} cover video`}
           autoPlay
           muted
           loop
@@ -34,6 +39,7 @@ export default function MediaPanel({ coverMedia, title, priority = false }: Medi
           className="object-cover"
           sizes="100vw"
           priority={priority}
+          fetchPriority="high"
         />
       </div>
     );

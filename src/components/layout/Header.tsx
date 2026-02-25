@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import Link from "next/link";
+import { Link } from "next-view-transitions";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
@@ -73,10 +73,10 @@ export default function Header() {
         <span ref={nameRef}>{ENGLISH_NAME}</span>
       </Link>
       <nav className="flex items-center gap-4">
-        <Link href="/journal" className="text-sub text-primary">
+        <Link href="/journal" className="link-underline text-sub text-primary">
           Journal
         </Link>
-        <Link href="/about" className="text-sub text-primary">
+        <Link href="/about" className="link-underline text-sub text-primary">
           About
         </Link>
       </nav>
