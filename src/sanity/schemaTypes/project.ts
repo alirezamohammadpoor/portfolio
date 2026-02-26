@@ -38,12 +38,6 @@ export const project = defineType({
       options: { layout: "tags" },
     }),
     defineField({
-      name: "metrics",
-      title: "Metrics",
-      type: "array",
-      of: [{ type: "string" }],
-    }),
-    defineField({
       name: "siteUrl",
       title: "Site URL",
       type: "url",

@@ -23,13 +23,6 @@ export const about = defineType({
       options: { hotspot: true },
     }),
     defineField({
-      name: "skills",
-      title: "Skills",
-      type: "array",
-      of: [{ type: "string" }],
-      options: { layout: "tags" },
-    }),
-    defineField({
       name: "email",
       title: "Email",
       type: "string",

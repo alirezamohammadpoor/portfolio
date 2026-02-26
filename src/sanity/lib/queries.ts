@@ -59,3 +59,10 @@ export const PROJECT_SLUGS_QUERY = defineQuery(
 export const JOURNAL_POST_SLUGS_QUERY = defineQuery(
   `*[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current }`
 );
+
+export const NEXT_PROJECT_QUERY = defineQuery(`
+  coalesce(
+    *[_type == "project" && order > $currentOrder] | order(order asc) [0] { title, slug },
+    *[_type == "project"] | order(order asc) [0] { title, slug }
+  )
+`);

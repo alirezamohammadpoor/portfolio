@@ -32,6 +32,7 @@ export default function TransitionOverlay() {
       ref={imgRef}
       src={imageUrl}
       alt=""
+      aria-hidden="true"
       style={{
         position: "fixed",
         top: sourceRect.top,

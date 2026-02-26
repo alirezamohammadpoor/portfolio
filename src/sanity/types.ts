@@ -52,7 +52,6 @@ export type About = {
     crop?: SanityImageCrop;
     _type: "image";
   };
-  skills?: Array<string>;
   email?: string;
   linkedinUrl?: string;
 };
@@ -98,7 +97,6 @@ export type Project = {
   shortDescription?: string;
   fullDescription?: string;
   techStack?: Array<string>;
-  metrics?: Array<string>;
   siteUrl?: string;
   caseStudy?: JournalPostReference;
   coverMedia?: {
@@ -548,6 +546,14 @@ export type JOURNAL_POST_SLUGS_QUERY_RESULT = Array<{
   slug: string | null;
 }>;
 
+// Source: src/sanity/lib/queries.ts
+// Variable: NEXT_PROJECT_QUERY
+// Query: coalesce(    *[_type == "project" && order > $currentOrder] | order(order asc) [0] { title, slug },    *[_type == "project"] | order(order asc) [0] { title, slug }  )
+export type NEXT_PROJECT_QUERY_RESULT = {
+  title: string | null;
+  slug: Slug | null;
+} | null;
+
 // Query TypeMap
 import "@sanity/client";
 declare module "@sanity/client" {
@@ -559,5 +565,6 @@ declare module "@sanity/client" {
     '\n  *[_type == "journalPost" && slug.current == $slug][0] { \n  _id,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug }\n, body }\n': JOURNAL_POST_BY_SLUG_QUERY_RESULT;
     '*[_type == "project" && defined(slug.current)]{ "slug": slug.current }': PROJECT_SLUGS_QUERY_RESULT;
     '*[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current }': JOURNAL_POST_SLUGS_QUERY_RESULT;
+    '\n  coalesce(\n    *[_type == "project" && order > $currentOrder] | order(order asc) [0] { title, slug },\n    *[_type == "project"] | order(order asc) [0] { title, slug }\n  )\n': NEXT_PROJECT_QUERY_RESULT;
   }
 }
