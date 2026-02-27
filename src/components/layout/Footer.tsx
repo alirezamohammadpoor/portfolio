@@ -12,6 +12,7 @@ interface FooterProps {
   onDetailsToggle?: () => void;
   detailsOpen?: boolean;
   visible?: boolean;
+  scrollProgress?: number;
 }
 
 export default function Footer({
@@ -21,6 +22,7 @@ export default function Footer({
   onDetailsToggle,
   detailsOpen = false,
   visible = true,
+  scrollProgress,
 }: FooterProps) {
   const footerRef = useRef<HTMLElement>(null);
   const wipeRef = useRef<HTMLDivElement>(null);
@@ -41,10 +43,12 @@ export default function Footer({
     }
   }, [visible]);
 
+  const showNextHint = scrollProgress != null && scrollProgress >= 100;
+
   useEffect(() => {
     if (!wipeRef.current) return;
 
-    if (detailsOpen) {
+    if (detailsOpen || showNextHint) {
       gsap.fromTo(
         wipeRef.current,
         { clipPath: "inset(100% 0 0 0)" },
@@ -58,47 +62,63 @@ export default function Footer({
         delay: 0.4,
       });
     }
-  }, [detailsOpen]);
+  }, [detailsOpen, showNextHint]);
 
   if (!projectTitle) return null;
 
   return (
-    <footer ref={footerRef} className="fixed bottom-0 left-0 right-0 z-40 flex h-10 items-center justify-between px-6 desktop:hidden bg-white overflow-hidden">
+    <footer
+      ref={footerRef}
+      className="fixed bottom-0 left-0 right-0 z-40 flex h-10 items-center justify-between px-6 desktop:hidden bg-white overflow-hidden"
+    >
       <div
         ref={wipeRef}
         className="absolute inset-0 bg-pistachio [clip-path:inset(100%_0_0_0)]"
       />
-      <span className="relative text-h3 text-primary">{projectTitle}</span>
+      <div className="relative flex items-center gap-3">
+        <span className="text-h3 text-primary">{projectTitle}</span>
+      </div>
       <div className="relative flex items-center gap-4">
-        {onDetailsToggle && (
-          <button
-            onClick={onDetailsToggle}
-            aria-expanded={detailsOpen}
-            aria-label={
-              detailsOpen ? "Close project details" : "Show project details"
-            }
-            className="text-sub text-primary hover:text-pomegranate hover:cursor-pointer"
-          >
-            {detailsOpen ? "Close -" : "Details +"}
-          </button>
-        )}
-        {caseStudySlug && (
-          <Link
-            href={`/journal/${caseStudySlug}`}
-            className="text-sub text-primary hover:text-pomegranate"
-          >
-            Case study
-          </Link>
-        )}
-        {siteUrl && (
-          <NextLink
-            href={siteUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sub text-primary hover:text-pomegranate"
-          >
-            Visit website
-          </NextLink>
+        {showNextHint ? (
+          <span className="text-sub font-bold uppercase text-primary">
+            Scroll to see next project
+          </span>
+        ) : (
+          <>
+            {scrollProgress != null && (
+              <span className="text-sub text-primary">{scrollProgress}</span>
+            )}
+            {onDetailsToggle && (
+              <button
+                onClick={onDetailsToggle}
+                aria-expanded={detailsOpen}
+                aria-label={
+                  detailsOpen ? "Close project details" : "Show project details"
+                }
+                className="text-sub text-primary hover:text-pomegranate hover:cursor-pointer"
+              >
+                {detailsOpen ? "Close -" : "Details +"}
+              </button>
+            )}
+            {caseStudySlug && (
+              <Link
+                href={`/journal/${caseStudySlug}`}
+                className="text-sub text-primary hover:text-pomegranate"
+              >
+                Case study
+              </Link>
+            )}
+            {siteUrl && (
+              <NextLink
+                href={siteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sub text-primary hover:text-pomegranate"
+              >
+                Visit website
+              </NextLink>
+            )}
+          </>
         )}
       </div>
     </footer>

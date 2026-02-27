@@ -104,6 +104,7 @@ export default function ProjectPageClient({ project, nextProject }: ProjectPageC
         onDetailsToggle={() => setDetailsOpen((prev) => !prev)}
         detailsOpen={detailsOpen}
         visible={!hidePanel}
+        scrollProgress={scrollProgress}
       />
     </>
   );

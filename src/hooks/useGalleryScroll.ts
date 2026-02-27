@@ -36,8 +36,9 @@ export function useGalleryScroll({
   const galleryRef = useRef<HTMLDivElement>(null);
   const firstImageRef = useRef<HTMLDivElement>(null);
   const nextTextWrapperRef = useRef<HTMLDivElement>(null);
-  const nextTextRef = useRef<HTMLParagraphElement>(null);
+  const nextTextRef = useRef<HTMLDivElement>(null);
   const hasAutoNavigated = useRef(false);
+  const enteredViaClone = useRef(false);
 
   const originalCount = images.length;
 
@@ -73,6 +74,7 @@ export function useGalleryScroll({
   // When transitioning from homepage, animate clone to first image position
   useEffect(() => {
     if (!isTransitioning || !firstImageRef.current) return;
+    enteredViaClone.current = true;
 
     requestAnimationFrame(() => {
       const rect = firstImageRef.current!.getBoundingClientRect();
@@ -110,6 +112,7 @@ export function useGalleryScroll({
         gsap.to(obj, {
           value: targetScroll,
           duration: 2,
+          delay: enteredViaClone.current ? 0 : 1,
           ease: "power2.inOut",
           onUpdate: () => window.scrollTo(0, obj.value),
           onComplete: () => {
@@ -157,7 +160,7 @@ export function useGalleryScroll({
           nextTextRef.current,
           { clipPath: "inset(0 100% 0 0)" },
           {
-            clipPath: "inset(0 0% 0 0)",
+            clipPath: "inset(0 -5% 0 0)",
             ease: "none",
             scrollTrigger: {
               trigger: galleryRef.current,
