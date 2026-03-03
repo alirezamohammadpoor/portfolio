@@ -81,7 +81,7 @@ export default function AboutContent({
             <a
               href={`mailto:${email}`}
               data-animate
-              className="link-underline text-sub desktop:text-body uppercase text-primary hover:text-pistachio"
+              className="link-underline text-sub desktop:text-body uppercase text-primary"
             >
               Email
             </a>
@@ -91,7 +91,7 @@ export default function AboutContent({
               href={linkedinUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="link-underline text-sub desktop:text-body uppercase text-primary hover:text-pomegranate"
+              className="link-underline text-sub desktop:text-body uppercase text-primary"
             >
               LinkedIn
             </Link>
