@@ -49,7 +49,7 @@ export default function ProjectInfoPanel({
           {project.caseStudy?.slug?.current && (
             <Link
               href={`/journal/${project.caseStudy.slug.current}`}
-              className="link-underline text-sub uppercase text-primary hover:text-pomegranate"
+              className="link-underline text-sub uppercase text-primary "
             >
               Case study
             </Link>
@@ -59,7 +59,7 @@ export default function ProjectInfoPanel({
               href={project.siteUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="link-underline text-sub uppercase text-primary hover:text-pomegranate"
+              className="link-underline text-sub uppercase text-primary "
             >
               Visit website
             </NextLink>

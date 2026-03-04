@@ -95,7 +95,7 @@ export default function Footer({
                 aria-label={
                   detailsOpen ? "Close project details" : "Show project details"
                 }
-                className="text-sub text-primary hover:text-pomegranate hover:cursor-pointer"
+                className="text-sub text-primary cursor-pointer"
               >
                 {detailsOpen ? "Close -" : "Details +"}
               </button>
@@ -103,7 +103,7 @@ export default function Footer({
             {caseStudySlug && (
               <Link
                 href={`/journal/${caseStudySlug}`}
-                className="text-sub text-primary hover:text-pomegranate"
+                className="text-sub text-primary "
               >
                 Case study
               </Link>
@@ -113,7 +113,7 @@ export default function Footer({
                 href={siteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sub text-primary hover:text-pomegranate"
+                className="text-sub text-primary "
               >
                 Visit website
               </NextLink>
