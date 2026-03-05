@@ -7,6 +7,7 @@ export default function Error({ reset }: { reset: () => void }) {
       <p className="mt-4 text-body text-secondary">Something went wrong.</p>
       <button
         onClick={() => reset()}
+        aria-label="Try again"
         className="mt-8 text-sub text-primary uppercase"
       >
         Try again

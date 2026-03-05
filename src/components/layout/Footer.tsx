@@ -69,7 +69,7 @@ export default function Footer({
   return (
     <footer
       ref={footerRef}
-      className="fixed bottom-0 left-0 right-0 z-40 flex h-10 items-center justify-between px-6 desktop:hidden bg-white overflow-hidden"
+      className="fixed bottom-0 left-0 right-0 z-40 flex h-10 items-center justify-between px-4 desktop:hidden bg-white overflow-hidden"
     >
       <div
         ref={wipeRef}

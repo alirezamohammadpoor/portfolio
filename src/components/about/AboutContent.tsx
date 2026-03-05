@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
+import NextLink from "next/link";
 import type { PortableTextBlock } from "next-sanity";
 import { PortableText } from "next-sanity";
 import {
@@ -88,7 +88,7 @@ export default function AboutContent({
   return (
     <section
       ref={sectionRef}
-      className="px-6 py-6 desktop:flex desktop:items-center desktop:min-h-[calc(100dvh-var(--header-height))]"
+      className="px-4 py-4 desktop:px-6 desktop:py-6 desktop:flex desktop:items-center desktop:min-h-[calc(100dvh-var(--header-height))]"
     >
       {/* Left column: text content */}
       <div className="desktop:w-2/3 desktop:pr-12">
@@ -121,14 +121,14 @@ export default function AboutContent({
         <div ref={linksRef} className="mt-16 flex gap-8">
           {email && <EmailCopyButton email={email} />}
           {linkedinUrl && (
-            <Link
+            <NextLink
               href={linkedinUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="link-underline text-sub desktop:text-body uppercase text-primary"
             >
               LinkedIn
-            </Link>
+            </NextLink>
           )}
         </div>
       </div>

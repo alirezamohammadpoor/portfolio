@@ -44,6 +44,10 @@ export const PROJECT_BY_SLUG_QUERY = defineQuery(`
   *[_type == "project" && slug.current == $slug][0] { ${PROJECT_FIELDS} }
 `);
 
+export const JOURNAL_PAGE_QUERY = defineQuery(`
+  *[_type == "journalPage"][0] { description }
+`);
+
 export const JOURNAL_POSTS_QUERY = defineQuery(`
   *[_type == "journalPost"] | order(publishedAt desc) { ${JOURNAL_FIELDS} }
 `);

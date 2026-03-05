@@ -175,6 +175,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
                 slideRefs.current[index] = el;
               }}
               href={`/project/${project.slug?.current}`}
+              aria-label={`View ${project.title ?? "project"}`}
               className="block h-[50dvh] desktop:h-[calc(100dvh-var(--header-height))]"
               onClick={(e) => handleProjectClick(e, project)}
             >
@@ -191,6 +192,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
               <Link
                 key={`clone-${project._id}`}
                 href={`/project/${project.slug?.current}`}
+                aria-label={`View ${project.title ?? "project"}`}
                 className="block h-[50dvh] desktop:h-[calc(100dvh-var(--header-height))]"
                 onClick={(e) => handleProjectClick(e, project)}
               >

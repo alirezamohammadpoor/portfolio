@@ -68,7 +68,7 @@ export default function Header() {
   });
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex h-[var(--header-height)] items-center justify-between bg-bg px-6">
+    <header className="fixed top-0 left-0 right-0 z-50 flex h-[var(--header-height)] items-center justify-between bg-bg px-4 desktop:px-6">
       <Link href="/" className="text-sub text-primary py-5">
         <span ref={nameRef}>{ENGLISH_NAME}</span>
       </Link>

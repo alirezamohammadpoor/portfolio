@@ -7,9 +7,13 @@ import JournalCard from "./JournalCard";
 
 interface JournalContentProps {
   posts: JOURNAL_POSTS_QUERY_RESULT;
+  description?: string | null;
 }
 
-export default function JournalContent({ posts }: JournalContentProps) {
+export default function JournalContent({
+  posts,
+  description,
+}: JournalContentProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const descRef = useRef<HTMLParagraphElement>(null);
@@ -18,17 +22,17 @@ export default function JournalContent({ posts }: JournalContentProps) {
   useBodyAnimation(descRef, sectionRef, { duration: 2, delay: 1.3 });
 
   return (
-    <section ref={sectionRef} className="py-6 px-6">
+    <section ref={sectionRef} className="px-4 py-4 desktop:px-6 desktop:py-6">
       <h1 ref={titleRef} className="text-h1 text-primary">
         Journal
       </h1>
-      <p ref={descRef} className="mt-4 max-w-[680px] text-sub text-primary">
-        Where I share what I&apos;m thinking about — case studies from projects,
-        technical decisions, and notes from the journey. Part reflection, part
-        documentation.
-      </p>
+      {description && (
+        <p ref={descRef} className="mt-2 max-w-[33vw] text-sub text-primary">
+          {description}
+        </p>
+      )}
 
-      <div className="mt-16 grid grid-cols-1 gap-8 desktop:grid-cols-3">
+      <div className="mt-8 grid grid-cols-1 gap-8 desktop:grid-cols-3">
         {posts.length === 0 ? (
           <p className="text-body text-secondary">No posts yet.</p>
         ) : (

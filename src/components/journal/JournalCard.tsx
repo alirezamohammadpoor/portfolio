@@ -22,7 +22,7 @@ export default function JournalCard({ post }: JournalCardProps) {
         </div>
       )}
       <h3 className="mt-4 text-h2 text-primary">{post.title}</h3>
-      <p className="mt-2 text-body text-primary">{post.excerpt}</p>
+      <p className="mt-4 text-body text-primary">{post.excerpt}</p>
     </Link>
   );
 }

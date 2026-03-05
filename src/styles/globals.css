@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 @theme {
-  --header-height: 60px;
+  --header-height: 40px;
 
   --color-bg: #f7f7f7;
   --color-primary: #1a1a1a;
