@@ -1,8 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import Image from "next/image";
-import NextLink from "next/link";
 import type { PortableTextBlock } from "next-sanity";
 import { PortableText } from "next-sanity";
 import {
@@ -12,6 +11,8 @@ import {
 } from "@/hooks/useTextAnimation";
 import type { ABOUT_QUERY_RESULT } from "@/sanity/types";
 import { urlFor } from "@/sanity/lib/image";
+import EmailCopyButton from "./EmailCopyButton";
+import LinkedInLink from "./LinkedInLink";
 
 type AboutBio = NonNullable<NonNullable<ABOUT_QUERY_RESULT>["bio"]>;
 type AboutPortrait = NonNullable<ABOUT_QUERY_RESULT>["portrait"];
@@ -22,48 +23,6 @@ interface AboutContentProps {
   portrait?: AboutPortrait;
   email?: string | null;
   linkedinUrl?: string | null;
-}
-
-function EmailCopyButton({ email }: { email: string }) {
-  const [visible, setVisible] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(email);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  return (
-    <div className="relative inline-block">
-      {/* Tooltip — appears above, desktop only */}
-      <div
-          className={`pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 ml-2 hidden desktop:flex items-center justify-center px-2 py-1 whitespace-nowrap bg-pistachio text-primary transition-all duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}`}
-        >
-          <span className="text-sub uppercase invisible">Click to copy</span>
-          <span
-            className={`text-sub uppercase absolute transition-opacity duration-300 ${copied ? "opacity-0" : "opacity-100"}`}
-          >
-            Click to copy
-          </span>
-          <span
-            className={`text-sub uppercase absolute transition-opacity duration-300 ${copied ? "opacity-100" : "opacity-0"}`}
-          >
-            Copied
-          </span>
-        </div>
-      {/* Email is the clickable element */}
-      <button
-        data-animate
-        onClick={handleCopy}
-        onMouseEnter={() => setVisible(true)}
-        onMouseLeave={() => setVisible(false)}
-        className="link-underline text-sub desktop:text-body uppercase text-primary cursor-pointer"
-      >
-        Email
-      </button>
-    </div>
-  );
 }
 
 export default function AboutContent({
@@ -118,18 +77,9 @@ export default function AboutContent({
           <PortableText value={bio as PortableTextBlock[]} />
         </div>
 
-        <div ref={linksRef} className="mt-16 flex gap-8">
+        <div ref={linksRef} className="mt-16 flex items-center gap-8">
           {email && <EmailCopyButton email={email} />}
-          {linkedinUrl && (
-            <NextLink
-              href={linkedinUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="link-underline text-sub desktop:text-body uppercase text-primary"
-            >
-              LinkedIn
-            </NextLink>
-          )}
+          {linkedinUrl && <LinkedInLink href={linkedinUrl} />}
         </div>
       </div>
 

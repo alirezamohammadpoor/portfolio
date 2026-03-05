@@ -89,10 +89,9 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
         {
           yPercent: 0,
           autoAlpha: 1,
-          duration: 0.8,
+          duration: 2,
           ease: "power3.out",
-          stagger: 0.1,
-          delay: 1,
+          delay: 1.7,
         },
       );
     },

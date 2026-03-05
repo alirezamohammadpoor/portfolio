@@ -39,9 +39,8 @@ export default function ProjectGallery({
               alt={`${projectTitle} — ${(i % originalCount) + 1}`}
               fill
               className="object-cover"
-              sizes="100vw"
-              priority={i < originalCount}
-              fetchPriority="high"
+              sizes="(min-width: 75rem) 50vw, 100vw"
+              priority={i === 0}
             />
           )}
         </div>

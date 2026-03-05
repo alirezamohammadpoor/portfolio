@@ -33,11 +33,11 @@ export default function MediaPanel({
     return (
       <div className="relative w-full overflow-hidden bg-tertiary h-full">
         <Image
-          src={urlFor(coverMedia.image).width(780).quality(85).url()}
+          src={urlFor(coverMedia.image).width(1400).quality(85).url()}
           alt={title}
           fill
           className="object-cover"
-          sizes="100vw"
+          sizes="(min-width: 75rem) 50vw, 100vw"
           priority={priority}
           fetchPriority="high"
         />

@@ -13,8 +13,8 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   const titleRef = useRef<HTMLHeadingElement>(null);
   const descRef = useRef<HTMLParagraphElement>(null);
 
-  useTitleAnimation(titleRef, cardRef, { delay: 1 });
-  useBodyAnimation(descRef, cardRef, { delay: 1.3 });
+  useTitleAnimation(titleRef, cardRef, { duration: 2, delay: 1 });
+  useBodyAnimation(descRef, cardRef, { duration: 2, delay: 1.3 });
 
   return (
     <div ref={cardRef}>

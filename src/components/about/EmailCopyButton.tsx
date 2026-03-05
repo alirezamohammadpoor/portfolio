@@ -1,0 +1,45 @@
+"use client";
+
+import { useState } from "react";
+
+export default function EmailCopyButton({ email }: { email: string }) {
+  const [visible, setVisible] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(email);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="relative inline-block">
+      {/* Tooltip — appears above, desktop only */}
+      <div
+        className={`pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 ml-2 hidden desktop:flex items-center justify-center px-2 py-1 whitespace-nowrap bg-pistachio text-primary transition-all duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}`}
+      >
+        <span className="text-sub uppercase invisible">Click to copy</span>
+        <span
+          className={`text-sub uppercase absolute transition-opacity duration-300 ${copied ? "opacity-0" : "opacity-100"}`}
+        >
+          Click to copy
+        </span>
+        <span
+          className={`text-sub uppercase absolute transition-opacity duration-300 ${copied ? "opacity-100" : "opacity-0"}`}
+        >
+          Copied
+        </span>
+      </div>
+      {/* Email is the clickable element */}
+      <button
+        data-animate
+        onClick={handleCopy}
+        onMouseEnter={() => setVisible(true)}
+        onMouseLeave={() => setVisible(false)}
+        className="link-underline text-body text-primary cursor-pointer"
+      >
+        Email
+      </button>
+    </div>
+  );
+}

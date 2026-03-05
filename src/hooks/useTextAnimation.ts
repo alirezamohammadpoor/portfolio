@@ -33,8 +33,7 @@ export function useTitleAnimation(
             duration,
             yPercent: -120,
             scale: 1.2,
-            stagger: 0.01,
-            ease: "expo.out",
+            ease: "power4.out",
             delay,
           }),
       });
@@ -63,8 +62,7 @@ export function useBodyAnimation(
           gsap.from(self.lines, {
             duration,
             yPercent: 105,
-            stagger: 0.04,
-            ease: "expo.out",
+            ease: "power4.out",
             delay,
           }),
       });
@@ -96,8 +94,7 @@ export function useInlineAnimation(
             gsap.from(self.lines, {
               duration,
               yPercent: 105,
-              stagger: 0.04,
-              ease: "expo.out",
+                ease: "power4.out",
               delay,
             }),
         });
