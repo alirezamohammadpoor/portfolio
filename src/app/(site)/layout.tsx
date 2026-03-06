@@ -3,7 +3,7 @@ import { draftMode } from "next/headers";
 import { ViewTransitions } from "next-view-transitions";
 import { Analytics } from "@vercel/analytics/next";
 import { VisualEditing } from "next-sanity/visual-editing";
-import { nhaas, nastaliq } from "@/lib/fonts";
+import { parastoo } from "@/lib/fonts";
 import Header from "@/components/layout/Header";
 import GsapProvider from "@/components/layout/GsapProvider";
 import { TransitionProvider } from "@/context/TransitionContext";
@@ -29,7 +29,7 @@ export default async function SiteLayout({
 
   return (
     <ViewTransitions>
-      <html lang="en" className={`${nhaas.variable} ${nastaliq.variable}`}>
+      <html lang="en" className={`${parastoo.variable}`}>
         <head>
           <link rel="preconnect" href="https://cdn.sanity.io" />
         </head>

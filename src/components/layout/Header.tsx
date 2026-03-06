@@ -31,11 +31,11 @@ export default function Header() {
           speed: 1,
           rightToLeft: false,
           tweenLength: false,
-          newClass: "nastaliq-font",
+          newClass: "parastoo-font",
         },
         onComplete: () => {
           span.textContent = PERSIAN_NAME;
-          span.className = "nastaliq-font";
+          span.className = "parastoo-font";
           gsap.delayedCall(HOLD_DURATION, scrambleToEnglish);
         },
       });
