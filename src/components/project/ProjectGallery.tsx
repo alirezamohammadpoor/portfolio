@@ -25,7 +25,7 @@ export default function ProjectGallery({
   return (
     <div
       ref={galleryRef}
-      className={`flex flex-col gap-2 px-6 pb-10 desktop:ml-[50%] desktop:w-1/2${isTransitioning ? " invisible" : ""}`}
+      className={`flex flex-col gap-2 px-4 pb-10 desktop:px-6 desktop:ml-[50%] desktop:w-1/2${isTransitioning ? " invisible" : ""}`}
     >
       {images.map((image, i) => (
         <div

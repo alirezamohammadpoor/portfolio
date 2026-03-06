@@ -30,7 +30,7 @@ export default function ProjectInfoPanel({
     >
       <div>
         {project.title && (
-          <h1 ref={titleRef} className="text-h1 text-primary">
+          <h1 ref={titleRef} className="text-primary">
             {project.title}
           </h1>
         )}

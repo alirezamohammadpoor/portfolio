@@ -153,7 +153,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       <div className="desktop:w-1/2 desktop:flex desktop:items-center">
         <Link
           href={`/project/${activeProject?.slug?.current}`}
-          className="block w-full px-6 py-2 desktop:py-0"
+          className="block w-full px-4 py-2 desktop:px-6 desktop:py-0"
         >
           <ProjectCard project={activeProject} />
         </Link>

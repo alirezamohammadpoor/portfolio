@@ -34,7 +34,7 @@
 }
 
 @theme inline {
-  --font-sans: var(--font-nhaas), system-ui, -apple-system, sans-serif;
+  --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
 }
 
 @layer base {
@@ -48,6 +48,21 @@
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1 {
+    font-size: var(--text-h1);
+    line-height: var(--text-h1--line-height);
+  }
+
+  h2 {
+    font-size: var(--text-h2);
+    line-height: var(--text-h2--line-height);
+  }
+
+  h3 {
+    font-size: var(--text-h3);
+    line-height: var(--text-h3--line-height);
   }
 
   ::selection {
@@ -74,8 +89,12 @@
     animation: gsap-fallback 0s 3s forwards;
   }
 
-  .nastaliq-font {
-    font-family: var(--font-nastaliq), serif;
+  .parastoo-font {
+    font-family: var(--font-parastoo), serif;
+  }
+
+  .line {
+    padding-bottom: 2px;
   }
 }
 

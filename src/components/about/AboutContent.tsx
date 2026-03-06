@@ -52,7 +52,7 @@ export default function AboutContent({
       {/* Left column: text content */}
       <div className="desktop:w-2/3 desktop:pr-12">
         {heading && (
-          <h1 ref={titleRef} className="text-h1 text-primary">
+          <h1 ref={titleRef} className="text-primary">
             {heading}
           </h1>
         )}

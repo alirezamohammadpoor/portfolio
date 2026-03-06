@@ -88,7 +88,7 @@ export default function DetailsDrawer({ project, isOpen }: DetailsDrawerProps) {
       aria-hidden={!isOpen}
       tabIndex={-1}
       onKeyDown={handleKeyDown}
-      className="fixed inset-x-0 bottom-10 z-30 bg-white px-6 py-8 desktop:hidden outline-none"
+      className="fixed inset-x-0 bottom-10 z-30 bg-white px-4 py-8 desktop:hidden outline-none"
     >
       <div
         ref={bgRef}

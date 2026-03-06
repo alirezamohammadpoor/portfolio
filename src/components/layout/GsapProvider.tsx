@@ -33,7 +33,7 @@ export default function GsapProvider({ children }: { children: ReactNode }) {
       ref={lenisRef}
       root
       autoRaf={false}
-      options={{ lerp: 0.1, smoothWheel: true }}
+      options={{ lerp: 0.06, smoothWheel: true }}
     >
       <ScrollTriggerSync />
       {children}

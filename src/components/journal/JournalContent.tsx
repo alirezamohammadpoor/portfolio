@@ -47,7 +47,7 @@ export default function JournalContent({
 
   return (
     <section ref={sectionRef} className="px-4 py-4 desktop:px-6 desktop:py-6">
-      <h1 ref={titleRef} className="text-h1 text-primary">
+      <h1 ref={titleRef} className="text-primary">
         Journal
       </h1>
       {description && (
