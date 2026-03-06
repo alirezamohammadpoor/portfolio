@@ -25,13 +25,15 @@ export default function JournalCard({ post }: JournalCardProps) {
       <p className="mt-4 text-sub desktop:text-body text-primary">
         {post.excerpt}
       </p>
-      <p className="mt-4 text-sub desktop:text-body text-secondary">
-        {new Date(post.publishedAt).toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        })}
-      </p>
+      {post.publishedAt && (
+        <p className="mt-4 text-sub desktop:text-body text-secondary">
+          {new Date(post.publishedAt).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
+        </p>
+      )}
     </Link>
   );
 }
