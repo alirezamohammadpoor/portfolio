@@ -64,6 +64,11 @@ export const JOURNAL_POST_SLUGS_QUERY = defineQuery(
   `*[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current }`
 );
 
+export const ADJACENT_JOURNAL_POSTS_QUERY = defineQuery(`{
+  "prev": *[_type == "journalPost" && publishedAt > $publishedAt] | order(publishedAt asc) [0] { title, slug },
+  "next": *[_type == "journalPost" && publishedAt < $publishedAt] | order(publishedAt desc) [0] { title, slug }
+}`);
+
 export const NEXT_PROJECT_QUERY = defineQuery(`
   coalesce(
     *[_type == "project" && order > $currentOrder] | order(order asc) [0] { title, slug },

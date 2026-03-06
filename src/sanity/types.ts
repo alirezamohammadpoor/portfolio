@@ -72,6 +72,15 @@ export type SanityImageHotspot = {
   width?: number;
 };
 
+export type JournalPage = {
+  _id: string;
+  _type: "journalPage";
+  _createdAt: string;
+  _updatedAt: string;
+  _rev: string;
+  description?: string;
+};
+
 export type JournalPostReference = {
   _ref: string;
   _type: "reference";
@@ -180,6 +189,12 @@ export type JournalPost = {
         hotspot?: SanityImageHotspot;
         crop?: SanityImageCrop;
         _type: "image";
+        _key: string;
+      }
+    | {
+        text?: string;
+        attribution?: string;
+        _type: "quote";
         _key: string;
       }
   >;
@@ -303,6 +318,7 @@ export type AllSanitySchemaTypes =
   | About
   | SanityImageCrop
   | SanityImageHotspot
+  | JournalPage
   | JournalPostReference
   | SanityFileAssetReference
   | Project
@@ -449,6 +465,13 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
 } | null;
 
 // Source: src/sanity/lib/queries.ts
+// Variable: JOURNAL_PAGE_QUERY
+// Query: *[_type == "journalPage"][0] { description }
+export type JOURNAL_PAGE_QUERY_RESULT = {
+  description: string | null;
+} | null;
+
+// Source: src/sanity/lib/queries.ts
 // Variable: JOURNAL_POSTS_QUERY
 // Query: *[_type == "journalPost"] | order(publishedAt desc) {   _id,  title,  slug,  excerpt,  coverImage,  tags,  publishedAt,  relatedProject->{ _id, title, slug } }
 export type JOURNAL_POSTS_QUERY_RESULT = Array<{
@@ -529,6 +552,12 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
         _type: "image";
         _key: string;
       }
+    | {
+        text?: string;
+        attribution?: string;
+        _type: "quote";
+        _key: string;
+      }
   > | null;
 } | null;
 
@@ -547,6 +576,20 @@ export type JOURNAL_POST_SLUGS_QUERY_RESULT = Array<{
 }>;
 
 // Source: src/sanity/lib/queries.ts
+// Variable: ADJACENT_JOURNAL_POSTS_QUERY
+// Query: {  "prev": *[_type == "journalPost" && publishedAt > $publishedAt] | order(publishedAt asc) [0] { title, slug },  "next": *[_type == "journalPost" && publishedAt < $publishedAt] | order(publishedAt desc) [0] { title, slug }}
+export type ADJACENT_JOURNAL_POSTS_QUERY_RESULT = {
+  prev: {
+    title: string | null;
+    slug: Slug | null;
+  } | null;
+  next: {
+    title: string | null;
+    slug: Slug | null;
+  } | null;
+};
+
+// Source: src/sanity/lib/queries.ts
 // Variable: NEXT_PROJECT_QUERY
 // Query: coalesce(    *[_type == "project" && order > $currentOrder] | order(order asc) [0] { title, slug },    *[_type == "project"] | order(order asc) [0] { title, slug }  )
 export type NEXT_PROJECT_QUERY_RESULT = {
@@ -561,10 +604,12 @@ declare module "@sanity/client" {
     '\n  *[_type == "about"][0] {\n    heading,\n    bio,\n    portrait,\n    email,\n    linkedinUrl\n  }\n': ABOUT_QUERY_RESULT;
     '\n  *[_type == "project"] | order(order asc) { \n  _id,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  images,\n  videos,\n  order\n }\n': PROJECTS_QUERY_RESULT;
     '\n  *[_type == "project" && slug.current == $slug][0] { \n  _id,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  images,\n  videos,\n  order\n }\n': PROJECT_BY_SLUG_QUERY_RESULT;
+    '\n  *[_type == "journalPage"][0] { description }\n': JOURNAL_PAGE_QUERY_RESULT;
     '\n  *[_type == "journalPost"] | order(publishedAt desc) { \n  _id,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug }\n }\n': JOURNAL_POSTS_QUERY_RESULT;
     '\n  *[_type == "journalPost" && slug.current == $slug][0] { \n  _id,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug }\n, body }\n': JOURNAL_POST_BY_SLUG_QUERY_RESULT;
     '*[_type == "project" && defined(slug.current)]{ "slug": slug.current }': PROJECT_SLUGS_QUERY_RESULT;
     '*[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current }': JOURNAL_POST_SLUGS_QUERY_RESULT;
+    '{\n  "prev": *[_type == "journalPost" && publishedAt > $publishedAt] | order(publishedAt asc) [0] { title, slug },\n  "next": *[_type == "journalPost" && publishedAt < $publishedAt] | order(publishedAt desc) [0] { title, slug }\n}': ADJACENT_JOURNAL_POSTS_QUERY_RESULT;
     '\n  coalesce(\n    *[_type == "project" && order > $currentOrder] | order(order asc) [0] { title, slug },\n    *[_type == "project"] | order(order asc) [0] { title, slug }\n  )\n': NEXT_PROJECT_QUERY_RESULT;
   }
 }

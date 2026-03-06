@@ -31,6 +31,31 @@ export const journalPost = defineType({
       of: [
         { type: "block" },
         { type: "image", options: { hotspot: true } },
+        {
+          type: "object",
+          name: "quote",
+          title: "Quote",
+          icon: () => "❝",
+          fields: [
+            defineField({
+              name: "text",
+              title: "Quote Text",
+              type: "text",
+              rows: 3,
+              validation: (rule) => rule.required(),
+            }),
+            defineField({
+              name: "attribution",
+              title: "Attribution",
+              type: "string",
+              description:
+                "Who said it and/or context (e.g. 'Steve Jobs, Stanford commencement')",
+            }),
+          ],
+          preview: {
+            select: { title: "text", subtitle: "attribution" },
+          },
+        },
       ],
     }),
     defineField({
