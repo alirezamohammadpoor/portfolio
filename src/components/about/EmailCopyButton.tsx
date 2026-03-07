@@ -16,7 +16,7 @@ export default function EmailCopyButton({ email }: { email: string }) {
     <div className="relative inline-block">
       {/* Tooltip — appears above, desktop only */}
       <div
-        className={`pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 ml-2 hidden desktop:flex items-center justify-center px-2 py-1 whitespace-nowrap bg-pistachio text-primary transition-all duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}`}
+        className={`pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 hidden desktop:flex items-center justify-center rounded-full px-4 pt-[7px] pb-[5px] whitespace-nowrap bg-pistachio text-primary transition-all duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] ${visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}`}
       >
         <span className="text-sub uppercase invisible">Click to copy</span>
         <span
@@ -36,7 +36,7 @@ export default function EmailCopyButton({ email }: { email: string }) {
         onClick={handleCopy}
         onMouseEnter={() => setVisible(true)}
         onMouseLeave={() => setVisible(false)}
-        className="link-underline text-body text-primary cursor-pointer"
+        className="link-underline text-sub uppercase text-primary cursor-pointer"
       >
         Email
       </button>

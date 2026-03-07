@@ -54,7 +54,13 @@ export default function AboutContent({
       gsap.fromTo(
         spotifyRef.current,
         { yPercent: 40, autoAlpha: 0 },
-        { yPercent: 0, autoAlpha: 1, duration: 2, ease: "power4.out", delay: 2 },
+        {
+          yPercent: 0,
+          autoAlpha: 1,
+          duration: 2,
+          ease: "power4.out",
+          delay: 2,
+        },
       );
     },
     { scope: sectionRef },
@@ -66,7 +72,7 @@ export default function AboutContent({
       className="px-4 py-4 desktop:px-6 desktop:py-6 desktop:flex desktop:items-center desktop:min-h-[calc(100dvh-var(--header-height))]"
     >
       {/* Left column: text content */}
-      <div>
+      <div className="desktop:w-2/3 desktop:pr-12">
         {heading && (
           <h1 ref={titleRef} className="text-primary">
             {heading}
@@ -93,15 +99,30 @@ export default function AboutContent({
           <PortableText value={bio as PortableTextBlock[]} />
         </div>
 
-        <div ref={linksRef} className="mt-16 flex items-center gap-8">
-          {email && <EmailCopyButton email={email} />}
+        <div ref={linksRef} className="mt-6 flex items-baseline gap-8">
           {linkedinUrl && <LinkedInLink href={linkedinUrl} />}
+          {email && <EmailCopyButton email={email} />}
         </div>
 
         <div ref={spotifyRef} className="mt-6 max-w-[400px] invisible">
           <SpotifyWidget />
         </div>
       </div>
+
+      {/* Right column: portrait — desktop only */}
+      {portrait?.asset && (
+        <div className="hidden desktop:flex desktop:w-1/3 desktop:items-center desktop:justify-center">
+          <div className="relative aspect-[3/4] w-full overflow-hidden bg-tertiary">
+            <Image
+              src={urlFor(portrait).width(780).quality(85).url()}
+              alt={heading ?? "Portrait"}
+              fill
+              className="object-cover"
+              sizes="33vw"
+            />
+          </div>
+        </div>
+      )}
     </section>
   );
 }

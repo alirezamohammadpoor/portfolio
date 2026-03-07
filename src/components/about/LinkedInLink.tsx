@@ -6,7 +6,7 @@ export default function LinkedInLink({ href }: { href: string }) {
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="link-underline text-body text-primary"
+      className="link-underline text-sub uppercase text-primary"
     >
       LinkedIn
     </NextLink>

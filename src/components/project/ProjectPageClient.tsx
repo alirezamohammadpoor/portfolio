@@ -2,6 +2,8 @@
 
 import { useRef, useState } from "react";
 import { useTransitionRouter } from "next-view-transitions";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import type {
   PROJECT_BY_SLUG_QUERY_RESULT,
   NEXT_PROJECT_QUERY_RESULT,
@@ -61,7 +63,22 @@ export default function ProjectPageClient({ project, nextProject }: ProjectPageC
   useTitleAnimation(titleRef, panelRef, { duration: 2, skip, dependencies: deps });
   useBodyAnimation(descRef, panelRef, { duration: 2, delay: 0.3, skip, dependencies: deps });
   useBodyAnimation(techRef, panelRef, { duration: 2, delay: 0.5, skip, dependencies: deps });
-  useInlineAnimation(linksRef, panelRef, "a", { duration: 2, delay: 0.7, skip, dependencies: deps });
+  useInlineAnimation(linksRef, panelRef, "a:not([data-pill])", { duration: 2, delay: 0.7, skip, dependencies: deps });
+
+  // Pill button needs its own animation (SplitText mask clips rounded corners)
+  useGSAP(
+    () => {
+      if (skip || !linksRef.current) return;
+      const pill = linksRef.current.querySelector("[data-pill]");
+      if (!pill) return;
+      gsap.fromTo(
+        pill,
+        { yPercent: 40, autoAlpha: 0 },
+        { yPercent: 0, autoAlpha: 1, duration: 2, ease: "power4.out", delay: 0.7 },
+      );
+    },
+    { scope: panelRef, dependencies: [skip, ...deps] },
+  );
 
   const hidePanel = skip;
 

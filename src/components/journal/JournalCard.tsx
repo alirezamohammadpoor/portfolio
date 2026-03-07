@@ -25,15 +25,26 @@ export default function JournalCard({ post }: JournalCardProps) {
       <p className="mt-4 text-sub desktop:text-body text-primary">
         {post.excerpt}
       </p>
-      {post.publishedAt && (
-        <p className="mt-4 text-sub desktop:text-body text-secondary">
-          {new Date(post.publishedAt).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </p>
-      )}
+      <div className="mt-4 flex items-center justify-between">
+        {post.publishedAt && (
+          <span className="text-sub desktop:text-body text-secondary">
+            {new Date(post.publishedAt).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </span>
+        )}
+        {post.tags && post.tags.length > 0 && (
+          <div className="flex items-center gap-2">
+            {post.tags.map((tag) => (
+              <span key={tag} className="text-sub text-secondary">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
     </Link>
   );
 }

@@ -45,11 +45,12 @@ export default function ProjectInfoPanel({
             <TechStack items={project.techStack} />
           </div>
         )}
-        <div ref={linksRef} className="mt-8 flex gap-6">
+        <div ref={linksRef} className="mt-8 flex items-baseline gap-6">
           {project.caseStudy?.slug?.current && (
             <Link
               href={`/journal/${project.caseStudy.slug.current}`}
-              className="link-underline text-sub uppercase text-primary "
+              data-pill
+              className="invisible rounded-full bg-pistachio px-4 pt-[7px] pb-[5px] text-sub uppercase text-primary hover:bg-lightpistachio transition-colors duration-200"
             >
               Case study
             </Link>
@@ -59,7 +60,7 @@ export default function ProjectInfoPanel({
               href={project.siteUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="link-underline text-sub uppercase text-primary "
+              className="link-underline text-sub uppercase text-primary"
             >
               Visit website
             </NextLink>
