@@ -11,6 +11,7 @@
   --color-pistachio: #bedcaa;
   --color-pomegranate: #c0392b;
   --color-lightpistachio: #d8eacc;
+  --color-spotify: #1DB954;
 
   --text-display: 3.5rem;
   --text-display--line-height: 4rem;
@@ -95,6 +96,50 @@
 
   .line {
     padding-bottom: 2px;
+  }
+}
+
+/* Spotify marquee animation for long track names */
+.spotify-marquee-active {
+  animation: marquee-scroll var(--marquee-duration, 10s) ease-in-out infinite;
+}
+
+@keyframes marquee-scroll {
+  0%,
+  15% {
+    transform: translateX(0);
+  }
+  45%,
+  55% {
+    transform: translateX(var(--marquee-offset));
+  }
+  85%,
+  100% {
+    transform: translateX(0);
+  }
+}
+
+.spotify-marquee-left-fade {
+  opacity: 0;
+}
+
+.spotify-marquee-active ~ .spotify-marquee-left-fade {
+  animation: marquee-left-fade var(--marquee-duration, 10s) ease-in-out
+    infinite;
+}
+
+@keyframes marquee-left-fade {
+  0%,
+  15% {
+    opacity: 0;
+  }
+  19%,
+  80% {
+    opacity: 1;
+  }
+  85%,
+  100% {
+    opacity: 0;
   }
 }
 
