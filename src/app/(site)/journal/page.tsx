@@ -5,6 +5,8 @@ import JournalContent from "@/components/journal/JournalContent";
 
 export const metadata: Metadata = {
   title: "Journal",
+  description:
+    "Insights and case studies from recent projects.",
 };
 
 export default async function JournalPage() {

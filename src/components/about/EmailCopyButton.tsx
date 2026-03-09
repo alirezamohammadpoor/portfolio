@@ -36,6 +36,7 @@ export default function EmailCopyButton({ email }: { email: string }) {
         onClick={handleCopy}
         onMouseEnter={() => setVisible(true)}
         onMouseLeave={() => setVisible(false)}
+        aria-label="Copy email address"
         className="link-underline text-sub uppercase text-primary cursor-pointer"
       >
         Email

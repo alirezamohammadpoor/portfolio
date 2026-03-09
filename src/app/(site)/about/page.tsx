@@ -5,6 +5,8 @@ import AboutContent from "@/components/about/AboutContent";
 
 export const metadata: Metadata = {
   title: "About",
+  description:
+    "Ali Reza Mohammad Poor — Frontend Developer specializing in eCommerce.",
 };
 
 export default async function AboutPage() {
