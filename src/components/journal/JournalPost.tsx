@@ -1,24 +1,22 @@
 "use client";
 
 import { useRef } from "react";
+import Image from "next/image";
 import type { PortableTextBlock } from "next-sanity";
 import { PortableText } from "next-sanity";
-import { Link } from "next-view-transitions";
-import {
-  useTitleAnimation,
-  useInlineAnimation,
-} from "@/hooks/useTextAnimation";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { useTitleAnimation, useBodyAnimation } from "@/hooks/useTextAnimation";
 import type {
   JOURNAL_POST_BY_SLUG_QUERY_RESULT,
-  ADJACENT_JOURNAL_POSTS_QUERY_RESULT,
+  JOURNAL_POSTS_QUERY_RESULT,
 } from "@/sanity/types";
-
-type AdjacentPost = NonNullable<ADJACENT_JOURNAL_POSTS_QUERY_RESULT>["prev"];
+import { urlFor } from "@/sanity/lib/image";
+import JournalCard from "./JournalCard";
 
 interface JournalPostProps {
   post: NonNullable<JOURNAL_POST_BY_SLUG_QUERY_RESULT>;
-  prevPost: AdjacentPost;
-  nextPost: AdjacentPost;
+  relatedPosts: JOURNAL_POSTS_QUERY_RESULT;
 }
 
 const portableTextComponents = {
@@ -46,11 +44,11 @@ const portableTextComponents = {
   types: {
     quote: ({ value }: { value: { text: string; attribution?: string } }) => (
       <blockquote className="my-8">
-        <p className="text-body text-primary font-medium italic">
+        <p className="text-sub desktop:text-body text-primary font-medium italic">
           &ldquo;{value.text}&rdquo;
         </p>
         {value.attribution && (
-          <cite className="mt-2 block text-body text-secondary not-italic">
+          <cite className="mt-2 block text-sub desktop:text-body text-secondary not-italic">
             — {value.attribution}
           </cite>
         )}
@@ -59,37 +57,88 @@ const portableTextComponents = {
   },
 };
 
-export default function JournalPost({
-  post,
-  prevPost,
-  nextPost,
-}: JournalPostProps) {
-  const articleRef = useRef<HTMLElement>(null);
+export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
+  const heroRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
+  const excerptRef = useRef<HTMLParagraphElement>(null);
+  const imageRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const carouselRef = useRef<HTMLElement>(null);
 
-  useTitleAnimation(titleRef, articleRef, { duration: 2, delay: 1 });
-  useInlineAnimation(
-    bodyRef,
-    articleRef,
-    ":scope > p, :scope > h1, :scope > h2, :scope > h3, blockquote p, blockquote cite",
-    {
-      duration: 2,
-      delay: 1.3,
-    },
-  );
+  // Hero text animations (SplitText)
+  useTitleAnimation(titleRef, heroRef, { duration: 2, delay: 1 });
+  useBodyAnimation(excerptRef, heroRef, { duration: 2, delay: 1.3 });
+
+  // Image, body, and carousel animations (opacity fade)
+  useGSAP(() => {
+    if (imageRef.current) {
+      gsap.fromTo(
+        imageRef.current,
+        { autoAlpha: 0 },
+        { autoAlpha: 1, duration: 1.5, ease: "power3.out", delay: 0.5 },
+      );
+    }
+    if (bodyRef.current) {
+      gsap.fromTo(
+        bodyRef.current,
+        { autoAlpha: 0, y: 20 },
+        { autoAlpha: 1, y: 0, duration: 1.2, ease: "power3.out", delay: 1.5 },
+      );
+    }
+    if (carouselRef.current) {
+      gsap.fromTo(
+        carouselRef.current,
+        { autoAlpha: 0, y: 30 },
+        { autoAlpha: 1, y: 0, duration: 1.2, ease: "power3.out", delay: 1.8 },
+      );
+    }
+  });
 
   return (
     <>
-      <article
-        ref={articleRef}
-        className="mx-auto desktop:max-w-[50vw] px-4 py-6 desktop:px-6"
+      {/* Hero: stacked on mobile, 50/50 split on desktop */}
+      <div
+        ref={heroRef}
+        className="flex flex-col-reverse desktop:flex-row desktop:h-[calc(100dvh-var(--header-height))]"
       >
-        <h1 ref={titleRef} className="text-primary py-6">
-          {post.title}
-        </h1>
+        <div className="px-4 py-6 desktop:flex desktop:w-1/2 desktop:items-center desktop:px-6">
+          <div>
+            <h1 ref={titleRef} className="text-primary">
+              {post.title}
+            </h1>
+            {post.excerpt && (
+              <p
+                ref={excerptRef}
+                className="mt-4 text-sub desktop:text-body text-primary"
+              >
+                {post.excerpt}
+              </p>
+            )}
+          </div>
+        </div>
+        {post.coverImage?.asset && (
+          <div
+            ref={imageRef}
+            className="invisible relative aspect-[3/4] w-full shrink-0 overflow-hidden bg-tertiary desktop:aspect-auto desktop:w-1/2"
+          >
+            <Image
+              src={urlFor(post.coverImage).width(1920).quality(85).url()}
+              alt={post.title ?? ""}
+              fill
+              className="object-cover"
+              sizes="(min-width: 75rem) 50vw, 100vw"
+              priority
+            />
+          </div>
+        )}
+      </div>
+      {/* Body content */}
+      <article className="mx-auto desktop:max-w-[50vw] px-4 py-6 desktop:px-6">
         {post.body && (
-          <div ref={bodyRef} className="text-body text-primary space-y-4">
+          <div
+            ref={bodyRef}
+            className="invisible text-sub desktop:text-body text-primary space-y-4 [&>h2]:mt-12 [&>h3]:mt-10"
+          >
             <PortableText
               value={post.body as PortableTextBlock[]}
               components={portableTextComponents}
@@ -97,25 +146,20 @@ export default function JournalPost({
           </div>
         )}
       </article>
-      {(prevPost || nextPost) && (
-        <nav className="mx-auto mt-4 flex items-start justify-between border-t border-tertiary px-4 pt-8 pb-8 desktop:max-w-[50vw] desktop:px-6">
-          <div>
-            {prevPost && (
-              <Link href={`/journal/${prevPost.slug?.current}`}>
-                <span className="text-sub text-secondary">Previous</span>
-                <p className="mt-1 text-body text-primary">{prevPost.title}</p>
-              </Link>
-            )}
+      {relatedPosts.length > 0 && (
+        <section ref={carouselRef} className="invisible mt-16 pb-8">
+          <h4 className="px-4 desktop:px-6 uppercase">More posts</h4>
+          <div className="mt-4 flex gap-2 overflow-x-auto px-4 desktop:px-6 snap-x snap-mandatory">
+            {relatedPosts.map((relatedPost) => (
+              <div
+                key={relatedPost._id}
+                className="min-w-[280px] max-w-[400px] shrink-0 snap-start"
+              >
+                <JournalCard post={relatedPost} />
+              </div>
+            ))}
           </div>
-          <div className="text-right">
-            {nextPost && (
-              <Link href={`/journal/${nextPost.slug?.current}`}>
-                <span className="text-sub text-secondary">Next</span>
-                <p className="mt-1 text-body text-primary">{nextPost.title}</p>
-              </Link>
-            )}
-          </div>
-        </nav>
+        </section>
       )}
     </>
   );

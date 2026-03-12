@@ -39,6 +39,8 @@ export default function AboutContent({
   const titleRef = useRef<HTMLHeadingElement>(null);
   const bioRef = useRef<HTMLDivElement>(null);
   const linksRef = useRef<HTMLDivElement>(null);
+  const portraitMobileRef = useRef<HTMLDivElement>(null);
+  const portraitDesktopRef = useRef<HTMLDivElement>(null);
   const spotifyRef = useRef<HTMLDivElement>(null);
 
   useTitleAnimation(titleRef, sectionRef, { duration: 2, delay: 1 });
@@ -50,18 +52,23 @@ export default function AboutContent({
 
   useGSAP(
     () => {
-      if (!spotifyRef.current) return;
-      gsap.fromTo(
-        spotifyRef.current,
-        { yPercent: 40, autoAlpha: 0 },
-        {
-          yPercent: 0,
-          autoAlpha: 1,
-          duration: 2,
-          ease: "power4.out",
-          delay: 2,
-        },
+      const targets = [portraitMobileRef.current, portraitDesktopRef.current].filter(
+        (el) => el && getComputedStyle(el).display !== "none",
       );
+      if (targets.length) {
+        gsap.fromTo(
+          targets,
+          { xPercent: 100, autoAlpha: 0 },
+          { xPercent: 0, autoAlpha: 1, duration: 2, ease: "power3.out", delay: 1.3 },
+        );
+      }
+      if (spotifyRef.current) {
+        gsap.fromTo(
+          spotifyRef.current,
+          { yPercent: 40, autoAlpha: 0 },
+          { yPercent: 0, autoAlpha: 1, duration: 2, ease: "power4.out", delay: 2 },
+        );
+      }
     },
     { scope: sectionRef },
   );
@@ -81,7 +88,7 @@ export default function AboutContent({
 
         {/* Mobile portrait — hidden on desktop */}
         {portrait?.asset && (
-          <div className="relative mt-6 aspect-[3/4] w-full overflow-hidden bg-tertiary desktop:hidden">
+          <div ref={portraitMobileRef} className="invisible relative mt-6 aspect-[3/4] w-full overflow-hidden bg-tertiary desktop:hidden">
             <Image
               src={urlFor(portrait).width(780).quality(85).url()}
               alt={heading ?? "Portrait"}
@@ -111,7 +118,7 @@ export default function AboutContent({
 
       {/* Right column: portrait — desktop only */}
       {portrait?.asset && (
-        <div className="hidden desktop:flex desktop:w-1/3 desktop:items-center desktop:justify-center">
+        <div ref={portraitDesktopRef} className="invisible hidden desktop:flex desktop:w-1/3 desktop:items-center desktop:justify-center">
           <div className="relative aspect-[3/4] w-full overflow-hidden bg-tertiary">
             <Image
               src={urlFor(portrait).width(780).quality(85).url()}

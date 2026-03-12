@@ -6,7 +6,7 @@ import { sanityFetch } from "@/sanity/lib/live";
 import {
   JOURNAL_POST_BY_SLUG_QUERY,
   JOURNAL_POST_SLUGS_QUERY,
-  ADJACENT_JOURNAL_POSTS_QUERY,
+  RELATED_JOURNAL_POSTS_QUERY,
 } from "@/sanity/lib/queries";
 import JournalPost from "@/components/journal/JournalPost";
 
@@ -45,16 +45,10 @@ export default async function JournalPostPage({
     notFound();
   }
 
-  const { data: adjacentPosts } = await sanityFetch({
-    query: ADJACENT_JOURNAL_POSTS_QUERY,
-    params: { publishedAt: post.publishedAt },
+  const { data: relatedPosts } = await sanityFetch({
+    query: RELATED_JOURNAL_POSTS_QUERY,
+    params: { id: post._id },
   });
 
-  return (
-    <JournalPost
-      post={post}
-      prevPost={adjacentPosts?.prev ?? null}
-      nextPost={adjacentPosts?.next ?? null}
-    />
-  );
+  return <JournalPost post={post} relatedPosts={relatedPosts ?? []} />;
 }
