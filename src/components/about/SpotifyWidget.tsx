@@ -145,6 +145,7 @@ function useSpotifyData() {
   const [cachedAt, setCachedAt] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const lastTrackRef = useRef<string | null>(null);
+  const lastPlayingRef = useRef<boolean | null>(null);
   const cachedAtRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -166,10 +167,17 @@ function useSpotifyData() {
       if (!res.ok) return;
       const json = await res.json();
       if (json.error) return;
-      setData(json);
+      const trackChanged = json.songUrl !== lastTrackRef.current;
+      const statusChanged = lastPlayingRef.current !== json.isPlaying;
+      if (trackChanged || statusChanged || lastPlayingRef.current === null) {
+        setData(json);
+      }
+      lastPlayingRef.current = json.isPlaying;
       const now = new Date().toISOString();
       const newCachedAt = json.isPlaying ? now : (cachedAtRef.current ?? now);
-      setCachedAt(newCachedAt);
+      if (trackChanged || statusChanged) {
+        setCachedAt(newCachedAt);
+      }
       cachedAtRef.current = newCachedAt;
 
       // Only write localStorage when track changes
@@ -192,7 +200,7 @@ function useSpotifyData() {
     fetchData();
     const timer = setInterval(() => {
       if (!document.hidden) fetchData();
-    }, 1_000);
+    }, 10_000);
     return () => clearInterval(timer);
   }, [fetchData]);
 

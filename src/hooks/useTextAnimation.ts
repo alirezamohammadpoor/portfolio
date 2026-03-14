@@ -94,7 +94,7 @@ export function useInlineAnimation(
             gsap.from(self.lines, {
               duration,
               yPercent: 105,
-                ease: "power4.out",
+              ease: "power4.out",
               delay,
             }),
         });

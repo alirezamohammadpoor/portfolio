@@ -47,6 +47,7 @@ export default function Footer({
 
   useEffect(() => {
     if (!wipeRef.current) return;
+    gsap.killTweensOf(wipeRef.current);
 
     if (detailsOpen || showNextHint) {
       gsap.fromTo(
@@ -103,7 +104,7 @@ export default function Footer({
             {caseStudySlug && (
               <Link
                 href={`/journal/${caseStudySlug}`}
-                className="text-sub text-primary "
+                className="text-sub text-primary"
               >
                 Case study
               </Link>
@@ -113,7 +114,7 @@ export default function Footer({
                 href={siteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sub text-primary "
+                className="text-sub text-primary"
               >
                 Visit website
               </NextLink>
