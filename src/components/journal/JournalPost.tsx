@@ -75,7 +75,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
       gsap.fromTo(
         imageRef.current,
         { autoAlpha: 0 },
-        { autoAlpha: 1, duration: 1.5, ease: "power3.out", delay: 0.5 },
+        { autoAlpha: 1, duration: 1.5, ease: "power3.out", delay: 1 },
       );
     }
     if (bodyRef.current) {

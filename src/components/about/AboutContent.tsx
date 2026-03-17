@@ -8,7 +8,6 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import {
   useTitleAnimation,
-  useBodyAnimation,
   useInlineAnimation,
 } from "@/hooks/useTextAnimation";
 import type { ABOUT_QUERY_RESULT } from "@/sanity/types";
@@ -44,7 +43,7 @@ export default function AboutContent({
   const spotifyRef = useRef<HTMLDivElement>(null);
 
   useTitleAnimation(titleRef, sectionRef, { duration: 2, delay: 1 });
-  useBodyAnimation(bioRef, sectionRef, { duration: 2, delay: 1.3 });
+  useInlineAnimation(bioRef, sectionRef, "p", { duration: 2, delay: 1.3 });
   useInlineAnimation(linksRef, sectionRef, "[data-animate], a", {
     duration: 2,
     delay: 1.7,
@@ -52,21 +51,34 @@ export default function AboutContent({
 
   useGSAP(
     () => {
-      const targets = [portraitMobileRef.current, portraitDesktopRef.current].filter(
-        (el) => el && getComputedStyle(el).display !== "none",
-      );
+      const targets = [
+        portraitMobileRef.current,
+        portraitDesktopRef.current,
+      ].filter((el) => el && getComputedStyle(el).display !== "none");
       if (targets.length) {
         gsap.fromTo(
           targets,
           { xPercent: 100, autoAlpha: 0 },
-          { xPercent: 0, autoAlpha: 1, duration: 2, ease: "power3.out", delay: 1.3 },
+          {
+            xPercent: 0,
+            autoAlpha: 1,
+            duration: 2,
+            ease: "power3.out",
+            delay: 1.3,
+          },
         );
       }
       if (spotifyRef.current) {
         gsap.fromTo(
           spotifyRef.current,
           { yPercent: 40, autoAlpha: 0 },
-          { yPercent: 0, autoAlpha: 1, duration: 2, ease: "power4.out", delay: 2 },
+          {
+            yPercent: 0,
+            autoAlpha: 1,
+            duration: 2,
+            ease: "power4.out",
+            delay: 2,
+          },
         );
       }
     },
@@ -88,7 +100,10 @@ export default function AboutContent({
 
         {/* Mobile portrait — hidden on desktop */}
         {portrait?.asset && (
-          <div ref={portraitMobileRef} className="invisible relative mt-6 aspect-[3/4] w-full overflow-hidden bg-tertiary desktop:hidden">
+          <div
+            ref={portraitMobileRef}
+            className="invisible relative mt-6 aspect-[3/4] w-full overflow-hidden bg-tertiary desktop:hidden"
+          >
             <Image
               src={urlFor(portrait).width(780).quality(85).url()}
               alt={heading ?? "Portrait"}
@@ -101,7 +116,7 @@ export default function AboutContent({
 
         <div
           ref={bioRef}
-          className="mt-6 max-w-[680px] text-sub desktop:text-body text-primary"
+          className="mt-6 max-w-[680px] text-sub desktop:text-body text-primary [&>p+p]:mt-6"
         >
           <PortableText value={bio as PortableTextBlock[]} />
         </div>
@@ -118,7 +133,10 @@ export default function AboutContent({
 
       {/* Right column: portrait — desktop only */}
       {portrait?.asset && (
-        <div ref={portraitDesktopRef} className="invisible hidden desktop:flex desktop:w-1/3 desktop:items-center desktop:justify-center">
+        <div
+          ref={portraitDesktopRef}
+          className="invisible hidden desktop:flex desktop:w-1/3 desktop:items-center desktop:justify-center"
+        >
           <div className="relative aspect-[3/4] w-full overflow-hidden bg-tertiary">
             <Image
               src={urlFor(portrait).width(780).quality(85).url()}

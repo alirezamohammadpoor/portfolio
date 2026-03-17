@@ -12,6 +12,11 @@ interface AnimationOptions {
   dependencies?: unknown[];
 }
 
+function prefersReducedMotion() {
+  return typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
 /**
  * Animate heading text — chars drop in from above.
  */
@@ -23,6 +28,10 @@ export function useTitleAnimation(
   useGSAP(
     () => {
       if (skip || !ref.current) return;
+      if (prefersReducedMotion()) {
+        gsap.set(ref.current, { autoAlpha: 1 });
+        return;
+      }
       SplitText.create(ref.current, {
         type: "words, chars",
         autoSplit: true,
@@ -32,7 +41,7 @@ export function useTitleAnimation(
           gsap.from(self.chars, {
             duration,
             yPercent: -120,
-            scale: 1.2,
+            scale: 1.08,
             ease: "power4.out",
             delay,
           }),
@@ -53,6 +62,10 @@ export function useBodyAnimation(
   useGSAP(
     () => {
       if (skip || !ref.current) return;
+      if (prefersReducedMotion()) {
+        gsap.set(ref.current, { autoAlpha: 1 });
+        return;
+      }
       SplitText.create(ref.current, {
         type: "lines, words",
         autoSplit: true,
@@ -83,6 +96,10 @@ export function useInlineAnimation(
   useGSAP(
     () => {
       if (skip || !ref.current) return;
+      if (prefersReducedMotion()) {
+        gsap.set(ref.current, { autoAlpha: 1 });
+        return;
+      }
       const elements = ref.current.querySelectorAll(selector);
       elements.forEach((el) => {
         SplitText.create(el, {

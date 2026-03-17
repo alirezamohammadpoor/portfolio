@@ -32,7 +32,7 @@ export default function JournalContent({
 
       gsap.fromTo(
         cards,
-        { yPercent: 100, autoAlpha: 0 },
+        { yPercent: 40, autoAlpha: 0 },
         {
           yPercent: 0,
           autoAlpha: 1,

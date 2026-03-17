@@ -53,7 +53,7 @@ export default function Footer({
       gsap.fromTo(
         wipeRef.current,
         { clipPath: "inset(100% 0 0 0)" },
-        { clipPath: "inset(0% 0 0 0)", duration: 0.3, ease: "power2.in" },
+        { clipPath: "inset(0% 0 0 0)", duration: 0.3, ease: "power2.out" },
       );
     } else {
       gsap.to(wipeRef.current, {

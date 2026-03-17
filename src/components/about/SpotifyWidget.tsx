@@ -104,14 +104,14 @@ function TrackMarquee({
         }}
       >
         <span
-          className="inline-flex items-center overflow-hidden transition-all duration-200"
+          className="inline-flex items-center overflow-hidden transition-[width,margin] duration-200"
           style={{
             width: hovered ? "14px" : "0px",
             marginRight: hovered ? "2px" : "-4px",
           }}
         >
           <SpotifyIcon
-            className={`h-[14px] w-[14px] shrink-0 transition-all duration-200${isActive ? " text-spotify" : " text-primary/50"}`}
+            className={`h-[14px] w-[14px] shrink-0 transition-[transform,opacity,filter] duration-200${isActive ? " text-spotify" : " text-primary/50"}`}
             style={
               {
                 opacity: hovered ? 1 : 0,
@@ -243,7 +243,7 @@ export default function SpotifyWidget() {
       rel="noopener noreferrer"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="flex w-full items-center gap-4 rounded-full py-2 pl-4 pr-5 outline-none transition-colors duration-200 focus-visible:ring-2 bg-pistachio hover:bg-lightpistachio"
+      className="flex w-full items-center gap-4 rounded-full py-2 pl-4 pr-5 outline-none transition-[background-color] duration-200 focus-visible:ring-2 bg-pistachio hover:bg-lightpistachio active:scale-[0.97]"
     >
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
         <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg shadow-[3px_3px_4px_0px_rgba(0,0,0,0.12)]">
@@ -272,7 +272,7 @@ export default function SpotifyWidget() {
 
       <div className="relative grid shrink-0 items-center pr-1">
         <div
-          className="col-start-1 row-start-1 flex items-center justify-end gap-3 transition-all duration-200"
+          className="col-start-1 row-start-1 flex items-center justify-end gap-3 transition-[transform,opacity,filter] duration-200"
           style={{
             opacity: hovered ? 0 : 1,
             filter: hovered ? "blur(4px)" : "blur(0px)",
@@ -289,7 +289,7 @@ export default function SpotifyWidget() {
           </span>
         </div>
         <div
-          className="col-start-1 row-start-1 flex items-center justify-end gap-3 transition-all duration-200"
+          className="col-start-1 row-start-1 flex items-center justify-end gap-3 transition-[transform,opacity,filter] duration-200"
           style={{
             opacity: hovered ? 1 : 0,
             filter: hovered ? "blur(0px)" : "blur(4px)",

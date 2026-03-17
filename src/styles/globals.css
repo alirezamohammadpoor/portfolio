@@ -11,7 +11,7 @@
   --color-pistachio: #bedcaa;
   --color-pomegranate: #c0392b;
   --color-lightpistachio: #d8eacc;
-  --color-spotify: #1DB954;
+  --color-spotify: #1db954;
 
   --text-display: 3.5rem;
   --text-display--line-height: 4rem;
@@ -102,7 +102,7 @@
 
 /* Spotify marquee animation for long track names */
 .spotify-marquee-active {
-  animation: marquee-scroll var(--marquee-duration, 10s) ease-in-out infinite;
+  animation: marquee-scroll var(--marquee-duration, 10s) linear infinite;
 }
 
 @keyframes marquee-scroll {
@@ -125,8 +125,7 @@
 }
 
 .spotify-marquee-active ~ .spotify-marquee-left-fade {
-  animation: marquee-left-fade var(--marquee-duration, 10s) ease-in-out
-    infinite;
+  animation: marquee-left-fade var(--marquee-duration, 10s) ease-in-out infinite;
 }
 
 @keyframes marquee-left-fade {
@@ -149,9 +148,14 @@
   position: relative;
   display: inline-block;
   padding-bottom: 2px;
+  transition: transform 160ms ease-out;
 }
 
-@media (width >= theme(--breakpoint-desktop)) {
+.link-underline:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) and (width >= theme(--breakpoint-desktop)) {
   .link-underline::after {
     content: "";
     position: absolute;
@@ -162,7 +166,7 @@
     background-color: var(--color-primary);
     transform: scaleX(0);
     transform-origin: left;
-    transition: transform 1s cubic-bezier(0.33, 1, 0.68, 1);
+    transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   .link-underline:hover::after {

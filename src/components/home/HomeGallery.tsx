@@ -64,13 +64,15 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
     });
 
     // RAF loop
+    let rafId: number;
     function raf(time: number) {
       lenis.raf(time);
-      requestAnimationFrame(raf);
+      rafId = requestAnimationFrame(raf);
     }
-    requestAnimationFrame(raf);
+    rafId = requestAnimationFrame(raf);
 
     return () => {
+      cancelAnimationFrame(rafId);
       clearTimeout(snapTimer);
       lenis.destroy();
     };
@@ -85,7 +87,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
 
       gsap.fromTo(
         slides,
-        { yPercent: 100, autoAlpha: 0 },
+        { yPercent: 40, autoAlpha: 0 },
         {
           yPercent: 0,
           autoAlpha: 1,
