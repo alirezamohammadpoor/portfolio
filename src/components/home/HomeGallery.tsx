@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
-import Lenis from "lenis";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
@@ -22,80 +21,202 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
   const contentRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const scrollHintRef = useRef<HTMLDivElement>(null);
+  const cursorHintRef = useRef<HTMLDivElement>(null);
+  const hasScrolled = useRef(false);
+  const colorCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const router = useRouter();
   const { startTransition } = usePageTransition();
 
-  // Lenis smooth snap for gallery
+  // Snap gallery — one scroll gesture = one slide, infinite loop via GSAP transforms
   useEffect(() => {
     if (!wrapperRef.current || !contentRef.current) return;
 
-    const lenis = new Lenis({
-      wrapper: wrapperRef.current,
-      content: contentRef.current,
-      orientation: "vertical",
-      infinite: true,
-      syncTouch: true,
-    });
+    const slides = slideRefs.current.filter(Boolean) as HTMLElement[];
+    const slideCount = slides.length;
+    if (!slideCount) return;
+    let currentIndex = 0; // always 0..slideCount-1
+    let isAnimating = false;
 
-    const slideCount = slideRefs.current.filter(Boolean).length;
-    const slideHeight = wrapperRef.current.clientHeight;
-    let snapTimer: ReturnType<typeof setTimeout>;
+    function goToSlide(direction: 1 | -1) {
+      if (isAnimating) return;
+      isAnimating = true;
 
-    // Track active slide + snap after scroll settles
-    let currentIndex = 0;
-    lenis.on("scroll", () => {
-      const rawIndex = Math.round(lenis.scroll / slideHeight);
-      const index = ((rawIndex % slideCount) + slideCount) % slideCount;
-      if (index !== currentIndex) {
-        currentIndex = index;
-        setActiveIndex(index);
+      const nextIndex =
+        (currentIndex + direction + slideCount) % slideCount;
+
+      // Hide scroll hints on first interaction
+      if (!hasScrolled.current) {
+        hasScrolled.current = true;
+        const hints = [scrollHintRef.current, cursorHintRef.current].filter(Boolean);
+        if (hints.length) {
+          gsap.to(hints, { autoAlpha: 0, duration: 0.4, ease: "power2.out" });
+        }
       }
 
-      // Debounced snap: wait for scroll to settle, then glide to nearest
-      clearTimeout(snapTimer);
-      snapTimer = setTimeout(() => {
-        const nearestIndex = Math.round(lenis.scroll / slideHeight);
-        const target = nearestIndex * slideHeight;
-        lenis.scrollTo(target, {
-          duration: 0.2,
-          easing: (t: number) => t * t,
-        });
-      }, 200);
+      const currentEl = slides[currentIndex];
+      const nextEl = slides[nextIndex];
+
+      // Position next slide off-screen in the scroll direction
+      gsap.set(nextEl, { yPercent: direction > 0 ? 100 : -100, autoAlpha: 1 });
+
+      const tl = gsap.timeline({
+        onComplete: () => {
+          currentIndex = nextIndex;
+          setActiveIndex(nextIndex);
+          isAnimating = false;
+        },
+      });
+
+      tl.to(currentEl, {
+        yPercent: direction > 0 ? -100 : 100,
+        duration: 0.6,
+        ease: "power2.inOut",
+      }, 0);
+
+      tl.to(nextEl, {
+        yPercent: 0,
+        duration: 0.6,
+        ease: "power2.inOut",
+      }, 0);
+    }
+
+    // Capture wheel events — one event = one slide
+    function onWheel(e: WheelEvent) {
+      e.preventDefault();
+      if (isAnimating) return;
+      if (e.deltaY > 0) goToSlide(1);
+      else if (e.deltaY < 0) goToSlide(-1);
+    }
+
+    // Touch: detect swipe direction
+    let touchStartY = 0;
+    let touchMoved = false;
+
+    function onTouchStart(e: TouchEvent) {
+      touchStartY = e.touches[0].clientY;
+      touchMoved = false;
+    }
+
+    function onTouchMove(e: TouchEvent) {
+      e.preventDefault();
+      if (isAnimating || touchMoved) return;
+      const delta = touchStartY - e.touches[0].clientY;
+      if (Math.abs(delta) > 30) {
+        touchMoved = true;
+        if (delta > 0) goToSlide(1);
+        else goToSlide(-1);
+      }
+    }
+
+    // Initialize: hide all slides except the first (handled by useGSAP entrance)
+    slides.forEach((el, i) => {
+      if (i > 0) gsap.set(el, { yPercent: 100, autoAlpha: 0 });
     });
 
-    // RAF loop
-    let rafId: number;
-    function raf(time: number) {
-      lenis.raf(time);
-      rafId = requestAnimationFrame(raf);
-    }
-    rafId = requestAnimationFrame(raf);
+    const wrapper = wrapperRef.current;
+    wrapper.addEventListener("wheel", onWheel, { passive: false });
+    wrapper.addEventListener("touchstart", onTouchStart, { passive: true });
+    wrapper.addEventListener("touchmove", onTouchMove, { passive: false });
 
     return () => {
-      cancelAnimationFrame(rafId);
-      clearTimeout(snapTimer);
-      lenis.destroy();
+      wrapper.removeEventListener("wheel", onWheel);
+      wrapper.removeEventListener("touchstart", onTouchStart);
+      wrapper.removeEventListener("touchmove", onTouchMove);
     };
-  }, [projects]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Gallery slides — slide up and fade in
+  // Desktop: cursor-follow scroll hint with adaptive color
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    const cursor = cursorHintRef.current;
+    if (!wrapper || !cursor) return;
+
+    function onMove(e: MouseEvent) {
+      if (hasScrolled.current) return;
+      const rect = wrapper!.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      gsap.to(cursor!, { x, y, duration: 0.3, ease: "power2.out" });
+
+      // Sample pixel color under cursor to determine text color
+      const img = wrapper!.querySelector("img") as HTMLImageElement | null;
+      if (img && img.complete) {
+        try {
+          if (!colorCanvasRef.current) {
+            colorCanvasRef.current = document.createElement("canvas");
+            colorCanvasRef.current.width = 1;
+            colorCanvasRef.current.height = 1;
+          }
+          const ctx = colorCanvasRef.current.getContext("2d");
+          if (ctx) {
+            const scaleX = img.naturalWidth / img.clientWidth;
+            const scaleY = img.naturalHeight / img.clientHeight;
+            const imgRect = img.getBoundingClientRect();
+            const sx = (e.clientX - imgRect.left) * scaleX;
+            const sy = (e.clientY - imgRect.top) * scaleY;
+            ctx.drawImage(img, sx, sy, 1, 1, 0, 0, 1, 1);
+            const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+            cursor!.style.color = luminance > 0.5 ? "#1a1a1a" : "#f7f7f7";
+          }
+        } catch {
+          // CORS or other error — keep default color
+        }
+      }
+    }
+
+    function onEnter() {
+      if (hasScrolled.current) return;
+      gsap.to(cursor!, { autoAlpha: 1, duration: 0.3, ease: "power2.out" });
+    }
+
+    function onLeave() {
+      gsap.to(cursor!, { autoAlpha: 0, duration: 0.3, ease: "power2.out" });
+    }
+
+    wrapper.addEventListener("mousemove", onMove);
+    wrapper.addEventListener("mouseenter", onEnter);
+    wrapper.addEventListener("mouseleave", onLeave);
+
+    return () => {
+      wrapper.removeEventListener("mousemove", onMove);
+      wrapper.removeEventListener("mouseenter", onEnter);
+      wrapper.removeEventListener("mouseleave", onLeave);
+    };
+  }, []);
+
+  // Gallery entrance — first slide fades in, hints appear
   useGSAP(
     () => {
-      if (!contentRef.current) return;
-      const slides = contentRef.current.querySelectorAll(":scope > a");
-      if (!slides.length) return;
+      const firstSlide = slideRefs.current[0];
+      if (firstSlide) {
+        gsap.fromTo(
+          firstSlide,
+          { yPercent: 40, autoAlpha: 0 },
+          {
+            yPercent: 0,
+            autoAlpha: 1,
+            duration: 2,
+            ease: "power3.out",
+            delay: 1,
+          },
+        );
+      }
 
-      gsap.fromTo(
-        slides,
-        { yPercent: 40, autoAlpha: 0 },
-        {
-          yPercent: 0,
-          autoAlpha: 1,
-          duration: 2,
-          ease: "power3.out",
-          delay: 1.7,
-        },
-      );
+      // Mobile scroll hint entrance
+      if (scrollHintRef.current) {
+        gsap.fromTo(
+          scrollHintRef.current,
+          { autoAlpha: 0, y: 10 },
+          { autoAlpha: 1, y: 0, duration: 0.8, ease: "power3.out", delay: 1.8 },
+        );
+      }
+      // Desktop cursor hint stays invisible until mouseenter
+      if (cursorHintRef.current) {
+        gsap.set(cursorHintRef.current, { autoAlpha: 0 });
+      }
     },
     { scope: contentRef },
   );
@@ -165,10 +286,30 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       <div
         ref={wrapperRef}
         data-lenis-prevent
-        className="h-[50dvh] overflow-hidden desktop:w-1/2 desktop:h-full"
+        className="relative mt-2 h-[50dvh] overflow-hidden desktop:mt-0 desktop:w-1/2 desktop:h-full"
       >
-        <div ref={contentRef}>
-          {/* Original slides */}
+        {/* Mobile scroll hint — fixed at bottom center */}
+        <div
+          ref={scrollHintRef}
+          className="invisible pointer-events-none absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 desktop:hidden"
+        >
+          <span className="text-sub uppercase text-primary">Scroll</span>
+          <div className="scroll-arrow" />
+        </div>
+        {/* Desktop cursor-follow scroll hint */}
+        <div
+          ref={cursorHintRef}
+          className="invisible pointer-events-none absolute left-0 top-0 z-10 hidden -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 desktop:flex"
+        >
+          <span className="text-sub uppercase" style={{ color: "inherit" }}>
+            Scroll
+          </span>
+          <div
+            className="scroll-arrow"
+            style={{ backgroundColor: "currentColor" }}
+          />
+        </div>
+        <div ref={contentRef} className="relative h-full">
           {projects.map((project, index) => (
             <Link
               key={project._id}
@@ -177,7 +318,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
               }}
               href={`/project/${project.slug?.current}`}
               aria-label={`View ${project.title ?? "project"}`}
-              className="block h-[50dvh] desktop:h-[calc(100dvh-var(--header-height))]"
+              className="absolute inset-0 block"
               onClick={(e) => handleProjectClick(e, project)}
             >
               <MediaPanel
@@ -187,24 +328,6 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
               />
             </Link>
           ))}
-          {/* Clone for infinite loop — overflow hidden so it doesn't add scroll height */}
-          <div className="h-[50dvh] overflow-hidden desktop:h-[calc(100dvh-var(--header-height))]">
-            {projects.map((project) => (
-              <Link
-                key={`clone-${project._id}`}
-                href={`/project/${project.slug?.current}`}
-                aria-label={`View ${project.title ?? "project"}`}
-                className="block h-[50dvh] desktop:h-[calc(100dvh-var(--header-height))]"
-                onClick={(e) => handleProjectClick(e, project)}
-              >
-                <MediaPanel
-                  coverMedia={project.coverMedia}
-                  title={project.title ?? ""}
-                  priority={false}
-                />
-              </Link>
-            ))}
-          </div>
         </div>
       </div>
     </div>

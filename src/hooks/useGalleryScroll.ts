@@ -33,6 +33,7 @@ export function useGalleryScroll({
 }: UseGalleryScrollOptions) {
   const [isReeling, setIsReeling] = useState(true);
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [nextProgress, setNextProgress] = useState(0);
   const galleryRef = useRef<HTMLDivElement>(null);
   const firstImageRef = useRef<HTMLDivElement>(null);
   const nextTextWrapperRef = useRef<HTMLDivElement>(null);
@@ -52,13 +53,7 @@ export function useGalleryScroll({
     ];
   }, [images, isReeling, originalCount]);
 
-  // Disable browser scroll restoration so reload starts at top
-  useEffect(() => {
-    if ("scrollRestoration" in history) {
-      history.scrollRestoration = "manual";
-    }
-    window.scrollTo(0, 0);
-  }, []);
+  // scroll-to-top on mount handled by GsapProvider pathname effect
 
   // Disable Lenis scroll during gallery reel
   const lenisInstance = useLenis();
@@ -151,8 +146,12 @@ export function useGalleryScroll({
         end: "+=60%",
         pin: true,
         pinSpacing: true,
+        onUpdate: (self) => setNextProgress(self.progress),
         onEnter: () => nextTextWrapperRef.current && gsap.to(nextTextWrapperRef.current, { autoAlpha: 1, duration: 0.3 }),
-        onLeaveBack: () => nextTextWrapperRef.current && gsap.to(nextTextWrapperRef.current, { autoAlpha: 0, duration: 0.3 }),
+        onLeaveBack: () => {
+          setNextProgress(0);
+          if (nextTextWrapperRef.current) gsap.to(nextTextWrapperRef.current, { autoAlpha: 0, duration: 0.3 });
+        },
       });
 
       if (nextTextRef.current) {
@@ -189,6 +188,7 @@ export function useGalleryScroll({
     displayImages,
     isReeling,
     scrollProgress,
+    nextProgress,
     originalCount,
   };
 }

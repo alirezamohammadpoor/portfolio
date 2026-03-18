@@ -143,6 +143,26 @@
   }
 }
 
+/* Scroll arrow indicator */
+.scroll-arrow {
+  width: 1px;
+  height: 16px;
+  background-color: currentColor;
+  animation: scroll-bounce 1.5s ease-in-out infinite;
+}
+
+@keyframes scroll-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(6px);
+    opacity: 0.5;
+  }
+}
+
 /* Link underline animation — slides in from left, out to right */
 .link-underline {
   position: relative;

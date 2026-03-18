@@ -47,6 +47,7 @@ export default function ProjectPageClient({ project, nextProject }: ProjectPageC
     displayImages,
     isReeling,
     scrollProgress,
+    nextProgress,
     originalCount,
   } = useGalleryScroll({
     images: project.images ?? [],
@@ -122,6 +123,7 @@ export default function ProjectPageClient({ project, nextProject }: ProjectPageC
         detailsOpen={detailsOpen}
         visible={!hidePanel}
         scrollProgress={scrollProgress}
+        nextProgress={nextProgress}
       />
     </>
   );

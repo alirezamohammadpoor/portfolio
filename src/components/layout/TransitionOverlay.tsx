@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import { usePageTransition } from "@/context/TransitionContext";
 
 export default function TransitionOverlay() {
@@ -10,7 +11,7 @@ export default function TransitionOverlay() {
   const imgRef = useRef<HTMLImageElement>(null);
 
   // Animate clone from sourceRect → targetRect when targetRect is set
-  useEffect(() => {
+  useGSAP(() => {
     if (!imgRef.current || !targetRect) return;
 
     gsap.to(imgRef.current, {
@@ -22,7 +23,7 @@ export default function TransitionOverlay() {
       ease: "power3.inOut",
       onComplete: clearTransition,
     });
-  }, [targetRect, clearTransition]);
+  }, { dependencies: [targetRect, clearTransition] });
 
   if (!isTransitioning || !imageUrl || !sourceRect) return null;
 

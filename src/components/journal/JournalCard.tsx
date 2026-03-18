@@ -9,7 +9,7 @@ interface JournalCardProps {
 
 export default function JournalCard({ post }: JournalCardProps) {
   return (
-    <Link href={`/journal/${post.slug?.current}`} className="block">
+    <Link href={`/journal/${post.slug?.current}`} className="flex h-full flex-col">
       {post.coverImage?.asset && (
         <div className="relative aspect-[4/5] w-full overflow-hidden bg-tertiary">
           <Image
@@ -25,7 +25,7 @@ export default function JournalCard({ post }: JournalCardProps) {
       <p className="mt-4 text-sub desktop:text-body text-primary">
         {post.excerpt}
       </p>
-      <div className="mt-4 flex items-center justify-between">
+      <div className="mt-auto flex items-center justify-between pt-6">
         {post.publishedAt && (
           <span className="text-sub desktop:text-body text-secondary">
             {new Date(post.publishedAt).toLocaleDateString("en-US", {
@@ -37,7 +37,7 @@ export default function JournalCard({ post }: JournalCardProps) {
         )}
         {post.tags && post.tags.length > 0 && (
           <div className="flex items-center gap-2">
-            {post.tags.map((tag) => (
+            {post.tags.slice(0, 2).map((tag) => (
               <span
                 key={tag}
                 className="rounded-full bg-pistachio px-3 py-1 text-sub text-primary uppercase"

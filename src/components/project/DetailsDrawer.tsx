@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useCallback } from "react";
 import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import TechStack from "./TechStack";
 
@@ -15,14 +16,8 @@ export default function DetailsDrawer({ project, isOpen }: DetailsDrawerProps) {
   const bgRef = useRef<HTMLDivElement>(null);
   const hasOpened = useRef(false);
 
-  // Fully hidden on mount — invisible + off-screen
-  useEffect(() => {
-    if (drawerRef.current) {
-      gsap.set(drawerRef.current, { autoAlpha: 0, yPercent: 100 });
-    }
-  }, []);
-
-  useEffect(() => {
+  // Open/close animation
+  useGSAP(() => {
     if (!drawerRef.current || !bgRef.current) return;
 
     if (isOpen) {
@@ -50,7 +45,7 @@ export default function DetailsDrawer({ project, isOpen }: DetailsDrawerProps) {
         delay: 0.35,
       });
     }
-  }, [isOpen]);
+  }, { dependencies: [isOpen] });
 
   // Trap focus within the drawer when open
   const handleKeyDown = useCallback(
@@ -88,7 +83,7 @@ export default function DetailsDrawer({ project, isOpen }: DetailsDrawerProps) {
       aria-hidden={!isOpen}
       tabIndex={-1}
       onKeyDown={handleKeyDown}
-      className="fixed inset-x-0 bottom-10 z-30 bg-white px-4 py-8 desktop:hidden outline-none"
+      className="invisible fixed inset-x-0 bottom-10 z-30 translate-y-full bg-white px-4 py-8 desktop:hidden outline-none"
     >
       <div
         ref={bgRef}

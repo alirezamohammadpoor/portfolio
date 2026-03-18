@@ -8,6 +8,7 @@ import { useGSAP } from "@gsap/react";
 import { ReactLenis, useLenis } from "lenis/react";
 import type { LenisRef } from "lenis/react";
 import { useEffect, useRef, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 
 gsap.registerPlugin(ScrollTrigger, SplitText, ScrambleTextPlugin, useGSAP);
 gsap.ticker.lagSmoothing(0);
@@ -19,6 +20,7 @@ function ScrollTriggerSync() {
 
 export default function GsapProvider({ children }: { children: ReactNode }) {
   const lenisRef = useRef<LenisRef>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     function update(time: number) {
@@ -27,6 +29,14 @@ export default function GsapProvider({ children }: { children: ReactNode }) {
     gsap.ticker.add(update);
     return () => gsap.ticker.remove(update);
   }, []);
+
+  // Disable browser scroll restoration + scroll Lenis to top on route change
+  useEffect(() => {
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+    lenisRef.current?.lenis?.scrollTo(0, { immediate: true });
+  }, [pathname]);
 
   return (
     <ReactLenis

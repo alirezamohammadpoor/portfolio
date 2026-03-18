@@ -4,6 +4,7 @@ import { useRef, useEffect } from "react";
 import NextLink from "next/link";
 import { Link } from "next-view-transitions";
 import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 
 interface FooterProps {
   projectTitle?: string;
@@ -13,6 +14,7 @@ interface FooterProps {
   detailsOpen?: boolean;
   visible?: boolean;
   scrollProgress?: number;
+  nextProgress?: number;
 }
 
 export default function Footer({
@@ -23,13 +25,14 @@ export default function Footer({
   detailsOpen = false,
   visible = true,
   scrollProgress,
+  nextProgress = 0,
 }: FooterProps) {
   const footerRef = useRef<HTMLElement>(null);
   const wipeRef = useRef<HTMLDivElement>(null);
   const hasAppeared = useRef(false);
 
   // Fully hidden on mount, animate in when visible becomes true
-  useEffect(() => {
+  useGSAP(() => {
     if (!footerRef.current) return;
     if (visible && !hasAppeared.current) {
       hasAppeared.current = true;
@@ -41,21 +44,22 @@ export default function Footer({
     } else if (!visible && !hasAppeared.current) {
       gsap.set(footerRef.current, { autoAlpha: 0, yPercent: 100 });
     }
-  }, [visible]);
+  }, { dependencies: [visible] });
 
   const showNextHint = scrollProgress != null && scrollProgress >= 100;
 
+  // Details drawer wipe — timed animation
   useEffect(() => {
     if (!wipeRef.current) return;
-    gsap.killTweensOf(wipeRef.current);
-
-    if (detailsOpen || showNextHint) {
+    if (detailsOpen) {
+      gsap.killTweensOf(wipeRef.current);
       gsap.fromTo(
         wipeRef.current,
         { clipPath: "inset(100% 0 0 0)" },
         { clipPath: "inset(0% 0 0 0)", duration: 0.3, ease: "power2.out" },
       );
-    } else {
+    } else if (!showNextHint) {
+      gsap.killTweensOf(wipeRef.current);
       gsap.to(wipeRef.current, {
         clipPath: "inset(100% 0 0 0)",
         duration: 1,
@@ -64,6 +68,17 @@ export default function Footer({
       });
     }
   }, [detailsOpen, showNextHint]);
+
+  // Next-project wipe — scrubbed to scroll progress (not timed)
+  useEffect(() => {
+    if (!wipeRef.current || detailsOpen) return;
+    if (showNextHint && nextProgress > 0) {
+      const pct = 100 - nextProgress * 100;
+      gsap.set(wipeRef.current, { clipPath: `inset(${pct}% 0 0 0)` });
+    } else if (!showNextHint) {
+      gsap.set(wipeRef.current, { clipPath: "inset(100% 0 0 0)" });
+    }
+  }, [detailsOpen, showNextHint, nextProgress]);
 
   if (!projectTitle) return null;
 

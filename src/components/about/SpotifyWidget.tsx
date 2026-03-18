@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 
 const CACHE_KEY = "spotify-last-track";
@@ -61,7 +61,7 @@ function TrackMarquee({
   const [offset, setOffset] = useState(0);
   const trackKey = useMemo(() => `${title}\0${artist}`, [title, artist]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     function measure() {
       const container = containerRef.current;
       const inner = innerRef.current;
@@ -140,26 +140,29 @@ function TrackMarquee({
   );
 }
 
-function useSpotifyData() {
-  const [data, setData] = useState<TrackData | null>(null);
-  const [cachedAt, setCachedAt] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const lastTrackRef = useRef<string | null>(null);
-  const lastPlayingRef = useRef<boolean | null>(null);
-  const cachedAtRef = useRef<string | null>(null);
+function readCache(): { track: TrackData; cachedAt: string } | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(CACHE_KEY);
-      if (raw) {
-        const cached = JSON.parse(raw);
-        setData({ ...cached.track, isPlaying: false });
-        setCachedAt(cached.cachedAt);
-        cachedAtRef.current = cached.cachedAt;
-        lastTrackRef.current = cached.track.songUrl;
-      }
-    } catch {}
-  }, []);
+function useSpotifyData() {
+  const [data, setData] = useState<TrackData | null>(() => {
+    const cached = readCache();
+    return cached ? { ...cached.track, isPlaying: false } : null;
+  });
+  const [cachedAt, setCachedAt] = useState<string | null>(() => {
+    const cached = readCache();
+    return cached?.cachedAt ?? null;
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const lastTrackRef = useRef<string | null>(readCache()?.track.songUrl ?? null);
+  const lastPlayingRef = useRef<boolean | null>(null);
+  const cachedAtRef = useRef<string | null>(readCache()?.cachedAt ?? null);
 
   const fetchData = useCallback(async () => {
     try {

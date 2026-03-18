@@ -21,7 +21,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       <h2 ref={titleRef} className="text-h1 text-primary">
         {project.title}
       </h2>
-      <p ref={descRef} className="text-body text-primary">
+      <p ref={descRef} className="mt-2 text-sub desktop:text-body text-primary">
         {project.shortDescription}
       </p>
     </div>

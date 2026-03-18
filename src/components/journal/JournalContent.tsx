@@ -53,7 +53,7 @@ export default function JournalContent({
       {description && (
         <p
           ref={descRef}
-          className="mt-2 desktop:max-w-[33vw] text-sub desktop:text-body text-primary"
+          className="mt-2 desktop:max-w-100vw] text-sub desktop:text-body text-primary"
         >
           {description}
         </p>
