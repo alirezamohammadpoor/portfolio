@@ -30,6 +30,7 @@ export default function Footer({
   const footerRef = useRef<HTMLElement>(null);
   const wipeRef = useRef<HTMLDivElement>(null);
   const hasAppeared = useRef(false);
+  const isClosing = useRef(false);
 
   // Fully hidden on mount, animate in when visible becomes true
   useGSAP(() => {
@@ -52,26 +53,29 @@ export default function Footer({
   useEffect(() => {
     if (!wipeRef.current) return;
     if (detailsOpen) {
+      isClosing.current = false;
       gsap.killTweensOf(wipeRef.current);
       gsap.fromTo(
         wipeRef.current,
         { clipPath: "inset(100% 0 0 0)" },
         { clipPath: "inset(0% 0 0 0)", duration: 0.3, ease: "power2.out" },
       );
-    } else if (!showNextHint) {
+    } else {
+      isClosing.current = true;
       gsap.killTweensOf(wipeRef.current);
       gsap.to(wipeRef.current, {
         clipPath: "inset(100% 0 0 0)",
-        duration: 1,
+        duration: 0.4,
         ease: "power2.in",
-        delay: 0.4,
+        delay: 0.7,
+        onComplete: () => { isClosing.current = false; },
       });
     }
   }, [detailsOpen, showNextHint]);
 
   // Next-project wipe — scrubbed to scroll progress (not timed)
   useEffect(() => {
-    if (!wipeRef.current || detailsOpen) return;
+    if (!wipeRef.current || detailsOpen || isClosing.current) return;
     if (showNextHint && nextProgress > 0) {
       const pct = 100 - nextProgress * 100;
       gsap.set(wipeRef.current, { clipPath: `inset(${pct}% 0 0 0)` });

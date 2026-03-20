@@ -16,9 +16,15 @@ export default function DetailsDrawer({ project, isOpen }: DetailsDrawerProps) {
   const bgRef = useRef<HTMLDivElement>(null);
   const hasOpened = useRef(false);
 
-  // Open/close animation
+  // Hidden on mount + open/close animation
   useGSAP(() => {
     if (!drawerRef.current || !bgRef.current) return;
+
+    // Initial hidden state
+    if (!hasOpened.current && !isOpen) {
+      gsap.set(drawerRef.current, { autoAlpha: 0, yPercent: 100 });
+      return;
+    }
 
     if (isOpen) {
       hasOpened.current = true;
@@ -83,7 +89,7 @@ export default function DetailsDrawer({ project, isOpen }: DetailsDrawerProps) {
       aria-hidden={!isOpen}
       tabIndex={-1}
       onKeyDown={handleKeyDown}
-      className="invisible fixed inset-x-0 bottom-10 z-30 translate-y-full bg-white px-4 py-8 desktop:hidden outline-none"
+      className="fixed inset-x-0 bottom-10 z-30 bg-white px-4 py-8 desktop:hidden outline-none"
     >
       <div
         ref={bgRef}
