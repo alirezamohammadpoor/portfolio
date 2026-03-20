@@ -39,11 +39,11 @@ export default function Footer({
       hasAppeared.current = true;
       gsap.fromTo(
         footerRef.current,
-        { autoAlpha: 0, yPercent: 100 },
-        { autoAlpha: 1, yPercent: 0, duration: 0.6, ease: "expo.out" },
+        { autoAlpha: 0 },
+        { autoAlpha: 1, duration: 0.6, ease: "expo.out" },
       );
     } else if (!visible && !hasAppeared.current) {
-      gsap.set(footerRef.current, { autoAlpha: 0, yPercent: 100 });
+      gsap.set(footerRef.current, { autoAlpha: 0 });
     }
   }, { dependencies: [visible] });
 
