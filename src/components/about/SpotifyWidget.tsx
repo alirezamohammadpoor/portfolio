@@ -151,18 +151,15 @@ function readCache(): { track: TrackData; cachedAt: string } | null {
 }
 
 function useSpotifyData() {
-  const [data, setData] = useState<TrackData | null>(() => {
-    const cached = readCache();
-    return cached ? { ...cached.track, isPlaying: false } : null;
-  });
-  const [cachedAt, setCachedAt] = useState<string | null>(() => {
-    const cached = readCache();
-    return cached?.cachedAt ?? null;
-  });
+  const initialCache = readCache();
+  const [data, setData] = useState<TrackData | null>(
+    initialCache ? { ...initialCache.track, isPlaying: false } : null,
+  );
+  const [cachedAt, setCachedAt] = useState<string | null>(initialCache?.cachedAt ?? null);
   const [isLoading, setIsLoading] = useState(true);
-  const lastTrackRef = useRef<string | null>(readCache()?.track.songUrl ?? null);
+  const lastTrackRef = useRef<string | null>(initialCache?.track.songUrl ?? null);
   const lastPlayingRef = useRef<boolean | null>(null);
-  const cachedAtRef = useRef<string | null>(readCache()?.cachedAt ?? null);
+  const cachedAtRef = useRef<string | null>(initialCache?.cachedAt ?? null);
 
   const fetchData = useCallback(async () => {
     try {

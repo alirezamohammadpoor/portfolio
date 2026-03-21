@@ -1,6 +1,7 @@
 'use client'
 
 import {visionTool} from '@sanity/vision'
+import {media} from 'sanity-plugin-media'
 import {defineConfig} from 'sanity'
 import {structureTool} from 'sanity/structure'
 import {presentationTool, defineDocuments, defineLocations} from 'sanity/presentation'
@@ -72,5 +73,6 @@ export default defineConfig({
       },
     }),
     visionTool({defaultApiVersion: apiVersion}),
+    media(),
   ],
 })

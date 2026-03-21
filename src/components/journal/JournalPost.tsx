@@ -13,6 +13,8 @@ import type {
 } from "@/sanity/types";
 import { urlFor } from "@/sanity/lib/image";
 import JournalCard from "./JournalCard";
+import GlossaryTerm from "./GlossaryTerm";
+import RichPreview from "./RichPreview";
 
 interface JournalPostProps {
   post: NonNullable<JOURNAL_POST_BY_SLUG_QUERY_RESULT>;
@@ -39,6 +41,32 @@ const portableTextComponents = {
       >
         {children}
       </a>
+    ),
+    glossary: ({
+      value,
+      children,
+    }: {
+      value?: { explanation?: string };
+      children: React.ReactNode;
+    }) => (
+      <GlossaryTerm explanation={value?.explanation ?? ""}>
+        {children}
+      </GlossaryTerm>
+    ),
+    richPreview: ({
+      value,
+      children,
+    }: {
+      value?: { videoUrl?: string; url?: string; label?: string };
+      children: React.ReactNode;
+    }) => (
+      <RichPreview
+        videoUrl={value?.videoUrl ?? ""}
+        url={value?.url}
+        label={value?.label}
+      >
+        {children}
+      </RichPreview>
     ),
   },
   types: {
