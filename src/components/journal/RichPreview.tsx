@@ -1,6 +1,9 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import type { MouseEvent } from "react";
+import { createPortal } from "react-dom";
+import { useAnchoredMobileOverlay } from "@/hooks/useAnchoredMobileOverlay";
 
 interface RichPreviewProps {
   videoUrl: string;
@@ -16,11 +19,26 @@ export default function RichPreview({
   children,
 }: RichPreviewProps) {
   const [visible, setVisible] = useState(false);
+  const [anchorPoint, setAnchorPoint] = useState<{ x: number; y: number } | null>(null);
   const [muted, setMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressRef = useRef<HTMLSpanElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
   const rafRef = useRef<number>(0);
+  const triggerRef = useRef<HTMLSpanElement>(null);
+  const popupRef = useRef<HTMLSpanElement>(null);
+
+  const close = useCallback(() => {
+    setVisible(false);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  }, []);
+
+  const { isMobile, position, placement, caretLeft, ready } =
+    useAnchoredMobileOverlay(triggerRef, popupRef, {
+      visible,
+      onClose: close,
+      anchorPoint,
+    });
 
   const tick = () => {
     if (videoRef.current && videoRef.current.duration && progressRef.current) {
@@ -39,6 +57,16 @@ export default function RichPreview({
     cancelAnimationFrame(rafRef.current);
   };
 
+  const playVideo = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const playPromise = video.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      playPromise.catch(() => {});
+    }
+  }, []);
+
   const show = () => {
     setVisible(true);
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -49,7 +77,9 @@ export default function RichPreview({
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
   };
 
-  const handleClick = () => {
+  const handleClick = (event: MouseEvent<HTMLSpanElement>) => {
+    setAnchorPoint({ x: event.clientX, y: event.clientY });
+
     if (visible) {
       hide();
       return;
@@ -60,7 +90,7 @@ export default function RichPreview({
   useEffect(() => {
     if (visible) {
       if (videoRef.current) videoRef.current.volume = 0.15;
-      videoRef.current?.play();
+      playVideo();
       startRAF();
     } else {
       videoRef.current?.pause();
@@ -69,16 +99,133 @@ export default function RichPreview({
 
     const handleVisibility = () => {
       if (document.visibilityState === "visible" && visible && videoRef.current?.paused) {
-        videoRef.current.play();
+        playVideo();
         startRAF();
       }
     };
+
     document.addEventListener("visibilitychange", handleVisibility);
+
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
       stopRAF();
     };
-  }, [visible]);
+  }, [visible, playVideo]);
+
+  const videoCard = (width: string | number, mobile = false) => (
+    <span className="relative flex flex-col" style={{ width }}>
+      <span className="flex flex-col overflow-hidden rounded-2xl bg-lightpistachio">
+        <span className="relative">
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            muted={muted}
+            loop
+            playsInline
+            preload="metadata"
+            className="aspect-video w-full object-cover"
+          />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setMuted((prev) => !prev);
+            }}
+            aria-label={muted ? "Unmute video" : "Mute video"}
+            className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white transition-opacity hover:bg-black/60"
+          >
+            {muted ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <line x1="23" y1="9" x2="17" y2="15" />
+                <line x1="17" y1="9" x2="23" y2="15" />
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </svg>
+            )}
+          </button>
+        </span>
+        <span className="relative flex flex-col gap-1 overflow-hidden px-3 py-2">
+          <span
+            ref={progressRef}
+            className="absolute inset-0 origin-left bg-pistachio transition-none"
+            style={{ transform: "scaleX(0)" }}
+          />
+          {label && (
+            <span className="relative text-sub font-medium uppercase text-primary">
+              {label}
+            </span>
+          )}
+          {url && (
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => {
+                e.stopPropagation();
+                videoRef.current?.pause();
+              }}
+              className="relative self-start border-b border-primary text-sub text-primary"
+            >
+              See more →
+            </a>
+          )}
+        </span>
+      </span>
+
+      {mobile && caretLeft !== null && placement === "above" && (
+        <span
+          className="absolute top-full h-0 w-0 -translate-x-1/2 border-x-[6px] border-x-transparent border-t-[6px] border-t-lightpistachio"
+          style={{ left: caretLeft }}
+        />
+      )}
+      {mobile && caretLeft !== null && placement === "below" && (
+        <span
+          className="absolute bottom-full h-0 w-0 -translate-x-1/2 border-x-[6px] border-x-transparent border-b-[6px] border-b-lightpistachio"
+          style={{ left: caretLeft }}
+        />
+      )}
+    </span>
+  );
+
+  if (isMobile) {
+    const showPopup = visible && ready;
+
+    return (
+      <span className="relative inline">
+        {typeof document !== "undefined" &&
+          createPortal(
+            <span
+              ref={popupRef}
+              className={`fixed z-50 transition-opacity duration-300 ${
+                showPopup
+                  ? "opacity-100"
+                  : "pointer-events-none opacity-0"
+              }`}
+              style={
+                showPopup && position
+                  ? { top: position.top, left: position.left }
+                  : { top: 0, left: 0, visibility: "hidden" as const }
+              }
+            >
+              {videoCard("min(420px, calc(100vw - 32px))", showPopup)}
+            </span>,
+            document.body,
+          )}
+
+        <span
+          ref={triggerRef}
+          onClick={handleClick}
+          className="cursor-pointer bg-lightpistachio"
+        >
+          {children}
+        </span>
+      </span>
+    );
+  }
 
   return (
     <span
@@ -86,77 +233,22 @@ export default function RichPreview({
       onMouseEnter={show}
       onMouseLeave={hide}
     >
-      {/* Preview card — fixed centered on mobile, absolute on desktop */}
       <span
-        className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 desktop:absolute desktop:bottom-full desktop:top-auto desktop:translate-y-0 desktop:-translate-x-1/2 mb-0 flex flex-col items-center transition-all duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] z-50 ${visible ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0 desktop:translate-y-1"}`}
+        ref={popupRef}
+        className={`fixed top-1/2 left-1/2 z-50 mb-0 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center transition-all duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] desktop:absolute desktop:bottom-full desktop:top-auto desktop:-translate-x-1/2 desktop:translate-y-0 ${
+          visible
+            ? "pointer-events-auto opacity-100"
+            : "pointer-events-none opacity-0 desktop:translate-y-1"
+        }`}
       >
-        <span className="rounded-2xl overflow-hidden bg-lightpistachio w-[380px] desktop:w-[600px] flex flex-col">
-          <span className="relative">
-            <video
-              ref={videoRef}
-              src={videoUrl}
-              muted={muted}
-              loop
-              playsInline
-              preload="metadata"
-              className="w-full aspect-video object-cover"
-            />
-            {/* Mute toggle */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setMuted((prev) => !prev);
-              }}
-              aria-label={muted ? "Unmute video" : "Mute video"}
-              className="absolute bottom-2 right-2 w-7 h-7 flex items-center justify-center rounded-full bg-black/40 text-white cursor-pointer transition-opacity hover:bg-black/60"
-            >
-              {muted ? (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                  <line x1="23" y1="9" x2="17" y2="15" />
-                  <line x1="17" y1="9" x2="23" y2="15" />
-                </svg>
-              ) : (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                </svg>
-              )}
-            </button>
-          </span>
-          <span className="relative px-3 py-2 flex flex-col gap-1 overflow-hidden">
-            {/* Progress fill */}
-            <span
-              ref={progressRef}
-              className="absolute inset-0 bg-pistachio origin-left transition-none"
-              style={{ transform: "scaleX(0)" }}
-            />
-            {label && (
-              <span className="relative text-sub uppercase text-primary font-medium">
-                {label}
-              </span>
-            )}
-            {url && (
-              <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => videoRef.current?.pause()}
-                className="relative text-sub text-primary border-b border-primary self-start"
-              >
-                See more →
-              </a>
-            )}
-          </span>
-        </span>
-        {/* Arrow */}
-        <span className="hidden desktop:block w-0 h-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-lightpistachio" />
+        {videoCard(600)}
+        <span className="hidden h-0 w-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-lightpistachio desktop:block" />
       </span>
-      {/* Highlighted term */}
+
       <span
+        ref={triggerRef}
         onClick={handleClick}
-        className="bg-lightpistachio cursor-pointer"
+        className="cursor-pointer bg-lightpistachio"
       >
         {children}
       </span>
