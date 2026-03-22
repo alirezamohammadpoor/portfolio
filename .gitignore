@@ -44,4 +44,5 @@ next-env.d.ts
 schema.json
 
 # claude
-.claude/  
+.claude/
+.agents/

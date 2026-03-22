@@ -41,8 +41,12 @@ export default async function SiteLayout({
               <TransitionOverlay />
             </TransitionProvider>
           </GsapProvider>
-          <SanityLive />
-          {isDraftMode && <VisualEditing />}
+          {isDraftMode && (
+            <>
+              <SanityLive />
+              <VisualEditing />
+            </>
+          )}
           <Analytics />
         </body>
       </html>

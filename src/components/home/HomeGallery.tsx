@@ -319,6 +319,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
               href={`/project/${project.slug?.current}`}
               aria-label={`View ${project.title ?? "project"}`}
               className="absolute inset-0 block"
+              style={index > 0 ? { visibility: "hidden" } : undefined}
               onClick={(e) => handleProjectClick(e, project)}
             >
               <MediaPanel
