@@ -132,7 +132,7 @@ export function useGalleryScroll({
         onUpdate: (self) => setScrollProgress(Math.round(self.progress * 100)),
       });
     },
-    { dependencies: [isReeling, isTransitioning] },
+    { scope: galleryRef, dependencies: [isReeling, isTransitioning] },
   );
 
   // Pin gallery at end + text fill animation + auto-navigate
@@ -146,6 +146,7 @@ export function useGalleryScroll({
         end: "+=60%",
         pin: true,
         pinSpacing: true,
+        invalidateOnRefresh: true,
         onUpdate: (self) => setNextProgress(self.progress),
         onEnter: () => nextTextWrapperRef.current && gsap.to(nextTextWrapperRef.current, { autoAlpha: 1, duration: 0.3 }),
         onLeaveBack: () => {
@@ -177,7 +178,7 @@ export function useGalleryScroll({
         );
       }
     },
-    { dependencies: [isReeling, isTransitioning, nextProjectSlug] },
+    { scope: galleryRef, dependencies: [isReeling, isTransitioning, nextProjectSlug] },
   );
 
   return {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 import NextLink from "next/link";
 import { Link } from "next-view-transitions";
 import gsap from "gsap";
@@ -50,7 +50,7 @@ export default function Footer({
   const showNextHint = scrollProgress != null && scrollProgress >= 100;
 
   // Details drawer wipe — timed animation
-  useEffect(() => {
+  useGSAP(() => {
     if (!wipeRef.current) return;
     if (detailsOpen) {
       isClosing.current = false;
@@ -71,10 +71,10 @@ export default function Footer({
         onComplete: () => { isClosing.current = false; },
       });
     }
-  }, [detailsOpen, showNextHint]);
+  }, { dependencies: [detailsOpen, showNextHint] });
 
   // Next-project wipe — scrubbed to scroll progress (not timed)
-  useEffect(() => {
+  useGSAP(() => {
     if (!wipeRef.current || detailsOpen || isClosing.current) return;
     if (showNextHint && nextProgress > 0) {
       const pct = 100 - nextProgress * 100;
@@ -82,7 +82,7 @@ export default function Footer({
     } else if (!showNextHint) {
       gsap.set(wipeRef.current, { clipPath: "inset(100% 0 0 0)" });
     }
-  }, [detailsOpen, showNextHint, nextProgress]);
+  }, { dependencies: [detailsOpen, showNextHint, nextProgress] });
 
   if (!projectTitle) return null;
 

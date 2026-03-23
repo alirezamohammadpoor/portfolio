@@ -47,7 +47,7 @@ export default function RichPreview({
     if (!el) return;
 
     gsap.set(el, {
-      backgroundImage: "linear-gradient(var(--color-lightpistachio), var(--color-lightpistachio))",
+      backgroundImage: "linear-gradient(var(--color-pistachio), var(--color-pistachio))",
       backgroundRepeat: "no-repeat",
       backgroundPosition: "left center",
       backgroundSize: "0% 100%",
@@ -65,7 +65,7 @@ export default function RichPreview({
         once: true,
       },
     });
-  });
+  }, { scope: triggerRef });
 
   const tick = () => {
     if (videoRef.current && videoRef.current.duration && progressRef.current) {

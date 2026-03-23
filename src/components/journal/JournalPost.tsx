@@ -37,7 +37,7 @@ const portableTextComponents = {
         href={value?.href}
         target="_blank"
         rel="noopener noreferrer"
-        className="border-b border-primary"
+        className="link-highlight border-b border-primary"
       >
         {children}
       </a>
@@ -120,7 +120,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
         { autoAlpha: 1, y: 0, duration: 1.2, ease: "power3.out", delay: 1.8 },
       );
     }
-  });
+  }, { scope: heroRef, dependencies: [post._id] });
 
   return (
     <>

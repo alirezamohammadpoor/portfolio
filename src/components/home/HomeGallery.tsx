@@ -32,6 +32,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
   useEffect(() => {
     if (!wrapperRef.current || !contentRef.current) return;
 
+    const ctx = gsap.context(() => {}, wrapperRef.current);
     const slides = slideRefs.current.filter(Boolean) as HTMLElement[];
     const slideCount = slides.length;
     if (!slideCount) return;
@@ -50,35 +51,39 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
         hasScrolled.current = true;
         const hints = [scrollHintRef.current, cursorHintRef.current].filter(Boolean);
         if (hints.length) {
-          gsap.to(hints, { autoAlpha: 0, duration: 0.4, ease: "power2.out" });
+          ctx.add(() => {
+            gsap.to(hints, { autoAlpha: 0, duration: 0.4, ease: "power2.out" });
+          });
         }
       }
 
       const currentEl = slides[currentIndex];
       const nextEl = slides[nextIndex];
 
-      // Position next slide off-screen in the scroll direction
-      gsap.set(nextEl, { yPercent: direction > 0 ? 100 : -100, autoAlpha: 1 });
+      ctx.add(() => {
+        // Position next slide off-screen in the scroll direction
+        gsap.set(nextEl, { yPercent: direction > 0 ? 100 : -100, autoAlpha: 1 });
 
-      const tl = gsap.timeline({
-        onComplete: () => {
-          currentIndex = nextIndex;
-          setActiveIndex(nextIndex);
-          isAnimating = false;
-        },
+        const tl = gsap.timeline({
+          onComplete: () => {
+            currentIndex = nextIndex;
+            setActiveIndex(nextIndex);
+            isAnimating = false;
+          },
+        });
+
+        tl.to(currentEl, {
+          yPercent: direction > 0 ? -100 : 100,
+          duration: 0.6,
+          ease: "power2.inOut",
+        }, 0);
+
+        tl.to(nextEl, {
+          yPercent: 0,
+          duration: 0.6,
+          ease: "power2.inOut",
+        }, 0);
       });
-
-      tl.to(currentEl, {
-        yPercent: direction > 0 ? -100 : 100,
-        duration: 0.6,
-        ease: "power2.inOut",
-      }, 0);
-
-      tl.to(nextEl, {
-        yPercent: 0,
-        duration: 0.6,
-        ease: "power2.inOut",
-      }, 0);
     }
 
     // Capture wheel events — one event = one slide
@@ -120,6 +125,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
     wrapper.addEventListener("touchmove", onTouchMove, { passive: false });
 
     return () => {
+      ctx.revert();
       wrapper.removeEventListener("wheel", onWheel);
       wrapper.removeEventListener("touchstart", onTouchStart);
       wrapper.removeEventListener("touchmove", onTouchMove);
@@ -184,6 +190,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       wrapper.removeEventListener("mousemove", onMove);
       wrapper.removeEventListener("mouseenter", onEnter);
       wrapper.removeEventListener("mouseleave", onLeave);
+      gsap.killTweensOf(cursor);
     };
   }, []);
 

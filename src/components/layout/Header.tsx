@@ -12,6 +12,7 @@ const SCRAMBLE_DURATION = 0.4;
 
 export default function Header() {
   const nameRef = useRef<HTMLSpanElement>(null);
+  const pendingCall = useRef<gsap.core.Tween | null>(null);
 
   useGSAP(() => {
     const el = nameRef.current;
@@ -36,7 +37,7 @@ export default function Header() {
         onComplete: () => {
           span.textContent = PERSIAN_NAME;
           span.className = "parastoo-font";
-          gsap.delayedCall(HOLD_DURATION, scrambleToEnglish);
+          pendingCall.current = gsap.delayedCall(HOLD_DURATION, scrambleToEnglish);
         },
       });
     }
@@ -59,12 +60,16 @@ export default function Header() {
           span.textContent = ENGLISH_NAME;
           span.removeAttribute("dir");
           span.removeAttribute("lang");
-          gsap.delayedCall(HOLD_DURATION, scrambleToPersian);
+          pendingCall.current = gsap.delayedCall(HOLD_DURATION, scrambleToPersian);
         },
       });
     }
 
-    gsap.delayedCall(HOLD_DURATION, scrambleToPersian);
+    pendingCall.current = gsap.delayedCall(HOLD_DURATION, scrambleToPersian);
+
+    return () => {
+      pendingCall.current?.kill();
+    };
   });
 
   return (

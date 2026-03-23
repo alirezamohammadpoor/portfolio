@@ -98,6 +98,7 @@
   .line {
     padding-bottom: 2px;
   }
+
 }
 
 /* Spotify marquee animation for long track names */
@@ -192,6 +193,21 @@
   .link-underline:hover::after {
     transform: scaleX(1);
   }
+}
+
+/* Link highlight sweep — pistachio fill on hover */
+.link-highlight {
+  background-image: linear-gradient(var(--color-pistachio), var(--color-pistachio));
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 0% 100%;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: background-size 0.5s cubic-bezier(0.33, 1, 0.68, 1);
+}
+
+.link-highlight:hover {
+  background-size: 100% 100%;
 }
 
 /* Page transitions (View Transitions API) */
