@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import type { MouseEvent } from "react";
 import { createPortal } from "react-dom";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
 import { useAnchoredMobileOverlay } from "@/hooks/useAnchoredMobileOverlay";
 
 interface GlossaryTermProps {
@@ -31,6 +33,31 @@ export default function GlossaryTerm({
       onClose: close,
       anchorPoint,
     });
+
+  useGSAP(() => {
+    const el = triggerRef.current;
+    if (!el) return;
+
+    gsap.set(el, {
+      backgroundImage: "linear-gradient(var(--color-lightpistachio), var(--color-lightpistachio))",
+      backgroundRepeat: "no-repeat",
+      backgroundPosition: "left center",
+      backgroundSize: "0% 100%",
+      boxDecorationBreak: "clone",
+      WebkitBoxDecorationBreak: "clone",
+    });
+
+    gsap.to(el, {
+      backgroundSize: "100% 100%",
+      duration: 0.8,
+      ease: "power2.out",
+      scrollTrigger: {
+        trigger: el,
+        start: "top 90%",
+        once: true,
+      },
+    });
+  });
 
   const handleClick = (event: MouseEvent<HTMLSpanElement>) => {
     setAnchorPoint({ x: event.clientX, y: event.clientY });
@@ -98,7 +125,7 @@ export default function GlossaryTerm({
         <span
           ref={triggerRef}
           onClick={handleClick}
-          className="cursor-pointer bg-lightpistachio"
+          className="cursor-pointer"
         >
           {children}
         </span>
@@ -128,7 +155,7 @@ export default function GlossaryTerm({
           setVisible(false);
           if (timeoutRef.current) clearTimeout(timeoutRef.current);
         }}
-        className="cursor-pointer bg-lightpistachio"
+        className="cursor-pointer"
       >
         {children}
       </span>
