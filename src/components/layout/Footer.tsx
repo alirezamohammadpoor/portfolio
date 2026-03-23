@@ -106,7 +106,7 @@ export default function Footer({
         ) : (
           <>
             {scrollProgress != null && (
-              <span className="text-sub text-primary">{scrollProgress}</span>
+              <span className="text-sub text-primary tabular-nums">{scrollProgress}</span>
             )}
             {onDetailsToggle && (
               <button
