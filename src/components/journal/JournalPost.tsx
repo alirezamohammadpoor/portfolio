@@ -70,14 +70,30 @@ const portableTextComponents = {
     ),
   },
   types: {
-    quote: ({ value }: { value: { text: string; attribution?: string } }) => (
+    quote: ({ value }: { value: { text?: PortableTextBlock[]; attribution?: PortableTextBlock[] } }) => (
       <blockquote className="my-8">
-        <p className="text-sub desktop:text-body text-primary font-medium italic">
-          &ldquo;{value.text}&rdquo;
-        </p>
+        <div className="text-sub desktop:text-body text-primary font-medium italic [&>p]:inline">
+          &ldquo;
+          {value.text && (
+            <PortableText value={value.text} components={{
+              ...portableTextComponents,
+              marks: {
+                ...portableTextComponents.marks,
+                richPreview: ({ children }: { children: React.ReactNode }) => (
+                  <span>{children}</span>
+                ),
+                glossary: ({ children }: { children: React.ReactNode }) => (
+                  <span>{children}</span>
+                ),
+              },
+            }} />
+          )}
+          &rdquo;
+        </div>
         {value.attribution && (
-          <cite className="mt-2 block text-sub desktop:text-body text-secondary not-italic">
-            — {value.attribution}
+          <cite className="mt-2 block text-sub desktop:text-body text-primary not-italic [&>p]:inline">
+            —{" "}
+            <PortableText value={value.attribution} components={portableTextComponents} />
           </cite>
         )}
       </blockquote>

@@ -106,20 +106,159 @@ export const journalPost = defineType({
             defineField({
               name: "text",
               title: "Quote Text",
-              type: "text",
-              rows: 3,
+              type: "array",
               validation: (rule) => rule.required(),
+              of: [
+                {
+                  type: "block",
+                  styles: [{ title: "Normal", value: "normal" }],
+                  lists: [],
+                  marks: {
+                    decorators: [
+                      { title: "Italic", value: "em" },
+                      { title: "Bold", value: "strong" },
+                    ],
+                    annotations: [
+                      {
+                        name: "link",
+                        title: "Link",
+                        type: "object",
+                        fields: [
+                          defineField({
+                            name: "href",
+                            title: "URL",
+                            type: "url",
+                            validation: (rule) =>
+                              rule.uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
+                          }),
+                        ],
+                      },
+                      {
+                        name: "glossary",
+                        title: "Glossary Term",
+                        type: "object",
+                        icon: () => "💡",
+                        fields: [
+                          defineField({
+                            name: "explanation",
+                            title: "ELI5 Explanation",
+                            type: "text",
+                            rows: 2,
+                            description:
+                              "Simple explanation a non-technical person would understand",
+                            validation: (rule) => rule.required(),
+                          }),
+                        ],
+                      },
+                      {
+                        name: "richPreview",
+                        title: "Rich Preview",
+                        type: "object",
+                        icon: () => "🎬",
+                        fields: [
+                          defineField({
+                            name: "videoUrl",
+                            title: "Video URL",
+                            type: "url",
+                            description:
+                              "Direct URL to video file (Sanity media library, YouTube, etc.)",
+                            validation: (rule) => rule.required(),
+                          }),
+                          defineField({
+                            name: "url",
+                            title: "Link URL",
+                            type: "url",
+                            description: "Where 'See more →' links to",
+                          }),
+                          defineField({
+                            name: "label",
+                            title: "Label",
+                            type: "string",
+                            description:
+                              "Optional label above video (e.g. 'FKA twigs × Gentle Monster')",
+                          }),
+                        ],
+                      },
+                    ],
+                  },
+                },
+              ],
             }),
             defineField({
               name: "attribution",
               title: "Attribution",
-              type: "string",
+              type: "array",
               description:
                 "Who said it and/or context (e.g. 'Steve Jobs, Stanford commencement')",
+              of: [
+                {
+                  type: "block",
+                  styles: [{ title: "Normal", value: "normal" }],
+                  lists: [],
+                  marks: {
+                    decorators: [
+                      { title: "Italic", value: "em" },
+                      { title: "Bold", value: "strong" },
+                    ],
+                    annotations: [
+                      {
+                        name: "link",
+                        title: "Link",
+                        type: "object",
+                        fields: [
+                          defineField({
+                            name: "href",
+                            title: "URL",
+                            type: "url",
+                            validation: (rule) =>
+                              rule.uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
+                          }),
+                        ],
+                      },
+                      {
+                        name: "richPreview",
+                        title: "Rich Preview",
+                        type: "object",
+                        icon: () => "🎬",
+                        fields: [
+                          defineField({
+                            name: "videoUrl",
+                            title: "Video URL",
+                            type: "url",
+                            description:
+                              "Direct URL to video file (Sanity media library, YouTube, etc.)",
+                            validation: (rule) => rule.required(),
+                          }),
+                          defineField({
+                            name: "url",
+                            title: "Link URL",
+                            type: "url",
+                            description: "Where 'See more →' links to",
+                          }),
+                          defineField({
+                            name: "label",
+                            title: "Label",
+                            type: "string",
+                            description:
+                              "Optional label above video (e.g. 'FKA twigs × Gentle Monster')",
+                          }),
+                        ],
+                      },
+                    ],
+                  },
+                },
+              ],
             }),
           ],
           preview: {
             select: { title: "text", subtitle: "attribution" },
+            prepare({ title, subtitle }) {
+              const extractText = (blocks: { children?: { text?: string }[] }[]) =>
+                Array.isArray(blocks)
+                  ? blocks.map((b) => b.children?.map((c) => c.text).join("") ?? "").join(" ")
+                  : blocks;
+              return { title: extractText(title), subtitle: extractText(subtitle) };
+            },
           },
         },
       ],
