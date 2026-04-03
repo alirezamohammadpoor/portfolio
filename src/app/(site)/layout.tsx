@@ -32,6 +32,7 @@ export default async function SiteLayout({
       <html lang="en" className={`${parastoo.variable}`}>
         <head>
           <link rel="preconnect" href="https://cdn.sanity.io" />
+          <link rel="dns-prefetch" href="https://i.scdn.co" />
         </head>
         <body className="font-sans">
           <GsapProvider>

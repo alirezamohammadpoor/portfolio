@@ -32,14 +32,19 @@ export function useGalleryScroll({
   routerPush,
 }: UseGalleryScrollOptions) {
   const [isReeling, setIsReeling] = useState(true);
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [nextProgress, setNextProgress] = useState(0);
+  const scrollProgressRef = useRef(0);
+  const nextProgressRef = useRef(0);
+  const scrollProgressElRef = useRef<HTMLElement>(null);
+  const mobileProgressElRef = useRef<HTMLElement>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
   const firstImageRef = useRef<HTMLDivElement>(null);
   const nextTextWrapperRef = useRef<HTMLDivElement>(null);
   const nextTextRef = useRef<HTMLDivElement>(null);
   const hasAutoNavigated = useRef(false);
   const enteredViaClone = useRef(false);
+  const footerWipeRef = useRef<HTMLDivElement>(null);
+  const footerNextHintRef = useRef<HTMLElement>(null);
+  const footerScrollInfoRef = useRef<HTMLElement>(null);
 
   const originalCount = images.length;
 
@@ -129,7 +134,17 @@ export function useGalleryScroll({
         trigger: galleryRef.current,
         start: "top top",
         end: "bottom bottom",
-        onUpdate: (self) => setScrollProgress(Math.round(self.progress * 100)),
+        onUpdate: (self) => {
+          const val = Math.round(self.progress * 100);
+          scrollProgressRef.current = val;
+          if (scrollProgressElRef.current) scrollProgressElRef.current.textContent = String(val);
+          if (mobileProgressElRef.current) mobileProgressElRef.current.textContent = String(val);
+
+          // Toggle footer next-project hint at 100%
+          const atEnd = val >= 100;
+          if (footerNextHintRef.current) footerNextHintRef.current.style.display = atEnd ? "" : "none";
+          if (footerScrollInfoRef.current) footerScrollInfoRef.current.style.display = atEnd ? "none" : "";
+        },
       });
     },
     { scope: galleryRef, dependencies: [isReeling, isTransitioning] },
@@ -147,10 +162,18 @@ export function useGalleryScroll({
         pin: true,
         pinSpacing: true,
         invalidateOnRefresh: true,
-        onUpdate: (self) => setNextProgress(self.progress),
+        onUpdate: (self) => {
+          nextProgressRef.current = self.progress;
+          // Scrub footer wipe to match next-project progress
+          if (footerWipeRef.current) {
+            const pct = 100 - self.progress * 100;
+            footerWipeRef.current.style.clipPath = `inset(${pct}% 0 0 0)`;
+          }
+        },
         onEnter: () => nextTextWrapperRef.current && gsap.to(nextTextWrapperRef.current, { autoAlpha: 1, duration: 0.3 }),
         onLeaveBack: () => {
-          setNextProgress(0);
+          nextProgressRef.current = 0;
+          if (footerWipeRef.current) footerWipeRef.current.style.clipPath = "inset(100% 0 0 0)";
           if (nextTextWrapperRef.current) gsap.to(nextTextWrapperRef.current, { autoAlpha: 0, duration: 0.3 });
         },
       });
@@ -188,8 +211,11 @@ export function useGalleryScroll({
     nextTextRef,
     displayImages,
     isReeling,
-    scrollProgress,
-    nextProgress,
     originalCount,
+    scrollProgressElRef,
+    mobileProgressElRef,
+    footerWipeRef,
+    footerNextHintRef,
+    footerScrollInfoRef,
   };
 }

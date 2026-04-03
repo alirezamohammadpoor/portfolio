@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 
-const CACHE_KEY = "spotify-last-track";
+const CACHE_KEY = "spotify-track:v1";
 
 interface TrackData {
   isPlaying: boolean;

@@ -6,7 +6,6 @@ import { sanityFetch } from "@/sanity/lib/live";
 import {
   PROJECT_BY_SLUG_QUERY,
   PROJECT_SLUGS_QUERY,
-  NEXT_PROJECT_QUERY,
 } from "@/sanity/lib/queries";
 import ProjectPageClient from "@/components/project/ProjectPageClient";
 
@@ -46,10 +45,5 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   if (!project) notFound();
 
-  const { data: nextProject } = await sanityFetch({
-    query: NEXT_PROJECT_QUERY,
-    params: { currentOrder: project.order ?? 0 },
-  });
-
-  return <ProjectPageClient project={project} nextProject={nextProject} />;
+  return <ProjectPageClient project={project} nextProject={project.nextProject} />;
 }

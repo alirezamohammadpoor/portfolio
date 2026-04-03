@@ -31,7 +31,7 @@ export default function ProjectGallery({
         <div
           key={image._key}
           ref={i === 0 ? firstImageRef : undefined}
-          className="relative h-[70dvh] w-full bg-tertiary"
+          className="relative h-[70dvh] w-full bg-tertiary [content-visibility:auto] [contain-intrinsic-size:auto_70dvh]"
         >
           {image.asset && (
             <Image

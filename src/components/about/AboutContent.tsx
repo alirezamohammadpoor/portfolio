@@ -12,9 +12,11 @@ import {
 } from "@/hooks/useTextAnimation";
 import type { ABOUT_QUERY_RESULT } from "@/sanity/types";
 import { urlFor } from "@/sanity/lib/image";
+import dynamic from "next/dynamic";
 import EmailCopyButton from "./EmailCopyButton";
 import LinkedInLink from "./LinkedInLink";
-import SpotifyWidget from "./SpotifyWidget";
+
+const SpotifyWidget = dynamic(() => import("./SpotifyWidget"), { ssr: false });
 
 type AboutBio = NonNullable<NonNullable<ABOUT_QUERY_RESULT>["bio"]>;
 type AboutPortrait = NonNullable<ABOUT_QUERY_RESULT>["portrait"];

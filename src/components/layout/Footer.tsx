@@ -1,5 +1,6 @@
 "use client";
 
+import type { RefObject } from "react";
 import { useRef } from "react";
 import NextLink from "next/link";
 import { Link } from "next-view-transitions";
@@ -13,8 +14,10 @@ interface FooterProps {
   onDetailsToggle?: () => void;
   detailsOpen?: boolean;
   visible?: boolean;
-  scrollProgress?: number;
-  nextProgress?: number;
+  progressRef?: RefObject<HTMLElement | null>;
+  wipeRef?: RefObject<HTMLDivElement | null>;
+  nextHintRef?: RefObject<HTMLElement | null>;
+  scrollInfoRef?: RefObject<HTMLElement | null>;
 }
 
 export default function Footer({
@@ -24,13 +27,13 @@ export default function Footer({
   onDetailsToggle,
   detailsOpen = false,
   visible = true,
-  scrollProgress,
-  nextProgress = 0,
+  progressRef,
+  wipeRef,
+  nextHintRef,
+  scrollInfoRef,
 }: FooterProps) {
   const footerRef = useRef<HTMLElement>(null);
-  const wipeRef = useRef<HTMLDivElement>(null);
   const hasAppeared = useRef(false);
-  const isClosing = useRef(false);
 
   // Fully hidden on mount, animate in when visible becomes true
   useGSAP(() => {
@@ -47,13 +50,10 @@ export default function Footer({
     }
   }, { dependencies: [visible] });
 
-  const showNextHint = scrollProgress != null && scrollProgress >= 100;
-
   // Details drawer wipe — timed animation
   useGSAP(() => {
-    if (!wipeRef.current) return;
+    if (!wipeRef?.current) return;
     if (detailsOpen) {
-      isClosing.current = false;
       gsap.killTweensOf(wipeRef.current);
       gsap.fromTo(
         wipeRef.current,
@@ -61,28 +61,15 @@ export default function Footer({
         { clipPath: "inset(0% 0 0 0)", duration: 0.3, ease: "power2.out" },
       );
     } else {
-      isClosing.current = true;
       gsap.killTweensOf(wipeRef.current);
       gsap.to(wipeRef.current, {
         clipPath: "inset(100% 0 0 0)",
         duration: 0.4,
         ease: "power2.in",
         delay: 0.7,
-        onComplete: () => { isClosing.current = false; },
       });
     }
-  }, { dependencies: [detailsOpen, showNextHint] });
-
-  // Next-project wipe — scrubbed to scroll progress (not timed)
-  useGSAP(() => {
-    if (!wipeRef.current || detailsOpen || isClosing.current) return;
-    if (showNextHint && nextProgress > 0) {
-      const pct = 100 - nextProgress * 100;
-      gsap.set(wipeRef.current, { clipPath: `inset(${pct}% 0 0 0)` });
-    } else if (!showNextHint) {
-      gsap.set(wipeRef.current, { clipPath: "inset(100% 0 0 0)" });
-    }
-  }, { dependencies: [detailsOpen, showNextHint, nextProgress] });
+  }, { dependencies: [detailsOpen] });
 
   if (!projectTitle) return null;
 
@@ -99,47 +86,44 @@ export default function Footer({
         <span className="text-h3 text-primary">{projectTitle}</span>
       </div>
       <div className="relative flex items-center gap-4">
-        {showNextHint ? (
-          <span className="text-sub font-bold uppercase text-primary">
-            Scroll to see next project
-          </span>
-        ) : (
-          <>
-            {scrollProgress != null && (
-              <span className="text-sub text-primary tabular-nums">{scrollProgress}</span>
-            )}
-            {onDetailsToggle && (
-              <button
-                onClick={onDetailsToggle}
-                aria-expanded={detailsOpen}
-                aria-label={
-                  detailsOpen ? "Close project details" : "Show project details"
-                }
-                className="text-sub text-primary cursor-pointer"
-              >
-                {detailsOpen ? "Close -" : "Details +"}
-              </button>
-            )}
-            {caseStudySlug && (
-              <Link
-                href={`/journal/${caseStudySlug}`}
-                className="text-sub text-primary"
-              >
-                Case study
-              </Link>
-            )}
-            {siteUrl && (
-              <NextLink
-                href={siteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sub text-primary"
-              >
-                Visit website
-              </NextLink>
-            )}
-          </>
-        )}
+        <span ref={nextHintRef} className="text-sub font-bold uppercase text-primary" style={{ display: "none" }}>
+          Scroll to see next project
+        </span>
+        <span ref={scrollInfoRef} className="flex items-center gap-4">
+          {progressRef && (
+            <span ref={progressRef as RefObject<HTMLSpanElement | null>} className="text-sub text-primary tabular-nums">0</span>
+          )}
+          {onDetailsToggle && (
+            <button
+              onClick={onDetailsToggle}
+              aria-expanded={detailsOpen}
+              aria-label={
+                detailsOpen ? "Close project details" : "Show project details"
+              }
+              className="text-sub text-primary cursor-pointer"
+            >
+              {detailsOpen ? "Close -" : "Details +"}
+            </button>
+          )}
+          {caseStudySlug && (
+            <Link
+              href={`/journal/${caseStudySlug}`}
+              className="text-sub text-primary"
+            >
+              Case study
+            </Link>
+          )}
+          {siteUrl && (
+            <NextLink
+              href={siteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sub text-primary"
+            >
+              Visit website
+            </NextLink>
+          )}
+        </span>
       </div>
     </footer>
   );

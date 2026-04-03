@@ -191,9 +191,9 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
         )}
       </article>
       {relatedPosts.length > 0 && (
-        <section ref={carouselRef} className="invisible mt-16 pb-8">
-          <h4 className="px-4 desktop:px-6 uppercase">More posts</h4>
-          <div className="mt-4 flex gap-2 overflow-x-auto px-4 desktop:px-6 snap-x snap-mandatory">
+        <section ref={carouselRef} className="invisible mx-auto desktop:max-w-[50vw] mt-16 pb-8 px-4 desktop:px-6">
+          <h4 className="uppercase">More posts</h4>
+          <div className="mt-4 flex gap-2 overflow-x-auto snap-x snap-mandatory">
             {relatedPosts.map((relatedPost) => (
               <div
                 key={relatedPost._id}

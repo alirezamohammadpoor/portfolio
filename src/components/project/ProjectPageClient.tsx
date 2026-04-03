@@ -4,10 +4,7 @@ import { useRef, useState } from "react";
 import { useTransitionRouter } from "next-view-transitions";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import type {
-  PROJECT_BY_SLUG_QUERY_RESULT,
-  NEXT_PROJECT_QUERY_RESULT,
-} from "@/sanity/types";
+import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { usePageTransition } from "@/context/TransitionContext";
 import {
   useTitleAnimation,
@@ -21,9 +18,11 @@ import ProjectInfoPanel from "@/components/project/ProjectInfoPanel";
 import ProjectGallery from "@/components/project/ProjectGallery";
 import ScrollProgress from "@/components/project/ScrollProgress";
 
+type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
+
 interface ProjectPageClientProps {
-  project: NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
-  nextProject?: NEXT_PROJECT_QUERY_RESULT;
+  project: Project;
+  nextProject?: Project["nextProject"];
 }
 
 export default function ProjectPageClient({ project, nextProject }: ProjectPageClientProps) {
@@ -46,9 +45,12 @@ export default function ProjectPageClient({ project, nextProject }: ProjectPageC
     nextTextRef,
     displayImages,
     isReeling,
-    scrollProgress,
-    nextProgress,
     originalCount,
+    scrollProgressElRef,
+    mobileProgressElRef,
+    footerWipeRef,
+    footerNextHintRef,
+    footerScrollInfoRef,
   } = useGalleryScroll({
     images: project.images ?? [],
     nextProjectSlug: nextProject?.slug?.current ?? undefined,
@@ -106,7 +108,7 @@ export default function ProjectPageClient({ project, nextProject }: ProjectPageC
 
       {!hidePanel && (
         <ScrollProgress
-          progress={scrollProgress}
+          progressRef={scrollProgressElRef}
           nextProjectSlug={nextProject?.slug?.current ?? undefined}
           nextTextWrapperRef={nextTextWrapperRef}
           nextTextRef={nextTextRef}
@@ -122,8 +124,10 @@ export default function ProjectPageClient({ project, nextProject }: ProjectPageC
         onDetailsToggle={() => setDetailsOpen((prev) => !prev)}
         detailsOpen={detailsOpen}
         visible={!hidePanel}
-        scrollProgress={scrollProgress}
-        nextProgress={nextProgress}
+        progressRef={mobileProgressElRef}
+        wipeRef={footerWipeRef}
+        nextHintRef={footerNextHintRef}
+        scrollInfoRef={footerScrollInfoRef}
       />
     </>
   );
