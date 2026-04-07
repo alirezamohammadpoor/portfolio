@@ -57,7 +57,7 @@ export default function GlossaryTerm({
         once: true,
       },
     });
-  }, { scope: triggerRef });
+  }, { scope: triggerRef, dependencies: [isMobile] });
 
   const handleClick = (event: MouseEvent<HTMLSpanElement>) => {
     setAnchorPoint({ x: event.clientX, y: event.clientY });

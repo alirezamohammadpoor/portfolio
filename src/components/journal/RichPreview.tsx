@@ -65,7 +65,7 @@ export default function RichPreview({
         once: true,
       },
     });
-  }, { scope: triggerRef });
+  }, { scope: triggerRef, dependencies: [isMobile] });
 
   const tick = () => {
     if (videoRef.current && videoRef.current.duration && progressRef.current) {
