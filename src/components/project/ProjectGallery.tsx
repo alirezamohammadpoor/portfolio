@@ -8,7 +8,6 @@ type ProjectImages = NonNullable<NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["imag
 interface ProjectGalleryProps {
   images: ProjectImages;
   projectTitle: string | null;
-  originalCount: number;
   galleryRef: RefObject<HTMLDivElement | null>;
   firstImageRef: RefObject<HTMLDivElement | null>;
   isTransitioning: boolean;
@@ -17,7 +16,6 @@ interface ProjectGalleryProps {
 export default function ProjectGallery({
   images,
   projectTitle,
-  originalCount,
   galleryRef,
   firstImageRef,
   isTransitioning,
@@ -36,7 +34,7 @@ export default function ProjectGallery({
           {image.asset && (
             <Image
               src={urlFor(image).width(1200).quality(85).url()}
-              alt={`${projectTitle} — ${(i % originalCount) + 1}`}
+              alt={`${projectTitle} — ${i + 1}`}
               fill
               className="object-cover"
               sizes="(min-width: 75rem) 50vw, 100vw"

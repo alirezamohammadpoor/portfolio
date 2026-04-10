@@ -43,9 +43,7 @@ export default function ProjectPageClient({ project, nextProject }: ProjectPageC
     firstImageRef,
     nextTextWrapperRef,
     nextTextRef,
-    displayImages,
-    isReeling,
-    originalCount,
+    images,
     scrollProgressElRef,
     mobileProgressElRef,
     footerWipeRef,
@@ -59,9 +57,9 @@ export default function ProjectPageClient({ project, nextProject }: ProjectPageC
     routerPush: router.push,
   });
 
-  // Text panel animations — wait for gallery reel to finish
-  const skip = isReeling || isTransitioning;
-  const deps = [isReeling, isTransitioning];
+  // Text panel animations — wait for transition to finish
+  const skip = isTransitioning;
+  const deps = [isTransitioning];
 
   useTitleAnimation(titleRef, panelRef, { duration: 2, skip, dependencies: deps });
   useBodyAnimation(descRef, panelRef, { duration: 2, delay: 0.3, skip, dependencies: deps });
@@ -98,9 +96,9 @@ export default function ProjectPageClient({ project, nextProject }: ProjectPageC
       />
 
       <ProjectGallery
-        images={displayImages}
+        images={images}
         projectTitle={project.title}
-        originalCount={originalCount}
+
         galleryRef={galleryRef}
         firstImageRef={firstImageRef}
         isTransitioning={isTransitioning}

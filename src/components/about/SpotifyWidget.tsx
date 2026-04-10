@@ -173,20 +173,25 @@ function useSpotifyData() {
         setData(json);
       }
       lastPlayingRef.current = json.isPlaying;
-      const now = new Date().toISOString();
-      const newCachedAt = json.isPlaying ? now : (cachedAtRef.current ?? now);
-      if (trackChanged || statusChanged) {
-        setCachedAt(newCachedAt);
-      }
-      cachedAtRef.current = newCachedAt;
 
-      // Only write localStorage when track changes
-      if (json.songUrl !== lastTrackRef.current) {
+      // Always refresh cachedAt when playing so timeAgo shows "Now"
+      const now = new Date().toISOString();
+      if (json.isPlaying) {
+        setCachedAt(now);
+        cachedAtRef.current = now;
+      } else if (trackChanged || statusChanged) {
+        const timestamp = json.playedAt ?? cachedAtRef.current ?? now;
+        setCachedAt(timestamp);
+        cachedAtRef.current = timestamp;
+      }
+
+      // Write localStorage on any track or status change
+      if (trackChanged || statusChanged) {
         lastTrackRef.current = json.songUrl;
         try {
           localStorage.setItem(
             CACHE_KEY,
-            JSON.stringify({ track: json, cachedAt: newCachedAt }),
+            JSON.stringify({ track: json, cachedAt: cachedAtRef.current }),
           );
         } catch {}
       }

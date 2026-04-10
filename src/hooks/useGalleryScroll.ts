@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useLenis } from "lenis/react";
+import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -31,7 +30,6 @@ export function useGalleryScroll({
   animateClone,
   routerPush,
 }: UseGalleryScrollOptions) {
-  const [isReeling, setIsReeling] = useState(true);
   const scrollProgressRef = useRef(0);
   const nextProgressRef = useRef(0);
   const scrollProgressElRef = useRef<HTMLElement>(null);
@@ -41,40 +39,13 @@ export function useGalleryScroll({
   const nextTextWrapperRef = useRef<HTMLDivElement>(null);
   const nextTextRef = useRef<HTMLDivElement>(null);
   const hasAutoNavigated = useRef(false);
-  const enteredViaClone = useRef(false);
   const footerWipeRef = useRef<HTMLDivElement>(null);
   const footerNextHintRef = useRef<HTMLElement>(null);
   const footerScrollInfoRef = useRef<HTMLElement>(null);
 
-  const originalCount = images.length;
-
-  // During reel: original images + duplicate set
-  // After reel: just original images
-  const displayImages = useMemo(() => {
-    if (!isReeling || originalCount <= 1) return images;
-    return [
-      ...images,
-      ...images.map((img, i) => ({ ...img, _key: `${img._key}-dup-${i}` })),
-    ];
-  }, [images, isReeling, originalCount]);
-
-  // scroll-to-top on mount handled by GsapProvider pathname effect
-
-  // Disable Lenis scroll during gallery reel
-  const lenisInstance = useLenis();
-  useEffect(() => {
-    if (!lenisInstance) return;
-    if (isReeling) {
-      lenisInstance.stop();
-    } else {
-      lenisInstance.start();
-    }
-  }, [isReeling, lenisInstance]);
-
   // When transitioning from homepage, animate clone to first image position
   useEffect(() => {
     if (!isTransitioning || !firstImageRef.current) return;
-    enteredViaClone.current = true;
 
     requestAnimationFrame(() => {
       const rect = firstImageRef.current!.getBoundingClientRect();
@@ -87,48 +58,10 @@ export function useGalleryScroll({
     });
   }, [isTransitioning, animateClone]);
 
-  // Gallery reel — scroll down through duplicated set, land on duplicate first image
-  useGSAP(
-    () => {
-      if (
-        !galleryRef.current ||
-        !isReeling ||
-        isTransitioning ||
-        originalCount <= 1
-      )
-        return;
-
-      const duplicateFirst = galleryRef.current.children[
-        originalCount
-      ] as HTMLElement;
-      if (!duplicateFirst) return;
-
-      requestAnimationFrame(() => {
-        const targetScroll =
-          duplicateFirst.offsetTop - galleryRef.current!.offsetTop;
-        window.scrollTo(0, 0);
-
-        const obj = { value: 0 };
-        gsap.to(obj, {
-          value: targetScroll,
-          duration: 2,
-          delay: enteredViaClone.current ? 0 : 1,
-          ease: "power2.inOut",
-          onUpdate: () => window.scrollTo(0, obj.value),
-          onComplete: () => {
-            setIsReeling(false);
-            window.scrollTo(0, 0);
-          },
-        });
-      });
-    },
-    { scope: galleryRef, dependencies: [isReeling, isTransitioning] },
-  );
-
   // Scroll progress — tracks gallery scroll position
   useGSAP(
     () => {
-      if (!galleryRef.current || isReeling || isTransitioning) return;
+      if (!galleryRef.current || isTransitioning) return;
 
       ScrollTrigger.create({
         trigger: galleryRef.current,
@@ -147,13 +80,13 @@ export function useGalleryScroll({
         },
       });
     },
-    { scope: galleryRef, dependencies: [isReeling, isTransitioning] },
+    { scope: galleryRef, dependencies: [isTransitioning] },
   );
 
   // Pin gallery at end + text fill animation + auto-navigate
   useGSAP(
     () => {
-      if (!galleryRef.current || isReeling || isTransitioning || !nextProjectSlug) return;
+      if (!galleryRef.current || isTransitioning || !nextProjectSlug) return;
 
       ScrollTrigger.create({
         trigger: galleryRef.current,
@@ -164,7 +97,6 @@ export function useGalleryScroll({
         invalidateOnRefresh: true,
         onUpdate: (self) => {
           nextProgressRef.current = self.progress;
-          // Scrub footer wipe to match next-project progress
           if (footerWipeRef.current) {
             const pct = 100 - self.progress * 100;
             footerWipeRef.current.style.clipPath = `inset(${pct}% 0 0 0)`;
@@ -201,7 +133,7 @@ export function useGalleryScroll({
         );
       }
     },
-    { scope: galleryRef, dependencies: [isReeling, isTransitioning, nextProjectSlug] },
+    { scope: galleryRef, dependencies: [isTransitioning, nextProjectSlug] },
   );
 
   return {
@@ -209,9 +141,7 @@ export function useGalleryScroll({
     firstImageRef,
     nextTextWrapperRef,
     nextTextRef,
-    displayImages,
-    isReeling,
-    originalCount,
+    images,
     scrollProgressElRef,
     mobileProgressElRef,
     footerWipeRef,
