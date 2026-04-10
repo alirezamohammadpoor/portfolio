@@ -7,6 +7,9 @@ import { Link } from "next-view-transitions";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 
+const FOOTER_HEIGHT = 40;
+const FOOTER_HEIGHT_EXPANDED = 72;
+
 interface FooterProps {
   projectTitle?: string;
   siteUrl?: string;
@@ -16,8 +19,10 @@ interface FooterProps {
   visible?: boolean;
   progressRef?: RefObject<HTMLElement | null>;
   wipeRef?: RefObject<HTMLDivElement | null>;
-  nextHintRef?: RefObject<HTMLElement | null>;
-  scrollInfoRef?: RefObject<HTMLElement | null>;
+  nextProjectSlug?: string;
+  prevProjectSlug?: string;
+  isFirstProject?: boolean;
+  showNav?: boolean;
 }
 
 export default function Footer({
@@ -29,13 +34,15 @@ export default function Footer({
   visible = true,
   progressRef,
   wipeRef,
-  nextHintRef,
-  scrollInfoRef,
+  nextProjectSlug,
+  prevProjectSlug,
+  isFirstProject = false,
+  showNav = false,
 }: FooterProps) {
   const footerRef = useRef<HTMLElement>(null);
+  const navRowRef = useRef<HTMLDivElement>(null);
   const hasAppeared = useRef(false);
 
-  // Fully hidden on mount, animate in when visible becomes true
   useGSAP(() => {
     if (!footerRef.current) return;
     if (visible && !hasAppeared.current) {
@@ -50,7 +57,6 @@ export default function Footer({
     }
   }, { dependencies: [visible] });
 
-  // Details drawer wipe — timed animation
   useGSAP(() => {
     if (!wipeRef?.current) return;
     if (detailsOpen) {
@@ -71,25 +77,35 @@ export default function Footer({
     }
   }, { dependencies: [detailsOpen] });
 
+  // Expand footer to reveal nav row
+  useGSAP(() => {
+    if (!footerRef.current || !navRowRef.current) return;
+    if (showNav) {
+      gsap.to(footerRef.current, { height: FOOTER_HEIGHT_EXPANDED, duration: 0.3, ease: "power2.out" });
+      gsap.to(navRowRef.current, { opacity: 1, height: "auto", duration: 0.3, ease: "power2.out" });
+    } else {
+      gsap.to(footerRef.current, { height: FOOTER_HEIGHT, duration: 0.3, ease: "power2.out" });
+      gsap.to(navRowRef.current, { opacity: 0, height: 0, duration: 0.3, ease: "power2.out" });
+    }
+  }, { dependencies: [showNav] });
+
   if (!projectTitle) return null;
+
+  const hasNav = nextProjectSlug || (prevProjectSlug && !isFirstProject);
 
   return (
     <footer
       ref={footerRef}
-      className="fixed bottom-0 left-0 right-0 z-40 flex h-10 items-center justify-between px-4 desktop:hidden bg-white overflow-hidden"
+      className="fixed bottom-0 left-0 right-0 z-40 flex flex-col justify-center px-4 desktop:hidden bg-white overflow-hidden"
+      style={{ height: FOOTER_HEIGHT }}
     >
       <div
         ref={wipeRef}
         className="absolute inset-0 bg-pistachio [clip-path:inset(100%_0_0_0)]"
       />
-      <div className="relative flex items-center gap-3">
+      <div className="relative flex items-center justify-between">
         <span className="text-h3 text-primary">{projectTitle}</span>
-      </div>
-      <div className="relative flex items-center gap-4">
-        <span ref={nextHintRef} className="text-sub font-bold uppercase text-primary" style={{ display: "none" }}>
-          Scroll to see next project
-        </span>
-        <span ref={scrollInfoRef} className="flex items-center gap-4">
+        <span className="flex items-center gap-4">
           {progressRef && (
             <span ref={progressRef as RefObject<HTMLSpanElement | null>} className="text-sub text-primary tabular-nums">0</span>
           )}
@@ -125,6 +141,33 @@ export default function Footer({
           )}
         </span>
       </div>
+      {hasNav && (
+        <div
+          ref={navRowRef}
+          className="relative flex items-center justify-between opacity-0 h-0 overflow-hidden"
+        >
+          <span>
+            {prevProjectSlug && !isFirstProject && (
+              <Link
+                href={`/project/${prevProjectSlug}`}
+                className="text-sub text-primary"
+              >
+                Previous Project
+              </Link>
+            )}
+          </span>
+          <span>
+            {nextProjectSlug && (
+              <Link
+                href={`/project/${nextProjectSlug}`}
+                className="text-sub text-primary"
+              >
+                Next Project
+              </Link>
+            )}
+          </span>
+        </div>
+      )}
     </footer>
   );
 }

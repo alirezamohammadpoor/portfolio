@@ -10,20 +10,15 @@ export default function TransitionOverlay() {
     usePageTransition();
   const imgRef = useRef<HTMLImageElement>(null);
 
-  // Animate clone from sourceRect → targetRect using transform (GPU-composited)
+  // Animate clone from sourceRect → targetRect
   useGSAP(() => {
-    if (!imgRef.current || !targetRect || !sourceRect) return;
-
-    const dx = targetRect.left - sourceRect.left;
-    const dy = targetRect.top - sourceRect.top;
-    const sx = targetRect.width / sourceRect.width;
-    const sy = targetRect.height / sourceRect.height;
+    if (!imgRef.current || !targetRect) return;
 
     gsap.to(imgRef.current, {
-      x: dx,
-      y: dy,
-      scaleX: sx,
-      scaleY: sy,
+      top: targetRect.top,
+      left: targetRect.left,
+      width: targetRect.width,
+      height: targetRect.height,
       duration: 0.7,
       ease: "power3.inOut",
       onComplete: clearTransition,
@@ -48,8 +43,6 @@ export default function TransitionOverlay() {
         zIndex: 50,
         objectFit: "cover",
         pointerEvents: "none",
-        transformOrigin: "top left",
-        willChange: "transform",
       }}
     />
   );

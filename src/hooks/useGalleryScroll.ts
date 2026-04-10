@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useLenis } from "lenis/react";
 import type Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
+import { lockScroll, unlockScroll } from "@/hooks/useScrollLock";
 
 type ProjectImages = NonNullable<NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["images"]>;
 
@@ -20,17 +21,49 @@ interface Rect {
 interface UseGalleryScrollOptions {
   images: ProjectImages;
   nextProjectSlug: string | undefined;
+  prevProjectSlug: string | undefined;
   isTransitioning: boolean;
   animateClone: (rect: Rect) => void;
   routerPush: (url: string) => void;
 }
 
-const WHEEL_THRESHOLD = 1750;
-const TOUCH_MULTIPLIER = 2.5;
+// Wheel deltaY units needed to trigger navigation (~20 mouse clicks or ~4 trackpad swipes)
+const THRESHOLD = 2500;
+// Delay before scroll + accumulation enable after mount (lets view transition settle)
+const UNLOCK_DELAY_MS = 2000;
+const BOTTOM_EDGE_PX = 10;
+const TOP_EDGE_PX = 2;
+
+// Shared animation helpers
+function animateClipReveal(el: HTMLElement | null, progress: number) {
+  if (!el) return;
+  gsap.to(el, {
+    clipPath: `inset(0 ${100 - progress * 105}% 0 0)`,
+    duration: 0.4,
+    ease: "power2.out",
+    overwrite: true,
+  });
+}
+
+function toggleVisibility(
+  el: HTMLElement | null,
+  show: boolean,
+  wasShowing: React.RefObject<boolean>,
+) {
+  if (!el) return;
+  if (show && !wasShowing.current) {
+    gsap.to(el, { autoAlpha: 1, duration: 0.2 });
+    wasShowing.current = true;
+  } else if (!show && wasShowing.current) {
+    gsap.to(el, { autoAlpha: 0, duration: 0.2 });
+    wasShowing.current = false;
+  }
+}
 
 export function useGalleryScroll({
   images,
   nextProjectSlug,
+  prevProjectSlug,
   isTransitioning,
   animateClone,
   routerPush,
@@ -41,44 +74,63 @@ export function useGalleryScroll({
   const firstImageRef = useRef<HTMLDivElement>(null);
   const nextTextWrapperRef = useRef<HTMLDivElement>(null);
   const nextTextRef = useRef<HTMLDivElement>(null);
-  const hasAutoNavigated = useRef(false);
+  const hasNavigated = useRef(false);
   const footerWipeRef = useRef<HTMLDivElement>(null);
-  const footerNextHintRef = useRef<HTMLElement>(null);
-  const footerScrollInfoRef = useRef<HTMLElement>(null);
 
-  // Wheel/touch accumulation refs
-  const isAtBottom = useRef(false);
-  const bottomFrames = useRef(0);
-  const accumulationRef = useRef(0);
-  const wasShowingHint = useRef(false);
-  const touchStartY = useRef(0);
+  const bottomAcc = useRef(0);
+  const topAcc = useRef(0);
+  const wasShowingBottom = useRef(false);
+  const wasShowingTop = useRef(false);
   const lenisRef = useRef<Lenis | null>(null);
+  const hasScrolledDown = useRef(false);
+  const hasScrolledBack = useRef(false);
+  const isReady = useRef(false);
 
-  // Reset on project change
+  const prevTextWrapperRef = useRef<HTMLDivElement>(null);
+  const prevTextRef = useRef<HTMLDivElement>(null);
+  const [showMobileNav, setShowMobileNav] = useState(false);
+  const showMobileNavRef = useRef(false);
+
+  useLenis((lenis) => {
+    lenisRef.current = lenis;
+    if (isReady.current && lenis.scroll > lenis.limit * 0.1) hasScrolledDown.current = true;
+    if (hasScrolledDown.current && lenis.scroll <= TOP_EDGE_PX) hasScrolledBack.current = true;
+  });
+
+  // Lock scroll on mount, reset to top, unlock after delay
   useEffect(() => {
-    hasAutoNavigated.current = false;
-    accumulationRef.current = 0;
-    wasShowingHint.current = false;
-    bottomFrames.current = 0;
-    isAtBottom.current = false;
-  }, [nextProjectSlug]);
+    lockScroll();
 
-  // When transitioning from homepage, animate clone to first image position
+    // Next tick: reset scroll + force-hide hint wrappers
+    setTimeout(() => {
+      window.scrollTo(0, 0);
+      lenisRef.current?.scrollTo(0, { immediate: true });
+      if (nextTextWrapperRef.current) gsap.set(nextTextWrapperRef.current, { autoAlpha: 0 });
+      if (prevTextWrapperRef.current) gsap.set(prevTextWrapperRef.current, { autoAlpha: 0 });
+    }, 0);
+
+    const timer = setTimeout(() => {
+      isReady.current = true;
+      hasNavigated.current = false;
+      window.scrollTo(0, 0);
+      lenisRef.current?.start();
+      lenisRef.current?.scrollTo(0, { immediate: true });
+      unlockScroll();
+    }, UNLOCK_DELAY_MS);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Animate clone to first image position (homepage → project transition)
   useEffect(() => {
     if (!isTransitioning || !firstImageRef.current) return;
-
     requestAnimationFrame(() => {
       const rect = firstImageRef.current!.getBoundingClientRect();
-      animateClone({
-        top: rect.top,
-        left: rect.left,
-        width: rect.width,
-        height: rect.height,
-      });
+      animateClone({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
     });
   }, [isTransitioning, animateClone]);
 
-  // Scroll progress — tracks gallery scroll position (0-100% text only)
+  // Gallery scroll progress (0-100%) + hint visibility
   useGSAP(
     () => {
       if (!galleryRef.current || isTransitioning) return;
@@ -91,130 +143,117 @@ export function useGalleryScroll({
           const val = Math.round(self.progress * 100);
           if (scrollProgressElRef.current) scrollProgressElRef.current.textContent = String(val);
           if (mobileProgressElRef.current) mobileProgressElRef.current.textContent = String(val);
+
+          if (!isReady.current) return;
+
+          if (val >= 90) toggleVisibility(nextTextWrapperRef.current, true, wasShowingBottom);
+          if (val <= 5 && hasScrolledBack.current) toggleVisibility(prevTextWrapperRef.current, true, wasShowingTop);
+          if (val > 20) toggleVisibility(prevTextWrapperRef.current, false, wasShowingTop);
+
+          // Mobile nav row — only setState when value changes
+          const shouldShow = val >= 95;
+          if (shouldShow !== showMobileNavRef.current) {
+            showMobileNavRef.current = shouldShow;
+            setShowMobileNav(shouldShow);
+          }
         },
       });
     },
     { scope: galleryRef, dependencies: [isTransitioning] },
   );
 
-  // Track page bottom via Lenis (3-frame debounce to avoid trackpad inertia)
-  useLenis((lenis) => {
-    lenisRef.current = lenis;
-    if (lenis.scroll >= lenis.limit - 1) {
-      bottomFrames.current = Math.min(bottomFrames.current + 1, 10);
-      isAtBottom.current = bottomFrames.current >= 3;
-    } else {
-      bottomFrames.current = 0;
-      isAtBottom.current = false;
-    }
-  });
-
-  // Visual feedback driven by accumulation progress (0-1)
-  const updateVisuals = useCallback((progress: number) => {
-    // Desktop: clip-path text fill
-    if (nextTextRef.current) {
-      const pct = 100 - progress * 105; // slight overshoot so text is fully revealed
-      nextTextRef.current.style.clipPath = `inset(0 ${pct}% 0 0)`;
-    }
-
-    // Desktop: show/hide the "Scroll to see next project" wrapper
-    if (nextTextWrapperRef.current) {
-      if (progress > 0 && !wasShowingHint.current) {
-        gsap.to(nextTextWrapperRef.current, { autoAlpha: 1, duration: 0.3 });
-        wasShowingHint.current = true;
-      } else if (progress === 0 && wasShowingHint.current) {
-        gsap.to(nextTextWrapperRef.current, { autoAlpha: 0, duration: 0.3 });
-        wasShowingHint.current = false;
-      }
-    }
-
-    // Mobile: footer wipe
-    if (footerWipeRef.current) {
-      const pct = 100 - progress * 100;
-      footerWipeRef.current.style.clipPath = `inset(${pct}% 0 0 0)`;
-    }
-
-    // Mobile: hint toggle
-    if (footerNextHintRef.current) footerNextHintRef.current.style.display = progress > 0 ? "" : "none";
-    if (footerScrollInfoRef.current) footerScrollInfoRef.current.style.display = progress > 0 ? "none" : "";
+  const isAtBottom = useCallback(() => {
+    const lenis = lenisRef.current;
+    return lenis ? lenis.scroll >= lenis.limit - BOTTOM_EDGE_PX : false;
   }, []);
 
-  // Shared accumulation logic for wheel and touch
-  const accumulate = useCallback((deltaY: number) => {
-    if (hasAutoNavigated.current || !nextProjectSlug) return;
+  const isAtTop = useCallback(() => {
+    const lenis = lenisRef.current;
+    if (!lenis || !hasScrolledBack.current) return false;
+    return lenis.scroll <= TOP_EDGE_PX;
+  }, []);
 
-    if (deltaY > 0 && (isAtBottom.current || accumulationRef.current > 0)) {
-      accumulationRef.current = Math.min(accumulationRef.current + deltaY, WHEEL_THRESHOLD);
-      updateVisuals(accumulationRef.current / WHEEL_THRESHOLD);
+  const updateBottomVisuals = useCallback((progress: number) => {
+    animateClipReveal(nextTextRef.current, progress);
+    animateClipReveal(footerWipeRef.current, progress);
+    toggleVisibility(nextTextWrapperRef.current, progress > 0, wasShowingBottom);
+  }, []);
 
-      if (accumulationRef.current >= WHEEL_THRESHOLD) {
-        hasAutoNavigated.current = true;
-        routerPush(`/project/${nextProjectSlug}`);
-      }
-      return true; // consumed
-    }
+  const updateTopVisuals = useCallback((progress: number) => {
+    animateClipReveal(prevTextRef.current, progress);
+    toggleVisibility(prevTextWrapperRef.current, progress > 0, wasShowingTop);
+  }, []);
 
-    if (deltaY < 0 && accumulationRef.current > 0) {
-      accumulationRef.current = Math.max(accumulationRef.current + deltaY, 0);
-      updateVisuals(accumulationRef.current / WHEEL_THRESHOLD);
-      return true; // consumed
-    }
-
-    return false; // not consumed, let Lenis handle it
-  }, [nextProjectSlug, routerPush, updateVisuals]);
-
-  // Wheel accumulation at page bottom
+  // Wheel accumulation — desktop only
   useEffect(() => {
-    if (!nextProjectSlug || isTransitioning) return;
+    if (isTransitioning) return;
+    if (!window.matchMedia("(min-width: 75rem)").matches) return;
 
     const onWheel = (e: WheelEvent) => {
-      if (!isAtBottom.current && accumulationRef.current === 0) return;
-      if (accumulate(e.deltaY)) {
+      if (!isReady.current || hasNavigated.current) return;
+
+      // Already accumulating bottom
+      if (bottomAcc.current > 0) {
         e.preventDefault();
+        bottomAcc.current = e.deltaY > 0
+          ? Math.min(bottomAcc.current + e.deltaY, THRESHOLD)
+          : Math.max(bottomAcc.current + e.deltaY, 0);
+        updateBottomVisuals(bottomAcc.current / THRESHOLD);
+        if (bottomAcc.current >= THRESHOLD) {
+          hasNavigated.current = true;
+          lockScroll();
+          lenisRef.current?.stop();
+          routerPush(`/project/${nextProjectSlug}`);
+        }
+        return;
+      }
+
+      // Already accumulating top
+      if (topAcc.current > 0) {
+        e.preventDefault();
+        topAcc.current = e.deltaY < 0
+          ? Math.min(topAcc.current + Math.abs(e.deltaY), THRESHOLD)
+          : Math.max(topAcc.current - e.deltaY, 0);
+        updateTopVisuals(topAcc.current / THRESHOLD);
+        if (topAcc.current >= THRESHOLD) {
+          hasNavigated.current = true;
+          lockScroll();
+          lenisRef.current?.stop();
+          routerPush(`/project/${prevProjectSlug}`);
+        }
+        return;
+      }
+
+      // Start accumulating at edges
+      if (e.deltaY > 0 && nextProjectSlug && isAtBottom()) {
+        e.preventDefault();
+        bottomAcc.current = e.deltaY;
+        updateBottomVisuals(bottomAcc.current / THRESHOLD);
+        return;
+      }
+
+      if (e.deltaY < 0 && prevProjectSlug && hasScrolledBack.current && isAtTop()) {
+        e.preventDefault();
+        topAcc.current = Math.abs(e.deltaY);
+        updateTopVisuals(topAcc.current / THRESHOLD);
       }
     };
 
     window.addEventListener("wheel", onWheel, { passive: false });
     return () => window.removeEventListener("wheel", onWheel);
-  }, [nextProjectSlug, isTransitioning, accumulate]);
-
-  // Touch accumulation at page bottom
-  useEffect(() => {
-    if (!nextProjectSlug || isTransitioning) return;
-
-    const onTouchStart = (e: TouchEvent) => {
-      touchStartY.current = e.touches[0].clientY;
-    };
-
-    const onTouchMove = (e: TouchEvent) => {
-      const currentY = e.touches[0].clientY;
-      const deltaY = (touchStartY.current - currentY) * TOUCH_MULTIPLIER;
-      touchStartY.current = currentY;
-
-      if (!isAtBottom.current && accumulationRef.current === 0) return;
-      if (accumulate(deltaY)) {
-        e.preventDefault();
-      }
-    };
-
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: false });
-    return () => {
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchmove", onTouchMove);
-    };
-  }, [nextProjectSlug, isTransitioning, accumulate]);
+  }, [isTransitioning, nextProjectSlug, prevProjectSlug, routerPush, isAtBottom, isAtTop, updateBottomVisuals, updateTopVisuals]);
 
   return {
     galleryRef,
     firstImageRef,
     nextTextWrapperRef,
     nextTextRef,
+    prevTextWrapperRef,
+    prevTextRef,
     images,
     scrollProgressElRef,
     mobileProgressElRef,
     footerWipeRef,
-    footerNextHintRef,
-    footerScrollInfoRef,
+    showMobileNav,
   };
 }

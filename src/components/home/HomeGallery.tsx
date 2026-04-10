@@ -43,16 +43,14 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       if (isAnimating) return;
       isAnimating = true;
 
-      const nextIndex =
-        (currentIndex + direction + slideCount) % slideCount;
+      const nextIndex = (currentIndex + direction + slideCount) % slideCount;
 
       // Hide scroll hints on first interaction
       if (!hasScrolled.current) {
         hasScrolled.current = true;
-        const hints = [scrollHintRef.current, cursorHintRef.current].filter(Boolean);
-        if (hints.length) {
+        if (scrollHintRef.current) {
           ctx.add(() => {
-            gsap.to(hints, { autoAlpha: 0, duration: 0.4, ease: "power2.out" });
+            gsap.to(scrollHintRef.current, { autoAlpha: 0, duration: 0.4, ease: "power2.out" });
           });
         }
       }
@@ -62,7 +60,10 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
 
       ctx.add(() => {
         // Position next slide off-screen in the scroll direction
-        gsap.set(nextEl, { yPercent: direction > 0 ? 100 : -100, autoAlpha: 1 });
+        gsap.set(nextEl, {
+          yPercent: direction > 0 ? 100 : -100,
+          autoAlpha: 1,
+        });
 
         const tl = gsap.timeline({
           onComplete: () => {
@@ -72,17 +73,25 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
           },
         });
 
-        tl.to(currentEl, {
-          yPercent: direction > 0 ? -100 : 100,
-          duration: 0.6,
-          ease: "power2.inOut",
-        }, 0);
+        tl.to(
+          currentEl,
+          {
+            yPercent: direction > 0 ? -100 : 100,
+            duration: 0.6,
+            ease: "power2.inOut",
+          },
+          0,
+        );
 
-        tl.to(nextEl, {
-          yPercent: 0,
-          duration: 0.6,
-          ease: "power2.inOut",
-        }, 0);
+        tl.to(
+          nextEl,
+          {
+            yPercent: 0,
+            duration: 0.6,
+            ease: "power2.inOut",
+          },
+          0,
+        );
       });
     }
 
@@ -130,7 +139,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       wrapper.removeEventListener("touchstart", onTouchStart);
       wrapper.removeEventListener("touchmove", onTouchMove);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Desktop: cursor-follow scroll hint with adaptive color
@@ -140,11 +149,10 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
     if (!wrapper || !cursor) return;
 
     function onMove(e: MouseEvent) {
-      if (hasScrolled.current) return;
       const rect = wrapper!.getBoundingClientRect();
       const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      gsap.to(cursor!, { x, y, duration: 0.3, ease: "power2.out" });
+      const y = e.clientY - rect.top + 24;
+      gsap.to(cursor!, { x, y, duration: 0.5, ease: "power3.out" });
 
       // Sample pixel color under cursor to determine text color
       const img = wrapper!.querySelector("img") as HTMLImageElement | null;
@@ -174,22 +182,16 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
     }
 
     function onEnter() {
-      if (hasScrolled.current) return;
       gsap.to(cursor!, { autoAlpha: 1, duration: 0.3, ease: "power2.out" });
     }
 
-    function onLeave() {
-      gsap.to(cursor!, { autoAlpha: 0, duration: 0.3, ease: "power2.out" });
-    }
-
+    // No mouseleave handler — cursor hint stays visible once shown
     wrapper.addEventListener("mousemove", onMove);
     wrapper.addEventListener("mouseenter", onEnter);
-    wrapper.addEventListener("mouseleave", onLeave);
 
     return () => {
       wrapper.removeEventListener("mousemove", onMove);
       wrapper.removeEventListener("mouseenter", onEnter);
-      wrapper.removeEventListener("mouseleave", onLeave);
       gsap.killTweensOf(cursor);
     };
   }, []);
@@ -220,9 +222,13 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
           { autoAlpha: 1, y: 0, duration: 0.6, ease: "power3.out", delay: 1.2 },
         );
       }
-      // Desktop cursor hint stays invisible until mouseenter
+      // Desktop cursor hint — fade in with gallery entrance
       if (cursorHintRef.current) {
-        gsap.set(cursorHintRef.current, { autoAlpha: 0 });
+        gsap.fromTo(
+          cursorHintRef.current,
+          { autoAlpha: 0 },
+          { autoAlpha: 1, duration: 0.6, ease: "power3.out", delay: 1.2 },
+        );
       }
     },
     { scope: contentRef },
@@ -303,18 +309,17 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
           <span className="text-sub uppercase text-primary">Scroll</span>
           <div className="scroll-arrow" />
         </div>
-        {/* Desktop cursor-follow scroll hint */}
+        {/* Desktop cursor-follow hint */}
         <div
           ref={cursorHintRef}
-          className="invisible pointer-events-none absolute left-0 top-0 z-10 hidden -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 desktop:flex"
+          className="invisible pointer-events-none absolute left-0 top-0 z-10 hidden -translate-x-1/2 flex-col items-center gap-4 desktop:flex"
         >
           <span className="text-sub uppercase" style={{ color: "inherit" }}>
-            Scroll
+            Scroll to Explore
           </span>
-          <div
-            className="scroll-arrow"
-            style={{ backgroundColor: "currentColor" }}
-          />
+          <span className="text-sub uppercase" style={{ color: "inherit" }}>
+            Click to View
+          </span>
         </div>
         <div ref={contentRef} className="relative h-full">
           {projects.map((project, index) => (

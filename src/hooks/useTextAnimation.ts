@@ -42,6 +42,7 @@ export function useTitleAnimation(
             duration,
             yPercent: -120,
             scale: 1.08,
+            filter: "blur(4px)",
             ease: "power4.out",
             delay,
           }),
@@ -75,6 +76,7 @@ export function useBodyAnimation(
           gsap.from(self.lines, {
             duration,
             yPercent: 105,
+            filter: "blur(3px)",
             ease: "power4.out",
             delay,
           }),
@@ -111,6 +113,7 @@ export function useInlineAnimation(
             gsap.from(self.lines, {
               duration,
               yPercent: 105,
+              filter: "blur(3px)",
               ease: "power4.out",
               delay,
             }),

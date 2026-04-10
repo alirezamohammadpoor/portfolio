@@ -23,50 +23,49 @@ type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 interface ProjectPageClientProps {
   project: Project;
   nextProject?: Project["nextProject"];
+  prevProject?: Project["prevProject"];
 }
 
-export default function ProjectPageClient({ project, nextProject }: ProjectPageClientProps) {
+export default function ProjectPageClient({ project, nextProject, prevProject }: ProjectPageClientProps) {
   const router = useTransitionRouter();
   const { isTransitioning, animateClone } = usePageTransition();
   const [detailsOpen, setDetailsOpen] = useState(false);
 
-  // Refs for text animations
   const panelRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const descRef = useRef<HTMLParagraphElement>(null);
   const techRef = useRef<HTMLDivElement>(null);
   const linksRef = useRef<HTMLDivElement>(null);
 
-  // All gallery scroll logic
   const {
     galleryRef,
     firstImageRef,
     nextTextWrapperRef,
     nextTextRef,
+    prevTextWrapperRef,
+    prevTextRef,
     images,
     scrollProgressElRef,
     mobileProgressElRef,
     footerWipeRef,
-    footerNextHintRef,
-    footerScrollInfoRef,
+    showMobileNav,
   } = useGalleryScroll({
     images: project.images ?? [],
     nextProjectSlug: nextProject?.slug?.current ?? undefined,
+    prevProjectSlug: prevProject?.slug?.current ?? undefined,
     isTransitioning,
     animateClone,
     routerPush: router.push,
   });
 
-  // Text panel animations — wait for transition to finish
   const skip = isTransitioning;
-  const deps = [isTransitioning];
 
-  useTitleAnimation(titleRef, panelRef, { duration: 1.2, skip, dependencies: deps });
-  useBodyAnimation(descRef, panelRef, { duration: 1, delay: 0.15, skip, dependencies: deps });
-  useBodyAnimation(techRef, panelRef, { duration: 1, delay: 0.25, skip, dependencies: deps });
-  useInlineAnimation(linksRef, panelRef, "a:not([data-pill])", { duration: 1, delay: 0.35, skip, dependencies: deps });
+  useTitleAnimation(titleRef, panelRef, { duration: 1.2, skip, dependencies: [isTransitioning] });
+  useBodyAnimation(descRef, panelRef, { duration: 1, delay: 0.15, skip, dependencies: [isTransitioning] });
+  useBodyAnimation(techRef, panelRef, { duration: 1, delay: 0.25, skip, dependencies: [isTransitioning] });
+  useInlineAnimation(linksRef, panelRef, "a:not([data-pill])", { duration: 1, delay: 0.35, skip, dependencies: [isTransitioning] });
 
-  // Pill button needs its own animation (SplitText mask clips rounded corners)
+  // Pill button animation (SplitText mask clips rounded corners)
   useGSAP(
     () => {
       if (skip || !linksRef.current) return;
@@ -78,16 +77,14 @@ export default function ProjectPageClient({ project, nextProject }: ProjectPageC
         { yPercent: 0, autoAlpha: 1, duration: 1, ease: "power4.out", delay: 0.35 },
       );
     },
-    { scope: panelRef, dependencies: [skip, ...deps] },
+    { scope: panelRef, dependencies: [isTransitioning] },
   );
-
-  const hidePanel = skip;
 
   return (
     <>
       <ProjectInfoPanel
         project={project}
-        hidden={hidePanel}
+        hidden={skip}
         panelRef={panelRef}
         titleRef={titleRef}
         descRef={descRef}
@@ -98,18 +95,20 @@ export default function ProjectPageClient({ project, nextProject }: ProjectPageC
       <ProjectGallery
         images={images}
         projectTitle={project.title}
-
         galleryRef={galleryRef}
         firstImageRef={firstImageRef}
         isTransitioning={isTransitioning}
       />
 
-      {!hidePanel && (
+      {!skip && (
         <ScrollProgress
           progressRef={scrollProgressElRef}
           nextProjectSlug={nextProject?.slug?.current ?? undefined}
           nextTextWrapperRef={nextTextWrapperRef}
           nextTextRef={nextTextRef}
+          prevProjectSlug={prevProject?.slug?.current ?? undefined}
+          prevTextWrapperRef={prevTextWrapperRef}
+          prevTextRef={prevTextRef}
         />
       )}
 
@@ -121,11 +120,13 @@ export default function ProjectPageClient({ project, nextProject }: ProjectPageC
         caseStudySlug={project.caseStudy?.slug?.current ?? undefined}
         onDetailsToggle={() => setDetailsOpen((prev) => !prev)}
         detailsOpen={detailsOpen}
-        visible={!hidePanel}
+        visible={!skip}
         progressRef={mobileProgressElRef}
         wipeRef={footerWipeRef}
-        nextHintRef={footerNextHintRef}
-        scrollInfoRef={footerScrollInfoRef}
+        nextProjectSlug={nextProject?.slug?.current ?? undefined}
+        prevProjectSlug={prevProject?.slug?.current ?? undefined}
+        isFirstProject={project.order === 1}
+        showNav={showMobileNav}
       />
     </>
   );

@@ -500,7 +500,7 @@ export type PROJECTS_QUERY_RESULT = Array<{
 
 // Source: src/sanity/lib/queries.ts
 // Variable: PROJECT_BY_SLUG_QUERY
-// Query: *[_type == "project" && slug.current == $slug][0] {      _id,  title,  slug,  shortDescription,  fullDescription,  techStack,  siteUrl,  caseStudy->{ _id, slug },  coverMedia,  images,  videos,  order,    "nextProject": coalesce(      *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },      *[_type == "project"] | order(order asc) [0] { title, slug }    )  }
+// Query: *[_type == "project" && slug.current == $slug][0] {      _id,  title,  slug,  shortDescription,  fullDescription,  techStack,  siteUrl,  caseStudy->{ _id, slug },  coverMedia,  images,  videos,  order,    "nextProject": coalesce(      *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },      *[_type == "project"] | order(order asc) [0] { title, slug }    ),    "prevProject": coalesce(      *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug },      *[_type == "project"] | order(order desc) [0] { title, slug }    )  }
 export type PROJECT_BY_SLUG_QUERY_RESULT = {
   _id: string;
   title: string | null;
@@ -544,6 +544,10 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
   }> | null;
   order: number | null;
   nextProject: {
+    title: string | null;
+    slug: Slug | null;
+  } | null;
+  prevProject: {
     title: string | null;
     slug: Slug | null;
   } | null;
@@ -757,7 +761,7 @@ declare module "@sanity/client" {
   interface SanityQueries {
     '\n  *[_type == "about"][0] {\n    heading,\n    bio,\n    portrait,\n    email,\n    linkedinUrl\n  }\n': ABOUT_QUERY_RESULT;
     '\n  *[_type == "project"] | order(order asc) { \n  _id,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  images,\n  videos,\n  order\n }\n': PROJECTS_QUERY_RESULT;
-    '\n  *[_type == "project" && slug.current == $slug][0] {\n    \n  _id,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  images,\n  videos,\n  order\n,\n    "nextProject": coalesce(\n      *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },\n      *[_type == "project"] | order(order asc) [0] { title, slug }\n    )\n  }\n': PROJECT_BY_SLUG_QUERY_RESULT;
+    '\n  *[_type == "project" && slug.current == $slug][0] {\n    \n  _id,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  images,\n  videos,\n  order\n,\n    "nextProject": coalesce(\n      *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },\n      *[_type == "project"] | order(order asc) [0] { title, slug }\n    ),\n    "prevProject": coalesce(\n      *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug },\n      *[_type == "project"] | order(order desc) [0] { title, slug }\n    )\n  }\n': PROJECT_BY_SLUG_QUERY_RESULT;
     '\n  *[_type == "journalPage"][0] { description }\n': JOURNAL_PAGE_QUERY_RESULT;
     '\n  *[_type == "journalPost"] | order(publishedAt desc) { \n  _id,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug }\n }\n': JOURNAL_POSTS_QUERY_RESULT;
     '\n  *[_type == "journalPost" && slug.current == $slug][0] {\n    \n  _id,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug }\n,\n    body,\n    "relatedPosts": *[_type == "journalPost" && _id != ^._id] | order(publishedAt desc) { \n  _id,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug }\n }\n  }\n': JOURNAL_POST_BY_SLUG_QUERY_RESULT;

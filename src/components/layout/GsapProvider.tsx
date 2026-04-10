@@ -35,7 +35,10 @@ export default function GsapProvider({ children }: { children: ReactNode }) {
     if ("scrollRestoration" in history) {
       history.scrollRestoration = "manual";
     }
-    lenisRef.current?.lenis?.scrollTo(0, { immediate: true });
+    const lenis = lenisRef.current?.lenis;
+    if (lenis) {
+      lenis.scrollTo(0, { immediate: true });
+    }
   }, [pathname]);
 
   return (

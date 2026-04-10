@@ -46,6 +46,10 @@ export const PROJECT_BY_SLUG_QUERY = defineQuery(`
     "nextProject": coalesce(
       *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },
       *[_type == "project"] | order(order asc) [0] { title, slug }
+    ),
+    "prevProject": coalesce(
+      *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug },
+      *[_type == "project"] | order(order desc) [0] { title, slug }
     )
   }
 `);
