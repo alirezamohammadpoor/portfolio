@@ -45,14 +45,14 @@ async function fetchSpotifyData(): Promise<{ data: Record<string, unknown>; stat
     fetch("https://api.spotify.com/v1/me/player/recently-played?limit=1", { headers }),
   ]);
 
-  // Check currently playing first
+  // Check currently playing first (includes paused tracks)
   if (nowRes.status === 200) {
     const now = await nowRes.json();
-    if (now?.item && now.is_playing) {
+    if (now?.item) {
       return {
         status: 200,
         data: {
-          isPlaying: true,
+          isPlaying: now.is_playing === true,
           title: now.item.name,
           artist: now.item.artists.map((a: { name: string }) => a.name).join(", "),
           album: now.item.album.name,

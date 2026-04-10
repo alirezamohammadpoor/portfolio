@@ -104,8 +104,8 @@ function TrackMarquee({
         }}
       >
         <span
-          className="inline-flex w-0 items-center overflow-hidden transition-[width] duration-200"
-          style={{ width: hovered ? "16px" : "0px" }}
+          className="inline-flex items-center overflow-hidden transition-[width] duration-200"
+          style={{ width: hovered ? "16px" : "0px", marginRight: hovered ? undefined : "-4px" }}
         >
           <SpotifyIcon
             className={`h-[14px] w-[14px] shrink-0 transition-[transform,opacity,filter] duration-200${isActive ? " text-spotify" : " text-primary/50"}`}
