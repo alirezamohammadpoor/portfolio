@@ -64,9 +64,9 @@ export default function Footer({
       gsap.killTweensOf(wipeRef.current);
       gsap.to(wipeRef.current, {
         clipPath: "inset(100% 0 0 0)",
-        duration: 0.4,
-        ease: "power2.in",
-        delay: 0.7,
+        duration: 0.3,
+        ease: "power2.out",
+        delay: 0.5,
       });
     }
   }, { dependencies: [detailsOpen] });

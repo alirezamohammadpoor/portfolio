@@ -45,5 +45,5 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   if (!project) notFound();
 
-  return <ProjectPageClient project={project} nextProject={project.nextProject} />;
+  return <ProjectPageClient key={slug} project={project} nextProject={project.nextProject} />;
 }

@@ -262,7 +262,7 @@ export default function RichPreview({
     >
       <span
         ref={popupRef}
-        className={`fixed top-1/2 left-1/2 z-50 mb-0 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center transition-all duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] desktop:absolute desktop:bottom-full desktop:top-auto desktop:-translate-x-1/2 desktop:translate-y-0 ${
+        className={`fixed top-1/2 left-1/2 z-50 mb-0 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] desktop:absolute desktop:bottom-full desktop:top-auto desktop:-translate-x-1/2 desktop:translate-y-0 ${
           visible
             ? "pointer-events-auto opacity-100"
             : "pointer-events-none opacity-0 desktop:translate-y-1"

@@ -137,7 +137,7 @@ export default function GlossaryTerm({
     <span className="relative inline">
       <span
         ref={popupRef}
-        className={`pointer-events-none fixed bottom-auto left-1/2 top-1/2 z-50 mb-0 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center transition-all duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] desktop:absolute desktop:bottom-full desktop:top-auto desktop:-translate-x-1/2 desktop:translate-y-0 ${
+        className={`pointer-events-none fixed bottom-auto left-1/2 top-1/2 z-50 mb-0 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] desktop:absolute desktop:bottom-full desktop:top-auto desktop:-translate-x-1/2 desktop:translate-y-0 ${
           visible ? "opacity-100" : "opacity-0 desktop:translate-y-1"
         }`}
       >

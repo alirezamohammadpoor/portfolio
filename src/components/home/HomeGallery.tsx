@@ -205,9 +205,9 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
           {
             yPercent: 0,
             autoAlpha: 1,
-            duration: 2,
+            duration: 1.4,
             ease: "power3.out",
-            delay: 1,
+            delay: 0.6,
           },
         );
       }
@@ -217,7 +217,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
         gsap.fromTo(
           scrollHintRef.current,
           { autoAlpha: 0, y: 10 },
-          { autoAlpha: 1, y: 0, duration: 0.8, ease: "power3.out", delay: 1.8 },
+          { autoAlpha: 1, y: 0, duration: 0.6, ease: "power3.out", delay: 1.2 },
         );
       }
       // Desktop cursor hint stays invisible until mouseenter

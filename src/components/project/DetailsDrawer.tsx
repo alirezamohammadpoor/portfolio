@@ -32,23 +32,23 @@ export default function DetailsDrawer({ project, isOpen }: DetailsDrawerProps) {
       gsap.to(drawerRef.current, {
         autoAlpha: 1,
         yPercent: 0,
-        duration: 0.6,
-        ease: "power2.in",
-        delay: 0.15,
+        duration: 0.4,
+        ease: "power3.out",
+        delay: 0.1,
         onComplete: () => drawerRef.current?.focus(),
       });
     } else if (hasOpened.current) {
       gsap.to(bgRef.current, {
         clipPath: "inset(100% 0 0 0)",
-        duration: 0.4,
-        ease: "power2.in",
+        duration: 0.3,
+        ease: "power2.out",
       });
       gsap.to(drawerRef.current, {
         autoAlpha: 0,
         yPercent: 100,
-        duration: 0.4,
-        ease: "power2.in",
-        delay: 0.35,
+        duration: 0.25,
+        ease: "power2.out",
+        delay: 0.15,
       });
     }
   }, { dependencies: [isOpen] });

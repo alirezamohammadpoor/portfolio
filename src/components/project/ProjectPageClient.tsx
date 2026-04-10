@@ -61,10 +61,10 @@ export default function ProjectPageClient({ project, nextProject }: ProjectPageC
   const skip = isTransitioning;
   const deps = [isTransitioning];
 
-  useTitleAnimation(titleRef, panelRef, { duration: 2, skip, dependencies: deps });
-  useBodyAnimation(descRef, panelRef, { duration: 2, delay: 0.3, skip, dependencies: deps });
-  useBodyAnimation(techRef, panelRef, { duration: 2, delay: 0.5, skip, dependencies: deps });
-  useInlineAnimation(linksRef, panelRef, "a:not([data-pill])", { duration: 2, delay: 0.7, skip, dependencies: deps });
+  useTitleAnimation(titleRef, panelRef, { duration: 1.2, skip, dependencies: deps });
+  useBodyAnimation(descRef, panelRef, { duration: 1, delay: 0.15, skip, dependencies: deps });
+  useBodyAnimation(techRef, panelRef, { duration: 1, delay: 0.25, skip, dependencies: deps });
+  useInlineAnimation(linksRef, panelRef, "a:not([data-pill])", { duration: 1, delay: 0.35, skip, dependencies: deps });
 
   // Pill button needs its own animation (SplitText mask clips rounded corners)
   useGSAP(
@@ -75,7 +75,7 @@ export default function ProjectPageClient({ project, nextProject }: ProjectPageC
       gsap.fromTo(
         pill,
         { yPercent: 40, autoAlpha: 0 },
-        { yPercent: 0, autoAlpha: 1, duration: 2, ease: "power4.out", delay: 0.7 },
+        { yPercent: 0, autoAlpha: 1, duration: 1, ease: "power4.out", delay: 0.35 },
       );
     },
     { scope: panelRef, dependencies: [skip, ...deps] },

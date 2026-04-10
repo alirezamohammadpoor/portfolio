@@ -104,11 +104,8 @@ function TrackMarquee({
         }}
       >
         <span
-          className="inline-flex items-center overflow-hidden transition-[width,margin] duration-200"
-          style={{
-            width: hovered ? "14px" : "0px",
-            marginRight: hovered ? "2px" : "-4px",
-          }}
+          className="inline-flex w-0 items-center overflow-hidden transition-[width] duration-200"
+          style={{ width: hovered ? "16px" : "0px" }}
         >
           <SpotifyIcon
             className={`h-[14px] w-[14px] shrink-0 transition-[transform,opacity,filter] duration-200${isActive ? " text-spotify" : " text-primary/50"}`}
@@ -116,7 +113,7 @@ function TrackMarquee({
               {
                 opacity: hovered ? 1 : 0,
                 filter: hovered ? "blur(0px)" : "blur(4px)",
-                transform: hovered ? "scale(1)" : "scale(0.8)",
+                transform: hovered ? "scale(1)" : "scale(0.9)",
               } as React.CSSProperties
             }
           />
@@ -223,6 +220,7 @@ function useTimeLabel(data: TrackData | null, cachedAt: string | null) {
 export default function SpotifyWidget() {
   const { data, cachedAt, isLoading } = useSpotifyData();
   const [hovered, setHovered] = useState(false);
+  const canHover = typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const timeLabel = useTimeLabel(data, cachedAt);
 
   if (isLoading && !data) {
@@ -246,8 +244,8 @@ export default function SpotifyWidget() {
       href={data.songUrl}
       target="_blank"
       rel="noopener noreferrer"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={canHover ? () => setHovered(true) : undefined}
+      onMouseLeave={canHover ? () => setHovered(false) : undefined}
       className="flex w-full items-center gap-4 rounded-full py-2 pl-4 pr-5 outline-none transition-[background-color] duration-200 focus-visible:ring-2 bg-pistachio hover:bg-lightpistachio active:scale-[0.97]"
     >
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
@@ -298,7 +296,7 @@ export default function SpotifyWidget() {
           style={{
             opacity: hovered ? 1 : 0,
             filter: hovered ? "blur(0px)" : "blur(4px)",
-            transform: hovered ? "scale(1)" : "scale(0.8)",
+            transform: hovered ? "scale(1)" : "scale(0.9)",
           }}
         >
           <span
