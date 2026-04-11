@@ -38,6 +38,7 @@ export default function GsapProvider({ children }: { children: ReactNode }) {
     const lenis = lenisRef.current?.lenis;
     if (lenis) {
       lenis.scrollTo(0, { immediate: true });
+      ScrollTrigger.refresh();
     }
   }, [pathname]);
 

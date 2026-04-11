@@ -17,7 +17,10 @@ export default function GlossaryTerm({
   children,
 }: GlossaryTermProps) {
   const [visible, setVisible] = useState(false);
-  const [anchorPoint, setAnchorPoint] = useState<{ x: number; y: number } | null>(null);
+  const [anchorPoint, setAnchorPoint] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
   const triggerRef = useRef<HTMLSpanElement>(null);
   const popupRef = useRef<HTMLSpanElement>(null);
@@ -34,30 +37,35 @@ export default function GlossaryTerm({
       anchorPoint,
     });
 
-  useGSAP(() => {
-    const el = triggerRef.current;
-    if (!el) return;
+  useGSAP(
+    () => {
+      const el = triggerRef.current;
+      if (!el) return;
 
-    gsap.set(el, {
-      backgroundImage: "linear-gradient(var(--color-pistachio), var(--color-pistachio))",
-      backgroundRepeat: "no-repeat",
-      backgroundPosition: "left center",
-      backgroundSize: "0% 100%",
-      boxDecorationBreak: "clone",
-      WebkitBoxDecorationBreak: "clone",
-    });
+      gsap.set(el, {
+        backgroundImage:
+          "linear-gradient(var(--color-pistachio), var(--color-pistachio))",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "left center",
+        backgroundSize: "0% 100%",
+        boxDecorationBreak: "clone",
+        WebkitBoxDecorationBreak: "clone",
+      });
 
-    gsap.to(el, {
-      backgroundSize: "100% 100%",
-      duration: 0.8,
-      ease: "power2.out",
-      scrollTrigger: {
-        trigger: el,
-        start: "top 90%",
-        once: true,
-      },
-    });
-  }, { scope: triggerRef, dependencies: [isMobile] });
+      gsap.to(el, {
+        backgroundSize: "100% 100%",
+        duration: 0.8,
+        delay: 1,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: el,
+          start: "top 90%",
+          once: true,
+        },
+      });
+    },
+    { scope: triggerRef, dependencies: [isMobile] },
+  );
 
   const handleClick = (event: MouseEvent<HTMLSpanElement>) => {
     setAnchorPoint({ x: event.clientX, y: event.clientY });
@@ -106,7 +114,10 @@ export default function GlossaryTerm({
 
                 <span
                   className="block rounded-2xl bg-pistachio px-4 py-2 text-left text-sub text-primary whitespace-normal"
-                  style={{ maxWidth: "min(320px, calc(100vw - 32px))", width: "max-content" }}
+                  style={{
+                    maxWidth: "min(320px, calc(100vw - 32px))",
+                    width: "max-content",
+                  }}
                 >
                   {explanation}
                 </span>
@@ -122,11 +133,7 @@ export default function GlossaryTerm({
             document.body,
           )}
 
-        <span
-          ref={triggerRef}
-          onClick={handleClick}
-          className="cursor-pointer"
-        >
+        <span ref={triggerRef} onClick={handleClick} className="cursor-pointer">
           {children}
         </span>
       </span>

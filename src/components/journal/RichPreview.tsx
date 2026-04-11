@@ -21,7 +21,10 @@ export default function RichPreview({
   children,
 }: RichPreviewProps) {
   const [visible, setVisible] = useState(false);
-  const [anchorPoint, setAnchorPoint] = useState<{ x: number; y: number } | null>(null);
+  const [anchorPoint, setAnchorPoint] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const [muted, setMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressRef = useRef<HTMLSpanElement>(null);
@@ -42,30 +45,35 @@ export default function RichPreview({
       anchorPoint,
     });
 
-  useGSAP(() => {
-    const el = triggerRef.current;
-    if (!el) return;
+  useGSAP(
+    () => {
+      const el = triggerRef.current;
+      if (!el) return;
 
-    gsap.set(el, {
-      backgroundImage: "linear-gradient(var(--color-pistachio), var(--color-pistachio))",
-      backgroundRepeat: "no-repeat",
-      backgroundPosition: "left center",
-      backgroundSize: "0% 100%",
-      boxDecorationBreak: "clone",
-      WebkitBoxDecorationBreak: "clone",
-    });
+      gsap.set(el, {
+        backgroundImage:
+          "linear-gradient(var(--color-pistachio), var(--color-pistachio))",
+        backgroundRepeat: "no-repeat",
+        backgroundPosition: "left center",
+        backgroundSize: "0% 100%",
+        boxDecorationBreak: "clone",
+        WebkitBoxDecorationBreak: "clone",
+      });
 
-    gsap.to(el, {
-      backgroundSize: "100% 100%",
-      duration: 0.8,
-      ease: "power2.out",
-      scrollTrigger: {
-        trigger: el,
-        start: "top 90%",
-        once: true,
-      },
-    });
-  }, { scope: triggerRef, dependencies: [isMobile] });
+      gsap.to(el, {
+        backgroundSize: "100% 100%",
+        duration: 0.8,
+        delay: 1,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: el,
+          start: "top 90%",
+          once: true,
+        },
+      });
+    },
+    { scope: triggerRef, dependencies: [isMobile] },
+  );
 
   const tick = () => {
     if (videoRef.current && videoRef.current.duration && progressRef.current) {
@@ -125,7 +133,11 @@ export default function RichPreview({
     }
 
     const handleVisibility = () => {
-      if (document.visibilityState === "visible" && visible && videoRef.current?.paused) {
+      if (
+        document.visibilityState === "visible" &&
+        visible &&
+        videoRef.current?.paused
+      ) {
         playVideo();
         startRAF();
       }
@@ -161,13 +173,31 @@ export default function RichPreview({
             className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white transition-opacity hover:bg-black/60"
           >
             {muted ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                 <line x1="23" y1="9" x2="17" y2="15" />
                 <line x1="17" y1="9" x2="23" y2="15" />
               </svg>
             ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                 <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
                 <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
@@ -228,9 +258,7 @@ export default function RichPreview({
             <span
               ref={popupRef}
               className={`fixed z-50 transition-opacity duration-300 ${
-                showPopup
-                  ? "opacity-100"
-                  : "pointer-events-none opacity-0"
+                showPopup ? "opacity-100" : "pointer-events-none opacity-0"
               }`}
               style={
                 showPopup && position
@@ -243,11 +271,7 @@ export default function RichPreview({
             document.body,
           )}
 
-        <span
-          ref={triggerRef}
-          onClick={handleClick}
-          className="cursor-pointer"
-        >
+        <span ref={triggerRef} onClick={handleClick} className="cursor-pointer">
           {children}
         </span>
       </span>
@@ -255,11 +279,7 @@ export default function RichPreview({
   }
 
   return (
-    <span
-      className="relative inline"
-      onMouseEnter={show}
-      onMouseLeave={hide}
-    >
+    <span className="relative inline" onMouseEnter={show} onMouseLeave={hide}>
       <span
         ref={popupRef}
         className={`fixed top-1/2 left-1/2 z-50 mb-0 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] desktop:absolute desktop:bottom-full desktop:top-auto desktop:-translate-x-1/2 desktop:translate-y-0 ${
@@ -272,11 +292,7 @@ export default function RichPreview({
         <span className="hidden h-0 w-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-lightpistachio desktop:block" />
       </span>
 
-      <span
-        ref={triggerRef}
-        onClick={handleClick}
-        className="cursor-pointer"
-      >
+      <span ref={triggerRef} onClick={handleClick} className="cursor-pointer">
         {children}
       </span>
     </span>
