@@ -237,6 +237,13 @@
   animation: none;
 }
 
+/* Black backdrop behind the transition snapshot on every viewport —
+   otherwise mobile reveals the html #f7f7f7 bg as a white flash during
+   the snapshot window. */
+::view-transition-group(root) {
+  background-color: black;
+}
+
 @media (min-width: 75rem) {
   ::view-transition-old(root) {
     animation: page-exit 1.2s cubic-bezier(0.76, 0, 0.24, 1) forwards;
@@ -246,10 +253,6 @@
     animation:
       page-slide-in 1s cubic-bezier(0.76, 0, 0.24, 1),
       page-enter 0.5s ease;
-  }
-
-  ::view-transition-group(root) {
-    background-color: black;
   }
 }
 

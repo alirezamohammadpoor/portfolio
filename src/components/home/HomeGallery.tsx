@@ -279,8 +279,17 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
 
       e.preventDefault();
 
-      const mediaEl = e.currentTarget.querySelector("img, video");
-      const rect = (mediaEl ?? e.currentTarget).getBoundingClientRect();
+      // The media element may live inside the clicked anchor (gallery slide)
+      // or in a sibling slide (when the click came from the ProjectCard link
+      // above the gallery). Fall back to the active slide ref so the clone
+      // still originates from the visible card either way.
+      const activeSlideEl = slideRefs.current[activeIndex];
+      const mediaEl =
+        e.currentTarget.querySelector("img, video") ??
+        activeSlideEl?.querySelector("img, video") ??
+        null;
+      const rectSource = mediaEl ?? activeSlideEl ?? e.currentTarget;
+      const rect = rectSource.getBoundingClientRect();
       const sourceRect = {
         top: rect.top,
         left: rect.left,
@@ -320,6 +329,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
         <Link
           href={`/project/${activeProject?.slug?.current}`}
           className="block w-full px-4 py-2 desktop:px-6 desktop:py-0"
+          onClick={(e) => activeProject && handleProjectClick(e, activeProject)}
         >
           <ProjectCard key={activeProject?._id} project={activeProject} />
         </Link>

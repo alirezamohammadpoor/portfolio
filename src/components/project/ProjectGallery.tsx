@@ -131,7 +131,7 @@ export default function ProjectGallery({
                 loop
                 playsInline
                 preload="metadata"
-                onLoadedData={i === 0 ? onFirstReady : undefined}
+                onLoadedMetadata={i === 0 ? onFirstReady : undefined}
               />
             )}
           </div>
