@@ -45,7 +45,7 @@ export default function CopyButton({
   const longerLabel = label.length > copiedLabel.length ? label : copiedLabel;
 
   return (
-    <div className="relative inline-block">
+    <div className="relative inline-block leading-[0]">
       {/* Desktop: floating tooltip above */}
       <div
         className={`pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden desktop:flex items-center justify-center rounded-full px-4 pt-[7px] pb-[5px] whitespace-nowrap bg-pistachio text-primary transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] ${hovered || copied ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}`}
@@ -71,8 +71,8 @@ export default function CopyButton({
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         aria-label={`Copy ${label.toLowerCase()}`}
-        className={`relative inline-flex items-center justify-center bg-transparent border-0 m-0 p-0 appearance-none focus:outline-none transition-[background-color,padding,color] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] desktop:!bg-transparent desktop:!p-0 ${
-          copied ? "rounded-full bg-pistachio text-primary px-3 py-[3px]" : ""
+        className={`relative inline-flex items-center justify-center border-0 m-0 p-0 appearance-none focus:outline-none transition-[background-color,padding,color] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] desktop:!bg-transparent desktop:!p-0 ${
+          copied ? "rounded-full bg-pistachio text-primary px-3 py-[3px]" : "bg-transparent"
         } ${className}`}
       >
         <span className="invisible">{longerLabel}</span>

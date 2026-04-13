@@ -160,7 +160,7 @@ export default function RichPreview({
 
   const videoCard = (width: string | number, mobile = false) => (
     <span className="relative flex flex-col" style={{ width }}>
-      <span className="flex flex-col overflow-hidden rounded-2xl bg-pistachio">
+      <span className="flex flex-col overflow-hidden rounded-2xl bg-lightpistachio">
         <span className="relative">
           {hasVideo ? (
             <>
@@ -227,7 +227,7 @@ export default function RichPreview({
           {hasVideo && (
             <span
               ref={progressRef}
-              className="absolute inset-0 origin-left bg-lightpistachio transition-none"
+              className="absolute inset-0 origin-left bg-pistachio transition-none"
               style={{ transform: "scaleX(0)" }}
             />
           )}
@@ -255,13 +255,13 @@ export default function RichPreview({
 
       {mobile && caretLeft !== null && placement === "above" && (
         <span
-          className="absolute top-full h-0 w-0 -translate-x-1/2 border-x-[6px] border-x-transparent border-t-[6px] border-t-pistachio"
+          className="absolute top-full h-0 w-0 -translate-x-1/2 border-x-[6px] border-x-transparent border-t-[6px] border-t-lightpistachio"
           style={{ left: caretLeft }}
         />
       )}
       {mobile && caretLeft !== null && placement === "below" && (
         <span
-          className="absolute bottom-full h-0 w-0 -translate-x-1/2 border-x-[6px] border-x-transparent border-b-[6px] border-b-pistachio"
+          className="absolute bottom-full h-0 w-0 -translate-x-1/2 border-x-[6px] border-x-transparent border-b-[6px] border-b-lightpistachio"
           style={{ left: caretLeft }}
         />
       )}
@@ -309,7 +309,7 @@ export default function RichPreview({
         }`}
       >
         {videoCard(600)}
-        <span className="hidden h-0 w-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-pistachio desktop:block" />
+        <span className="hidden h-0 w-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-lightpistachio desktop:block" />
       </span>
 
       <span ref={triggerRef} onClick={handleClick} className="cursor-pointer">

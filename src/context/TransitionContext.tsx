@@ -56,6 +56,9 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
   const [state, setState] = useState<TransitionState>(initial);
 
   const startTransition = useCallback((args: StartTransitionArgs) => {
+    if (typeof document !== "undefined") {
+      document.documentElement.dataset.customClone = "true";
+    }
     setState({
       isTransitioning: true,
       mediaType: args.mediaType,
@@ -72,6 +75,9 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
   }, []);
 
   const clearTransition = useCallback(() => {
+    if (typeof document !== "undefined") {
+      delete document.documentElement.dataset.customClone;
+    }
     setState(initial);
   }, []);
 

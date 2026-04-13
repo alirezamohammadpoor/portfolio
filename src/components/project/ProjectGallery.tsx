@@ -57,7 +57,6 @@ export default function ProjectGallery({
     );
 
     videos.forEach((video) => {
-      video.pause();
       observer.observe(video);
     });
 
@@ -105,7 +104,7 @@ export default function ProjectGallery({
               itemRefs.current[i] = el;
               if (i === 0) firstImageRef.current = el;
             }}
-            className={`relative w-full overflow-hidden ${isImage ? "bg-black" : "bg-tertiary"}`}
+            className="relative w-full overflow-hidden bg-black"
             style={{ aspectRatio: 4 / 3 }}
           >
             {isImage && item.image?.asset && (
@@ -127,6 +126,7 @@ export default function ProjectGallery({
                 src={fileUrl(item.video.asset._ref)}
                 className={`h-full w-full object-cover${i > 0 ? " scale-[1.06]" : ""}`}
                 aria-label={`${projectTitle} — ${i + 1}`}
+                autoPlay
                 muted
                 loop
                 playsInline

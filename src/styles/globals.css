@@ -230,10 +230,22 @@
   }
 }
 
-/* Mobile default: instant page swap (no browser default cross-fade).
-   Clone overlay carries the visual continuity. */
-::view-transition-old(root),
+/* Default page transition — same slide on mobile and desktop. */
+::view-transition-old(root) {
+  animation: page-exit 1.2s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+}
+
 ::view-transition-new(root) {
+  animation:
+    page-slide-in 1s cubic-bezier(0.76, 0, 0.24, 1),
+    page-enter 0.5s ease;
+}
+
+/* Custom clone path (home→project): suppress the page slide so the
+   clone overlay is the only visible motion. TransitionProvider toggles
+   this attribute on <html> around the transition lifecycle. */
+html[data-custom-clone] ::view-transition-old(root),
+html[data-custom-clone] ::view-transition-new(root) {
   animation: none;
 }
 
@@ -242,18 +254,6 @@
    the snapshot window. */
 ::view-transition-group(root) {
   background-color: black;
-}
-
-@media (min-width: 75rem) {
-  ::view-transition-old(root) {
-    animation: page-exit 1.2s cubic-bezier(0.76, 0, 0.24, 1) forwards;
-  }
-
-  ::view-transition-new(root) {
-    animation:
-      page-slide-in 1s cubic-bezier(0.76, 0, 0.24, 1),
-      page-enter 0.5s ease;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
