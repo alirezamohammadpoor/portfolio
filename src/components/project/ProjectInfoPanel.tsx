@@ -1,16 +1,19 @@
 import type { RefObject } from "react";
 import NextLink from "next/link";
 import { Link } from "next-view-transitions";
+import type { PortableTextBlock } from "next-sanity";
+import { PortableText } from "next-sanity";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import TechStack from "@/components/project/TechStack";
 import CopyButton from "@/components/CopyButton";
+import { portableTextComponents } from "@/components/portableText/components";
 
 interface ProjectInfoPanelProps {
   project: NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
   hidden: boolean;
   panelRef: RefObject<HTMLDivElement | null>;
   titleRef: RefObject<HTMLHeadingElement | null>;
-  descRef: RefObject<HTMLParagraphElement | null>;
+  descRef: RefObject<HTMLDivElement | null>;
   techRef: RefObject<HTMLDivElement | null>;
   linksRef: RefObject<HTMLDivElement | null>;
 }
@@ -35,11 +38,18 @@ export default function ProjectInfoPanel({
             {project.title}
           </h1>
         )}
-        {project.fullDescription && (
-          <p ref={descRef} className="mt-4 text-body text-primary">
-            {project.fullDescription}
-          </p>
-        )}
+        {Array.isArray(project.fullDescription) &&
+          project.fullDescription.length > 0 && (
+            <div
+              ref={descRef}
+              className="mt-4 text-body text-primary [&>p]:my-0 [&>p+p]:mt-3 [&>h2]:mt-12 [&>h3]:mt-10"
+            >
+              <PortableText
+                value={project.fullDescription as PortableTextBlock[]}
+                components={portableTextComponents}
+              />
+            </div>
+          )}
         {project.techStack && project.techStack.length > 0 && (
           <div ref={techRef} className="mt-6">
             <p className="text-sub text-secondary">Tech stack</p>

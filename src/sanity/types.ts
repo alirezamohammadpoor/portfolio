@@ -105,7 +105,63 @@ export type Project = {
   title?: string;
   slug?: Slug;
   shortDescription?: string;
-  fullDescription?: string;
+  fullDescription?: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>;
+          text?: string;
+          _type: "span";
+          _key: string;
+        }>;
+        style?:
+          | "normal"
+          | "h1"
+          | "h2"
+          | "h3"
+          | "h4"
+          | "h5"
+          | "h6"
+          | "blockquote";
+        listItem?: "bullet" | "number";
+        markDefs?: Array<
+          | {
+              href?: string;
+              _type: "link";
+              _key: string;
+            }
+          | {
+              explanation?: string;
+              _type: "glossary";
+              _key: string;
+            }
+          | {
+              videoUrl?: string;
+              image?: {
+                asset?: SanityImageAssetReference;
+                media?: unknown;
+                hotspot?: SanityImageHotspot;
+                crop?: SanityImageCrop;
+                _type: "image";
+              };
+              url?: string;
+              label?: string;
+              _type: "richPreview";
+              _key: string;
+            }
+        >;
+        level?: number;
+        _type: "block";
+        _key: string;
+      }
+    | {
+        asset?: SanityImageAssetReference;
+        media?: unknown;
+        hotspot?: SanityImageHotspot;
+        crop?: SanityImageCrop;
+        _type: "image";
+        _key: string;
+      }
+  >;
   techStack?: Array<string>;
   siteUrl?: string;
   sitePassword?: string;
@@ -211,6 +267,13 @@ export type JournalPost = {
             }
           | {
               videoUrl?: string;
+              image?: {
+                asset?: SanityImageAssetReference;
+                media?: unknown;
+                hotspot?: SanityImageHotspot;
+                crop?: SanityImageCrop;
+                _type: "image";
+              };
               url?: string;
               label?: string;
               _type: "richPreview";
@@ -252,6 +315,13 @@ export type JournalPost = {
               }
             | {
                 videoUrl?: string;
+                image?: {
+                  asset?: SanityImageAssetReference;
+                  media?: unknown;
+                  hotspot?: SanityImageHotspot;
+                  crop?: SanityImageCrop;
+                  _type: "image";
+                };
                 url?: string;
                 label?: string;
                 _type: "richPreview";
@@ -279,6 +349,13 @@ export type JournalPost = {
               }
             | {
                 videoUrl?: string;
+                image?: {
+                  asset?: SanityImageAssetReference;
+                  media?: unknown;
+                  hotspot?: SanityImageHotspot;
+                  crop?: SanityImageCrop;
+                  _type: "image";
+                };
                 url?: string;
                 label?: string;
                 _type: "richPreview";
@@ -484,7 +561,63 @@ export type PROJECTS_QUERY_RESULT = Array<{
   title: string | null;
   slug: Slug | null;
   shortDescription: string | null;
-  fullDescription: string | null;
+  fullDescription: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>;
+          text?: string;
+          _type: "span";
+          _key: string;
+        }>;
+        style?:
+          | "blockquote"
+          | "h1"
+          | "h2"
+          | "h3"
+          | "h4"
+          | "h5"
+          | "h6"
+          | "normal";
+        listItem?: "bullet" | "number";
+        markDefs?: Array<
+          | {
+              explanation?: string;
+              _type: "glossary";
+              _key: string;
+            }
+          | {
+              href?: string;
+              _type: "link";
+              _key: string;
+            }
+          | {
+              videoUrl?: string;
+              image?: {
+                asset?: SanityImageAssetReference;
+                media?: unknown;
+                hotspot?: SanityImageHotspot;
+                crop?: SanityImageCrop;
+                _type: "image";
+              };
+              url?: string;
+              label?: string;
+              _type: "richPreview";
+              _key: string;
+            }
+        >;
+        level?: number;
+        _type: "block";
+        _key: string;
+      }
+    | {
+        asset?: SanityImageAssetReference;
+        media?: unknown;
+        hotspot?: SanityImageHotspot;
+        crop?: SanityImageCrop;
+        _type: "image";
+        _key: string;
+      }
+  > | null;
   techStack: Array<string> | null;
   siteUrl: string | null;
   sitePassword: string | null;
@@ -563,7 +696,63 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
   title: string | null;
   slug: Slug | null;
   shortDescription: string | null;
-  fullDescription: string | null;
+  fullDescription: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>;
+          text?: string;
+          _type: "span";
+          _key: string;
+        }>;
+        style?:
+          | "blockquote"
+          | "h1"
+          | "h2"
+          | "h3"
+          | "h4"
+          | "h5"
+          | "h6"
+          | "normal";
+        listItem?: "bullet" | "number";
+        markDefs?: Array<
+          | {
+              explanation?: string;
+              _type: "glossary";
+              _key: string;
+            }
+          | {
+              href?: string;
+              _type: "link";
+              _key: string;
+            }
+          | {
+              videoUrl?: string;
+              image?: {
+                asset?: SanityImageAssetReference;
+                media?: unknown;
+                hotspot?: SanityImageHotspot;
+                crop?: SanityImageCrop;
+                _type: "image";
+              };
+              url?: string;
+              label?: string;
+              _type: "richPreview";
+              _key: string;
+            }
+        >;
+        level?: number;
+        _type: "block";
+        _key: string;
+      }
+    | {
+        asset?: SanityImageAssetReference;
+        media?: unknown;
+        hotspot?: SanityImageHotspot;
+        crop?: SanityImageCrop;
+        _type: "image";
+        _key: string;
+      }
+  > | null;
   techStack: Array<string> | null;
   siteUrl: string | null;
   sitePassword: string | null;
@@ -726,6 +915,13 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
             }
           | {
               videoUrl?: string;
+              image?: {
+                asset?: SanityImageAssetReference;
+                media?: unknown;
+                hotspot?: SanityImageHotspot;
+                crop?: SanityImageCrop;
+                _type: "image";
+              };
               url?: string;
               label?: string;
               _type: "richPreview";
@@ -767,6 +963,13 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
               }
             | {
                 videoUrl?: string;
+                image?: {
+                  asset?: SanityImageAssetReference;
+                  media?: unknown;
+                  hotspot?: SanityImageHotspot;
+                  crop?: SanityImageCrop;
+                  _type: "image";
+                };
                 url?: string;
                 label?: string;
                 _type: "richPreview";
@@ -794,6 +997,13 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
               }
             | {
                 videoUrl?: string;
+                image?: {
+                  asset?: SanityImageAssetReference;
+                  media?: unknown;
+                  hotspot?: SanityImageHotspot;
+                  crop?: SanityImageCrop;
+                  _type: "image";
+                };
                 url?: string;
                 label?: string;
                 _type: "richPreview";

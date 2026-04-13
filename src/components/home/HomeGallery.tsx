@@ -26,7 +26,6 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
   const cursorHintRef = useRef<HTMLDivElement>(null);
   const hasScrolled = useRef(false);
   const hasTapped = useRef(false);
-  const colorCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const router = useRouter();
   const { startTransition } = usePageTransition();
 
@@ -158,32 +157,6 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top + 24;
       gsap.to(cursor!, { x, y, duration: 0.5, ease: "power3.out" });
-
-      // Sample pixel color under cursor to determine text color
-      const img = wrapper!.querySelector("img") as HTMLImageElement | null;
-      if (img && img.complete) {
-        try {
-          if (!colorCanvasRef.current) {
-            colorCanvasRef.current = document.createElement("canvas");
-            colorCanvasRef.current.width = 1;
-            colorCanvasRef.current.height = 1;
-          }
-          const ctx = colorCanvasRef.current.getContext("2d");
-          if (ctx) {
-            const scaleX = img.naturalWidth / img.clientWidth;
-            const scaleY = img.naturalHeight / img.clientHeight;
-            const imgRect = img.getBoundingClientRect();
-            const sx = (e.clientX - imgRect.left) * scaleX;
-            const sy = (e.clientY - imgRect.top) * scaleY;
-            ctx.drawImage(img, sx, sy, 1, 1, 0, 0, 1, 1);
-            const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
-            const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-            cursor!.style.color = luminance > 0.5 ? "#1a1a1a" : "#f7f7f7";
-          }
-        } catch {
-          // CORS or other error — keep default color
-        }
-      }
     }
 
     function onEnter() {
@@ -359,10 +332,10 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
           ref={cursorHintRef}
           className="invisible pointer-events-none absolute left-0 top-0 z-10 hidden -translate-x-1/2 flex-col items-center gap-4 desktop:flex"
         >
-          <span className="text-sub uppercase" style={{ color: "inherit" }}>
+          <span className="text-sub font-medium uppercase text-white">
             Scroll to Explore
           </span>
-          <span className="text-sub uppercase" style={{ color: "inherit" }}>
+          <span className="text-sub font-medium uppercase text-white">
             Click to View
           </span>
         </div>

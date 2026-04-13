@@ -27,8 +27,84 @@ export const project = defineType({
     defineField({
       name: "fullDescription",
       title: "Full Description",
-      type: "text",
-      rows: 6,
+      type: "array",
+      of: [
+        {
+          type: "block",
+          marks: {
+            annotations: [
+              {
+                name: "link",
+                title: "Link",
+                type: "object",
+                fields: [
+                  defineField({
+                    name: "href",
+                    title: "URL",
+                    type: "url",
+                    validation: (rule) =>
+                      rule.uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
+                  }),
+                ],
+              },
+              {
+                name: "glossary",
+                title: "Glossary Term",
+                type: "object",
+                icon: () => "💡",
+                fields: [
+                  defineField({
+                    name: "explanation",
+                    title: "ELI5 Explanation",
+                    type: "text",
+                    rows: 2,
+                    description:
+                      "Simple explanation a non-technical person would understand",
+                    validation: (rule) => rule.required(),
+                  }),
+                ],
+              },
+              {
+                name: "richPreview",
+                title: "Rich Preview",
+                type: "object",
+                icon: () => "🎬",
+                fields: [
+                  defineField({
+                    name: "videoUrl",
+                    title: "Video URL",
+                    type: "url",
+                    description:
+                      "Direct URL to video file. Leave empty if using an image.",
+                  }),
+                  defineField({
+                    name: "image",
+                    title: "Image",
+                    type: "image",
+                    options: { hotspot: true },
+                    description:
+                      "Image to show in the preview. Used if no video URL is provided.",
+                  }),
+                  defineField({
+                    name: "url",
+                    title: "Link URL",
+                    type: "url",
+                    description: "Where 'See more →' links to",
+                  }),
+                  defineField({
+                    name: "label",
+                    title: "Label",
+                    type: "string",
+                    description:
+                      "Optional label above the preview (e.g. 'FKA twigs × Gentle Monster')",
+                  }),
+                ],
+              },
+            ],
+          },
+        },
+        { type: "image", options: { hotspot: true } },
+      ],
     }),
     defineField({
       name: "techStack",

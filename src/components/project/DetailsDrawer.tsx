@@ -3,8 +3,11 @@
 import { useRef, useCallback } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import type { PortableTextBlock } from "next-sanity";
+import { PortableText } from "next-sanity";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import TechStack from "./TechStack";
+import { portableTextComponents } from "@/components/portableText/components";
 
 interface DetailsDrawerProps {
   project: NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
@@ -96,8 +99,13 @@ export default function DetailsDrawer({ project, isOpen }: DetailsDrawerProps) {
         className="absolute inset-0 bg-pistachio [&_*::selection]:bg-lightpistachio"
       />
       <div className="relative">
-        {project.fullDescription && (
-          <p className="text-body text-primary">{project.fullDescription}</p>
+        {Array.isArray(project.fullDescription) && project.fullDescription.length > 0 && (
+          <div className="text-body text-primary [&>p]:my-0 [&>p+p]:mt-3 [&>h2]:mt-12 [&>h3]:mt-10">
+            <PortableText
+              value={project.fullDescription as PortableTextBlock[]}
+              components={portableTextComponents}
+            />
+          </div>
         )}
         {project.techStack && project.techStack.length > 0 && (
           <>

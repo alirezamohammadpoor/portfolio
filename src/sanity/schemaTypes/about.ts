@@ -20,7 +20,9 @@ export const about = defineType({
       name: "portrait",
       title: "Portrait",
       type: "image",
-      options: { hotspot: true },
+      options: {
+        hotspot: true,
+      },
     }),
     defineField({
       name: "email",

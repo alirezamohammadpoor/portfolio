@@ -84,4 +84,3 @@ export const PROJECT_SLUGS_QUERY = defineQuery(
 export const JOURNAL_POST_SLUGS_QUERY = defineQuery(
   `*[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current }`
 );
-
