@@ -6,7 +6,7 @@ import { Link } from "next-view-transitions";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
-import { urlFor } from "@/sanity/lib/image";
+import { urlFor, fileUrl } from "@/sanity/lib/image";
 import { usePageTransition } from "@/context/TransitionContext";
 import ProjectCard from "./ProjectCard";
 import MediaPanel from "./MediaPanel";
@@ -69,7 +69,10 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
           onComplete: () => {
             currentIndex = nextIndex;
             setActiveIndex(nextIndex);
-            isAnimating = false;
+            // Hold lock during trackpad inertia decay
+            setTimeout(() => {
+              isAnimating = false;
+            }, 400);
           },
         });
 
@@ -241,29 +244,45 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       e: React.MouseEvent<HTMLAnchorElement>,
       project: PROJECTS_QUERY_RESULT[number],
     ) => {
-      // Only intercept image covers — video covers navigate normally
-      if (
-        project.coverMedia?.type !== "image" ||
-        !project.coverMedia.image?.asset
-      )
-        return;
+      const coverMedia = project.coverMedia;
+      const image =
+        coverMedia?.type === "image" && coverMedia.image?.asset
+          ? coverMedia.image
+          : null;
+      const videoRef =
+        coverMedia?.type === "video" && coverMedia.video?.asset?._ref
+          ? coverMedia.video.asset._ref
+          : null;
+
+      if (!image && !videoRef) return;
 
       e.preventDefault();
 
-      const img = e.currentTarget.querySelector("img");
-      const rect = (img ?? e.currentTarget).getBoundingClientRect();
-      const imageUrl = urlFor(project.coverMedia.image)
-        .width(1200)
-        .quality(85)
-        .url();
-      const href = `/project/${project.slug?.current}`;
-
-      startTransition(imageUrl, {
+      const mediaEl = e.currentTarget.querySelector("img, video");
+      const rect = (mediaEl ?? e.currentTarget).getBoundingClientRect();
+      const sourceRect = {
         top: rect.top,
         left: rect.left,
         width: rect.width,
         height: rect.height,
-      });
+      };
+      const href = `/project/${project.slug?.current}`;
+
+      if (image) {
+        startTransition({
+          mediaType: "image",
+          imageUrl: urlFor(image).width(1200).quality(85).url(),
+          sourceRect,
+        });
+      } else if (videoRef) {
+        const videoEl = mediaEl as HTMLVideoElement | null;
+        startTransition({
+          mediaType: "video",
+          videoSrc: fileUrl(videoRef),
+          videoCurrentTime: videoEl?.currentTime ?? 0,
+          sourceRect,
+        });
+      }
 
       // Fade out the entire page, then navigate
       if (containerRef.current) {
@@ -291,7 +310,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
           href={`/project/${activeProject?.slug?.current}`}
           className="block w-full px-4 py-2 desktop:px-6 desktop:py-0"
         >
-          <ProjectCard project={activeProject} />
+          <ProjectCard key={activeProject?._id} project={activeProject} />
         </Link>
       </div>
 

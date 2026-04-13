@@ -9,7 +9,7 @@ import { useGSAP } from "@gsap/react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { lockScroll, unlockScroll } from "@/hooks/useScrollLock";
 
-type ProjectImages = NonNullable<NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["images"]>;
+type ProjectGalleryItems = NonNullable<NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["gallery"]>;
 
 interface Rect {
   top: number;
@@ -19,7 +19,7 @@ interface Rect {
 }
 
 interface UseGalleryScrollOptions {
-  images: ProjectImages;
+  gallery: ProjectGalleryItems;
   nextProjectSlug: string | undefined;
   prevProjectSlug: string | undefined;
   isTransitioning: boolean;
@@ -61,7 +61,7 @@ function toggleVisibility(
 }
 
 export function useGalleryScroll({
-  images,
+  gallery,
   nextProjectSlug,
   prevProjectSlug,
   isTransitioning,
@@ -250,7 +250,7 @@ export function useGalleryScroll({
     nextTextRef,
     prevTextWrapperRef,
     prevTextRef,
-    images,
+    gallery,
     scrollProgressElRef,
     mobileProgressElRef,
     footerWipeRef,

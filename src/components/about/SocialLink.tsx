@@ -1,6 +1,11 @@
 import NextLink from "next/link";
 
-export default function LinkedInLink({ href }: { href: string }) {
+interface SocialLinkProps {
+  href: string;
+  label: string;
+}
+
+export default function SocialLink({ href, label }: SocialLinkProps) {
   return (
     <NextLink
       href={href}
@@ -8,7 +13,7 @@ export default function LinkedInLink({ href }: { href: string }) {
       rel="noopener noreferrer"
       className="link-underline text-sub uppercase text-primary"
     >
-      LinkedIn
+      {label}
     </NextLink>
   );
 }

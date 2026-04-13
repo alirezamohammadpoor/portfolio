@@ -9,22 +9,38 @@ interface Rect {
   height: number;
 }
 
+type MediaType = "image" | "video";
+
 interface TransitionState {
   isTransitioning: boolean;
+  mediaType: MediaType | null;
   imageUrl: string | null;
+  videoSrc: string | null;
+  videoCurrentTime: number | null;
   sourceRect: Rect | null;
   targetRect: Rect | null;
 }
 
+interface StartTransitionArgs {
+  mediaType: MediaType;
+  imageUrl?: string;
+  videoSrc?: string;
+  videoCurrentTime?: number;
+  sourceRect: Rect;
+}
+
 interface TransitionContextValue extends TransitionState {
-  startTransition: (imageUrl: string, sourceRect: Rect) => void;
+  startTransition: (args: StartTransitionArgs) => void;
   animateClone: (targetRect: Rect) => void;
   clearTransition: () => void;
 }
 
 const initial: TransitionState = {
   isTransitioning: false,
+  mediaType: null,
   imageUrl: null,
+  videoSrc: null,
+  videoCurrentTime: null,
   sourceRect: null,
   targetRect: null,
 };
@@ -39,8 +55,16 @@ const TransitionContext = createContext<TransitionContextValue>({
 export function TransitionProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<TransitionState>(initial);
 
-  const startTransition = useCallback((imageUrl: string, sourceRect: Rect) => {
-    setState({ isTransitioning: true, imageUrl, sourceRect, targetRect: null });
+  const startTransition = useCallback((args: StartTransitionArgs) => {
+    setState({
+      isTransitioning: true,
+      mediaType: args.mediaType,
+      imageUrl: args.imageUrl ?? null,
+      videoSrc: args.videoSrc ?? null,
+      videoCurrentTime: args.videoCurrentTime ?? null,
+      sourceRect: args.sourceRect,
+      targetRect: null,
+    });
   }, []);
 
   const animateClone = useCallback((targetRect: Rect) => {

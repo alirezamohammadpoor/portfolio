@@ -44,13 +44,13 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
     nextTextRef,
     prevTextWrapperRef,
     prevTextRef,
-    images,
+    gallery,
     scrollProgressElRef,
     mobileProgressElRef,
     footerWipeRef,
     showMobileNav,
   } = useGalleryScroll({
-    images: project.images ?? [],
+    gallery: project.gallery ?? [],
     nextProjectSlug: nextProject?.slug?.current ?? undefined,
     prevProjectSlug: prevProject?.slug?.current ?? undefined,
     isTransitioning,
@@ -93,7 +93,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
       />
 
       <ProjectGallery
-        images={images}
+        gallery={gallery}
         projectTitle={project.title}
         galleryRef={galleryRef}
         firstImageRef={firstImageRef}
@@ -117,6 +117,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
       <Footer
         projectTitle={project.title ?? undefined}
         siteUrl={project.siteUrl ?? undefined}
+        sitePassword={project.sitePassword ?? undefined}
         caseStudySlug={project.caseStudy?.slug?.current ?? undefined}
         onDetailsToggle={() => setDetailsOpen((prev) => !prev)}
         detailsOpen={detailsOpen}

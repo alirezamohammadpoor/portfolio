@@ -3,6 +3,7 @@ import NextLink from "next/link";
 import { Link } from "next-view-transitions";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import TechStack from "@/components/project/TechStack";
+import CopyButton from "@/components/CopyButton";
 
 interface ProjectInfoPanelProps {
   project: NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
@@ -46,24 +47,27 @@ export default function ProjectInfoPanel({
           </div>
         )}
         <div ref={linksRef} className="mt-8 flex items-baseline gap-6">
-          {project.caseStudy?.slug?.current && (
-            <Link
-              href={`/journal/${project.caseStudy.slug.current}`}
-              data-pill
-              className="invisible rounded-full bg-pistachio px-4 pt-[7px] pb-[5px] text-sub uppercase text-primary hover:bg-lightpistachio transition-colors duration-200"
-            >
-              Case study
-            </Link>
-          )}
           {project.siteUrl && (
             <NextLink
               href={project.siteUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="link-underline text-sub uppercase text-primary"
+              data-pill
+              className="invisible rounded-full bg-pistachio px-4 pt-[7px] pb-[5px] text-sub uppercase text-primary hover:bg-lightpistachio transition-colors duration-200"
             >
               Visit website
             </NextLink>
+          )}
+          {project.sitePassword && (
+            <CopyButton value={project.sitePassword} label="Password" />
+          )}
+          {project.caseStudy?.slug?.current && (
+            <Link
+              href={`/journal/${project.caseStudy.slug.current}`}
+              className="link-underline text-sub uppercase text-primary"
+            >
+              Case study
+            </Link>
           )}
         </div>
       </div>

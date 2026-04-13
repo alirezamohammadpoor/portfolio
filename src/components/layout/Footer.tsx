@@ -6,6 +6,7 @@ import NextLink from "next/link";
 import { Link } from "next-view-transitions";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
+import CopyButton from "@/components/CopyButton";
 
 const FOOTER_HEIGHT = 40;
 const FOOTER_HEIGHT_EXPANDED = 72;
@@ -13,6 +14,7 @@ const FOOTER_HEIGHT_EXPANDED = 72;
 interface FooterProps {
   projectTitle?: string;
   siteUrl?: string;
+  sitePassword?: string;
   caseStudySlug?: string;
   onDetailsToggle?: () => void;
   detailsOpen?: boolean;
@@ -28,6 +30,7 @@ interface FooterProps {
 export default function Footer({
   projectTitle,
   siteUrl,
+  sitePassword,
   caseStudySlug,
   onDetailsToggle,
   detailsOpen = false,
@@ -121,14 +124,6 @@ export default function Footer({
               {detailsOpen ? "Close -" : "Details +"}
             </button>
           )}
-          {caseStudySlug && (
-            <Link
-              href={`/journal/${caseStudySlug}`}
-              className="text-sub text-primary"
-            >
-              Case study
-            </Link>
-          )}
           {siteUrl && (
             <NextLink
               href={siteUrl}
@@ -138,6 +133,21 @@ export default function Footer({
             >
               Visit website
             </NextLink>
+          )}
+          {sitePassword && (
+            <CopyButton
+              value={sitePassword}
+              label="Password"
+              className="text-sub text-primary cursor-pointer"
+            />
+          )}
+          {caseStudySlug && (
+            <Link
+              href={`/journal/${caseStudySlug}`}
+              className="text-sub text-primary"
+            >
+              Case study
+            </Link>
           )}
         </span>
       </div>

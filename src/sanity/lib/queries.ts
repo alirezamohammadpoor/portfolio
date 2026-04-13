@@ -8,10 +8,16 @@ const PROJECT_FIELDS = `
   fullDescription,
   techStack,
   siteUrl,
+  sitePassword,
   caseStudy->{ _id, slug },
   coverMedia,
-  images,
-  videos,
+  gallery[]{
+    ...,
+    _type == "galleryImage" => {
+      ...,
+      image { ..., asset-> { ..., metadata { dimensions } } }
+    }
+  },
   order
 `;
 
@@ -32,7 +38,8 @@ export const ABOUT_QUERY = defineQuery(`
     bio,
     portrait,
     email,
-    linkedinUrl
+    linkedinUrl,
+    githubUrl
   }
 `);
 

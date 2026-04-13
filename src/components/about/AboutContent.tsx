@@ -13,8 +13,8 @@ import {
 import type { ABOUT_QUERY_RESULT } from "@/sanity/types";
 import { urlFor } from "@/sanity/lib/image";
 import dynamic from "next/dynamic";
-import EmailCopyButton from "./EmailCopyButton";
-import LinkedInLink from "./LinkedInLink";
+import CopyButton from "@/components/CopyButton";
+import SocialLink from "./SocialLink";
 
 const SpotifyWidget = dynamic(() => import("./SpotifyWidget"), { ssr: false });
 
@@ -27,6 +27,7 @@ interface AboutContentProps {
   portrait?: AboutPortrait;
   email?: string | null;
   linkedinUrl?: string | null;
+  githubUrl?: string | null;
 }
 
 export default function AboutContent({
@@ -35,6 +36,7 @@ export default function AboutContent({
   portrait,
   email,
   linkedinUrl,
+  githubUrl,
 }: AboutContentProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -124,8 +126,9 @@ export default function AboutContent({
         </div>
 
         <div ref={linksRef} className="mt-6 flex items-baseline gap-8">
-          {linkedinUrl && <LinkedInLink href={linkedinUrl} />}
-          {email && <EmailCopyButton email={email} />}
+          {linkedinUrl && <SocialLink href={linkedinUrl} label="LinkedIn" />}
+          {githubUrl && <SocialLink href={githubUrl} label="GitHub" />}
+          {email && <CopyButton value={email} label="Email" />}
         </div>
 
         <div ref={spotifyRef} className="mt-6 max-w-[400px] invisible">

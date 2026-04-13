@@ -6,12 +6,14 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
-import { urlFor } from "@/sanity/lib/image";
+import { urlFor, fileUrl } from "@/sanity/lib/image";
 
-type ProjectImages = NonNullable<NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["images"]>;
+type ProjectGalleryItems = NonNullable<
+  NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["gallery"]
+>;
 
 interface ProjectGalleryProps {
-  images: ProjectImages;
+  gallery: ProjectGalleryItems;
   projectTitle: string | null;
   galleryRef: React.RefObject<HTMLDivElement | null>;
   firstImageRef: React.RefObject<HTMLDivElement | null>;
@@ -19,20 +21,20 @@ interface ProjectGalleryProps {
 }
 
 export default function ProjectGallery({
-  images,
+  gallery,
   projectTitle,
   galleryRef,
   firstImageRef,
   isTransitioning,
 }: ProjectGalleryProps) {
-  const imageRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  // Scroll-reveal + parallax (skip first image — clone transition targets it)
+  // Scroll-reveal + parallax (skip first item — clone transition targets it)
   useGSAP(
     () => {
       if (!galleryRef.current || isTransitioning) return;
 
-      imageRefs.current.forEach((el, i) => {
+      itemRefs.current.forEach((el, i) => {
         if (!el || i === 0) return;
 
         // Fade in on scroll
@@ -46,11 +48,11 @@ export default function ProjectGallery({
           },
         });
 
-        // Subtle parallax shift
-        const img = el.querySelector("img");
-        if (img) {
+        // Subtle parallax shift — works on both <img> and <video>
+        const media = el.querySelector("img, video");
+        if (media) {
           gsap.fromTo(
-            img,
+            media,
             { yPercent: 4 },
             {
               yPercent: -4,
@@ -66,7 +68,7 @@ export default function ProjectGallery({
         }
       });
     },
-    { scope: galleryRef, dependencies: [isTransitioning, images] },
+    { scope: galleryRef, dependencies: [isTransitioning, gallery] },
   );
 
   return (
@@ -74,27 +76,44 @@ export default function ProjectGallery({
       ref={galleryRef}
       className={`flex flex-col gap-2 px-4 pb-10 desktop:px-6 desktop:ml-[50%] desktop:w-1/2${isTransitioning ? " invisible" : ""}`}
     >
-      {images.map((image, i) => (
-        <div
-          key={image._key}
-          ref={(el) => {
-            imageRefs.current[i] = el;
-            if (i === 0) firstImageRef.current = el;
-          }}
-          className="relative h-[70dvh] w-full overflow-hidden bg-tertiary [content-visibility:auto] [contain-intrinsic-size:auto_70dvh]"
-        >
-          {image.asset && (
-            <Image
-              src={urlFor(image).width(1200).quality(85).url()}
-              alt={`${projectTitle} — ${i + 1}`}
-              fill
-              className={`object-cover${i > 0 ? " scale-[1.06]" : ""}`}
-              sizes="(min-width: 75rem) 50vw, 100vw"
-              priority={i === 0}
-            />
-          )}
-        </div>
-      ))}
+      {gallery.map((item, i) => {
+        const isImage = item._type === "galleryImage";
+
+        return (
+          <div
+            key={item._key}
+            ref={(el) => {
+              itemRefs.current[i] = el;
+              if (i === 0) firstImageRef.current = el;
+            }}
+            className={`relative w-full overflow-hidden ${isImage ? "bg-black" : "bg-tertiary"}`}
+            style={{ aspectRatio: 4 / 3 }}
+          >
+            {isImage && item.image?.asset && (
+              <Image
+                src={urlFor(item.image).width(1600).quality(85).url()}
+                alt={`${projectTitle} — ${i + 1}`}
+                fill
+                className={`object-cover${i > 0 ? " scale-[1.06]" : ""}`}
+                sizes="(min-width: 75rem) 50vw, 100vw"
+                priority={i === 0}
+              />
+            )}
+            {!isImage && item.video?.asset?._ref && (
+              <video
+                src={fileUrl(item.video.asset._ref)}
+                className={`h-full w-full object-cover${i > 0 ? " scale-[1.06]" : ""}`}
+                aria-label={`${projectTitle} — ${i + 1}`}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

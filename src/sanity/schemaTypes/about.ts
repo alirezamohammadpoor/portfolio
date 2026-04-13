@@ -32,5 +32,10 @@ export const about = defineType({
       title: "LinkedIn URL",
       type: "url",
     }),
+    defineField({
+      name: "githubUrl",
+      title: "GitHub URL",
+      type: "url",
+    }),
   ],
 });

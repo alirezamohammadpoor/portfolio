@@ -6,15 +6,23 @@ import { useGSAP } from "@gsap/react";
 import { usePageTransition } from "@/context/TransitionContext";
 
 export default function TransitionOverlay() {
-  const { isTransitioning, imageUrl, sourceRect, targetRect, clearTransition } =
-    usePageTransition();
-  const imgRef = useRef<HTMLImageElement>(null);
+  const {
+    isTransitioning,
+    mediaType,
+    imageUrl,
+    videoSrc,
+    videoCurrentTime,
+    sourceRect,
+    targetRect,
+    clearTransition,
+  } = usePageTransition();
+  const mediaRef = useRef<HTMLImageElement | HTMLVideoElement>(null);
 
   // Animate clone from sourceRect → targetRect
   useGSAP(() => {
-    if (!imgRef.current || !targetRect) return;
+    if (!mediaRef.current || !targetRect) return;
 
-    gsap.to(imgRef.current, {
+    gsap.to(mediaRef.current, {
       top: targetRect.top,
       left: targetRect.left,
       width: targetRect.width,
@@ -25,25 +33,51 @@ export default function TransitionOverlay() {
     });
   }, { dependencies: [targetRect, clearTransition] });
 
-  if (!isTransitioning || !imageUrl || !sourceRect) return null;
+  if (!isTransitioning || !sourceRect) return null;
 
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      ref={imgRef}
-      src={imageUrl}
-      alt=""
-      aria-hidden="true"
-      style={{
-        position: "fixed",
-        top: sourceRect.top,
-        left: sourceRect.left,
-        width: sourceRect.width,
-        height: sourceRect.height,
-        zIndex: 50,
-        objectFit: "cover",
-        pointerEvents: "none",
-      }}
-    />
-  );
+  const commonStyle: React.CSSProperties = {
+    position: "fixed",
+    top: sourceRect.top,
+    left: sourceRect.left,
+    width: sourceRect.width,
+    height: sourceRect.height,
+    zIndex: 50,
+    objectFit: "cover",
+    pointerEvents: "none",
+  };
+
+  if (mediaType === "video" && videoSrc) {
+    return (
+      <video
+        ref={mediaRef as React.RefObject<HTMLVideoElement>}
+        src={videoSrc}
+        autoPlay
+        muted
+        loop
+        playsInline
+        onLoadedMetadata={(e) => {
+          if (videoCurrentTime != null) {
+            e.currentTarget.currentTime = videoCurrentTime;
+          }
+        }}
+        style={commonStyle}
+        aria-hidden="true"
+      />
+    );
+  }
+
+  if (mediaType === "image" && imageUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        ref={mediaRef as React.RefObject<HTMLImageElement>}
+        src={imageUrl}
+        alt=""
+        aria-hidden="true"
+        style={commonStyle}
+      />
+    );
+  }
+
+  return null;
 }

@@ -20,6 +20,7 @@ export default async function AboutPage() {
         portrait={about?.portrait}
         email={about?.email}
         linkedinUrl={about?.linkedinUrl}
+        githubUrl={about?.githubUrl}
       />
     </div>
   );
