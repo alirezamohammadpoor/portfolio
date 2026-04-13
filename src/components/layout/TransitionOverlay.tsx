@@ -10,13 +10,12 @@ export default function TransitionOverlay() {
     isTransitioning,
     mediaType,
     imageUrl,
-    videoSrc,
-    videoCurrentTime,
+    sourceVideoElement,
     sourceRect,
     targetRect,
     clearTransition,
   } = usePageTransition();
-  const mediaRef = useRef<HTMLImageElement | HTMLVideoElement>(null);
+  const mediaRef = useRef<HTMLElement>(null);
 
   // Animate clone from sourceRect → targetRect via transform (compositor-friendly)
   useGSAP(() => {
@@ -53,18 +52,30 @@ export default function TransitionOverlay() {
     willChange: "transform",
   };
 
-  if (mediaType === "video" && videoSrc) {
+  // Video: paint the source video's current frame onto a canvas. Avoids
+  // the clone <video>'s decode pipeline (which paints black for
+  // 100–500ms on mobile after a route transition) and gives us an
+  // instant-ready clone that morphs cleanly. Canvas taint from a
+  // cross-origin drawImage only blocks readback methods — plain display
+  // works, so no CORS setup is needed.
+  if (mediaType === "video") {
     return (
-      <video
-        ref={mediaRef as React.RefObject<HTMLVideoElement>}
-        src={videoSrc}
-        autoPlay
-        muted
-        loop
-        playsInline
-        onLoadedMetadata={(e) => {
-          if (videoCurrentTime != null) {
-            e.currentTarget.currentTime = videoCurrentTime;
+      <canvas
+        ref={(el) => {
+          mediaRef.current = el;
+          if (!el || !sourceVideoElement) return;
+          const vw = sourceVideoElement.videoWidth;
+          const vh = sourceVideoElement.videoHeight;
+          if (vw === 0 || vh === 0) return;
+          el.width = vw;
+          el.height = vh;
+          const ctx = el.getContext("2d");
+          if (!ctx) return;
+          try {
+            ctx.drawImage(sourceVideoElement, 0, 0);
+          } catch {
+            // Source video not paintable yet (shouldn't happen since it's
+            // been autoplaying on the homepage, but don't crash if it does).
           }
         }}
         style={commonStyle}

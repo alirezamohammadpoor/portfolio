@@ -17,6 +17,7 @@ interface TransitionState {
   imageUrl: string | null;
   videoSrc: string | null;
   videoCurrentTime: number | null;
+  sourceVideoElement: HTMLVideoElement | null;
   sourceRect: Rect | null;
   targetRect: Rect | null;
 }
@@ -26,6 +27,7 @@ interface StartTransitionArgs {
   imageUrl?: string;
   videoSrc?: string;
   videoCurrentTime?: number;
+  sourceVideoElement?: HTMLVideoElement;
   sourceRect: Rect;
 }
 
@@ -41,6 +43,7 @@ const initial: TransitionState = {
   imageUrl: null,
   videoSrc: null,
   videoCurrentTime: null,
+  sourceVideoElement: null,
   sourceRect: null,
   targetRect: null,
 };
@@ -65,6 +68,7 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
       imageUrl: args.imageUrl ?? null,
       videoSrc: args.videoSrc ?? null,
       videoCurrentTime: args.videoCurrentTime ?? null,
+      sourceVideoElement: args.sourceVideoElement ?? null,
       sourceRect: args.sourceRect,
       targetRect: null,
     });

@@ -310,6 +310,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
           mediaType: "video",
           videoSrc: fileUrl(videoRef),
           videoCurrentTime: videoEl?.currentTime ?? 0,
+          sourceVideoElement: videoEl ?? undefined,
           sourceRect,
         });
       }
