@@ -22,8 +22,10 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const scrollHintRef = useRef<HTMLDivElement>(null);
+  const tapHintRef = useRef<HTMLDivElement>(null);
   const cursorHintRef = useRef<HTMLDivElement>(null);
   const hasScrolled = useRef(false);
+  const hasTapped = useRef(false);
   const colorCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const router = useRouter();
   const { startTransition } = usePageTransition();
@@ -225,6 +227,13 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
           { autoAlpha: 1, y: 0, duration: 0.6, ease: "power3.out", delay: 1.2 },
         );
       }
+      if (tapHintRef.current) {
+        gsap.fromTo(
+          tapHintRef.current,
+          { autoAlpha: 0, y: 10 },
+          { autoAlpha: 1, y: 0, duration: 0.6, ease: "power3.out", delay: 1.2 },
+        );
+      }
       // Desktop cursor hint — fade in with gallery entrance
       if (cursorHintRef.current) {
         gsap.fromTo(
@@ -244,6 +253,17 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       e: React.MouseEvent<HTMLAnchorElement>,
       project: PROJECTS_QUERY_RESULT[number],
     ) => {
+      if (!hasTapped.current) {
+        hasTapped.current = true;
+        if (tapHintRef.current) {
+          gsap.to(tapHintRef.current, {
+            autoAlpha: 0,
+            duration: 0.4,
+            ease: "power2.out",
+          });
+        }
+      }
+
       const coverMedia = project.coverMedia;
       const image =
         coverMedia?.type === "image" && coverMedia.image?.asset
@@ -320,13 +340,19 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
         data-lenis-prevent
         className="relative mt-2 h-[50dvh] overflow-hidden desktop:mt-0 desktop:w-1/2 desktop:h-full"
       >
-        {/* Mobile scroll hint — fixed at bottom center */}
+        {/* Mobile: scroll hint (bottom-left) */}
         <div
           ref={scrollHintRef}
-          className="invisible pointer-events-none absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1 desktop:hidden"
+          className="invisible pointer-events-none absolute bottom-4 left-4 z-10 flex flex-col items-start gap-1 desktop:hidden"
         >
-          <span className="text-sub uppercase text-primary">Scroll</span>
-          <div className="scroll-arrow" />
+          <span className="text-sub font-medium uppercase text-white">Scroll ↕</span>
+        </div>
+        {/* Mobile: tap hint (bottom-right) */}
+        <div
+          ref={tapHintRef}
+          className="invisible pointer-events-none absolute bottom-4 right-4 z-10 flex flex-col items-end gap-1 desktop:hidden"
+        >
+          <span className="text-sub font-medium uppercase text-white">Tap to view</span>
         </div>
         {/* Desktop cursor-follow hint */}
         <div

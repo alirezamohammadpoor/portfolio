@@ -44,7 +44,7 @@ export default function GlossaryTerm({
 
       gsap.set(el, {
         backgroundImage:
-          "linear-gradient(var(--color-pistachio), var(--color-pistachio))",
+          "linear-gradient(var(--color-lightpistachio), var(--color-lightpistachio))",
         backgroundRepeat: "no-repeat",
         backgroundPosition: "left center",
         backgroundSize: "0% 100%",

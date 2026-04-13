@@ -75,8 +75,14 @@ export const journalPost = defineType({
                     title: "Video URL",
                     type: "url",
                     description:
-                      "Direct URL to video file (Sanity media library, YouTube, etc.)",
-                    validation: (rule) => rule.required(),
+                      "Direct URL to video file (Sanity media library, YouTube, etc.). Leave empty if using an image.",
+                  }),
+                  defineField({
+                    name: "image",
+                    title: "Image",
+                    type: "image",
+                    options: { hotspot: true },
+                    description: "Image to show in the preview. Used if no video URL is provided.",
                   }),
                   defineField({
                     name: "url",
@@ -89,7 +95,7 @@ export const journalPost = defineType({
                     title: "Label",
                     type: "string",
                     description:
-                      "Optional label above video (e.g. 'FKA twigs × Gentle Monster')",
+                      "Optional label above the preview (e.g. 'FKA twigs × Gentle Monster')",
                   }),
                 ],
               },
@@ -161,8 +167,14 @@ export const journalPost = defineType({
                             title: "Video URL",
                             type: "url",
                             description:
-                              "Direct URL to video file (Sanity media library, YouTube, etc.)",
-                            validation: (rule) => rule.required(),
+                              "Direct URL to video file (Sanity media library, YouTube, etc.). Leave empty if using an image.",
+                          }),
+                          defineField({
+                            name: "image",
+                            title: "Image",
+                            type: "image",
+                            options: { hotspot: true },
+                            description: "Image to show in the preview. Used if no video URL is provided.",
                           }),
                           defineField({
                             name: "url",
@@ -175,7 +187,7 @@ export const journalPost = defineType({
                             title: "Label",
                             type: "string",
                             description:
-                              "Optional label above video (e.g. 'FKA twigs × Gentle Monster')",
+                              "Optional label above the preview (e.g. 'FKA twigs × Gentle Monster')",
                           }),
                         ],
                       },
@@ -226,8 +238,14 @@ export const journalPost = defineType({
                             title: "Video URL",
                             type: "url",
                             description:
-                              "Direct URL to video file (Sanity media library, YouTube, etc.)",
-                            validation: (rule) => rule.required(),
+                              "Direct URL to video file (Sanity media library, YouTube, etc.). Leave empty if using an image.",
+                          }),
+                          defineField({
+                            name: "image",
+                            title: "Image",
+                            type: "image",
+                            options: { hotspot: true },
+                            description: "Image to show in the preview. Used if no video URL is provided.",
                           }),
                           defineField({
                             name: "url",
@@ -240,7 +258,7 @@ export const journalPost = defineType({
                             title: "Label",
                             type: "string",
                             description:
-                              "Optional label above video (e.g. 'FKA twigs × Gentle Monster')",
+                              "Optional label above the preview (e.g. 'FKA twigs × Gentle Monster')",
                           }),
                         ],
                       },

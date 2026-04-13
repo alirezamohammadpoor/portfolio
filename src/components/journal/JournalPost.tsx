@@ -57,43 +57,90 @@ const portableTextComponents = {
       value,
       children,
     }: {
-      value?: { videoUrl?: string; url?: string; label?: string };
+      value?: {
+        videoUrl?: string;
+        image?: { asset?: { _ref: string }; alt?: string };
+        url?: string;
+        label?: string;
+      };
       children: React.ReactNode;
-    }) => (
-      <RichPreview
-        videoUrl={value?.videoUrl ?? ""}
-        url={value?.url}
-        label={value?.label}
-      >
-        {children}
-      </RichPreview>
-    ),
+    }) => {
+      const imageUrl = value?.image?.asset
+        ? urlFor(value.image).width(1200).quality(85).url()
+        : undefined;
+      return (
+        <RichPreview
+          videoUrl={value?.videoUrl}
+          imageUrl={imageUrl}
+          imageAlt={value?.image?.alt}
+          url={value?.url}
+          label={value?.label}
+        >
+          {children}
+        </RichPreview>
+      );
+    },
   },
   types: {
-    quote: ({ value }: { value: { text?: PortableTextBlock[]; attribution?: PortableTextBlock[] } }) => (
+    image: ({
+      value,
+    }: {
+      value: {
+        asset?: { _ref: string };
+        hotspot?: unknown;
+        crop?: unknown;
+        alt?: string;
+      };
+    }) => {
+      if (!value?.asset) return null;
+      return (
+        <div className="relative my-8 aspect-[4/3] w-full overflow-hidden">
+          <Image
+            src={urlFor(value).width(1400).quality(85).url()}
+            alt={value.alt ?? ""}
+            fill
+            className="object-contain"
+            sizes="(min-width: 75rem) 50vw, 100vw"
+          />
+        </div>
+      );
+    },
+    quote: ({
+      value,
+    }: {
+      value: { text?: PortableTextBlock[]; attribution?: PortableTextBlock[] };
+    }) => (
       <blockquote className="my-8">
         <div className="text-sub desktop:text-body text-primary font-medium italic [&>p]:inline">
           &ldquo;
           {value.text && (
-            <PortableText value={value.text} components={{
-              ...portableTextComponents,
-              marks: {
-                ...portableTextComponents.marks,
-                richPreview: ({ children }: { children: React.ReactNode }) => (
-                  <span>{children}</span>
-                ),
-                glossary: ({ children }: { children: React.ReactNode }) => (
-                  <span>{children}</span>
-                ),
-              },
-            }} />
+            <PortableText
+              value={value.text}
+              components={{
+                ...portableTextComponents,
+                marks: {
+                  ...portableTextComponents.marks,
+                  richPreview: ({
+                    children,
+                  }: {
+                    children: React.ReactNode;
+                  }) => <span>{children}</span>,
+                  glossary: ({ children }: { children: React.ReactNode }) => (
+                    <span>{children}</span>
+                  ),
+                },
+              }}
+            />
           )}
           &rdquo;
         </div>
         {value.attribution && (
           <cite className="mt-2 block text-sub desktop:text-body text-primary not-italic [&>p]:inline">
             —{" "}
-            <PortableText value={value.attribution} components={portableTextComponents} />
+            <PortableText
+              value={value.attribution}
+              components={portableTextComponents}
+            />
           </cite>
         )}
       </blockquote>
@@ -114,29 +161,32 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
   useBodyAnimation(excerptRef, heroRef, { duration: 2, delay: 1.3 });
 
   // Image, body, and carousel animations (opacity fade)
-  useGSAP(() => {
-    if (imageRef.current) {
-      gsap.fromTo(
-        imageRef.current,
-        { autoAlpha: 0 },
-        { autoAlpha: 1, duration: 1.5, ease: "power3.out", delay: 1 },
-      );
-    }
-    if (bodyRef.current) {
-      gsap.fromTo(
-        bodyRef.current,
-        { autoAlpha: 0, y: 20 },
-        { autoAlpha: 1, y: 0, duration: 1.2, ease: "power3.out", delay: 1.5 },
-      );
-    }
-    if (carouselRef.current) {
-      gsap.fromTo(
-        carouselRef.current,
-        { autoAlpha: 0, y: 30 },
-        { autoAlpha: 1, y: 0, duration: 1.2, ease: "power3.out", delay: 1.8 },
-      );
-    }
-  }, { scope: heroRef, dependencies: [post._id] });
+  useGSAP(
+    () => {
+      if (imageRef.current) {
+        gsap.fromTo(
+          imageRef.current,
+          { autoAlpha: 0 },
+          { autoAlpha: 1, duration: 1.5, ease: "power3.out", delay: 1 },
+        );
+      }
+      if (bodyRef.current) {
+        gsap.fromTo(
+          bodyRef.current,
+          { autoAlpha: 0, y: 20 },
+          { autoAlpha: 1, y: 0, duration: 1.2, ease: "power3.out", delay: 1.5 },
+        );
+      }
+      if (carouselRef.current) {
+        gsap.fromTo(
+          carouselRef.current,
+          { autoAlpha: 0, y: 30 },
+          { autoAlpha: 1, y: 0, duration: 1.2, ease: "power3.out", delay: 1.8 },
+        );
+      }
+    },
+    { scope: heroRef, dependencies: [post._id] },
+  );
 
   return (
     <>
@@ -191,7 +241,10 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
         )}
       </article>
       {relatedPosts.length > 0 && (
-        <section ref={carouselRef} className="invisible mx-auto desktop:max-w-[50vw] mt-16 pb-8 px-4 desktop:px-6">
+        <section
+          ref={carouselRef}
+          className="invisible mx-auto desktop:max-w-[50vw] mt-16 pb-8 px-4 desktop:px-6"
+        >
           <h4 className="uppercase">More posts</h4>
           <div className="mt-4 flex gap-2 overflow-x-auto snap-x snap-mandatory">
             {relatedPosts.map((relatedPost) => (
