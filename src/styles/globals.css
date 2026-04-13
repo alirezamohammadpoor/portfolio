@@ -230,6 +230,13 @@
   }
 }
 
+/* Mobile default: instant page swap (no browser default cross-fade).
+   Clone overlay carries the visual continuity. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+
 @media (min-width: 75rem) {
   ::view-transition-old(root) {
     animation: page-exit 1.2s cubic-bezier(0.76, 0, 0.24, 1) forwards;
