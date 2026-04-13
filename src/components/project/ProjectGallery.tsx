@@ -18,6 +18,7 @@ interface ProjectGalleryProps {
   galleryRef: React.RefObject<HTMLDivElement | null>;
   firstImageRef: React.RefObject<HTMLDivElement | null>;
   isTransitioning: boolean;
+  onFirstReady?: () => void;
 }
 
 export default function ProjectGallery({
@@ -26,6 +27,7 @@ export default function ProjectGallery({
   galleryRef,
   firstImageRef,
   isTransitioning,
+  onFirstReady,
 }: ProjectGalleryProps) {
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
@@ -114,6 +116,7 @@ export default function ProjectGallery({
                 className={`object-cover${i > 0 ? " scale-[1.06]" : ""}`}
                 sizes="(min-width: 75rem) 50vw, 100vw"
                 priority={i === 0}
+                onLoad={i === 0 ? onFirstReady : undefined}
               />
             )}
             {!isImage && item.video?.asset?._ref && (
@@ -128,6 +131,7 @@ export default function ProjectGallery({
                 loop
                 playsInline
                 preload="metadata"
+                onLoadedData={i === 0 ? onFirstReady : undefined}
               />
             )}
           </div>

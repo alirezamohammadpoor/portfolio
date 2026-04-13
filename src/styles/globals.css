@@ -230,18 +230,20 @@
   }
 }
 
-::view-transition-old(root) {
-  animation: page-exit 1.2s cubic-bezier(0.76, 0, 0.24, 1) forwards;
-}
+@media (min-width: 75rem) {
+  ::view-transition-old(root) {
+    animation: page-exit 1.2s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+  }
 
-::view-transition-new(root) {
-  animation:
-    page-slide-in 1s cubic-bezier(0.76, 0, 0.24, 1),
-    page-enter 0.5s ease;
-}
+  ::view-transition-new(root) {
+    animation:
+      page-slide-in 1s cubic-bezier(0.76, 0, 0.24, 1),
+      page-enter 0.5s ease;
+  }
 
-::view-transition-group(root) {
-  background-color: black;
+  ::view-transition-group(root) {
+    background-color: black;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

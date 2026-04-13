@@ -121,14 +121,44 @@ export function useGalleryScroll({
     return () => clearTimeout(timer);
   }, []);
 
-  // Animate clone to first image position (homepage → project transition)
-  useEffect(() => {
-    if (!isTransitioning || !firstImageRef.current) return;
+  // Animate clone to first image position (homepage → project transition).
+  // Wait for the destination first image to be ready (decoded) before morphing,
+  // so the clone doesn't land on a black box on slow mobile networks.
+  // Safety timeout fires the morph anyway after 600ms in case the load event
+  // never arrives (broken asset, decoder hang).
+  const firstReady = useRef(false);
+  const cloneFired = useRef(false);
+
+  const fireAnimateClone = useCallback(() => {
+    if (cloneFired.current) return;
+    if (!firstImageRef.current) return;
+    cloneFired.current = true;
     requestAnimationFrame(() => {
-      const rect = firstImageRef.current!.getBoundingClientRect();
+      const el = firstImageRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
       animateClone({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
     });
-  }, [isTransitioning, animateClone]);
+  }, [animateClone]);
+
+  const onFirstReady = useCallback(() => {
+    firstReady.current = true;
+    fireAnimateClone();
+  }, [fireAnimateClone]);
+
+  useEffect(() => {
+    if (!isTransitioning) {
+      cloneFired.current = false;
+      firstReady.current = false;
+      return;
+    }
+    if (firstReady.current) {
+      fireAnimateClone();
+      return;
+    }
+    const timeout = setTimeout(fireAnimateClone, 600);
+    return () => clearTimeout(timeout);
+  }, [isTransitioning, fireAnimateClone]);
 
   // Gallery scroll progress (0-100%) + hint visibility
   useGSAP(
@@ -255,5 +285,6 @@ export function useGalleryScroll({
     mobileProgressElRef,
     footerWipeRef,
     showMobileNav,
+    onFirstReady,
   };
 }

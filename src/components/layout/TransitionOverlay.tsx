@@ -18,20 +18,25 @@ export default function TransitionOverlay() {
   } = usePageTransition();
   const mediaRef = useRef<HTMLImageElement | HTMLVideoElement>(null);
 
-  // Animate clone from sourceRect → targetRect
+  // Animate clone from sourceRect → targetRect via transform (compositor-friendly)
   useGSAP(() => {
-    if (!mediaRef.current || !targetRect) return;
+    if (!mediaRef.current || !targetRect || !sourceRect) return;
+
+    const dx = targetRect.left - sourceRect.left;
+    const dy = targetRect.top - sourceRect.top;
+    const sx = targetRect.width / sourceRect.width;
+    const sy = targetRect.height / sourceRect.height;
 
     gsap.to(mediaRef.current, {
-      top: targetRect.top,
-      left: targetRect.left,
-      width: targetRect.width,
-      height: targetRect.height,
+      x: dx,
+      y: dy,
+      scaleX: sx,
+      scaleY: sy,
       duration: 0.7,
       ease: "power3.inOut",
       onComplete: clearTransition,
     });
-  }, { dependencies: [targetRect, clearTransition] });
+  }, { dependencies: [targetRect, sourceRect, clearTransition] });
 
   if (!isTransitioning || !sourceRect) return null;
 
@@ -44,6 +49,8 @@ export default function TransitionOverlay() {
     zIndex: 50,
     objectFit: "cover",
     pointerEvents: "none",
+    transformOrigin: "top left",
+    willChange: "transform",
   };
 
   if (mediaType === "video" && videoSrc) {

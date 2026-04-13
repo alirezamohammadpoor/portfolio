@@ -49,6 +49,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
     mobileProgressElRef,
     footerWipeRef,
     showMobileNav,
+    onFirstReady,
   } = useGalleryScroll({
     gallery: project.gallery ?? [],
     nextProjectSlug: nextProject?.slug?.current ?? undefined,
@@ -98,6 +99,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
         galleryRef={galleryRef}
         firstImageRef={firstImageRef}
         isTransitioning={isTransitioning}
+        onFirstReady={onFirstReady}
       />
 
       {!skip && (

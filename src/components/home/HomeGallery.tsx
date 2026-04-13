@@ -146,6 +146,34 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Prefetch the active project's route + preload its first gallery image.
+  // Mobile has no hover, so Next's Link prefetch never fires before tap —
+  // this gives the destination a head start so the clone overlay doesn't
+  // morph onto an empty box.
+  useEffect(() => {
+    const project = projects[activeIndex];
+    const slug = project?.slug?.current;
+    if (!slug) return;
+
+    router.prefetch(`/project/${slug}`);
+
+    const firstGalleryItem = project?.gallery?.[0];
+    if (
+      firstGalleryItem?._type === "galleryImage" &&
+      firstGalleryItem.image?.asset
+    ) {
+      const href = urlFor(firstGalleryItem.image).width(1600).quality(85).url();
+      const link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "image";
+      link.href = href;
+      document.head.appendChild(link);
+      return () => {
+        document.head.removeChild(link);
+      };
+    }
+  }, [activeIndex, projects, router]);
+
   // Desktop: cursor-follow scroll hint with adaptive color
   useEffect(() => {
     const wrapper = wrapperRef.current;
