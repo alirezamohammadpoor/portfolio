@@ -277,17 +277,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
         });
       }
 
-      // Fade out the entire page, then navigate
-      if (containerRef.current) {
-        gsap.to(containerRef.current, {
-          autoAlpha: 0,
-          duration: 0.3,
-          ease: "power2.in",
-          onComplete: () => router.push(href),
-        });
-      } else {
-        router.push(href);
-      }
+      router.push(href);
     },
     [startTransition, router],
   );
