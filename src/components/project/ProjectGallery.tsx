@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -28,6 +28,42 @@ export default function ProjectGallery({
   isTransitioning,
 }: ProjectGalleryProps) {
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+
+  useEffect(() => {
+    const videos = videoRefs.current.filter(Boolean) as HTMLVideoElement[];
+    if (!videos.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const video = entry.target as HTMLVideoElement;
+          if (entry.isIntersecting) {
+            const playPromise = video.play();
+            if (playPromise && typeof playPromise.catch === "function") {
+              playPromise.catch(() => {});
+            }
+          } else {
+            video.pause();
+          }
+        });
+      },
+      {
+        threshold: 0.35,
+        rootMargin: "150px 0px",
+      },
+    );
+
+    videos.forEach((video) => {
+      video.pause();
+      observer.observe(video);
+    });
+
+    return () => {
+      observer.disconnect();
+      videos.forEach((video) => video.pause());
+    };
+  }, [gallery]);
 
   // Scroll-reveal + parallax (skip first item — clone transition targets it)
   useGSAP(
@@ -47,25 +83,6 @@ export default function ProjectGallery({
             gsap.to(el, { opacity: 1, y: 0, duration: 1, ease: "power3.out" });
           },
         });
-
-        // Subtle parallax shift — works on both <img> and <video>
-        const media = el.querySelector("img, video");
-        if (media) {
-          gsap.fromTo(
-            media,
-            { yPercent: 4 },
-            {
-              yPercent: -4,
-              ease: "none",
-              scrollTrigger: {
-                trigger: el,
-                start: "top bottom",
-                end: "bottom top",
-                scrub: true,
-              },
-            },
-          );
-        }
       });
     },
     { scope: galleryRef, dependencies: [isTransitioning, gallery] },
@@ -101,10 +118,12 @@ export default function ProjectGallery({
             )}
             {!isImage && item.video?.asset?._ref && (
               <video
+                ref={(el) => {
+                  videoRefs.current[i] = el;
+                }}
                 src={fileUrl(item.video.asset._ref)}
                 className={`h-full w-full object-cover${i > 0 ? " scale-[1.06]" : ""}`}
                 aria-label={`${projectTitle} — ${i + 1}`}
-                autoPlay
                 muted
                 loop
                 playsInline
