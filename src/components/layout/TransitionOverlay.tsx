@@ -16,26 +16,24 @@ export default function TransitionOverlay() {
     clearTransition,
   } = usePageTransition();
   const mediaRef = useRef<HTMLElement>(null);
+  const targetKey = targetRect
+    ? `${targetRect.top}:${targetRect.left}:${targetRect.width}:${targetRect.height}`
+    : "none";
 
-  // Animate clone from sourceRect → targetRect via transform (compositor-friendly)
+  // Animate clone from sourceRect → targetRect
   useGSAP(() => {
-    if (!mediaRef.current || !targetRect || !sourceRect) return;
-
-    const dx = targetRect.left - sourceRect.left;
-    const dy = targetRect.top - sourceRect.top;
-    const sx = targetRect.width / sourceRect.width;
-    const sy = targetRect.height / sourceRect.height;
+    if (!mediaRef.current || !targetRect) return;
 
     gsap.to(mediaRef.current, {
-      x: dx,
-      y: dy,
-      scaleX: sx,
-      scaleY: sy,
+      top: targetRect.top,
+      left: targetRect.left,
+      width: targetRect.width,
+      height: targetRect.height,
       duration: 0.7,
       ease: "power3.inOut",
       onComplete: clearTransition,
     });
-  }, { dependencies: [targetRect, sourceRect, clearTransition] });
+  }, { dependencies: [targetKey, clearTransition] });
 
   if (!isTransitioning || !sourceRect) return null;
 
@@ -48,8 +46,6 @@ export default function TransitionOverlay() {
     zIndex: 50,
     objectFit: "cover",
     pointerEvents: "none",
-    transformOrigin: "top left",
-    willChange: "transform",
   };
 
   // Video: paint the source video's current frame onto a canvas. Avoids
