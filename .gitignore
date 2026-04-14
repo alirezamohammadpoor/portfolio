@@ -42,6 +42,7 @@ next-env.d.ts
 # sanity
 .sanity/
 schema.json
+*.tar.gz
 
 # claude
 .claude/
