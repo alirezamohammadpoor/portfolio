@@ -69,7 +69,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
       >
         <div className="px-4 py-6 desktop:flex desktop:w-1/2 desktop:items-center desktop:px-6">
           <div>
-            <h1 ref={titleRef} className="text-primary">
+            <h1 ref={titleRef} className="text-primary text-[32px] leading-[40px] desktop:text-[48px] desktop:leading-[56px] font-normal">
               {post.title}
             </h1>
             {post.excerpt && (
@@ -103,7 +103,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
         {post.body && (
           <div
             ref={bodyRef}
-            className="invisible text-sub desktop:text-body text-primary space-y-4 [&>h2]:mt-12 [&>h3]:mt-10"
+            className="invisible text-sub desktop:text-body text-primary space-y-4 mx-auto max-w-[75ch] [&>h2]:mt-12 [&>h3]:mt-10 [&>h4]:mt-8 [&_h2]:text-[32px] [&_h2]:leading-[40px] desktop:[&_h2]:text-[40px] desktop:[&_h2]:leading-[48px] [&_h3]:text-[24px] [&_h3]:leading-[32px] desktop:[&_h3]:text-[32px] desktop:[&_h3]:leading-[40px] [&_h4]:text-[16px] [&_h4]:leading-[24px] desktop:[&_h4]:text-[24px] desktop:[&_h4]:leading-[32px] [&_h5]:text-[14px] [&_h5]:leading-[20px] desktop:[&_h5]:text-[20px] desktop:[&_h5]:leading-[28px] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
           >
             <PortableText
               value={post.body as PortableTextBlock[]}

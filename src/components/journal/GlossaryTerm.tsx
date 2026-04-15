@@ -133,7 +133,16 @@ export default function GlossaryTerm({
             document.body,
           )}
 
-        <span ref={triggerRef} onClick={handleClick} className="cursor-pointer">
+        <span
+          ref={triggerRef}
+          role="button"
+          tabIndex={0}
+          aria-label={`Definition: ${explanation}`}
+          aria-expanded={visible}
+          onClick={handleClick}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(e as unknown as MouseEvent<HTMLSpanElement>); } }}
+          className="cursor-pointer"
+        >
           {children}
         </span>
       </span>
@@ -156,9 +165,19 @@ export default function GlossaryTerm({
 
       <span
         ref={triggerRef}
+        role="button"
+        tabIndex={0}
+        aria-label={`Definition: ${explanation}`}
+        aria-expanded={visible}
         onClick={handleClick}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(e as unknown as MouseEvent<HTMLSpanElement>); } }}
         onMouseEnter={() => setVisible(true)}
         onMouseLeave={() => {
+          setVisible(false);
+          if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        }}
+        onFocus={() => setVisible(true)}
+        onBlur={() => {
           setVisible(false);
           if (timeoutRef.current) clearTimeout(timeoutRef.current);
         }}
