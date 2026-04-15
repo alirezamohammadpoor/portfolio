@@ -94,40 +94,44 @@ export const portableTextComponents = {
     }: {
       value: { text?: PortableTextBlock[]; attribution?: PortableTextBlock[] };
     }) => (
-      <blockquote className="my-8">
-        <div className="text-sub desktop:text-body text-primary font-medium italic [&>p]:inline">
-          &ldquo;
-          {value.text && (
-            <PortableText
-              value={value.text}
-              components={{
-                ...portableTextComponents,
-                marks: {
-                  ...portableTextComponents.marks,
-                  richPreview: ({
-                    children,
-                  }: {
-                    children: React.ReactNode;
-                  }) => <span>{children}</span>,
-                  glossary: ({ children }: { children: React.ReactNode }) => (
-                    <span>{children}</span>
-                  ),
-                },
-              }}
-            />
-          )}
-          &rdquo;
-        </div>
+      <figure className="my-8 border-l border-primary pl-4">
+        <blockquote>
+          <p className="text-sub desktop:text-body text-primary font-medium italic [&>p]:inline">
+            &ldquo;
+            {value.text && (
+              <PortableText
+                value={value.text}
+                components={{
+                  ...portableTextComponents,
+                  marks: {
+                    ...portableTextComponents.marks,
+                    richPreview: ({
+                      children,
+                    }: {
+                      children: React.ReactNode;
+                    }) => <span>{children}</span>,
+                    glossary: ({ children }: { children: React.ReactNode }) => (
+                      <span>{children}</span>
+                    ),
+                  },
+                }}
+              />
+            )}
+            &rdquo;
+          </p>
+        </blockquote>
         {value.attribution && (
-          <cite className="mt-2 block text-sub desktop:text-body text-primary not-italic [&>p]:inline">
-            —{" "}
-            <PortableText
-              value={value.attribution}
-              components={portableTextComponents}
-            />
-          </cite>
+          <figcaption className="mt-2">
+            <cite className="block text-sub desktop:text-body text-primary not-italic [&>p]:inline">
+              —{" "}
+              <PortableText
+                value={value.attribution}
+                components={portableTextComponents}
+              />
+            </cite>
+          </figcaption>
         )}
-      </blockquote>
+      </figure>
     ),
   },
 };

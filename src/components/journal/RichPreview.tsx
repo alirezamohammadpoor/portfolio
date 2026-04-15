@@ -241,6 +241,7 @@ export default function RichPreview({
               href={url}
               target="_blank"
               rel="noopener noreferrer"
+              aria-label={label ? `See more about ${label}` : "See more"}
               onClick={(e) => {
                 e.stopPropagation();
                 videoRef.current?.pause();
@@ -291,7 +292,16 @@ export default function RichPreview({
             document.body,
           )}
 
-        <span ref={triggerRef} onClick={handleClick} className="cursor-pointer">
+        <span
+          ref={triggerRef}
+          role="button"
+          tabIndex={0}
+          aria-label={label ? `Preview: ${label}` : "Show preview"}
+          aria-expanded={visible}
+          onClick={handleClick}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(e as unknown as MouseEvent<HTMLSpanElement>); } }}
+          className="cursor-pointer"
+        >
           {children}
         </span>
       </span>
@@ -299,7 +309,13 @@ export default function RichPreview({
   }
 
   return (
-    <span className="relative inline" onMouseEnter={show} onMouseLeave={hide}>
+    <span
+      className="relative inline"
+      onMouseEnter={show}
+      onMouseLeave={hide}
+      onFocus={show}
+      onBlur={hide}
+    >
       <span
         ref={popupRef}
         className={`fixed top-1/2 left-1/2 z-50 mb-0 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] desktop:absolute desktop:bottom-full desktop:top-auto desktop:-translate-x-1/2 desktop:translate-y-0 ${
@@ -312,7 +328,16 @@ export default function RichPreview({
         <span className="hidden h-0 w-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-lightpistachio desktop:block" />
       </span>
 
-      <span ref={triggerRef} onClick={handleClick} className="cursor-pointer">
+      <span
+        ref={triggerRef}
+        role="button"
+        tabIndex={0}
+        aria-label={label ? `Preview: ${label}` : "Show preview"}
+        aria-expanded={visible}
+        onClick={handleClick}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(e as unknown as MouseEvent<HTMLSpanElement>); } }}
+        className="cursor-pointer"
+      >
         {children}
       </span>
     </span>
