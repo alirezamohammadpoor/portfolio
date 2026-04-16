@@ -45,5 +45,5 @@ export default async function JournalPostPage({
     notFound();
   }
 
-  return <JournalPost post={post} relatedPosts={post.relatedPosts ?? []} />;
+  return <JournalPost key={post._id} post={post} relatedPosts={post.relatedPosts ?? []} />;
 }

@@ -95,30 +95,28 @@ export const portableTextComponents = {
       value: { text?: PortableTextBlock[]; attribution?: PortableTextBlock[] };
     }) => (
       <figure className="my-8 border-l border-primary pl-4">
-        <blockquote>
-          <p className="text-sub desktop:text-body text-primary font-medium italic [&>p]:inline">
-            &ldquo;
-            {value.text && (
-              <PortableText
-                value={value.text}
-                components={{
-                  ...portableTextComponents,
-                  marks: {
-                    ...portableTextComponents.marks,
-                    richPreview: ({
-                      children,
-                    }: {
-                      children: React.ReactNode;
-                    }) => <span>{children}</span>,
-                    glossary: ({ children }: { children: React.ReactNode }) => (
-                      <span>{children}</span>
-                    ),
-                  },
-                }}
-              />
-            )}
-            &rdquo;
-          </p>
+        <blockquote className="text-sub desktop:text-body text-primary font-medium italic [&>p]:inline">
+          &ldquo;
+          {value.text && (
+            <PortableText
+              value={value.text}
+              components={{
+                ...portableTextComponents,
+                marks: {
+                  ...portableTextComponents.marks,
+                  richPreview: ({
+                    children,
+                  }: {
+                    children: React.ReactNode;
+                  }) => <span>{children}</span>,
+                  glossary: ({ children }: { children: React.ReactNode }) => (
+                    <span>{children}</span>
+                  ),
+                },
+              }}
+            />
+          )}
+          &rdquo;
         </blockquote>
         {value.attribution && (
           <figcaption className="mt-2">

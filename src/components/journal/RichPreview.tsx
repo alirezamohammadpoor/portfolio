@@ -78,7 +78,7 @@ export default function RichPreview({
         },
       });
     },
-    { scope: triggerRef, dependencies: [isMobile] },
+    { scope: triggerRef, dependencies: [isMobile, videoUrl, imageUrl, label] },
   );
 
   const tick = () => {
