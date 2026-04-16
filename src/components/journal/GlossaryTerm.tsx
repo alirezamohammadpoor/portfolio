@@ -64,7 +64,7 @@ export default function GlossaryTerm({
         },
       });
     },
-    { scope: triggerRef, dependencies: [isMobile] },
+    { scope: triggerRef, dependencies: [isMobile, explanation] },
   );
 
   const handleClick = (event: MouseEvent<HTMLSpanElement>) => {
