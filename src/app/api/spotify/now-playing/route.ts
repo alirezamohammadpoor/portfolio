@@ -45,14 +45,21 @@ async function fetchSpotifyData(): Promise<{ data: Record<string, unknown>; stat
     fetch("https://api.spotify.com/v1/me/player/recently-played?limit=1", { headers }),
   ]);
 
-  // Check currently playing first (includes paused tracks)
+  // Trust currently-playing when either:
+  //   (a) the track is actively playing (is_playing: true), OR
+  //   (b) the track is paused mid-playback (is_playing: false but progress_ms > 0) —
+  //       the user actually listened to part of it, so it's the "last listened" track.
+  // Skip when the track is just queued/loaded with progress_ms == 0 — that wasn't
+  // listened to, it was just selected. Fall through to recently-played in that case.
   if (nowRes.status === 200) {
     const now = await nowRes.json();
-    if (now?.item) {
+    const progressMs = typeof now?.progress_ms === "number" ? now.progress_ms : 0;
+    const isPlayingNow = now?.is_playing === true;
+    if (now?.item && (isPlayingNow || progressMs > 0)) {
       return {
         status: 200,
         data: {
-          isPlaying: now.is_playing === true,
+          isPlaying: isPlayingNow,
           title: now.item.name,
           artist: now.item.artists.map((a: { name: string }) => a.name).join(", "),
           album: now.item.album.name,
@@ -64,7 +71,9 @@ async function fetchSpotifyData(): Promise<{ data: Record<string, unknown>; stat
     }
   }
 
-  // Fall back to recently played
+  // Fall back to recently played (covers paused + nothing-loaded cases, plus
+  // cases where `currently-playing` returns 204 even though a track is active —
+  // happens when Spotify can't see the user's device through the API).
   const recent = await recentRes.json();
   const item = recent.items?.[0];
 
@@ -72,10 +81,17 @@ async function fetchSpotifyData(): Promise<{ data: Record<string, unknown>; stat
     return { status: 404, data: { error: "No data" } };
   }
 
+  // Infer "still playing" from timestamp + duration. Spotify's `played_at`
+  // is when the track started, so if now < played_at + duration_ms the track
+  // is almost certainly still playing, just not visible to `currently-playing`.
+  const playedAtMs = new Date(item.played_at).getTime();
+  const durationMs = typeof item.track.duration_ms === "number" ? item.track.duration_ms : 0;
+  const inferredStillPlaying = Date.now() < playedAtMs + durationMs;
+
   return {
     status: 200,
     data: {
-      isPlaying: false,
+      isPlaying: inferredStillPlaying,
       title: item.track.name,
       artist: item.track.artists.map((a: { name: string }) => a.name).join(", "),
       album: item.track.album.name,

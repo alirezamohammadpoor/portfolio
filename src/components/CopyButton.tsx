@@ -42,12 +42,10 @@ export default function CopyButton({
     } catch {}
   };
 
-  const longerLabel = label.length > copiedLabel.length ? label : copiedLabel;
-
   return (
-    <div className="relative inline-block leading-[0]">
+    <span className="relative inline-block">
       {/* Desktop: floating tooltip above */}
-      <div
+      <span
         className={`pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden desktop:flex items-center justify-center rounded-full px-4 pt-[7px] pb-[5px] whitespace-nowrap bg-pistachio text-primary transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] ${hovered || copied ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}`}
       >
         <span className="text-sub uppercase invisible">
@@ -63,7 +61,7 @@ export default function CopyButton({
         >
           {copiedLabel}
         </span>
-      </div>
+      </span>
 
       <button
         data-animate
@@ -71,12 +69,18 @@ export default function CopyButton({
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         aria-label={`Copy ${label.toLowerCase()}`}
-        className={`relative inline-flex items-center justify-center border-0 m-0 p-0 appearance-none focus:outline-none transition-[background-color,padding,color] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] desktop:!bg-transparent desktop:!p-0 ${
-          copied ? "rounded-full bg-pistachio text-primary px-3 py-[3px]" : "bg-transparent"
-        } ${className}`}
+        className={`relative inline-block border-0 m-0 p-0 bg-transparent appearance-none focus:outline-none align-baseline ${className}`}
       >
-        <span className="invisible">{longerLabel}</span>
-        <span className="absolute inset-0 flex items-center justify-center">
+        {/* Pill background — absolute, extends outside button bounds (negative insets)
+            so it doesn't affect the button's own size, which keeps alignment with
+            sibling links stable. Only visible on mobile when copied. */}
+        <span
+          aria-hidden
+          className={`pointer-events-none absolute -left-3 -right-3 -top-[3px] -bottom-[3px] rounded-full transition-colors duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] desktop:!bg-transparent ${
+            copied ? "bg-pistachio" : "bg-transparent"
+          }`}
+        />
+        <span className="relative">
           {copied ? (
             <>
               <span className="desktop:hidden">{copiedLabel}</span>
@@ -87,6 +91,6 @@ export default function CopyButton({
           )}
         </span>
       </button>
-    </div>
+    </span>
   );
 }
