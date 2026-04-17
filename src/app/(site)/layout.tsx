@@ -11,13 +11,35 @@ import TransitionOverlay from "@/components/layout/TransitionOverlay";
 import { SanityLive } from "@/sanity/lib/live";
 import "@/styles/globals.css";
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://alirezamp.com";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: "Ali Reza Mohammad Poor | Developer",
     template: "%s | Ali Reza Mohammad Poor",
   },
   description:
     "Portfolio of Ali Reza Mohammad Poor — Full-stack developer and creative technologist.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Ali Reza Mohammad Poor",
+    locale: "en_US",
+    url: "/",
+    title: "Ali Reza Mohammad Poor | Developer",
+    description:
+      "Portfolio of Ali Reza Mohammad Poor — Full-stack developer and creative technologist.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ali Reza Mohammad Poor | Developer",
+    description:
+      "Portfolio of Ali Reza Mohammad Poor — Full-stack developer and creative technologist.",
+  },
 };
 
 export default async function SiteLayout({
