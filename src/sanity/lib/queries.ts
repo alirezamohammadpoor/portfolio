@@ -19,7 +19,8 @@ const PROJECT_FIELDS = `
       image { ..., asset-> { ..., metadata { dimensions } } }
     }
   },
-  order
+  order,
+  seo { title, description, ogImage, noIndex }
 `;
 
 const JOURNAL_FIELDS = `
@@ -31,7 +32,8 @@ const JOURNAL_FIELDS = `
   coverImage,
   tags,
   publishedAt,
-  relatedProject->{ _id, title, slug }
+  relatedProject->{ _id, title, slug },
+  seo { title, description, ogImage, noIndex }
 `;
 
 export const ABOUT_QUERY = defineQuery(`
