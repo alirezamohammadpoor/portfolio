@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import Image from "next/image";
+import { Link } from "next-view-transitions";
 import type { PortableTextBlock } from "next-sanity";
 import { PortableText } from "next-sanity";
 import gsap from "gsap";
@@ -80,6 +81,22 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
                 {post.excerpt}
               </p>
             )}
+            {post.publishedAt && (
+              <p className="mt-6 text-sub text-secondary">
+                By{" "}
+                <Link href="/about" className="underline decoration-secondary underline-offset-2 hover:decoration-primary">
+                  Ali Reza Mohammad Poor
+                </Link>
+                {" · "}
+                <time dateTime={post.publishedAt}>
+                  {new Date(post.publishedAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </time>
+              </p>
+            )}
           </div>
         </div>
         {post.coverImage?.asset && (
@@ -89,7 +106,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
           >
             <Image
               src={urlFor(post.coverImage).width(1920).quality(85).url()}
-              alt={post.title ?? ""}
+              alt={post.coverImage.alt ?? post.title ?? ""}
               fill
               className="object-cover"
               sizes="(min-width: 75rem) 50vw, 100vw"

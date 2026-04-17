@@ -38,21 +38,27 @@ export async function generateMetadata({
   if (!project) return {};
 
   const canonicalPath = `/project/${project.slug?.current ?? slug}`;
+  const seoTitle = project.seo?.title ?? project.title ?? undefined;
+  const seoDescription =
+    project.seo?.description ?? project.shortDescription ?? undefined;
 
   return {
-    title: project.title,
-    description: project.shortDescription ?? undefined,
+    title: seoTitle,
+    description: seoDescription,
     alternates: { canonical: canonicalPath },
+    ...(project.seo?.noIndex && {
+      robots: { index: false, follow: false },
+    }),
     openGraph: {
       type: "article",
-      title: project.title ?? undefined,
-      description: project.shortDescription ?? undefined,
+      title: seoTitle,
+      description: seoDescription,
       url: canonicalPath,
     },
     twitter: {
       card: "summary_large_image",
-      title: project.title ?? undefined,
-      description: project.shortDescription ?? undefined,
+      title: seoTitle,
+      description: seoDescription,
     },
   };
 }

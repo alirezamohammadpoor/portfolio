@@ -286,6 +286,17 @@ export const journalPost = defineType({
       title: "Cover Image",
       type: "image",
       options: { hotspot: true },
+      fields: [
+        defineField({
+          name: "alt",
+          title: "Alt text",
+          type: "string",
+          description:
+            "Describe the image for screen readers and search engines. Required for accessibility.",
+          validation: (rule) =>
+            rule.required().warning("Add alt text for accessibility."),
+        }),
+      ],
     }),
     defineField({
       name: "tags",
@@ -305,6 +316,48 @@ export const journalPost = defineType({
       title: "Related Project",
       type: "reference",
       to: [{ type: "project" }],
+    }),
+    defineField({
+      name: "seo",
+      title: "SEO",
+      type: "object",
+      description:
+        "Overrides for search engines and social sharing. If empty, falls back to the post title, excerpt and cover image.",
+      options: { collapsible: true, collapsed: true },
+      fields: [
+        defineField({
+          name: "title",
+          title: "SEO Title",
+          type: "string",
+          description: "Defaults to the post title. Keep under 60 characters.",
+          validation: (rule) => rule.max(60),
+        }),
+        defineField({
+          name: "description",
+          title: "SEO Description",
+          type: "text",
+          rows: 3,
+          description:
+            "Defaults to the post excerpt. Keep under 160 characters.",
+          validation: (rule) => rule.max(160),
+        }),
+        defineField({
+          name: "ogImage",
+          title: "Open Graph Image",
+          type: "image",
+          description:
+            "Optional. If empty, the auto-generated OG image is used.",
+          options: { hotspot: true },
+        }),
+        defineField({
+          name: "noIndex",
+          title: "Hide from search engines",
+          type: "boolean",
+          description:
+            "If enabled, the page is excluded via robots meta tag. Use for drafts or private posts.",
+          initialValue: false,
+        }),
+      ],
     }),
   ],
   preview: {

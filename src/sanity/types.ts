@@ -105,48 +105,63 @@ export type Project = {
   title?: string;
   slug?: Slug;
   shortDescription?: string;
-  fullDescription?: Array<{
-    children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "normal" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "blockquote";
-    listItem?: "bullet" | "number";
-    markDefs?: Array<{
-      href?: string;
-      _type: "link";
-      _key: string;
-    } | {
-      explanation?: string;
-      _type: "glossary";
-      _key: string;
-    } | {
-      videoUrl?: string;
-      image?: {
+  fullDescription?: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>;
+          text?: string;
+          _type: "span";
+          _key: string;
+        }>;
+        style?:
+          | "normal"
+          | "h1"
+          | "h2"
+          | "h3"
+          | "h4"
+          | "h5"
+          | "h6"
+          | "blockquote";
+        listItem?: "bullet" | "number";
+        markDefs?: Array<
+          | {
+              href?: string;
+              _type: "link";
+              _key: string;
+            }
+          | {
+              explanation?: string;
+              _type: "glossary";
+              _key: string;
+            }
+          | {
+              videoUrl?: string;
+              image?: {
+                asset?: SanityImageAssetReference;
+                media?: unknown;
+                hotspot?: SanityImageHotspot;
+                crop?: SanityImageCrop;
+                _type: "image";
+              };
+              url?: string;
+              label?: string;
+              _type: "richPreview";
+              _key: string;
+            }
+        >;
+        level?: number;
+        _type: "block";
+        _key: string;
+      }
+    | {
         asset?: SanityImageAssetReference;
         media?: unknown;
         hotspot?: SanityImageHotspot;
         crop?: SanityImageCrop;
         _type: "image";
-      };
-      url?: string;
-      label?: string;
-      _type: "richPreview";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  } | {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    _type: "image";
-    _key: string;
-  }>;
+        _key: string;
+      }
+  >;
   techStack?: Array<string>;
   siteUrl?: string;
   sitePassword?: string;
@@ -166,25 +181,28 @@ export type Project = {
       _type: "file";
     };
   };
-  gallery?: Array<{
-    image?: {
-      asset?: SanityImageAssetReference;
-      media?: unknown;
-      hotspot?: SanityImageHotspot;
-      crop?: SanityImageCrop;
-      _type: "image";
-    };
-    _type: "galleryImage";
-    _key: string;
-  } | {
-    video?: {
-      asset?: SanityFileAssetReference;
-      media?: unknown;
-      _type: "file";
-    };
-    _type: "galleryVideo";
-    _key: string;
-  }>;
+  gallery?: Array<
+    | {
+        image?: {
+          asset?: SanityImageAssetReference;
+          media?: unknown;
+          hotspot?: SanityImageHotspot;
+          crop?: SanityImageCrop;
+          _type: "image";
+        };
+        _type: "galleryImage";
+        _key: string;
+      }
+    | {
+        video?: {
+          asset?: SanityFileAssetReference;
+          media?: unknown;
+          _type: "file";
+        };
+        _type: "galleryVideo";
+        _key: string;
+      }
+  >;
   images?: Array<{
     asset?: SanityImageAssetReference;
     media?: unknown;
@@ -200,6 +218,18 @@ export type Project = {
     _key: string;
   }>;
   order?: number;
+  seo?: {
+    title?: string;
+    description?: string;
+    ogImage?: {
+      asset?: SanityImageAssetReference;
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    };
+    noIndex?: boolean;
+  };
 };
 
 export type ProjectReference = {
@@ -218,127 +248,163 @@ export type JournalPost = {
   title?: string;
   slug?: Slug;
   excerpt?: string;
-  body?: Array<{
-    children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "normal" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "blockquote";
-    listItem?: "bullet" | "number";
-    markDefs?: Array<{
-      href?: string;
-      _type: "link";
-      _key: string;
-    } | {
-      explanation?: string;
-      _type: "glossary";
-      _key: string;
-    } | {
-      videoUrl?: string;
-      image?: {
+  body?: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>;
+          text?: string;
+          _type: "span";
+          _key: string;
+        }>;
+        style?:
+          | "normal"
+          | "h1"
+          | "h2"
+          | "h3"
+          | "h4"
+          | "h5"
+          | "h6"
+          | "blockquote";
+        listItem?: "bullet" | "number";
+        markDefs?: Array<
+          | {
+              href?: string;
+              _type: "link";
+              _key: string;
+            }
+          | {
+              explanation?: string;
+              _type: "glossary";
+              _key: string;
+            }
+          | {
+              videoUrl?: string;
+              image?: {
+                asset?: SanityImageAssetReference;
+                media?: unknown;
+                hotspot?: SanityImageHotspot;
+                crop?: SanityImageCrop;
+                _type: "image";
+              };
+              url?: string;
+              label?: string;
+              _type: "richPreview";
+              _key: string;
+            }
+        >;
+        level?: number;
+        _type: "block";
+        _key: string;
+      }
+    | {
         asset?: SanityImageAssetReference;
         media?: unknown;
         hotspot?: SanityImageHotspot;
         crop?: SanityImageCrop;
         _type: "image";
-      };
-      url?: string;
-      label?: string;
-      _type: "richPreview";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  } | {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    _type: "image";
-    _key: string;
-  } | {
-    text?: Array<{
-      children?: Array<{
-        marks?: Array<string>;
-        text?: string;
-        _type: "span";
         _key: string;
-      }>;
-      style?: "normal";
-      listItem?: never;
-      markDefs?: Array<{
-        href?: string;
-        _type: "link";
+      }
+    | {
+        text?: Array<{
+          children?: Array<{
+            marks?: Array<string>;
+            text?: string;
+            _type: "span";
+            _key: string;
+          }>;
+          style?: "normal";
+          listItem?: never;
+          markDefs?: Array<
+            | {
+                href?: string;
+                _type: "link";
+                _key: string;
+              }
+            | {
+                explanation?: string;
+                _type: "glossary";
+                _key: string;
+              }
+            | {
+                videoUrl?: string;
+                image?: {
+                  asset?: SanityImageAssetReference;
+                  media?: unknown;
+                  hotspot?: SanityImageHotspot;
+                  crop?: SanityImageCrop;
+                  _type: "image";
+                };
+                url?: string;
+                label?: string;
+                _type: "richPreview";
+                _key: string;
+              }
+          >;
+          level?: number;
+          _type: "block";
+          _key: string;
+        }>;
+        attribution?: Array<{
+          children?: Array<{
+            marks?: Array<string>;
+            text?: string;
+            _type: "span";
+            _key: string;
+          }>;
+          style?: "normal";
+          listItem?: never;
+          markDefs?: Array<
+            | {
+                href?: string;
+                _type: "link";
+                _key: string;
+              }
+            | {
+                videoUrl?: string;
+                image?: {
+                  asset?: SanityImageAssetReference;
+                  media?: unknown;
+                  hotspot?: SanityImageHotspot;
+                  crop?: SanityImageCrop;
+                  _type: "image";
+                };
+                url?: string;
+                label?: string;
+                _type: "richPreview";
+                _key: string;
+              }
+          >;
+          level?: number;
+          _type: "block";
+          _key: string;
+        }>;
+        _type: "quote";
         _key: string;
-      } | {
-        explanation?: string;
-        _type: "glossary";
-        _key: string;
-      } | {
-        videoUrl?: string;
-        image?: {
-          asset?: SanityImageAssetReference;
-          media?: unknown;
-          hotspot?: SanityImageHotspot;
-          crop?: SanityImageCrop;
-          _type: "image";
-        };
-        url?: string;
-        label?: string;
-        _type: "richPreview";
-        _key: string;
-      }>;
-      level?: number;
-      _type: "block";
-      _key: string;
-    }>;
-    attribution?: Array<{
-      children?: Array<{
-        marks?: Array<string>;
-        text?: string;
-        _type: "span";
-        _key: string;
-      }>;
-      style?: "normal";
-      listItem?: never;
-      markDefs?: Array<{
-        href?: string;
-        _type: "link";
-        _key: string;
-      } | {
-        videoUrl?: string;
-        image?: {
-          asset?: SanityImageAssetReference;
-          media?: unknown;
-          hotspot?: SanityImageHotspot;
-          crop?: SanityImageCrop;
-          _type: "image";
-        };
-        url?: string;
-        label?: string;
-        _type: "richPreview";
-        _key: string;
-      }>;
-      level?: number;
-      _type: "block";
-      _key: string;
-    }>;
-    _type: "quote";
-    _key: string;
-  }>;
+      }
+  >;
   coverImage?: {
     asset?: SanityImageAssetReference;
     media?: unknown;
     hotspot?: SanityImageHotspot;
     crop?: SanityImageCrop;
+    alt?: string;
     _type: "image";
   };
   tags?: Array<string>;
   publishedAt?: string;
   relatedProject?: ProjectReference;
+  seo?: {
+    title?: string;
+    description?: string;
+    ogImage?: {
+      asset?: SanityImageAssetReference;
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    };
+    noIndex?: boolean;
+  };
 };
 
 export type Slug = {
@@ -453,7 +519,27 @@ export type Geopoint = {
   alt?: number;
 };
 
-export type AllSanitySchemaTypes = SanityImageAssetReference | About | SanityImageCrop | SanityImageHotspot | JournalPage | JournalPostReference | SanityFileAssetReference | Project | ProjectReference | JournalPost | Slug | MediaTag | SanityImagePaletteSwatch | SanityImagePalette | SanityImageDimensions | SanityImageMetadata | SanityFileAsset | SanityAssetSourceData | SanityImageAsset | Geopoint;
+export type AllSanitySchemaTypes =
+  | SanityImageAssetReference
+  | About
+  | SanityImageCrop
+  | SanityImageHotspot
+  | JournalPage
+  | JournalPostReference
+  | SanityFileAssetReference
+  | Project
+  | ProjectReference
+  | JournalPost
+  | Slug
+  | MediaTag
+  | SanityImagePaletteSwatch
+  | SanityImagePalette
+  | SanityImageDimensions
+  | SanityImageMetadata
+  | SanityFileAsset
+  | SanityAssetSourceData
+  | SanityImageAsset
+  | Geopoint;
 
 export declare const internalGroqTypeReferenceTo: unique symbol;
 
@@ -494,54 +580,70 @@ export type ABOUT_QUERY_RESULT = {
 
 // Source: src/sanity/lib/queries.ts
 // Variable: PROJECTS_QUERY
-// Query: *[_type == "project"] | order(order asc) {   _id,  title,  slug,  shortDescription,  fullDescription,  techStack,  siteUrl,  sitePassword,  caseStudy->{ _id, slug },  coverMedia,  gallery[]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  },  order }
+// Query: *[_type == "project"] | order(order asc) {   _id,  _updatedAt,  title,  slug,  shortDescription,  fullDescription,  techStack,  siteUrl,  sitePassword,  caseStudy->{ _id, slug },  coverMedia,  gallery[]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  },  order,  seo { title, description, ogImage, noIndex } }
 export type PROJECTS_QUERY_RESULT = Array<{
   _id: string;
+  _updatedAt: string;
   title: string | null;
   slug: Slug | null;
   shortDescription: string | null;
-  fullDescription: Array<{
-    children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "blockquote" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "normal";
-    listItem?: "bullet" | "number";
-    markDefs?: Array<{
-      explanation?: string;
-      _type: "glossary";
-      _key: string;
-    } | {
-      href?: string;
-      _type: "link";
-      _key: string;
-    } | {
-      videoUrl?: string;
-      image?: {
+  fullDescription: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>;
+          text?: string;
+          _type: "span";
+          _key: string;
+        }>;
+        style?:
+          | "blockquote"
+          | "h1"
+          | "h2"
+          | "h3"
+          | "h4"
+          | "h5"
+          | "h6"
+          | "normal";
+        listItem?: "bullet" | "number";
+        markDefs?: Array<
+          | {
+              explanation?: string;
+              _type: "glossary";
+              _key: string;
+            }
+          | {
+              href?: string;
+              _type: "link";
+              _key: string;
+            }
+          | {
+              videoUrl?: string;
+              image?: {
+                asset?: SanityImageAssetReference;
+                media?: unknown;
+                hotspot?: SanityImageHotspot;
+                crop?: SanityImageCrop;
+                _type: "image";
+              };
+              url?: string;
+              label?: string;
+              _type: "richPreview";
+              _key: string;
+            }
+        >;
+        level?: number;
+        _type: "block";
+        _key: string;
+      }
+    | {
         asset?: SanityImageAssetReference;
         media?: unknown;
         hotspot?: SanityImageHotspot;
         crop?: SanityImageCrop;
         _type: "image";
-      };
-      url?: string;
-      label?: string;
-      _type: "richPreview";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  } | {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    _type: "image";
-    _key: string;
-  }> | null;
+        _key: string;
+      }
+  > | null;
   techStack: Array<string> | null;
   siteUrl: string | null;
   sitePassword: string | null;
@@ -564,101 +666,132 @@ export type PROJECTS_QUERY_RESULT = Array<{
       _type: "file";
     };
   } | null;
-  gallery: Array<{
-    image: {
-      asset: {
-        _id: string;
-        _type: "sanity.imageAsset";
-        _createdAt: string;
-        _updatedAt: string;
-        _rev: string;
-        originalFilename?: string;
-        label?: string;
-        title?: string;
-        description?: string;
-        altText?: string;
-        sha1hash?: string;
-        extension?: string;
-        mimeType?: string;
-        size?: number;
-        assetId?: string;
-        uploadId?: string;
-        path?: string;
-        url?: string;
-        metadata: {
-          dimensions: SanityImageDimensions | null;
+  gallery: Array<
+    | {
+        image: {
+          asset: {
+            _id: string;
+            _type: "sanity.imageAsset";
+            _createdAt: string;
+            _updatedAt: string;
+            _rev: string;
+            originalFilename?: string;
+            label?: string;
+            title?: string;
+            description?: string;
+            altText?: string;
+            sha1hash?: string;
+            extension?: string;
+            mimeType?: string;
+            size?: number;
+            assetId?: string;
+            uploadId?: string;
+            path?: string;
+            url?: string;
+            metadata: {
+              dimensions: SanityImageDimensions | null;
+            } | null;
+            source?: SanityAssetSourceData;
+          } | null;
+          media?: unknown;
+          hotspot?: SanityImageHotspot;
+          crop?: SanityImageCrop;
+          _type: "image";
         } | null;
-        source?: SanityAssetSourceData;
-      } | null;
+        _type: "galleryImage";
+        _key: string;
+      }
+    | {
+        video?: {
+          asset?: SanityFileAssetReference;
+          media?: unknown;
+          _type: "file";
+        };
+        _type: "galleryVideo";
+        _key: string;
+      }
+  > | null;
+  order: number | null;
+  seo: {
+    title: string | null;
+    description: string | null;
+    ogImage: {
+      asset?: SanityImageAssetReference;
       media?: unknown;
       hotspot?: SanityImageHotspot;
       crop?: SanityImageCrop;
       _type: "image";
     } | null;
-    _type: "galleryImage";
-    _key: string;
-  } | {
-    video?: {
-      asset?: SanityFileAssetReference;
-      media?: unknown;
-      _type: "file";
-    };
-    _type: "galleryVideo";
-    _key: string;
-  }> | null;
-  order: number | null;
+    noIndex: boolean | null;
+  } | null;
 }>;
 
 // Source: src/sanity/lib/queries.ts
 // Variable: PROJECT_BY_SLUG_QUERY
-// Query: *[_type == "project" && slug.current == $slug][0] {      _id,  title,  slug,  shortDescription,  fullDescription,  techStack,  siteUrl,  sitePassword,  caseStudy->{ _id, slug },  coverMedia,  gallery[]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  },  order,    "nextProject": coalesce(      *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },      *[_type == "project"] | order(order asc) [0] { title, slug }    ),    "prevProject": coalesce(      *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug },      *[_type == "project"] | order(order desc) [0] { title, slug }    )  }
+// Query: *[_type == "project" && slug.current == $slug][0] {      _id,  _updatedAt,  title,  slug,  shortDescription,  fullDescription,  techStack,  siteUrl,  sitePassword,  caseStudy->{ _id, slug },  coverMedia,  gallery[]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  },  order,  seo { title, description, ogImage, noIndex },    "nextProject": coalesce(      *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },      *[_type == "project"] | order(order asc) [0] { title, slug }    ),    "prevProject": coalesce(      *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug },      *[_type == "project"] | order(order desc) [0] { title, slug }    )  }
 export type PROJECT_BY_SLUG_QUERY_RESULT = {
   _id: string;
+  _updatedAt: string;
   title: string | null;
   slug: Slug | null;
   shortDescription: string | null;
-  fullDescription: Array<{
-    children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "blockquote" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "normal";
-    listItem?: "bullet" | "number";
-    markDefs?: Array<{
-      explanation?: string;
-      _type: "glossary";
-      _key: string;
-    } | {
-      href?: string;
-      _type: "link";
-      _key: string;
-    } | {
-      videoUrl?: string;
-      image?: {
+  fullDescription: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>;
+          text?: string;
+          _type: "span";
+          _key: string;
+        }>;
+        style?:
+          | "blockquote"
+          | "h1"
+          | "h2"
+          | "h3"
+          | "h4"
+          | "h5"
+          | "h6"
+          | "normal";
+        listItem?: "bullet" | "number";
+        markDefs?: Array<
+          | {
+              explanation?: string;
+              _type: "glossary";
+              _key: string;
+            }
+          | {
+              href?: string;
+              _type: "link";
+              _key: string;
+            }
+          | {
+              videoUrl?: string;
+              image?: {
+                asset?: SanityImageAssetReference;
+                media?: unknown;
+                hotspot?: SanityImageHotspot;
+                crop?: SanityImageCrop;
+                _type: "image";
+              };
+              url?: string;
+              label?: string;
+              _type: "richPreview";
+              _key: string;
+            }
+        >;
+        level?: number;
+        _type: "block";
+        _key: string;
+      }
+    | {
         asset?: SanityImageAssetReference;
         media?: unknown;
         hotspot?: SanityImageHotspot;
         crop?: SanityImageCrop;
         _type: "image";
-      };
-      url?: string;
-      label?: string;
-      _type: "richPreview";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  } | {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    _type: "image";
-    _key: string;
-  }> | null;
+        _key: string;
+      }
+  > | null;
   techStack: Array<string> | null;
   siteUrl: string | null;
   sitePassword: string | null;
@@ -681,49 +814,64 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
       _type: "file";
     };
   } | null;
-  gallery: Array<{
-    image: {
-      asset: {
-        _id: string;
-        _type: "sanity.imageAsset";
-        _createdAt: string;
-        _updatedAt: string;
-        _rev: string;
-        originalFilename?: string;
-        label?: string;
-        title?: string;
-        description?: string;
-        altText?: string;
-        sha1hash?: string;
-        extension?: string;
-        mimeType?: string;
-        size?: number;
-        assetId?: string;
-        uploadId?: string;
-        path?: string;
-        url?: string;
-        metadata: {
-          dimensions: SanityImageDimensions | null;
+  gallery: Array<
+    | {
+        image: {
+          asset: {
+            _id: string;
+            _type: "sanity.imageAsset";
+            _createdAt: string;
+            _updatedAt: string;
+            _rev: string;
+            originalFilename?: string;
+            label?: string;
+            title?: string;
+            description?: string;
+            altText?: string;
+            sha1hash?: string;
+            extension?: string;
+            mimeType?: string;
+            size?: number;
+            assetId?: string;
+            uploadId?: string;
+            path?: string;
+            url?: string;
+            metadata: {
+              dimensions: SanityImageDimensions | null;
+            } | null;
+            source?: SanityAssetSourceData;
+          } | null;
+          media?: unknown;
+          hotspot?: SanityImageHotspot;
+          crop?: SanityImageCrop;
+          _type: "image";
         } | null;
-        source?: SanityAssetSourceData;
-      } | null;
+        _type: "galleryImage";
+        _key: string;
+      }
+    | {
+        video?: {
+          asset?: SanityFileAssetReference;
+          media?: unknown;
+          _type: "file";
+        };
+        _type: "galleryVideo";
+        _key: string;
+      }
+  > | null;
+  order: number | null;
+  seo: {
+    title: string | null;
+    description: string | null;
+    ogImage: {
+      asset?: SanityImageAssetReference;
       media?: unknown;
       hotspot?: SanityImageHotspot;
       crop?: SanityImageCrop;
       _type: "image";
     } | null;
-    _type: "galleryImage";
-    _key: string;
-  } | {
-    video?: {
-      asset?: SanityFileAssetReference;
-      media?: unknown;
-      _type: "file";
-    };
-    _type: "galleryVideo";
-    _key: string;
-  }> | null;
-  order: number | null;
+    noIndex: boolean | null;
+  } | null;
   nextProject: {
     title: string | null;
     slug: Slug | null;
@@ -743,9 +891,10 @@ export type JOURNAL_PAGE_QUERY_RESULT = {
 
 // Source: src/sanity/lib/queries.ts
 // Variable: JOURNAL_POSTS_QUERY
-// Query: *[_type == "journalPost"] | order(publishedAt desc) {   _id,  title,  slug,  excerpt,  coverImage,  tags,  publishedAt,  relatedProject->{ _id, title, slug } }
+// Query: *[_type == "journalPost"] | order(publishedAt desc) {   _id,  _updatedAt,  title,  slug,  excerpt,  coverImage,  tags,  publishedAt,  relatedProject->{ _id, title, slug },  seo { title, description, ogImage, noIndex } }
 export type JOURNAL_POSTS_QUERY_RESULT = Array<{
   _id: string;
+  _updatedAt: string;
   title: string | null;
   slug: Slug | null;
   excerpt: string | null;
@@ -754,6 +903,7 @@ export type JOURNAL_POSTS_QUERY_RESULT = Array<{
     media?: unknown;
     hotspot?: SanityImageHotspot;
     crop?: SanityImageCrop;
+    alt?: string;
     _type: "image";
   } | null;
   tags: Array<string> | null;
@@ -762,14 +912,27 @@ export type JOURNAL_POSTS_QUERY_RESULT = Array<{
     _id: string;
     title: string | null;
     slug: Slug | null;
+  } | null;
+  seo: {
+    title: string | null;
+    description: string | null;
+    ogImage: {
+      asset?: SanityImageAssetReference;
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    } | null;
+    noIndex: boolean | null;
   } | null;
 }>;
 
 // Source: src/sanity/lib/queries.ts
 // Variable: JOURNAL_POST_BY_SLUG_QUERY
-// Query: *[_type == "journalPost" && slug.current == $slug][0] {      _id,  title,  slug,  excerpt,  coverImage,  tags,  publishedAt,  relatedProject->{ _id, title, slug },    body,    "relatedPosts": *[_type == "journalPost" && _id != ^._id] | order(publishedAt desc) {   _id,  title,  slug,  excerpt,  coverImage,  tags,  publishedAt,  relatedProject->{ _id, title, slug } }  }
+// Query: *[_type == "journalPost" && slug.current == $slug][0] {      _id,  _updatedAt,  title,  slug,  excerpt,  coverImage,  tags,  publishedAt,  relatedProject->{ _id, title, slug },  seo { title, description, ogImage, noIndex },    body,    "relatedPosts": *[_type == "journalPost" && _id != ^._id] | order(publishedAt desc) {   _id,  _updatedAt,  title,  slug,  excerpt,  coverImage,  tags,  publishedAt,  relatedProject->{ _id, title, slug },  seo { title, description, ogImage, noIndex } }  }
 export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
   _id: string;
+  _updatedAt: string;
   title: string | null;
   slug: Slug | null;
   excerpt: string | null;
@@ -778,6 +941,7 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
     media?: unknown;
     hotspot?: SanityImageHotspot;
     crop?: SanityImageCrop;
+    alt?: string;
     _type: "image";
   } | null;
   tags: Array<string> | null;
@@ -787,119 +951,155 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
     title: string | null;
     slug: Slug | null;
   } | null;
-  body: Array<{
-    children?: Array<{
-      marks?: Array<string>;
-      text?: string;
-      _type: "span";
-      _key: string;
-    }>;
-    style?: "blockquote" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "normal";
-    listItem?: "bullet" | "number";
-    markDefs?: Array<{
-      explanation?: string;
-      _type: "glossary";
-      _key: string;
-    } | {
-      href?: string;
-      _type: "link";
-      _key: string;
-    } | {
-      videoUrl?: string;
-      image?: {
+  seo: {
+    title: string | null;
+    description: string | null;
+    ogImage: {
+      asset?: SanityImageAssetReference;
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    } | null;
+    noIndex: boolean | null;
+  } | null;
+  body: Array<
+    | {
+        children?: Array<{
+          marks?: Array<string>;
+          text?: string;
+          _type: "span";
+          _key: string;
+        }>;
+        style?:
+          | "blockquote"
+          | "h1"
+          | "h2"
+          | "h3"
+          | "h4"
+          | "h5"
+          | "h6"
+          | "normal";
+        listItem?: "bullet" | "number";
+        markDefs?: Array<
+          | {
+              explanation?: string;
+              _type: "glossary";
+              _key: string;
+            }
+          | {
+              href?: string;
+              _type: "link";
+              _key: string;
+            }
+          | {
+              videoUrl?: string;
+              image?: {
+                asset?: SanityImageAssetReference;
+                media?: unknown;
+                hotspot?: SanityImageHotspot;
+                crop?: SanityImageCrop;
+                _type: "image";
+              };
+              url?: string;
+              label?: string;
+              _type: "richPreview";
+              _key: string;
+            }
+        >;
+        level?: number;
+        _type: "block";
+        _key: string;
+      }
+    | {
         asset?: SanityImageAssetReference;
         media?: unknown;
         hotspot?: SanityImageHotspot;
         crop?: SanityImageCrop;
         _type: "image";
-      };
-      url?: string;
-      label?: string;
-      _type: "richPreview";
-      _key: string;
-    }>;
-    level?: number;
-    _type: "block";
-    _key: string;
-  } | {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    _type: "image";
-    _key: string;
-  } | {
-    text?: Array<{
-      children?: Array<{
-        marks?: Array<string>;
-        text?: string;
-        _type: "span";
         _key: string;
-      }>;
-      style?: "normal";
-      listItem?: never;
-      markDefs?: Array<{
-        explanation?: string;
-        _type: "glossary";
+      }
+    | {
+        text?: Array<{
+          children?: Array<{
+            marks?: Array<string>;
+            text?: string;
+            _type: "span";
+            _key: string;
+          }>;
+          style?: "normal";
+          listItem?: never;
+          markDefs?: Array<
+            | {
+                explanation?: string;
+                _type: "glossary";
+                _key: string;
+              }
+            | {
+                href?: string;
+                _type: "link";
+                _key: string;
+              }
+            | {
+                videoUrl?: string;
+                image?: {
+                  asset?: SanityImageAssetReference;
+                  media?: unknown;
+                  hotspot?: SanityImageHotspot;
+                  crop?: SanityImageCrop;
+                  _type: "image";
+                };
+                url?: string;
+                label?: string;
+                _type: "richPreview";
+                _key: string;
+              }
+          >;
+          level?: number;
+          _type: "block";
+          _key: string;
+        }>;
+        attribution?: Array<{
+          children?: Array<{
+            marks?: Array<string>;
+            text?: string;
+            _type: "span";
+            _key: string;
+          }>;
+          style?: "normal";
+          listItem?: never;
+          markDefs?: Array<
+            | {
+                href?: string;
+                _type: "link";
+                _key: string;
+              }
+            | {
+                videoUrl?: string;
+                image?: {
+                  asset?: SanityImageAssetReference;
+                  media?: unknown;
+                  hotspot?: SanityImageHotspot;
+                  crop?: SanityImageCrop;
+                  _type: "image";
+                };
+                url?: string;
+                label?: string;
+                _type: "richPreview";
+                _key: string;
+              }
+          >;
+          level?: number;
+          _type: "block";
+          _key: string;
+        }>;
+        _type: "quote";
         _key: string;
-      } | {
-        href?: string;
-        _type: "link";
-        _key: string;
-      } | {
-        videoUrl?: string;
-        image?: {
-          asset?: SanityImageAssetReference;
-          media?: unknown;
-          hotspot?: SanityImageHotspot;
-          crop?: SanityImageCrop;
-          _type: "image";
-        };
-        url?: string;
-        label?: string;
-        _type: "richPreview";
-        _key: string;
-      }>;
-      level?: number;
-      _type: "block";
-      _key: string;
-    }>;
-    attribution?: Array<{
-      children?: Array<{
-        marks?: Array<string>;
-        text?: string;
-        _type: "span";
-        _key: string;
-      }>;
-      style?: "normal";
-      listItem?: never;
-      markDefs?: Array<{
-        href?: string;
-        _type: "link";
-        _key: string;
-      } | {
-        videoUrl?: string;
-        image?: {
-          asset?: SanityImageAssetReference;
-          media?: unknown;
-          hotspot?: SanityImageHotspot;
-          crop?: SanityImageCrop;
-          _type: "image";
-        };
-        url?: string;
-        label?: string;
-        _type: "richPreview";
-        _key: string;
-      }>;
-      level?: number;
-      _type: "block";
-      _key: string;
-    }>;
-    _type: "quote";
-    _key: string;
-  }> | null;
+      }
+  > | null;
   relatedPosts: Array<{
     _id: string;
+    _updatedAt: string;
     title: string | null;
     slug: Slug | null;
     excerpt: string | null;
@@ -908,6 +1108,7 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
       media?: unknown;
       hotspot?: SanityImageHotspot;
       crop?: SanityImageCrop;
+      alt?: string;
       _type: "image";
     } | null;
     tags: Array<string> | null;
@@ -916,6 +1117,18 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
       _id: string;
       title: string | null;
       slug: Slug | null;
+    } | null;
+    seo: {
+      title: string | null;
+      description: string | null;
+      ogImage: {
+        asset?: SanityImageAssetReference;
+        media?: unknown;
+        hotspot?: SanityImageHotspot;
+        crop?: SanityImageCrop;
+        _type: "image";
+      } | null;
+      noIndex: boolean | null;
     } | null;
   }>;
 } | null;
@@ -934,3 +1147,17 @@ export type JOURNAL_POST_SLUGS_QUERY_RESULT = Array<{
   slug: string | null;
 }>;
 
+// Query TypeMap
+import "@sanity/client";
+declare module "@sanity/client" {
+  interface SanityQueries {
+    '\n  *[_type == "about"][0] {\n    heading,\n    bio,\n    portrait,\n    email,\n    linkedinUrl,\n    githubUrl\n  }\n': ABOUT_QUERY_RESULT;
+    '\n  *[_type == "project"] | order(order asc) { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  sitePassword,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  gallery[]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  },\n  order,\n  seo { title, description, ogImage, noIndex }\n }\n': PROJECTS_QUERY_RESULT;
+    '\n  *[_type == "project" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  sitePassword,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  gallery[]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  },\n  order,\n  seo { title, description, ogImage, noIndex }\n,\n    "nextProject": coalesce(\n      *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },\n      *[_type == "project"] | order(order asc) [0] { title, slug }\n    ),\n    "prevProject": coalesce(\n      *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug },\n      *[_type == "project"] | order(order desc) [0] { title, slug }\n    )\n  }\n': PROJECT_BY_SLUG_QUERY_RESULT;
+    '\n  *[_type == "journalPage"][0] { description }\n': JOURNAL_PAGE_QUERY_RESULT;
+    '\n  *[_type == "journalPost"] | order(publishedAt desc) { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n }\n': JOURNAL_POSTS_QUERY_RESULT;
+    '\n  *[_type == "journalPost" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n,\n    body,\n    "relatedPosts": *[_type == "journalPost" && _id != ^._id] | order(publishedAt desc) { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n }\n  }\n': JOURNAL_POST_BY_SLUG_QUERY_RESULT;
+    '*[_type == "project" && defined(slug.current)]{ "slug": slug.current }': PROJECT_SLUGS_QUERY_RESULT;
+    '*[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current }': JOURNAL_POST_SLUGS_QUERY_RESULT;
+  }
+}

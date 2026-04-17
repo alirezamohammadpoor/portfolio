@@ -38,15 +38,20 @@ export async function generateMetadata({
   if (!post) return { title: "Post Not Found" };
 
   const canonicalPath = `/journal/${post.slug?.current ?? slug}`;
+  const seoTitle = post.seo?.title ?? post.title ?? undefined;
+  const seoDescription = post.seo?.description ?? post.excerpt ?? undefined;
 
   return {
-    title: post.title,
-    description: post.excerpt ?? undefined,
+    title: seoTitle,
+    description: seoDescription,
     alternates: { canonical: canonicalPath },
+    ...(post.seo?.noIndex && {
+      robots: { index: false, follow: false },
+    }),
     openGraph: {
       type: "article",
-      title: post.title ?? undefined,
-      description: post.excerpt ?? undefined,
+      title: seoTitle,
+      description: seoDescription,
       url: canonicalPath,
       publishedTime: post.publishedAt ?? undefined,
       modifiedTime: post._updatedAt ?? undefined,
@@ -55,8 +60,8 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: post.title ?? undefined,
-      description: post.excerpt ?? undefined,
+      title: seoTitle,
+      description: seoDescription,
     },
   };
 }

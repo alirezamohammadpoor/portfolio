@@ -223,6 +223,49 @@ export const project = defineType({
       title: "Display Order",
       type: "number",
     }),
+    defineField({
+      name: "seo",
+      title: "SEO",
+      type: "object",
+      description:
+        "Overrides for search engines and social sharing. If empty, falls back to the project title, short description and cover media.",
+      options: { collapsible: true, collapsed: true },
+      fields: [
+        defineField({
+          name: "title",
+          title: "SEO Title",
+          type: "string",
+          description:
+            "Defaults to the project title. Keep under 60 characters.",
+          validation: (rule) => rule.max(60),
+        }),
+        defineField({
+          name: "description",
+          title: "SEO Description",
+          type: "text",
+          rows: 3,
+          description:
+            "Defaults to the project short description. Keep under 160 characters.",
+          validation: (rule) => rule.max(160),
+        }),
+        defineField({
+          name: "ogImage",
+          title: "Open Graph Image",
+          type: "image",
+          description:
+            "Optional. If empty, the auto-generated OG image is used.",
+          options: { hotspot: true },
+        }),
+        defineField({
+          name: "noIndex",
+          title: "Hide from search engines",
+          type: "boolean",
+          description:
+            "If enabled, the page is excluded via robots meta tag.",
+          initialValue: false,
+        }),
+      ],
+    }),
   ],
   orderings: [
     {
