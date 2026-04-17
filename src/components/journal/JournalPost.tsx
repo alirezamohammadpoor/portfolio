@@ -105,13 +105,17 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
             className="invisible relative aspect-[3/4] w-full shrink-0 overflow-hidden bg-tertiary desktop:aspect-auto desktop:w-1/2"
           >
             <Image
-              src={urlFor(post.coverImage).width(1920).quality(85).url()}
+              src={urlFor(post.coverImage).width(1600).quality(75).auto("format").url()}
               alt={post.coverImage.alt ?? post.title ?? ""}
               fill
               className="object-cover"
               sizes="(min-width: 75rem) 50vw, 100vw"
               priority
               fetchPriority="high"
+              {...(post.coverImage.asset?.metadata?.lqip && {
+                placeholder: "blur" as const,
+                blurDataURL: post.coverImage.asset.metadata.lqip,
+              })}
             />
           </div>
         )}
