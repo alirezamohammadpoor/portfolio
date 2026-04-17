@@ -37,6 +37,7 @@ export function useTitleAnimation(
         autoSplit: true,
         mask: "chars",
         charsClass: "char",
+        aria: "none",
         onSplit: (self) =>
           gsap.from(self.chars, {
             duration,
@@ -72,6 +73,7 @@ export function useBodyAnimation(
         autoSplit: true,
         mask: "lines",
         linesClass: "line",
+        aria: "none",
         onSplit: (self) =>
           gsap.from(self.lines, {
             duration,
@@ -109,6 +111,7 @@ export function useInlineAnimation(
           autoSplit: true,
           mask: "lines",
           linesClass: "line",
+          aria: "none",
           onSplit: (self) =>
             gsap.from(self.lines, {
               duration,

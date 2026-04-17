@@ -21,13 +21,13 @@ export default function JournalCard({ post }: JournalCardProps) {
           />
         </div>
       )}
-      <h3 className="mt-4 text-h2 text-primary">{post.title}</h3>
+      <h2 className="mt-4 text-h2 text-primary">{post.title}</h2>
       <p className="mt-4 text-sub desktop:text-body text-primary">
         {post.excerpt}
       </p>
       <div className="mt-auto flex items-center justify-between pt-6">
         {post.publishedAt && (
-          <span className="text-sub desktop:text-body text-secondary">
+          <span className="text-sub desktop:text-body text-primary">
             {new Date(post.publishedAt).toLocaleDateString("en-US", {
               year: "numeric",
               month: "long",
