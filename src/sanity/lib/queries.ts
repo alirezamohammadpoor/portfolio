@@ -2,6 +2,7 @@ import { defineQuery } from "next-sanity";
 
 const PROJECT_FIELDS = `
   _id,
+  _updatedAt,
   title,
   slug,
   shortDescription,
@@ -23,6 +24,7 @@ const PROJECT_FIELDS = `
 
 const JOURNAL_FIELDS = `
   _id,
+  _updatedAt,
   title,
   slug,
   excerpt,
