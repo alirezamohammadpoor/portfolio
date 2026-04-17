@@ -29,7 +29,7 @@ const JOURNAL_FIELDS = `
   title,
   slug,
   excerpt,
-  coverImage,
+  coverImage { ..., asset->{ _id, _type, metadata { lqip, dimensions } } },
   tags,
   publishedAt,
   relatedProject->{ _id, title, slug },
