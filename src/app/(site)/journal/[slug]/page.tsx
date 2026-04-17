@@ -9,6 +9,10 @@ import {
 } from "@/sanity/lib/queries";
 
 import JournalPost from "@/components/journal/JournalPost";
+import JsonLd from "@/components/seo/JsonLd";
+
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://alirezamp.com";
 
 interface JournalPostPageProps {
   params: Promise<{ slug: string }>;
@@ -32,7 +36,29 @@ export async function generateMetadata({
   const { slug } = await params;
   const post = await getPost(slug);
   if (!post) return { title: "Post Not Found" };
-  return { title: post.title };
+
+  const canonicalPath = `/journal/${post.slug?.current ?? slug}`;
+
+  return {
+    title: post.title,
+    description: post.excerpt ?? undefined,
+    alternates: { canonical: canonicalPath },
+    openGraph: {
+      type: "article",
+      title: post.title ?? undefined,
+      description: post.excerpt ?? undefined,
+      url: canonicalPath,
+      publishedTime: post.publishedAt ?? undefined,
+      modifiedTime: post._updatedAt ?? undefined,
+      authors: ["Ali Reza Mohammad Poor"],
+      tags: post.tags ?? undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title ?? undefined,
+      description: post.excerpt ?? undefined,
+    },
+  };
 }
 
 export default async function JournalPostPage({
@@ -45,5 +71,33 @@ export default async function JournalPostPage({
     notFound();
   }
 
-  return <JournalPost key={post._id} post={post} relatedPosts={post.relatedPosts ?? []} />;
+  const canonicalPath = `/journal/${post.slug?.current ?? slug}`;
+  const canonicalUrl = `${siteUrl}${canonicalPath}`;
+
+  const blogPostingLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.excerpt ?? undefined,
+    datePublished: post.publishedAt ?? undefined,
+    dateModified: post._updatedAt ?? post.publishedAt ?? undefined,
+    author: {
+      "@type": "Person",
+      name: "Ali Reza Mohammad Poor",
+      url: siteUrl,
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": canonicalUrl,
+    },
+    url: canonicalUrl,
+    keywords: Array.isArray(post.tags) ? post.tags.join(", ") : undefined,
+  };
+
+  return (
+    <>
+      <JsonLd data={blogPostingLd} />
+      <JournalPost key={post._id} post={post} relatedPosts={post.relatedPosts ?? []} />
+    </>
+  );
 }

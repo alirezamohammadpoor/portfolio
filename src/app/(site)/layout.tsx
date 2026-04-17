@@ -9,6 +9,9 @@ import GsapProvider from "@/components/layout/GsapProvider";
 import { TransitionProvider } from "@/context/TransitionContext";
 import TransitionOverlay from "@/components/layout/TransitionOverlay";
 import { SanityLive } from "@/sanity/lib/live";
+import { client } from "@/sanity/lib/client";
+import { ABOUT_QUERY } from "@/sanity/lib/queries";
+import JsonLd from "@/components/seo/JsonLd";
 import "@/styles/globals.css";
 
 const siteUrl =
@@ -47,7 +50,32 @@ export default async function SiteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isEnabled: isDraftMode } = await draftMode();
+  const [{ isEnabled: isDraftMode }, about] = await Promise.all([
+    draftMode(),
+    client.fetch(ABOUT_QUERY).catch(() => null),
+  ]);
+
+  const sameAs = [about?.linkedinUrl, about?.githubUrl].filter(
+    (u): u is string => typeof u === "string" && u.length > 0,
+  );
+
+  const personLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: "Ali Reza Mohammad Poor",
+    url: siteUrl,
+    jobTitle: "Full-stack developer and creative technologist",
+    ...(sameAs.length > 0 && { sameAs }),
+  };
+
+  const websiteLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Ali Reza Mohammad Poor",
+    url: siteUrl,
+    inLanguage: "en",
+    author: { "@type": "Person", name: "Ali Reza Mohammad Poor", url: siteUrl },
+  };
 
   return (
     <ViewTransitions>
@@ -55,6 +83,7 @@ export default async function SiteLayout({
         <head>
           <link rel="preconnect" href="https://cdn.sanity.io" />
           <link rel="dns-prefetch" href="https://i.scdn.co" />
+          <JsonLd data={[personLd, websiteLd]} />
         </head>
         <body className="font-sans">
           <GsapProvider>
