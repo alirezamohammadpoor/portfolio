@@ -891,7 +891,7 @@ export type JOURNAL_PAGE_QUERY_RESULT = {
 
 // Source: src/sanity/lib/queries.ts
 // Variable: JOURNAL_POSTS_QUERY
-// Query: *[_type == "journalPost"] | order(publishedAt desc) {   _id,  _updatedAt,  title,  slug,  excerpt,  coverImage { ..., asset->{ _id, _type, metadata { lqip, dimensions } } },  tags,  publishedAt,  relatedProject->{ _id, title, slug },  seo { title, description, ogImage, noIndex } }
+// Query: *[_type == "journalPost"] | order(publishedAt desc) {   _id,  _updatedAt,  title,  slug,  excerpt,  coverImage,  tags,  publishedAt,  relatedProject->{ _id, title, slug },  seo { title, description, ogImage, noIndex } }
 export type JOURNAL_POSTS_QUERY_RESULT = Array<{
   _id: string;
   _updatedAt: string;
@@ -899,14 +899,7 @@ export type JOURNAL_POSTS_QUERY_RESULT = Array<{
   slug: Slug | null;
   excerpt: string | null;
   coverImage: {
-    asset: {
-      _id: string;
-      _type: "sanity.imageAsset";
-      metadata: {
-        lqip: string | null;
-        dimensions: SanityImageDimensions | null;
-      } | null;
-    } | null;
+    asset?: SanityImageAssetReference;
     media?: unknown;
     hotspot?: SanityImageHotspot;
     crop?: SanityImageCrop;
@@ -936,7 +929,7 @@ export type JOURNAL_POSTS_QUERY_RESULT = Array<{
 
 // Source: src/sanity/lib/queries.ts
 // Variable: JOURNAL_POST_BY_SLUG_QUERY
-// Query: *[_type == "journalPost" && slug.current == $slug][0] {      _id,  _updatedAt,  title,  slug,  excerpt,  coverImage { ..., asset->{ _id, _type, metadata { lqip, dimensions } } },  tags,  publishedAt,  relatedProject->{ _id, title, slug },  seo { title, description, ogImage, noIndex },    body,    "relatedPosts": *[_type == "journalPost" && _id != ^._id] | order(publishedAt desc) {   _id,  _updatedAt,  title,  slug,  excerpt,  coverImage { ..., asset->{ _id, _type, metadata { lqip, dimensions } } },  tags,  publishedAt,  relatedProject->{ _id, title, slug },  seo { title, description, ogImage, noIndex } }  }
+// Query: *[_type == "journalPost" && slug.current == $slug][0] {      _id,  _updatedAt,  title,  slug,  excerpt,  coverImage,  tags,  publishedAt,  relatedProject->{ _id, title, slug },  seo { title, description, ogImage, noIndex },    body,    "relatedPosts": *[_type == "journalPost" && _id != ^._id] | order(publishedAt desc) {   _id,  _updatedAt,  title,  slug,  excerpt,  coverImage,  tags,  publishedAt,  relatedProject->{ _id, title, slug },  seo { title, description, ogImage, noIndex } }  }
 export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
   _id: string;
   _updatedAt: string;
@@ -944,14 +937,7 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
   slug: Slug | null;
   excerpt: string | null;
   coverImage: {
-    asset: {
-      _id: string;
-      _type: "sanity.imageAsset";
-      metadata: {
-        lqip: string | null;
-        dimensions: SanityImageDimensions | null;
-      } | null;
-    } | null;
+    asset?: SanityImageAssetReference;
     media?: unknown;
     hotspot?: SanityImageHotspot;
     crop?: SanityImageCrop;
@@ -1118,14 +1104,7 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
     slug: Slug | null;
     excerpt: string | null;
     coverImage: {
-      asset: {
-        _id: string;
-        _type: "sanity.imageAsset";
-        metadata: {
-          lqip: string | null;
-          dimensions: SanityImageDimensions | null;
-        } | null;
-      } | null;
+      asset?: SanityImageAssetReference;
       media?: unknown;
       hotspot?: SanityImageHotspot;
       crop?: SanityImageCrop;
@@ -1176,8 +1155,8 @@ declare module "@sanity/client" {
     '\n  *[_type == "project"] | order(order asc) { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  sitePassword,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  gallery[]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  },\n  order,\n  seo { title, description, ogImage, noIndex }\n }\n': PROJECTS_QUERY_RESULT;
     '\n  *[_type == "project" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  sitePassword,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  gallery[]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  },\n  order,\n  seo { title, description, ogImage, noIndex }\n,\n    "nextProject": coalesce(\n      *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },\n      *[_type == "project"] | order(order asc) [0] { title, slug }\n    ),\n    "prevProject": coalesce(\n      *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug },\n      *[_type == "project"] | order(order desc) [0] { title, slug }\n    )\n  }\n': PROJECT_BY_SLUG_QUERY_RESULT;
     '\n  *[_type == "journalPage"][0] { description }\n': JOURNAL_PAGE_QUERY_RESULT;
-    '\n  *[_type == "journalPost"] | order(publishedAt desc) { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage { ..., asset->{ _id, _type, metadata { lqip, dimensions } } },\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n }\n': JOURNAL_POSTS_QUERY_RESULT;
-    '\n  *[_type == "journalPost" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage { ..., asset->{ _id, _type, metadata { lqip, dimensions } } },\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n,\n    body,\n    "relatedPosts": *[_type == "journalPost" && _id != ^._id] | order(publishedAt desc) { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage { ..., asset->{ _id, _type, metadata { lqip, dimensions } } },\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n }\n  }\n': JOURNAL_POST_BY_SLUG_QUERY_RESULT;
+    '\n  *[_type == "journalPost"] | order(publishedAt desc) { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n }\n': JOURNAL_POSTS_QUERY_RESULT;
+    '\n  *[_type == "journalPost" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n,\n    body,\n    "relatedPosts": *[_type == "journalPost" && _id != ^._id] | order(publishedAt desc) { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n }\n  }\n': JOURNAL_POST_BY_SLUG_QUERY_RESULT;
     '*[_type == "project" && defined(slug.current)]{ "slug": slug.current }': PROJECT_SLUGS_QUERY_RESULT;
     '*[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current }': JOURNAL_POST_SLUGS_QUERY_RESULT;
   }
