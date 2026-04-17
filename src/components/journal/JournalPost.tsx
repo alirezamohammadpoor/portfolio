@@ -82,9 +82,9 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
               </p>
             )}
             {post.publishedAt && (
-              <p className="mt-6 text-sub text-secondary">
+              <p className="mt-6 text-sub text-primary">
                 By{" "}
-                <Link href="/about" className="underline decoration-secondary underline-offset-2 hover:decoration-primary">
+                <Link href="/about" className="underline underline-offset-2 decoration-primary">
                   Ali Reza Mohammad Poor
                 </Link>
                 {" · "}
@@ -111,6 +111,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
               className="object-cover"
               sizes="(min-width: 75rem) 50vw, 100vw"
               priority
+              fetchPriority="high"
             />
           </div>
         )}
@@ -134,7 +135,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
           ref={carouselRef}
           className="invisible mx-auto desktop:max-w-[50vw] mt-16 pb-8 px-4 desktop:px-6"
         >
-          <h4 className="uppercase">More posts</h4>
+          <h2 className="uppercase text-sub desktop:text-body">More posts</h2>
           <div className="mt-4 flex gap-2 overflow-x-auto snap-x snap-mandatory">
             {relatedPosts.map((relatedPost) => (
               <div
