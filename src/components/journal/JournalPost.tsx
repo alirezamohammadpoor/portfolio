@@ -33,13 +33,16 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
   useTitleAnimation(titleRef, heroRef, { duration: 2, delay: 1 });
   useBodyAnimation(excerptRef, heroRef, { duration: 2, delay: 1.3 });
 
-  // Body and carousel animations (opacity fade).
-  // The hero image is intentionally NOT animated here — its blur-to-sharp
-  // transition via Next's placeholder="blur" is the reveal, and any opacity
-  // animation on the LCP element delays the painted-frame timestamp that
-  // Lighthouse measures, hurting the LCP score.
+  // Image, body, and carousel animations (opacity fade)
   useGSAP(
     () => {
+      if (imageRef.current) {
+        gsap.fromTo(
+          imageRef.current,
+          { autoAlpha: 0 },
+          { autoAlpha: 1, duration: 1.5, ease: "power3.out", delay: 1 },
+        );
+      }
       if (bodyRef.current) {
         gsap.fromTo(
           bodyRef.current,
@@ -99,7 +102,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
         {post.coverImage?.asset && (
           <div
             ref={imageRef}
-            className="relative aspect-[3/4] w-full shrink-0 overflow-hidden bg-tertiary desktop:aspect-auto desktop:w-1/2"
+            className="invisible relative aspect-[3/4] w-full shrink-0 overflow-hidden bg-tertiary desktop:aspect-auto desktop:w-1/2"
           >
             <Image
               src={urlFor(post.coverImage).width(1600).quality(75).auto("format").url()}
