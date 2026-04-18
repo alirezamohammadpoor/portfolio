@@ -118,7 +118,14 @@ export function useGalleryScroll({
       unlockScroll();
     }, UNLOCK_DELAY_MS);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      // Always release the global lock on unmount. Without this, if the user
+      // navigates away before the timer fires (common on mobile where taps
+      // happen within 2s), the lock persists forever and scroll stays frozen
+      // on every subsequent page.
+      unlockScroll();
+    };
   }, []);
 
   // Animate clone to first image position (homepage → project transition).
