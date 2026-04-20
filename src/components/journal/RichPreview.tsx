@@ -66,17 +66,25 @@ export default function RichPreview({
         WebkitBoxDecorationBreak: "clone",
       });
 
-      gsap.to(el, {
-        backgroundSize: "100% 100%",
-        duration: 0.8,
-        delay: 1,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: el,
-          start: "top 90%",
-          once: true,
+      // See GlossaryTerm for rationale — IntersectionObserver avoids the
+      // "already filled when I arrive" bug that ScrollTrigger + once + delay caused
+      // during page transitions / fast scrolls.
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (!entry?.isIntersecting) return;
+          observer.disconnect();
+          gsap.to(el, {
+            backgroundSize: "100% 100%",
+            duration: 0.8,
+            ease: "power2.out",
+          });
         },
-      });
+        { threshold: 0.5 },
+      );
+      observer.observe(el);
+
+      return () => observer.disconnect();
     },
     { scope: triggerRef, dependencies: [isMobile, videoUrl, imageUrl, label] },
   );

@@ -52,17 +52,28 @@ export default function GlossaryTerm({
         WebkitBoxDecorationBreak: "clone",
       });
 
-      gsap.to(el, {
-        backgroundSize: "100% 100%",
-        duration: 0.8,
-        delay: 1,
-        ease: "power2.out",
-        scrollTrigger: {
-          trigger: el,
-          start: "top 90%",
-          once: true,
+      // IntersectionObserver instead of ScrollTrigger:
+      // ScrollTrigger's `once: true` + `delay: 1` pattern could fire the animation
+      // while the element was briefly in view during a page transition, then kill
+      // itself — so by the time the user arrived the sweep had completed offscreen
+      // and the term appeared already highlighted. IO re-evaluates on scroll/resize
+      // and only fires when the element is actually visible (threshold 0.5).
+      const observer = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0];
+          if (!entry?.isIntersecting) return;
+          observer.disconnect();
+          gsap.to(el, {
+            backgroundSize: "100% 100%",
+            duration: 0.8,
+            ease: "power2.out",
+          });
         },
-      });
+        { threshold: 0.5 },
+      );
+      observer.observe(el);
+
+      return () => observer.disconnect();
     },
     { scope: triggerRef, dependencies: [isMobile, explanation] },
   );
