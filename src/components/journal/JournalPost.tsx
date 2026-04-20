@@ -25,6 +25,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
   const heroRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const excerptRef = useRef<HTMLParagraphElement>(null);
+  const bylineRef = useRef<HTMLParagraphElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const carouselRef = useRef<HTMLElement>(null);
@@ -32,6 +33,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
   // Hero text animations (SplitText)
   useTitleAnimation(titleRef, heroRef, { duration: 2, delay: 1 });
   useBodyAnimation(excerptRef, heroRef, { duration: 2, delay: 1.3 });
+  useBodyAnimation(bylineRef, heroRef, { duration: 1.5, delay: 1.6 });
 
   // Image, body, and carousel animations (opacity fade)
   useGSAP(
@@ -82,7 +84,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
               </p>
             )}
             {post.publishedAt && (
-              <p className="mt-6 text-sub text-primary">
+              <p ref={bylineRef} className="mt-6 text-sub text-primary">
                 By{" "}
                 <Link href="/about" className="underline underline-offset-2 decoration-primary">
                   Ali Reza Mohammad Poor
