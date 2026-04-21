@@ -1,0 +1,41 @@
+{
+  "name": "portfolio",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "portless portfolio next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typegen": "sanity schema extract && sanity typegen generate"
+  },
+  "dependencies": {
+    "@gsap/react": "^2.1.2",
+    "@sanity/client": "^7.15.0",
+    "@sanity/image-url": "1",
+    "@sanity/vision": "^5.11.0",
+    "@vercel/analytics": "^1.6.1",
+    "gsap": "^3.14.2",
+    "lenis": "^1.3.17",
+    "next": "16.1.6",
+    "next-sanity": "^12.1.0",
+    "next-view-transitions": "^0.3.5",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "sanity": "^5.11.0",
+    "sanity-plugin-media": "^4.1.1",
+    "styled-components": "^6.1.15"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
+    "@tailwindcss/postcss": "^4.2.0",
+    "@types/node": "^25.3.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^10.0.0",
+    "eslint-config-next": "^16.1.6",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.2.0",
+    "typescript": "^5.9.3"
+  }
+}
