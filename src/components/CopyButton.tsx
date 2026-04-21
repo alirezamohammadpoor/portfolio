@@ -43,8 +43,8 @@ export default function CopyButton({
   };
 
   return (
-    <span className="relative inline-block">
-      {/* Desktop: floating tooltip above */}
+    <span className="relative inline-block leading-none align-middle">
+      {/* Desktop: floating tooltip above — hover shows "Click to copy", flips to "Copied" on click */}
       <span
         className={`pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden desktop:flex items-center justify-center rounded-full px-4 pt-[7px] pb-[5px] whitespace-nowrap bg-pistachio text-primary transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] ${hovered || copied ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}`}
       >
@@ -63,6 +63,13 @@ export default function CopyButton({
         </span>
       </span>
 
+      {/* Mobile: floating "Copied" pill that pops above the button on tap */}
+      <span
+        className={`pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1 flex desktop:hidden items-center justify-center rounded-full px-4 pt-[7px] pb-[5px] whitespace-nowrap bg-pistachio text-primary transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] ${copied ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}`}
+      >
+        <span className="text-sub uppercase">{copiedLabel}</span>
+      </span>
+
       <button
         data-animate
         onClick={handleCopy}
@@ -71,25 +78,7 @@ export default function CopyButton({
         aria-label={`Copy ${label.toLowerCase()}`}
         className={`relative inline-block border-0 m-0 p-0 bg-transparent appearance-none focus:outline-none align-baseline ${className}`}
       >
-        {/* Pill background — absolute, extends outside button bounds (negative insets)
-            so it doesn't affect the button's own size, which keeps alignment with
-            sibling links stable. Only visible on mobile when copied. */}
-        <span
-          aria-hidden
-          className={`pointer-events-none absolute -left-3 -right-3 -top-[3px] -bottom-[3px] rounded-full transition-colors duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] desktop:!bg-transparent ${
-            copied ? "bg-pistachio" : "bg-transparent"
-          }`}
-        />
-        <span className="relative">
-          {copied ? (
-            <>
-              <span className="desktop:hidden">{copiedLabel}</span>
-              <span className="hidden desktop:inline">{label}</span>
-            </>
-          ) : (
-            label
-          )}
-        </span>
+        {label}
       </button>
     </span>
   );

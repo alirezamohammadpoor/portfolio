@@ -36,16 +36,29 @@ export default function ProjectGallery({
     const videos = videoRefs.current.filter(Boolean) as HTMLVideoElement[];
     if (!videos.length) return;
 
+    const tryPlay = (video: HTMLVideoElement) => {
+      const playPromise = video.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {});
+      }
+    };
+
+    // Track which videos the observer considers in-view. On mobile after a
+    // view transition, autoPlay can be blocked because user activation was
+    // consumed by the outgoing page; the canplay fallback retries once the
+    // new page's video has data. Without this, gallery videos stay frozen
+    // on the first frame after tapping Next/Previous.
+    const inView = new WeakSet<HTMLVideoElement>();
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           const video = entry.target as HTMLVideoElement;
           if (entry.isIntersecting) {
-            const playPromise = video.play();
-            if (playPromise && typeof playPromise.catch === "function") {
-              playPromise.catch(() => {});
-            }
+            inView.add(video);
+            tryPlay(video);
           } else {
+            inView.delete(video);
             video.pause();
           }
         });
@@ -56,13 +69,22 @@ export default function ProjectGallery({
       },
     );
 
+    const onCanPlay = (e: Event) => {
+      const video = e.currentTarget as HTMLVideoElement;
+      if (inView.has(video) && video.paused) tryPlay(video);
+    };
+
     videos.forEach((video) => {
       observer.observe(video);
+      video.addEventListener("canplay", onCanPlay);
     });
 
     return () => {
       observer.disconnect();
-      videos.forEach((video) => video.pause());
+      videos.forEach((video) => {
+        video.removeEventListener("canplay", onCanPlay);
+        video.pause();
+      });
     };
   }, [gallery]);
 
