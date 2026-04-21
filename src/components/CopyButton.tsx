@@ -65,31 +65,44 @@ export default function CopyButton({
         </span>
       </span>
 
+      {/* Mobile pill — lives in the wrapper, not the button, so SplitText
+          running on [data-animate] inside the button can't clip it with
+          its line masks. Extends past the button via negative insets. */}
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute -left-3 -right-3 -top-[5px] -bottom-[5px] rounded-full transition-colors duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] desktop:!bg-transparent ${
+          copied ? "bg-pistachio" : "bg-transparent"
+        }`}
+      />
+
       <button
-        data-animate
         onClick={handleCopy}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         aria-label={`Copy ${label.toLowerCase()}`}
         className={`relative inline-flex items-center justify-center border-0 m-0 p-0 bg-transparent appearance-none focus:outline-none ${className}`}
       >
-        {/* Pill background — absolute, extends outside button bounds (negative insets)
-            so it doesn't affect the button's own size and keeps siblings stable.
-            Only visible on mobile when copied. */}
-        <span
-          aria-hidden
-          className={`pointer-events-none absolute -left-3 -right-3 -top-[5px] -bottom-[5px] rounded-full transition-colors duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] desktop:!bg-transparent ${
-            copied ? "bg-pistachio" : "bg-transparent"
-          }`}
-        />
-        {/* Invisible spacer sizes the button to the longer of the two labels so
-            the inline mobile swap doesn't shift siblings. */}
+        {/* Spacer sized to the longer label so the mobile swap doesn't
+            reflow siblings. */}
         <span aria-hidden className="invisible">
           {longerLabel}
         </span>
-        <span className="absolute inset-0 flex items-center justify-center">
-          <span className="desktop:hidden">{copied ? copiedLabel : label}</span>
-          <span className="hidden desktop:inline">{label}</span>
+        {/* Animated label layer — data-animate so useInlineAnimation picks
+            it up for the entrance SplitText. Text content never changes, so
+            SplitText's DOM stays valid across copied state changes. */}
+        <span
+          data-animate
+          className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${copied ? "desktop:opacity-100 opacity-0" : "opacity-100"}`}
+        >
+          {label}
+        </span>
+        {/* Mobile-only "Copied" overlay — cross-fades with the label.
+            Separate element so SplitText never sees this text. */}
+        <span
+          aria-hidden
+          className={`desktop:hidden absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${copied ? "opacity-100" : "opacity-0"}`}
+        >
+          {copiedLabel}
         </span>
       </button>
     </span>
