@@ -32,9 +32,15 @@ export default function ProjectGallery({
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
+  // Track which videos the observer considers in-view across effects, so
+  // the transition-end retry can target only the ones that should play.
+  const inViewRef = useRef<WeakSet<HTMLVideoElement>>(new WeakSet());
+
   useEffect(() => {
     const videos = videoRefs.current.filter(Boolean) as HTMLVideoElement[];
     if (!videos.length) return;
+
+    const inView = inViewRef.current;
 
     const tryPlay = (video: HTMLVideoElement) => {
       const playPromise = video.play();
@@ -42,13 +48,6 @@ export default function ProjectGallery({
         playPromise.catch(() => {});
       }
     };
-
-    // Track which videos the observer considers in-view. On mobile after a
-    // view transition, autoPlay can be blocked because user activation was
-    // consumed by the outgoing page; the canplay fallback retries once the
-    // new page's video has data. Without this, gallery videos stay frozen
-    // on the first frame after tapping Next/Previous.
-    const inView = new WeakSet<HTMLVideoElement>();
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -77,6 +76,12 @@ export default function ProjectGallery({
     videos.forEach((video) => {
       observer.observe(video);
       video.addEventListener("canplay", onCanPlay);
+      // canplay may have already fired before this listener attached
+      // (preload="metadata" on a short muxed file can resolve during the
+      // same frame as the render). If the video is ready and paused,
+      // try once immediately — the observer's initial callback will
+      // still correct this if the video actually sits offscreen.
+      if (video.readyState >= 3 && video.paused) tryPlay(video);
     });
 
     return () => {
@@ -87,6 +92,24 @@ export default function ProjectGallery({
       });
     };
   }, [gallery]);
+
+  // Retry playback when the home→project clone transition ends. During the
+  // transition the gallery container is visibility:hidden and the initial
+  // play() can be blocked because user activation was consumed by the
+  // outgoing page's click. The observer's play() attempt and the canplay
+  // fallback both run too early to recover the first video in that window.
+  useEffect(() => {
+    if (isTransitioning) return;
+    const videos = videoRefs.current.filter(Boolean) as HTMLVideoElement[];
+    videos.forEach((video) => {
+      if (!inViewRef.current.has(video)) return;
+      if (!video.paused) return;
+      const playPromise = video.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {});
+      }
+    });
+  }, [isTransitioning]);
 
   // Scroll-reveal + parallax (skip first item — clone transition targets it)
   useGSAP(
