@@ -33,7 +33,24 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
   // Hero text animations (SplitText)
   useTitleAnimation(titleRef, heroRef, { duration: 2, delay: 1 });
   useBodyAnimation(excerptRef, heroRef, { duration: 2, delay: 1.3 });
-  useBodyAnimation(bylineRef, heroRef, { duration: 1.5, delay: 1.6 });
+
+  // Byline gets a plain fade-up instead of SplitText. SplitText wraps each
+  // word in an inline-block span; CSS text-decoration doesn't propagate to
+  // atomic inline-level descendants, so the link's underline ends up
+  // painting only in the gaps between words and shows up as underscores.
+  useGSAP(
+    () => {
+      if (!bylineRef.current) return;
+      gsap.from(bylineRef.current, {
+        autoAlpha: 0,
+        y: 20,
+        duration: 1.5,
+        delay: 1.6,
+        ease: "power3.out",
+      });
+    },
+    { scope: heroRef },
+  );
 
   // Image, body, and carousel animations (opacity fade)
   useGSAP(

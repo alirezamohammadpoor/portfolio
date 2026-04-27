@@ -7,6 +7,14 @@ export const metadata: Metadata = {
   title: "About",
   description:
     "Ali Reza Mohammad Poor — Frontend Developer specializing in eCommerce.",
+  alternates: { canonical: "/about" },
+  openGraph: {
+    type: "profile",
+    url: "/about",
+    title: "About",
+    description:
+      "Ali Reza Mohammad Poor — Frontend Developer specializing in eCommerce.",
+  },
 };
 
 export default async function AboutPage() {

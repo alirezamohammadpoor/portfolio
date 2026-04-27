@@ -180,11 +180,17 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
     const cursor = cursorHintRef.current;
     if (!wrapper || !cursor) return;
 
+    // quickTo pre-creates a single tween whose target props are updated on
+    // each call — no allocation per mousemove. gsap.to inside an event
+    // handler creates a fresh tween every time, which adds up at typical
+    // mousemove rates.
+    const xTo = gsap.quickTo(cursor, "x", { duration: 0.5, ease: "power3.out" });
+    const yTo = gsap.quickTo(cursor, "y", { duration: 0.5, ease: "power3.out" });
+
     function onMove(e: MouseEvent) {
       const rect = wrapper!.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top + 24;
-      gsap.to(cursor!, { x, y, duration: 0.5, ease: "power3.out" });
+      xTo(e.clientX - rect.left);
+      yTo(e.clientY - rect.top + 24);
     }
 
     function onEnter() {
@@ -281,9 +287,13 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
 
       // The media element may live inside the clicked anchor (gallery slide)
       // or in a sibling slide (when the click came from the ProjectCard link
-      // above the gallery). Fall back to the active slide ref so the clone
-      // still originates from the visible card either way.
-      const activeSlideEl = slideRefs.current[activeIndex];
+      // above the gallery). Look up the slide by the project's index in the
+      // current list — not by a captured activeIndex, which is stale because
+      // useCallback's deps don't include it (and adding it would re-create
+      // the callback on every scroll).
+      const projectIndex = projects.findIndex((p) => p._id === project._id);
+      const activeSlideEl =
+        projectIndex >= 0 ? slideRefs.current[projectIndex] : null;
       const mediaEl =
         e.currentTarget.querySelector("img, video") ??
         activeSlideEl?.querySelector("img, video") ??
@@ -317,7 +327,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
 
       router.push(href);
     },
-    [startTransition, router],
+    [startTransition, router, projects],
   );
 
   return (
@@ -384,6 +394,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
                 coverMedia={project.coverMedia}
                 title={project.title ?? ""}
                 priority={index === 0}
+                isActive={index === activeIndex}
               />
             </Link>
           ))}
