@@ -12,6 +12,8 @@
  * ---------------------------------------------------------------------------------
  */
 
+export declare const internalGroqTypeReferenceTo: unique symbol;
+
 // Source: schema.json
 export type SanityImageAssetReference = {
   _ref: string;
@@ -541,8 +543,6 @@ export type AllSanitySchemaTypes =
   | SanityImageAsset
   | Geopoint;
 
-export declare const internalGroqTypeReferenceTo: unique symbol;
-
 // Source: src/sanity/lib/queries.ts
 // Variable: ABOUT_QUERY
 // Query: *[_type == "about"][0] {    heading,    bio,    portrait,    email,    linkedinUrl,    githubUrl  }
@@ -728,7 +728,7 @@ export type PROJECTS_QUERY_RESULT = Array<{
 
 // Source: src/sanity/lib/queries.ts
 // Variable: PROJECT_BY_SLUG_QUERY
-// Query: *[_type == "project" && slug.current == $slug][0] {      _id,  _updatedAt,  title,  slug,  shortDescription,  fullDescription,  techStack,  siteUrl,  sitePassword,  caseStudy->{ _id, slug },  coverMedia,  gallery[]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  },  order,  seo { title, description, ogImage, noIndex },    "nextProject": coalesce(      *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },      *[_type == "project"] | order(order asc) [0] { title, slug }    ),    "prevProject": coalesce(      *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug },      *[_type == "project"] | order(order desc) [0] { title, slug }    )  }
+// Query: *[_type == "project" && slug.current == $slug][0] {      _id,  _updatedAt,  title,  slug,  shortDescription,  fullDescription,  techStack,  siteUrl,  sitePassword,  caseStudy->{ _id, slug },  coverMedia,  gallery[]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  },  order,  seo { title, description, ogImage, noIndex },    "nextProject": *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },    "prevProject": *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug }  }
 export type PROJECT_BY_SLUG_QUERY_RESULT = {
   _id: string;
   _updatedAt: string;
@@ -929,7 +929,7 @@ export type JOURNAL_POSTS_QUERY_RESULT = Array<{
 
 // Source: src/sanity/lib/queries.ts
 // Variable: JOURNAL_POST_BY_SLUG_QUERY
-// Query: *[_type == "journalPost" && slug.current == $slug][0] {      _id,  _updatedAt,  title,  slug,  excerpt,  coverImage,  tags,  publishedAt,  relatedProject->{ _id, title, slug },  seo { title, description, ogImage, noIndex },    body,    "relatedPosts": *[_type == "journalPost" && _id != ^._id] | order(publishedAt desc) {   _id,  _updatedAt,  title,  slug,  excerpt,  coverImage,  tags,  publishedAt,  relatedProject->{ _id, title, slug },  seo { title, description, ogImage, noIndex } }  }
+// Query: *[_type == "journalPost" && slug.current == $slug][0] {      _id,  _updatedAt,  title,  slug,  excerpt,  coverImage,  tags,  publishedAt,  relatedProject->{ _id, title, slug },  seo { title, description, ogImage, noIndex },    body,    "relatedPosts": *[_type == "journalPost" && _id != ^._id] | order(publishedAt desc) [0...3] {   _id,  _updatedAt,  title,  slug,  excerpt,  coverImage,  tags,  publishedAt,  relatedProject->{ _id, title, slug },  seo { title, description, ogImage, noIndex } }  }
 export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
   _id: string;
   _updatedAt: string;
@@ -1147,17 +1147,35 @@ export type JOURNAL_POST_SLUGS_QUERY_RESULT = Array<{
   slug: string | null;
 }>;
 
+// Source: src/sanity/lib/queries.ts
+// Variable: PROJECT_SITEMAP_QUERY
+// Query: *[_type == "project" && defined(slug.current)]{ "slug": slug.current, _updatedAt }
+export type PROJECT_SITEMAP_QUERY_RESULT = Array<{
+  slug: string | null;
+  _updatedAt: string;
+}>;
+
+// Source: src/sanity/lib/queries.ts
+// Variable: JOURNAL_POST_SITEMAP_QUERY
+// Query: *[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current, _updatedAt }
+export type JOURNAL_POST_SITEMAP_QUERY_RESULT = Array<{
+  slug: string | null;
+  _updatedAt: string;
+}>;
+
 // Query TypeMap
 import "@sanity/client";
 declare module "@sanity/client" {
   interface SanityQueries {
     '\n  *[_type == "about"][0] {\n    heading,\n    bio,\n    portrait,\n    email,\n    linkedinUrl,\n    githubUrl\n  }\n': ABOUT_QUERY_RESULT;
     '\n  *[_type == "project"] | order(order asc) { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  sitePassword,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  gallery[]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  },\n  order,\n  seo { title, description, ogImage, noIndex }\n }\n': PROJECTS_QUERY_RESULT;
-    '\n  *[_type == "project" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  sitePassword,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  gallery[]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  },\n  order,\n  seo { title, description, ogImage, noIndex }\n,\n    "nextProject": coalesce(\n      *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },\n      *[_type == "project"] | order(order asc) [0] { title, slug }\n    ),\n    "prevProject": coalesce(\n      *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug },\n      *[_type == "project"] | order(order desc) [0] { title, slug }\n    )\n  }\n': PROJECT_BY_SLUG_QUERY_RESULT;
+    '\n  *[_type == "project" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  sitePassword,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  gallery[]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  },\n  order,\n  seo { title, description, ogImage, noIndex }\n,\n    "nextProject": *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },\n    "prevProject": *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug }\n  }\n': PROJECT_BY_SLUG_QUERY_RESULT;
     '\n  *[_type == "journalPage"][0] { description }\n': JOURNAL_PAGE_QUERY_RESULT;
     '\n  *[_type == "journalPost"] | order(publishedAt desc) { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n }\n': JOURNAL_POSTS_QUERY_RESULT;
-    '\n  *[_type == "journalPost" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n,\n    body,\n    "relatedPosts": *[_type == "journalPost" && _id != ^._id] | order(publishedAt desc) { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n }\n  }\n': JOURNAL_POST_BY_SLUG_QUERY_RESULT;
+    '\n  *[_type == "journalPost" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n,\n    body,\n    "relatedPosts": *[_type == "journalPost" && _id != ^._id] | order(publishedAt desc) [0...3] { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n }\n  }\n': JOURNAL_POST_BY_SLUG_QUERY_RESULT;
     '*[_type == "project" && defined(slug.current)]{ "slug": slug.current }': PROJECT_SLUGS_QUERY_RESULT;
     '*[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current }': JOURNAL_POST_SLUGS_QUERY_RESULT;
+    '*[_type == "project" && defined(slug.current)]{ "slug": slug.current, _updatedAt }': PROJECT_SITEMAP_QUERY_RESULT;
+    '*[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current, _updatedAt }': JOURNAL_POST_SITEMAP_QUERY_RESULT;
   }
 }

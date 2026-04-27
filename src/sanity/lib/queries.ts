@@ -54,14 +54,8 @@ export const PROJECTS_QUERY = defineQuery(`
 export const PROJECT_BY_SLUG_QUERY = defineQuery(`
   *[_type == "project" && slug.current == $slug][0] {
     ${PROJECT_FIELDS},
-    "nextProject": coalesce(
-      *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },
-      *[_type == "project"] | order(order asc) [0] { title, slug }
-    ),
-    "prevProject": coalesce(
-      *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug },
-      *[_type == "project"] | order(order desc) [0] { title, slug }
-    )
+    "nextProject": *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },
+    "prevProject": *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug }
   }
 `);
 
@@ -77,7 +71,7 @@ export const JOURNAL_POST_BY_SLUG_QUERY = defineQuery(`
   *[_type == "journalPost" && slug.current == $slug][0] {
     ${JOURNAL_FIELDS},
     body,
-    "relatedPosts": *[_type == "journalPost" && _id != ^._id] | order(publishedAt desc) { ${JOURNAL_FIELDS} }
+    "relatedPosts": *[_type == "journalPost" && _id != ^._id] | order(publishedAt desc) [0...3] { ${JOURNAL_FIELDS} }
   }
 `);
 
@@ -87,4 +81,12 @@ export const PROJECT_SLUGS_QUERY = defineQuery(
 
 export const JOURNAL_POST_SLUGS_QUERY = defineQuery(
   `*[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current }`
+);
+
+export const PROJECT_SITEMAP_QUERY = defineQuery(
+  `*[_type == "project" && defined(slug.current)]{ "slug": slug.current, _updatedAt }`
+);
+
+export const JOURNAL_POST_SITEMAP_QUERY = defineQuery(
+  `*[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current, _updatedAt }`
 );

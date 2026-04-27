@@ -1,53 +1,61 @@
 import type { MetadataRoute } from "next";
 import { client } from "@/sanity/lib/client";
 import {
-  JOURNAL_POST_SLUGS_QUERY,
-  PROJECT_SLUGS_QUERY,
+  JOURNAL_POST_SITEMAP_QUERY,
+  PROJECT_SITEMAP_QUERY,
 } from "@/sanity/lib/queries";
 
 const siteUrl =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://alirezamp.com";
 
-type SlugOnly = { slug: string | null } | { slug: { current: string } | null };
+type SitemapEntry = { slug: string | null; _updatedAt?: string | null };
 
-function extractSlug(entry: SlugOnly): string | null {
-  const raw = (entry as { slug: unknown }).slug;
-  if (typeof raw === "string") return raw;
-  if (raw && typeof raw === "object" && "current" in raw) {
-    return (raw as { current: string }).current;
-  }
-  return null;
+function parseUpdatedAt(value: string | null | undefined, fallback: Date): Date {
+  if (!value) return fallback;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? fallback : parsed;
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [projectSlugs, journalSlugs] = await Promise.all([
-    client.fetch(PROJECT_SLUGS_QUERY),
-    client.fetch(JOURNAL_POST_SLUGS_QUERY),
+  const [projectEntries, journalEntries] = await Promise.all([
+    client.fetch(PROJECT_SITEMAP_QUERY),
+    client.fetch(JOURNAL_POST_SITEMAP_QUERY),
   ]);
 
   const now = new Date();
+  const allUpdates = [...(projectEntries ?? []), ...(journalEntries ?? [])]
+    .map((e: SitemapEntry) => parseUpdatedAt(e._updatedAt, now).getTime())
+    .filter((t) => t > 0);
+  // Static routes don't have their own _updatedAt; use the most recent
+  // content update as a proxy so the homepage and listing pages reflect
+  // when their content actually changed.
+  const latestContentUpdate = allUpdates.length
+    ? new Date(Math.max(...allUpdates))
+    : now;
 
   const staticRoutes: MetadataRoute.Sitemap = [
-    { url: `${siteUrl}/`, lastModified: now, priority: 1 },
-    { url: `${siteUrl}/about`, lastModified: now, priority: 0.8 },
-    { url: `${siteUrl}/journal`, lastModified: now, priority: 0.8 },
+    { url: `${siteUrl}/`, lastModified: latestContentUpdate, priority: 1 },
+    { url: `${siteUrl}/about`, lastModified: latestContentUpdate, priority: 0.8 },
+    { url: `${siteUrl}/journal`, lastModified: latestContentUpdate, priority: 0.8 },
   ];
 
-  const projectRoutes: MetadataRoute.Sitemap = (projectSlugs ?? [])
-    .map((entry: SlugOnly) => extractSlug(entry))
-    .filter((slug: string | null): slug is string => Boolean(slug))
-    .map((slug: string) => ({
-      url: `${siteUrl}/project/${slug}`,
-      lastModified: now,
+  const projectRoutes: MetadataRoute.Sitemap = (projectEntries ?? [])
+    .filter((entry: SitemapEntry): entry is SitemapEntry & { slug: string } =>
+      Boolean(entry.slug),
+    )
+    .map((entry) => ({
+      url: `${siteUrl}/project/${entry.slug}`,
+      lastModified: parseUpdatedAt(entry._updatedAt, now),
       priority: 0.7,
     }));
 
-  const journalRoutes: MetadataRoute.Sitemap = (journalSlugs ?? [])
-    .map((entry: SlugOnly) => extractSlug(entry))
-    .filter((slug: string | null): slug is string => Boolean(slug))
-    .map((slug: string) => ({
-      url: `${siteUrl}/journal/${slug}`,
-      lastModified: now,
+  const journalRoutes: MetadataRoute.Sitemap = (journalEntries ?? [])
+    .filter((entry: SitemapEntry): entry is SitemapEntry & { slug: string } =>
+      Boolean(entry.slug),
+    )
+    .map((entry) => ({
+      url: `${siteUrl}/journal/${entry.slug}`,
+      lastModified: parseUpdatedAt(entry._updatedAt, now),
       priority: 0.7,
     }));
 
