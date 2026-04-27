@@ -128,7 +128,6 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
         wipeRef={footerWipeRef}
         nextProjectSlug={nextProject?.slug?.current ?? undefined}
         prevProjectSlug={prevProject?.slug?.current ?? undefined}
-        isFirstProject={project.order === 1}
         showNav={showMobileNav}
       />
     </>

@@ -23,7 +23,6 @@ interface FooterProps {
   wipeRef?: RefObject<HTMLDivElement | null>;
   nextProjectSlug?: string;
   prevProjectSlug?: string;
-  isFirstProject?: boolean;
   showNav?: boolean;
 }
 
@@ -39,7 +38,6 @@ export default function Footer({
   wipeRef,
   nextProjectSlug,
   prevProjectSlug,
-  isFirstProject = false,
   showNav = false,
 }: FooterProps) {
   const footerRef = useRef<HTMLElement>(null);
@@ -94,7 +92,7 @@ export default function Footer({
 
   if (!projectTitle) return null;
 
-  const hasNav = nextProjectSlug || (prevProjectSlug && !isFirstProject);
+  const hasNav = nextProjectSlug || prevProjectSlug;
 
   return (
     <footer
@@ -157,7 +155,7 @@ export default function Footer({
           className="relative flex items-center justify-between opacity-0 h-0 overflow-hidden"
         >
           <span>
-            {prevProjectSlug && !isFirstProject && (
+            {prevProjectSlug && (
               <Link
                 href={`/project/${prevProjectSlug}`}
                 className="text-sub text-primary"

@@ -7,6 +7,14 @@ export const metadata: Metadata = {
   title: "Journal",
   description:
     "Insights and case studies from recent projects.",
+  alternates: { canonical: "/journal" },
+  openGraph: {
+    type: "website",
+    url: "/journal",
+    title: "Journal",
+    description:
+      "Insights and case studies from recent projects.",
+  },
 };
 
 export default async function JournalPage() {
