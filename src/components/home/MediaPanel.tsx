@@ -41,7 +41,7 @@ export default function MediaPanel({
 
   if (coverMedia?.type === "video" && coverMedia.video?.asset?._ref) {
     return (
-      <div className="relative w-full overflow-hidden bg-tertiary h-full">
+      <div className="relative w-full overflow-hidden bg-black h-full">
         <video
           ref={videoRef}
           src={fileUrl(coverMedia.video.asset._ref)}
@@ -61,7 +61,7 @@ export default function MediaPanel({
 
   if (coverMedia?.type === "image" && coverMedia.image?.asset) {
     return (
-      <div className="relative w-full overflow-hidden bg-tertiary h-full">
+      <div className="relative w-full overflow-hidden bg-black h-full">
         <Image
           src={urlFor(coverMedia.image).width(1400).quality(85).url()}
           alt={title}
@@ -76,7 +76,7 @@ export default function MediaPanel({
   }
 
   return (
-    <div className="relative w-full overflow-hidden bg-tertiary h-full">
+    <div className="relative w-full overflow-hidden bg-black h-full">
       <div className="flex h-full items-center justify-center text-sub text-secondary">
         {title} media
       </div>
