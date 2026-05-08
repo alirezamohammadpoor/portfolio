@@ -51,7 +51,7 @@ export default function Footer({
       gsap.fromTo(
         footerRef.current,
         { autoAlpha: 0 },
-        { autoAlpha: 1, duration: 0.6, ease: "expo.out" },
+        { autoAlpha: 1, duration: 0.3, ease: "expo.out" },
       );
     } else if (!visible && !hasAppeared.current) {
       gsap.set(footerRef.current, { autoAlpha: 0 });
@@ -117,7 +117,7 @@ export default function Footer({
               aria-label={
                 detailsOpen ? "Close project details" : "Show project details"
               }
-              className="text-sub text-primary cursor-pointer"
+              className="text-sub text-primary cursor-pointer transition-transform duration-150 ease-out active:scale-[0.97]"
             >
               {detailsOpen ? "Close -" : "Details +"}
             </button>
