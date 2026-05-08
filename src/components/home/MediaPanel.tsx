@@ -10,9 +10,12 @@ interface MediaPanelProps {
   title: string;
   /** First slide on first paint — gets eager loading + fetchPriority high. */
   priority?: boolean;
-  /** Currently visible slide — drives autoplay and fetchPriority once
-   *  the user scrolls past the initial slide. */
+  /** Currently visible slide — drives autoplay imperatively. */
   isActive?: boolean;
+  /** Adjacent slide (±1 from active) — eagerly preloads the video so a
+   *  scroll into view paints the first frame without a black flash, but
+   *  the video remains paused (decode budget preserved). */
+  shouldPreload?: boolean;
 }
 
 export default function MediaPanel({
@@ -20,12 +23,26 @@ export default function MediaPanel({
   title,
   priority = false,
   isActive = false,
+  shouldPreload = false,
 }: MediaPanelProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // Play/pause the cover video imperatively so off-screen slides aren't
-  // decoding and competing for the mobile media-element budget. Only the
-  // active slide plays; others freeze on their first frame.
+  // Force-fetch adjacent + active + priority slides. iOS Safari ignores
+  // `preload="auto"` as a hint and won't fetch until user interaction
+  // or visibility change — calling load() bypasses that. The
+  // readyState < 2 guard prevents re-triggering load() on a video that
+  // already has frames buffered (which would reset it).
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const shouldFetch = priority || isActive || shouldPreload;
+    if (shouldFetch && video.readyState < 2) {
+      video.load();
+    }
+  }, [priority, isActive, shouldPreload]);
+
+  // Play/pause the cover video imperatively. Only the active slide plays;
+  // others freeze on their first frame (preserves mobile decode budget).
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -53,7 +70,7 @@ export default function MediaPanel({
           muted
           loop
           playsInline
-          preload={priority || isActive ? "auto" : "metadata"}
+          preload={priority || isActive || shouldPreload ? "auto" : "metadata"}
         />
       </div>
     );
@@ -69,7 +86,7 @@ export default function MediaPanel({
           className="object-cover"
           sizes="(min-width: 75rem) 50vw, 100vw"
           priority={priority}
-          fetchPriority={priority || isActive ? "high" : "auto"}
+          fetchPriority={priority ? "high" : undefined}
         />
       </div>
     );
