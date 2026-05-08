@@ -8,6 +8,7 @@ import { useGSAP } from "@gsap/react";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { usePageTransition } from "@/context/TransitionContext";
+import { lockScroll, unlockScroll } from "@/hooks/useScrollLock";
 import ProjectCard from "./ProjectCard";
 import MediaPanel from "./MediaPanel";
 
@@ -28,6 +29,15 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
   const hasTapped = useRef(false);
   const router = useRouter();
   const { startTransition } = usePageTransition();
+
+  // Lock the page itself while on home — the gallery's own wheel/touch
+  // handlers preventDefault inside the gallery wrapper, but events on
+  // the surrounding ProjectCard area (especially on mobile) would
+  // otherwise scroll the page or trigger overscroll bounce.
+  useEffect(() => {
+    lockScroll();
+    return () => unlockScroll();
+  }, []);
 
   // Snap gallery — one scroll gesture = one slide, infinite loop via GSAP transforms
   useEffect(() => {
