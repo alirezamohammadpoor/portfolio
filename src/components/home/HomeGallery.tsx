@@ -60,10 +60,13 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       const nextEl = slides[nextIndex];
 
       ctx.add(() => {
-        // Position next slide off-screen in the scroll direction
+        // Position next slide off-screen in the scroll direction.
+        // Use opacity (not autoAlpha) so visibility stays visible — iOS
+        // Safari refuses to fetch video resources inside a
+        // visibility:hidden element, even with preload="auto".
         gsap.set(nextEl, {
           yPercent: direction > 0 ? 100 : -100,
-          autoAlpha: 1,
+          opacity: 1,
         });
 
         const tl = gsap.timeline({
@@ -77,12 +80,18 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
           },
         });
 
+        // Honor prefers-reduced-motion: snap instantly instead of sliding.
+        const reduced =
+          typeof window !== "undefined" &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const slideDuration = reduced ? 0 : 0.35;
+
         tl.to(
           currentEl,
           {
             yPercent: direction > 0 ? -100 : 100,
-            duration: 0.6,
-            ease: "power2.inOut",
+            duration: slideDuration,
+            ease: "power3.inOut",
           },
           0,
         );
@@ -91,8 +100,8 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
           nextEl,
           {
             yPercent: 0,
-            duration: 0.6,
-            ease: "power2.inOut",
+            duration: slideDuration,
+            ease: "power3.inOut",
           },
           0,
         );
@@ -127,9 +136,11 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       }
     }
 
-    // Initialize: hide all slides except the first (handled by useGSAP entrance)
+    // Initialize: position non-first slides off-screen and transparent.
+    // Using opacity (not autoAlpha) keeps visibility:visible so iOS Safari
+    // will fetch video resources on inactive slides.
     slides.forEach((el, i) => {
-      if (i > 0) gsap.set(el, { yPercent: 100, autoAlpha: 0 });
+      if (i > 0) gsap.set(el, { yPercent: 100, opacity: 0 });
     });
 
     const wrapper = wrapperRef.current;
@@ -146,10 +157,11 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Prefetch the active project's route + preload its first gallery image.
+  // Prefetch the active project's route + preload its first gallery item.
   // Mobile has no hover, so Next's Link prefetch never fires before tap —
   // this gives the destination a head start so the clone overlay doesn't
-  // morph onto an empty box.
+  // morph onto an empty box. Handles both image and video first items so
+  // the video case isn't a regression vs the image case.
   useEffect(() => {
     const project = projects[activeIndex];
     const slug = project?.slug?.current;
@@ -158,20 +170,33 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
     router.prefetch(`/project/${slug}`);
 
     const firstGalleryItem = project?.gallery?.[0];
+    let href: string | null = null;
+    let asAttr: "image" | "video" | null = null;
+
     if (
       firstGalleryItem?._type === "galleryImage" &&
       firstGalleryItem.image?.asset
     ) {
-      const href = urlFor(firstGalleryItem.image).width(1600).quality(85).url();
-      const link = document.createElement("link");
-      link.rel = "preload";
-      link.as = "image";
-      link.href = href;
-      document.head.appendChild(link);
-      return () => {
-        document.head.removeChild(link);
-      };
+      href = urlFor(firstGalleryItem.image).width(1600).quality(85).url();
+      asAttr = "image";
+    } else if (
+      firstGalleryItem?._type === "galleryVideo" &&
+      firstGalleryItem.video?.asset?._ref
+    ) {
+      href = fileUrl(firstGalleryItem.video.asset._ref);
+      asAttr = "video";
     }
+
+    if (!href || !asAttr) return;
+
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = asAttr;
+    link.href = href;
+    document.head.appendChild(link);
+    return () => {
+      document.head.removeChild(link);
+    };
   }, [activeIndex, projects, router]);
 
   // Desktop: cursor-follow scroll hint with adaptive color
@@ -184,8 +209,8 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
     // each call — no allocation per mousemove. gsap.to inside an event
     // handler creates a fresh tween every time, which adds up at typical
     // mousemove rates.
-    const xTo = gsap.quickTo(cursor, "x", { duration: 0.5, ease: "power3.out" });
-    const yTo = gsap.quickTo(cursor, "y", { duration: 0.5, ease: "power3.out" });
+    const xTo = gsap.quickTo(cursor, "x", { duration: 0.25, ease: "power3.out" });
+    const yTo = gsap.quickTo(cursor, "y", { duration: 0.25, ease: "power3.out" });
 
     function onMove(e: MouseEvent) {
       const rect = wrapper!.getBoundingClientRect();
@@ -211,19 +236,12 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
   // Gallery entrance — first slide fades in, hints appear
   useGSAP(
     () => {
+      // First slide is in its final position from mount — no entrance.
+      // Setting opacity:1 explicitly here in case the className's opacity-0
+      // hasn't been overridden by a later gsap.set yet.
       const firstSlide = slideRefs.current[0];
       if (firstSlide) {
-        gsap.fromTo(
-          firstSlide,
-          { yPercent: 40, autoAlpha: 0 },
-          {
-            yPercent: 0,
-            autoAlpha: 1,
-            duration: 1.4,
-            ease: "power3.out",
-            delay: 0.6,
-          },
-        );
+        gsap.set(firstSlide, { yPercent: 0, opacity: 1 });
       }
 
       // Mobile scroll hint entrance
@@ -231,14 +249,14 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
         gsap.fromTo(
           scrollHintRef.current,
           { autoAlpha: 0, y: 10 },
-          { autoAlpha: 1, y: 0, duration: 0.6, ease: "power3.out", delay: 1.2 },
+          { autoAlpha: 1, y: 0, duration: 0.4, ease: "power3.out", delay: 0.2 },
         );
       }
       if (tapHintRef.current) {
         gsap.fromTo(
           tapHintRef.current,
           { autoAlpha: 0, y: 10 },
-          { autoAlpha: 1, y: 0, duration: 0.6, ease: "power3.out", delay: 1.2 },
+          { autoAlpha: 1, y: 0, duration: 0.4, ease: "power3.out", delay: 0.2 },
         );
       }
       // Desktop cursor hint — fade in with gallery entrance
@@ -246,7 +264,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
         gsap.fromTo(
           cursorHintRef.current,
           { autoAlpha: 0 },
-          { autoAlpha: 1, duration: 0.6, ease: "power3.out", delay: 1.2 },
+          { autoAlpha: 1, duration: 0.4, ease: "power3.out", delay: 0.2 },
         );
       }
     },
@@ -387,7 +405,9 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
               }}
               href={`/project/${project.slug?.current}`}
               aria-label={`View ${project.title ?? "project"}`}
-              className="absolute inset-0 block invisible"
+              aria-hidden={index !== activeIndex}
+              tabIndex={index !== activeIndex ? -1 : undefined}
+              className={`absolute inset-0 block opacity-0${index !== activeIndex ? " pointer-events-none" : ""}`}
               onClick={(e) => handleProjectClick(e, project)}
             >
               <MediaPanel
@@ -395,6 +415,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
                 title={project.title ?? ""}
                 priority={index === 0}
                 isActive={index === activeIndex}
+                shouldPreload={Math.abs(index - activeIndex) === 1}
               />
             </Link>
           ))}
