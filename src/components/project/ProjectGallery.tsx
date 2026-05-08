@@ -6,7 +6,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
-import { urlFor, fileUrl } from "@/sanity/lib/image";
+import { imageUrl, fileUrl } from "@/sanity/lib/image";
 
 type ProjectGalleryItems = NonNullable<
   NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["gallery"]
@@ -163,7 +163,7 @@ export default function ProjectGallery({
           >
             {isImage && item.image?.asset && (
               <Image
-                src={urlFor(item.image).width(1600).quality(85).url()}
+                src={imageUrl(item.image, 1200)}
                 alt={`${projectTitle} — ${i + 1}`}
                 fill
                 className={`object-cover${i > 0 ? " scale-[1.06]" : ""}`}

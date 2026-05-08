@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
-import { urlFor, fileUrl } from "@/sanity/lib/image";
+import { imageUrl, fileUrl } from "@/sanity/lib/image";
 
 interface MediaPanelProps {
   coverMedia: PROJECTS_QUERY_RESULT[number]["coverMedia"];
@@ -80,7 +80,7 @@ export default function MediaPanel({
     return (
       <div className="relative w-full overflow-hidden bg-black h-full">
         <Image
-          src={urlFor(coverMedia.image).width(1400).quality(85).url()}
+          src={imageUrl(coverMedia.image, 1200)}
           alt={title}
           fill
           className="object-cover"

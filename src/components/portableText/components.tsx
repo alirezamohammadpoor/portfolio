@@ -1,7 +1,7 @@
 import Image from "next/image";
 import type { PortableTextBlock } from "next-sanity";
 import { PortableText } from "next-sanity";
-import { urlFor } from "@/sanity/lib/image";
+import { imageUrl } from "@/sanity/lib/image";
 import GlossaryTerm from "@/components/journal/GlossaryTerm";
 import RichPreview from "@/components/journal/RichPreview";
 
@@ -49,13 +49,13 @@ export const portableTextComponents = {
       };
       children: React.ReactNode;
     }) => {
-      const imageUrl = value?.image?.asset
-        ? urlFor(value.image).width(1200).quality(85).url()
+      const imageSrc = value?.image?.asset
+        ? imageUrl(value.image, 1200)
         : undefined;
       return (
         <RichPreview
           videoUrl={value?.videoUrl}
-          imageUrl={imageUrl}
+          imageUrl={imageSrc}
           imageAlt={value?.image?.alt}
           url={value?.url}
           label={value?.label}
@@ -80,7 +80,7 @@ export const portableTextComponents = {
       return (
         <div className="relative my-8 aspect-[4/3] w-full overflow-hidden">
           <Image
-            src={urlFor(value).width(1400).quality(85).url()}
+            src={imageUrl(value, 1200)}
             alt={value.alt ?? ""}
             fill
             className="object-contain"

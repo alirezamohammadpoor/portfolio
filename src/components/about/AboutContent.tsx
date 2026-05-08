@@ -11,7 +11,7 @@ import {
   useInlineAnimation,
 } from "@/hooks/useTextAnimation";
 import type { ABOUT_QUERY_RESULT } from "@/sanity/types";
-import { urlFor } from "@/sanity/lib/image";
+import { imageUrl } from "@/sanity/lib/image";
 import dynamic from "next/dynamic";
 import CopyButton from "@/components/CopyButton";
 import SocialLink from "./SocialLink";
@@ -109,7 +109,7 @@ export default function AboutContent({
             className="invisible relative mt-6 aspect-[3/4] w-full overflow-hidden bg-tertiary desktop:hidden"
           >
             <Image
-              src={urlFor(portrait).width(780).quality(85).url()}
+              src={imageUrl(portrait, 780)}
               alt={heading ?? "Portrait"}
               fill
               className="object-cover"
@@ -144,7 +144,7 @@ export default function AboutContent({
         >
           <div className="relative aspect-[3/4] w-full overflow-hidden bg-tertiary">
             <Image
-              src={urlFor(portrait).width(780).quality(85).url()}
+              src={imageUrl(portrait, 780)}
               alt={heading ?? "Portrait"}
               fill
               className="object-cover"

@@ -14,8 +14,7 @@ import { ABOUT_QUERY } from "@/sanity/lib/queries";
 import JsonLd from "@/components/seo/JsonLd";
 import "@/styles/globals.css";
 
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://alirezamp.com";
+import { SITE_URL as siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

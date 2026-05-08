@@ -10,10 +10,8 @@ import {
 
 import JournalPost from "@/components/journal/JournalPost";
 import JsonLd from "@/components/seo/JsonLd";
-import { urlFor } from "@/sanity/lib/image";
-
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://alirezamp.com";
+import { ogImageUrl } from "@/sanity/lib/image";
+import { SITE_URL as siteUrl } from "@/lib/site";
 
 interface JournalPostPageProps {
   params: Promise<{ slug: string }>;
@@ -43,11 +41,11 @@ export async function generateMetadata({
   const seoDescription = post.seo?.description ?? post.excerpt ?? undefined;
   // Sanity ogImage override — when set, replaces the auto-generated
   // opengraph-image.tsx output. When empty, falls back to the generator.
-  const ogImageUrl = post.seo?.ogImage?.asset
-    ? urlFor(post.seo.ogImage).width(1200).height(630).quality(85).url()
+  const seoOgImage = post.seo?.ogImage?.asset
+    ? ogImageUrl(post.seo.ogImage)
     : undefined;
-  const ogImages = ogImageUrl
-    ? [{ url: ogImageUrl, width: 1200, height: 630, alt: seoTitle }]
+  const ogImages = seoOgImage
+    ? [{ url: seoOgImage, width: 1200, height: 630, alt: seoTitle }]
     : undefined;
 
   return {

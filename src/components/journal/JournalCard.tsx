@@ -1,7 +1,7 @@
 import { Link } from "next-view-transitions";
 import Image from "next/image";
 import type { JOURNAL_POSTS_QUERY_RESULT } from "@/sanity/types";
-import { urlFor } from "@/sanity/lib/image";
+import { imageUrl } from "@/sanity/lib/image";
 
 interface JournalCardProps {
   post: JOURNAL_POSTS_QUERY_RESULT[number];
@@ -13,7 +13,7 @@ export default function JournalCard({ post }: JournalCardProps) {
       {post.coverImage?.asset && (
         <div className="relative aspect-[4/5] w-full overflow-hidden bg-tertiary">
           <Image
-            src={urlFor(post.coverImage).width(800).quality(85).url()}
+            src={imageUrl(post.coverImage, 800)}
             alt={post.title ?? ""}
             fill
             className="object-cover"

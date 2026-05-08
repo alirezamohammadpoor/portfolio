@@ -6,7 +6,7 @@ import { Link } from "next-view-transitions";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
-import { urlFor, fileUrl } from "@/sanity/lib/image";
+import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { usePageTransition } from "@/context/TransitionContext";
 import ProjectCard from "./ProjectCard";
 import MediaPanel from "./MediaPanel";
@@ -177,7 +177,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       firstGalleryItem?._type === "galleryImage" &&
       firstGalleryItem.image?.asset
     ) {
-      href = urlFor(firstGalleryItem.image).width(1600).quality(85).url();
+      href = imageUrl(firstGalleryItem.image, 1200);
       asAttr = "image";
     } else if (
       firstGalleryItem?._type === "galleryVideo" &&
@@ -329,7 +329,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       if (image) {
         startTransition({
           mediaType: "image",
-          imageUrl: urlFor(image).width(1200).quality(85).url(),
+          imageUrl: imageUrl(image, 1200),
           sourceRect,
         });
       } else if (videoRef) {

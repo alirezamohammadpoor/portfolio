@@ -12,7 +12,7 @@ import type {
   JOURNAL_POST_BY_SLUG_QUERY_RESULT,
   JOURNAL_POSTS_QUERY_RESULT,
 } from "@/sanity/types";
-import { urlFor } from "@/sanity/lib/image";
+import { imageUrl } from "@/sanity/lib/image";
 import { portableTextComponents } from "@/components/portableText/components";
 import JournalCard from "./JournalCard";
 
@@ -124,7 +124,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
             className="invisible relative aspect-[3/4] w-full shrink-0 overflow-hidden bg-tertiary desktop:aspect-auto desktop:w-1/2"
           >
             <Image
-              src={urlFor(post.coverImage).width(1920).quality(85).url()}
+              src={imageUrl(post.coverImage, 1400)}
               alt={post.coverImage.alt ?? post.title ?? ""}
               fill
               className="object-cover"
