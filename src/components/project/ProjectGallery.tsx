@@ -94,15 +94,24 @@ export default function ProjectGallery({
   }, [gallery]);
 
   // Retry playback when the home→project clone transition ends. During the
-  // transition the gallery container is visibility:hidden and the initial
-  // play() can be blocked because user activation was consumed by the
-  // outgoing page's click. The observer's play() attempt and the canplay
-  // fallback both run too early to recover the first video in that window.
+  // transition the gallery container is opacity:0 (and was previously
+  // visibility:hidden, which broke iOS Safari's IntersectionObserver — see
+  // the className gate below). The initial play() can also be blocked
+  // because user activation was consumed by the outgoing page's click.
+  //
+  // Iterate the SPARSE videoRefs.current so `galleryIndex` lines up with
+  // the gallery item index. Do NOT use videos.filter(Boolean).forEach —
+  // that compacts the array, so index 0 would mean "first video on the
+  // page" rather than "gallery item 0" (broken when gallery[0] is an
+  // image and the actual first video is at gallery[3]).
   useEffect(() => {
     if (isTransitioning) return;
-    const videos = videoRefs.current.filter(Boolean) as HTMLVideoElement[];
-    videos.forEach((video) => {
-      if (!inViewRef.current.has(video)) return;
+    videoRefs.current.forEach((video, galleryIndex) => {
+      if (!video) return;
+      // First gallery item is always retried because the clone targets it
+      // and the observer may have missed it during transition. Other
+      // videos retry only if the observer marked them in-view.
+      if (galleryIndex !== 0 && !inViewRef.current.has(video)) return;
       if (!video.paused) return;
       const playPromise = video.play();
       if (playPromise && typeof playPromise.catch === "function") {
@@ -137,7 +146,7 @@ export default function ProjectGallery({
   return (
     <div
       ref={galleryRef}
-      className={`flex flex-col gap-2 px-4 pb-10 desktop:px-6 desktop:ml-[50%] desktop:w-1/2${isTransitioning ? " invisible" : ""}`}
+      className={`flex flex-col gap-2 px-4 pb-10 desktop:px-6 desktop:ml-[50%] desktop:w-1/2${isTransitioning ? " opacity-0 pointer-events-none" : ""}`}
     >
       {gallery.map((item, i) => {
         const isImage = item._type === "galleryImage";
