@@ -48,7 +48,7 @@ export default function CopyButton({
     <span className="relative inline-flex items-center">
       {/* Desktop: floating tooltip above — hover shows "Click to copy", flips to "Copied" on click */}
       <span
-        className={`pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden desktop:flex items-center justify-center rounded-full px-4 pt-[7px] pb-[5px] whitespace-nowrap bg-pistachio text-primary transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.33,1,0.68,1)] ${hovered || copied ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}`}
+        className={`pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden desktop:flex items-center justify-center rounded-full px-4 pt-[7px] pb-[5px] whitespace-nowrap bg-pistachio text-primary transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.33,1,0.68,1)] ${hovered || copied ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}`}
       >
         <span className="text-sub uppercase invisible">
           {hoverLabel.length > copiedLabel.length ? hoverLabel : copiedLabel}
@@ -80,7 +80,7 @@ export default function CopyButton({
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         aria-label={`Copy ${label.toLowerCase()}`}
-        className={`relative inline-flex items-center justify-center border-0 m-0 p-0 bg-transparent appearance-none focus:outline-none ${className}`}
+        className={`relative inline-flex items-center justify-center border-0 m-0 p-0 bg-transparent appearance-none focus:outline-none transition-transform duration-150 ease-out active:scale-[0.97] ${className}`}
       >
         {/* Spacer sized to the longer label so the mobile swap doesn't
             reflow siblings. */}
