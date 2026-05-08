@@ -4,9 +4,7 @@ import {
   JOURNAL_POST_SITEMAP_QUERY,
   PROJECT_SITEMAP_QUERY,
 } from "@/sanity/lib/queries";
-
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://alirezamp.com";
+import { SITE_URL as siteUrl } from "@/lib/site";
 
 type SitemapEntry = { slug: string | null; _updatedAt?: string | null };
 

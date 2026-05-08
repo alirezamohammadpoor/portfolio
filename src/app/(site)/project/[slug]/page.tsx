@@ -9,10 +9,8 @@ import {
 } from "@/sanity/lib/queries";
 import ProjectPageClient from "@/components/project/ProjectPageClient";
 import JsonLd from "@/components/seo/JsonLd";
-import { urlFor } from "@/sanity/lib/image";
-
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://alirezamp.com";
+import { ogImageUrl } from "@/sanity/lib/image";
+import { SITE_URL as siteUrl } from "@/lib/site";
 
 interface ProjectPageProps {
   params: Promise<{ slug: string }>;
@@ -45,11 +43,11 @@ export async function generateMetadata({
   // Sanity ogImage override — when set, replaces the auto-generated
   // opengraph-image.tsx output. When empty, omitting `images` lets Next.js
   // fall back to the route's opengraph-image generator.
-  const ogImageUrl = project.seo?.ogImage?.asset
-    ? urlFor(project.seo.ogImage).width(1200).height(630).quality(85).url()
+  const seoOgImage = project.seo?.ogImage?.asset
+    ? ogImageUrl(project.seo.ogImage)
     : undefined;
-  const ogImages = ogImageUrl
-    ? [{ url: ogImageUrl, width: 1200, height: 630, alt: seoTitle }]
+  const ogImages = seoOgImage
+    ? [{ url: seoOgImage, width: 1200, height: 630, alt: seoTitle }]
     : undefined;
 
   return {
