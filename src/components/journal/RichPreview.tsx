@@ -187,7 +187,7 @@ export default function RichPreview({
                   setMuted((prev) => !prev);
                 }}
                 aria-label={muted ? "Unmute video" : "Mute video"}
-                className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/40 text-white transition-opacity hover:bg-black/60"
+                className="absolute bottom-2 right-2 flex size-7 items-center justify-center rounded-full bg-black/40 text-white transition-opacity hover:bg-black/60"
               >
                 {muted ? (
                   <svg
@@ -264,13 +264,13 @@ export default function RichPreview({
 
       {mobile && caretLeft !== null && placement === "above" && (
         <span
-          className="absolute top-full h-0 w-0 -translate-x-1/2 border-x-[6px] border-x-transparent border-t-[6px] border-t-lightpistachio"
+          className="absolute top-full size-0 -translate-x-1/2 border-x-[6px] border-x-transparent border-t-[6px] border-t-lightpistachio"
           style={{ left: caretLeft }}
         />
       )}
       {mobile && caretLeft !== null && placement === "below" && (
         <span
-          className="absolute bottom-full h-0 w-0 -translate-x-1/2 border-x-[6px] border-x-transparent border-b-[6px] border-b-lightpistachio"
+          className="absolute bottom-full size-0 -translate-x-1/2 border-x-[6px] border-x-transparent border-b-[6px] border-b-lightpistachio"
           style={{ left: caretLeft }}
         />
       )}
@@ -333,7 +333,7 @@ export default function RichPreview({
         }`}
       >
         {videoCard(600)}
-        <span className="hidden h-0 w-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-lightpistachio desktop:block" />
+        <span className="hidden size-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-lightpistachio desktop:block" />
       </span>
 
       <span

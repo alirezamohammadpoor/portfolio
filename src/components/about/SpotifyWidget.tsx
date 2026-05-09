@@ -226,7 +226,7 @@ export default function SpotifyWidget() {
   if (isLoading && !data) {
     return (
       <div className="flex w-full animate-pulse items-center gap-2.5 rounded-full bg-pistachio px-2.5 py-2">
-        <div className="h-8 w-8 rounded-lg bg-primary/10" />
+        <div className="size-8 rounded-lg bg-primary/10" />
         <div className="flex flex-1 flex-col gap-1">
           <div className="h-3 w-20 rounded bg-primary/10" />
           <div className="h-4 w-32 rounded bg-primary/10" />
@@ -249,7 +249,7 @@ export default function SpotifyWidget() {
       className="flex w-full items-center gap-4 rounded-full py-2 pl-4 pr-5 outline-none transition-[background-color] duration-200 focus-visible:ring-2 bg-pistachio hover:bg-lightpistachio active:scale-[0.97]"
     >
       <div className="flex min-w-0 flex-1 items-center gap-2.5">
-        <div className="relative h-8 w-8 shrink-0 overflow-hidden rounded-lg shadow-[3px_3px_4px_0px_rgba(0,0,0,0.12)]">
+        <div className="relative size-8 shrink-0 overflow-hidden rounded-lg shadow-[3px_3px_4px_0px_rgba(0,0,0,0.12)]">
           {data.albumImageUrl && (
             <Image
               src={data.albumImageUrl}
@@ -283,7 +283,7 @@ export default function SpotifyWidget() {
           }}
         >
           {isActive && (
-            <span className="h-1 w-1 animate-pulse rounded-full bg-spotify" />
+            <span className="size-1 animate-pulse rounded-full bg-spotify" />
           )}
           <span
             className={`font-mono text-sub ${isActive ? "text-spotify" : "text-primary/50"}`}

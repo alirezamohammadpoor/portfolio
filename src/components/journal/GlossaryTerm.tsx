@@ -118,7 +118,7 @@ export default function GlossaryTerm({
               <span className="relative block">
                 {placement === "below" && caretLeft !== null && (
                   <span
-                    className="absolute bottom-full h-0 w-0 -translate-x-1/2 border-x-[6px] border-x-transparent border-b-[6px] border-b-pistachio"
+                    className="absolute bottom-full size-0 -translate-x-1/2 border-x-[6px] border-x-transparent border-b-[6px] border-b-pistachio"
                     style={{ left: caretLeft }}
                   />
                 )}
@@ -135,7 +135,7 @@ export default function GlossaryTerm({
 
                 {placement === "above" && caretLeft !== null && (
                   <span
-                    className="absolute top-full h-0 w-0 -translate-x-1/2 border-x-[6px] border-x-transparent border-t-[6px] border-t-pistachio"
+                    className="absolute top-full size-0 -translate-x-1/2 border-x-[6px] border-x-transparent border-t-[6px] border-t-pistachio"
                     style={{ left: caretLeft }}
                   />
                 )}
@@ -171,7 +171,7 @@ export default function GlossaryTerm({
         <span className="w-max max-w-[300px] rounded-2xl bg-pistachio px-4 py-2 text-left text-sub text-primary whitespace-normal">
           {explanation}
         </span>
-        <span className="hidden h-0 w-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-pistachio desktop:block" />
+        <span className="hidden size-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-pistachio desktop:block" />
       </span>
 
       <span

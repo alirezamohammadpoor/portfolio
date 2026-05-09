@@ -41,8 +41,13 @@ async function fetchSpotifyData(): Promise<{ data: Record<string, unknown>; stat
 
   // Fetch both endpoints in parallel
   const [nowRes, recentRes] = await Promise.all([
-    fetch("https://api.spotify.com/v1/me/player/currently-playing", { headers }),
-    fetch("https://api.spotify.com/v1/me/player/recently-played?limit=1", { headers }),
+    // cache: "no-store" — the route handler keeps its own 1s in-memory
+    // cache (see CACHE_TTL above). Letting Next.js silently forever-cache
+    // the upstream Spotify responses on top of that would mean the widget
+    // could show a stale "now playing" track for the lifetime of the
+    // server process.
+    fetch("https://api.spotify.com/v1/me/player/currently-playing", { headers, cache: "no-store" }),
+    fetch("https://api.spotify.com/v1/me/player/recently-played?limit=1", { headers, cache: "no-store" }),
   ]);
 
   // Trust currently-playing when either:

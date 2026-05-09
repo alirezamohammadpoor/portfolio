@@ -6,7 +6,10 @@ import { dataset, projectId } from '../env'
 // https://www.sanity.io/docs/image-url
 const builder = createImageUrlBuilder({ projectId, dataset })
 
-export const urlFor = (source: SanityImageSource) => {
+// Internal — call sites should use `imageUrl()` or `ogImageUrl()` below
+// rather than chaining urlFor directly. Keeps the 85-quality default
+// in one place and avoids drift across the codebase.
+const urlFor = (source: SanityImageSource) => {
   return builder.image(source)
 }
 
