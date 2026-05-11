@@ -54,8 +54,14 @@ export const PROJECTS_QUERY = defineQuery(`
 export const PROJECT_BY_SLUG_QUERY = defineQuery(`
   *[_type == "project" && slug.current == $slug][0] {
     ${PROJECT_FIELDS},
-    "nextProject": *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },
-    "prevProject": *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug }
+    "nextProject": coalesce(
+      *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },
+      *[_type == "project"] | order(order asc) [0] { title, slug }
+    ),
+    "prevProject": coalesce(
+      *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug },
+      *[_type == "project"] | order(order desc) [0] { title, slug }
+    )
   }
 `);
 
