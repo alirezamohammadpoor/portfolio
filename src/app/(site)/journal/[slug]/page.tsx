@@ -21,6 +21,7 @@ const getPost = cache(async (slug: string) => {
   const { data } = await sanityFetch({
     query: JOURNAL_POST_BY_SLUG_QUERY,
     params: { slug },
+    stega: false,
   });
   return data;
 });

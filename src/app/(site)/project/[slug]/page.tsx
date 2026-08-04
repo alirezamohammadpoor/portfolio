@@ -20,6 +20,7 @@ const getProject = cache(async (slug: string) => {
   const { data } = await sanityFetch({
     query: PROJECT_BY_SLUG_QUERY,
     params: { slug },
+    stega: false,
   });
   return data;
 });
