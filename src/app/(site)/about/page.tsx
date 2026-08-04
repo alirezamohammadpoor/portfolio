@@ -18,7 +18,10 @@ export const metadata: Metadata = {
 };
 
 export default async function AboutPage() {
-  const { data: about } = await sanityFetch({ query: ABOUT_QUERY });
+  const { data: about } = await sanityFetch({
+    query: ABOUT_QUERY,
+    stega: false,
+  });
 
   return (
     <div>

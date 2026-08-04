@@ -19,8 +19,8 @@ export const metadata: Metadata = {
 
 export default async function JournalPage() {
   const [{ data: posts }, { data: page }] = await Promise.all([
-    sanityFetch({ query: JOURNAL_POSTS_QUERY }),
-    sanityFetch({ query: JOURNAL_PAGE_QUERY }),
+    sanityFetch({ query: JOURNAL_POSTS_QUERY, stega: false }),
+    sanityFetch({ query: JOURNAL_PAGE_QUERY, stega: false }),
   ]);
 
   return <JournalContent posts={posts} description={page?.description} />;
