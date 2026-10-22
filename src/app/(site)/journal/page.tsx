@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
-import { sanityFetch } from "@/sanity/lib/live";
-import { JOURNAL_PAGE_QUERY, JOURNAL_POSTS_QUERY } from "@/sanity/lib/queries";
+import { draftMode } from "next/headers";
+import {
+  getJournalPage,
+  getJournalPageDraft,
+  getJournalPosts,
+  getJournalPostsDraft,
+} from "@/sanity/lib/data";
 import JournalContent from "@/components/journal/JournalContent";
 
 export const metadata: Metadata = {
@@ -18,9 +23,10 @@ export const metadata: Metadata = {
 };
 
 export default async function JournalPage() {
-  const [{ data: posts }, { data: page }] = await Promise.all([
-    sanityFetch({ query: JOURNAL_POSTS_QUERY, stega: false }),
-    sanityFetch({ query: JOURNAL_PAGE_QUERY, stega: false }),
+  const { isEnabled: isDraft } = await draftMode();
+  const [posts, page] = await Promise.all([
+    isDraft ? getJournalPostsDraft() : getJournalPosts(),
+    isDraft ? getJournalPageDraft() : getJournalPage(),
   ]);
 
   return <JournalContent posts={posts} description={page?.description} />;
