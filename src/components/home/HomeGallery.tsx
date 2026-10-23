@@ -118,10 +118,27 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       });
     }
 
-    // Capture wheel events — one event = one slide
+    // Capture wheel events — one GESTURE = one slide. A trackpad flick emits
+    // a stream of decaying deltas for ~1 s, longer than the slide animation
+    // plus its 400 ms lock, so without gating one flick advanced two or three
+    // slides. A new gesture starts after a 150 ms silence, on a direction
+    // change, or when the delta re-accelerates (a second flick mid-inertia).
+    let lastWheelAt = 0;
+    let lastDelta = 0;
+    let gestureConsumed = false;
     function onWheel(e: WheelEvent) {
       e.preventDefault();
-      if (isAnimating) return;
+      const now = performance.now();
+      const magnitude = Math.abs(e.deltaY);
+      const newGesture =
+        now - lastWheelAt > 150 ||
+        Math.sign(e.deltaY) !== Math.sign(lastDelta) ||
+        magnitude > lastDelta * 1.5;
+      lastWheelAt = now;
+      lastDelta = magnitude;
+      if (newGesture) gestureConsumed = false;
+      if (gestureConsumed || isAnimating || magnitude < 2) return;
+      gestureConsumed = true;
       if (e.deltaY > 0) goToSlide(1);
       else if (e.deltaY < 0) goToSlide(-1);
     }
