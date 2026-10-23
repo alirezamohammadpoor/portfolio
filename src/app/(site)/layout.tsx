@@ -1,16 +1,14 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
-import { draftMode } from "next/headers";
 import { ViewTransitions } from "next-view-transitions";
 import { Analytics } from "@vercel/analytics/next";
-import { VisualEditing } from "next-sanity/visual-editing";
 import { parastoo } from "@/lib/fonts";
 import Header from "@/components/layout/Header";
 import GsapProvider from "@/components/layout/GsapProvider";
 import { TransitionProvider } from "@/context/TransitionContext";
 import TransitionOverlay from "@/components/layout/TransitionOverlay";
-import { SanityLive } from "@/sanity/lib/live";
-import { client } from "@/sanity/lib/client";
-import { ABOUT_QUERY } from "@/sanity/lib/queries";
+import DraftModeTools from "@/components/layout/DraftModeTools";
+import { getAbout } from "@/sanity/lib/data";
 import JsonLd from "@/components/seo/JsonLd";
 import "@/styles/globals.css";
 
@@ -49,10 +47,7 @@ export default async function SiteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [{ isEnabled: isDraftMode }, about] = await Promise.all([
-    draftMode(),
-    client.fetch(ABOUT_QUERY).catch(() => null),
-  ]);
+  const about = await getAbout().catch(() => null);
 
   const sameAs = [about?.linkedinUrl, about?.githubUrl].filter(
     (u): u is string => typeof u === "string" && u.length > 0,
@@ -92,12 +87,9 @@ export default async function SiteLayout({
               <TransitionOverlay />
             </TransitionProvider>
           </GsapProvider>
-          {isDraftMode && (
-            <>
-              <SanityLive />
-              <VisualEditing />
-            </>
-          )}
+          <Suspense fallback={null}>
+            <DraftModeTools />
+          </Suspense>
           <Analytics />
         </body>
       </html>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { sanityFetch } from "@/sanity/lib/live";
-import { ABOUT_QUERY } from "@/sanity/lib/queries";
+import { draftMode } from "next/headers";
+import { getAbout, getAboutDraft } from "@/sanity/lib/data";
 import AboutContent from "@/components/about/AboutContent";
 
 export const metadata: Metadata = {
@@ -18,7 +18,8 @@ export const metadata: Metadata = {
 };
 
 export default async function AboutPage() {
-  const { data: about } = await sanityFetch({ query: ABOUT_QUERY });
+  const { isEnabled: isDraft } = await draftMode();
+  const about = isDraft ? await getAboutDraft() : await getAbout();
 
   return (
     <div>

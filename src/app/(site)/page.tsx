@@ -1,9 +1,10 @@
+import { draftMode } from "next/headers";
 import HomeGallery from "@/components/home/HomeGallery";
-import { sanityFetch } from "@/sanity/lib/live";
-import { PROJECTS_QUERY } from "@/sanity/lib/queries";
+import { getProjects, getProjectsDraft } from "@/sanity/lib/data";
 
 export default async function HomePage() {
-  const { data: projects } = await sanityFetch({ query: PROJECTS_QUERY });
+  const { isEnabled: isDraft } = await draftMode();
+  const projects = isDraft ? await getProjectsDraft() : await getProjects();
 
   return (
     <>

@@ -1,12 +1,12 @@
-import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { client } from "@/sanity/lib/client";
-import { sanityFetch } from "@/sanity/lib/live";
+import { draftMode } from "next/headers";
 import {
-  JOURNAL_POST_BY_SLUG_QUERY,
-  JOURNAL_POST_SLUGS_QUERY,
-} from "@/sanity/lib/queries";
+  getJournalPost as getPost,
+  getJournalPostDraft as getPostDraft,
+} from "@/sanity/lib/data";
+import { JOURNAL_POST_SLUGS_QUERY } from "@/sanity/lib/queries";
 
 import JournalPost from "@/components/journal/JournalPost";
 import JsonLd from "@/components/seo/JsonLd";
@@ -16,14 +16,6 @@ import { SITE_URL as siteUrl } from "@/lib/site";
 interface JournalPostPageProps {
   params: Promise<{ slug: string }>;
 }
-
-const getPost = cache(async (slug: string) => {
-  const { data } = await sanityFetch({
-    query: JOURNAL_POST_BY_SLUG_QUERY,
-    params: { slug },
-  });
-  return data;
-});
 
 export async function generateStaticParams() {
   return client.fetch(JOURNAL_POST_SLUGS_QUERY);
@@ -79,7 +71,8 @@ export default async function JournalPostPage({
   params,
 }: JournalPostPageProps) {
   const { slug } = await params;
-  const post = await getPost(slug);
+  const { isEnabled: isDraft } = await draftMode();
+  const post = isDraft ? await getPostDraft(slug) : await getPost(slug);
 
   if (!post) {
     notFound();

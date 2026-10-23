@@ -1,12 +1,9 @@
-import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { client } from "@/sanity/lib/client";
-import { sanityFetch } from "@/sanity/lib/live";
-import {
-  PROJECT_BY_SLUG_QUERY,
-  PROJECT_SLUGS_QUERY,
-} from "@/sanity/lib/queries";
+import { draftMode } from "next/headers";
+import { getProject, getProjectDraft } from "@/sanity/lib/data";
+import { PROJECT_SLUGS_QUERY } from "@/sanity/lib/queries";
 import ProjectPageClient from "@/components/project/ProjectPageClient";
 import JsonLd from "@/components/seo/JsonLd";
 import { ogImageUrl } from "@/sanity/lib/image";
@@ -15,14 +12,6 @@ import { SITE_URL as siteUrl } from "@/lib/site";
 interface ProjectPageProps {
   params: Promise<{ slug: string }>;
 }
-
-const getProject = cache(async (slug: string) => {
-  const { data } = await sanityFetch({
-    query: PROJECT_BY_SLUG_QUERY,
-    params: { slug },
-  });
-  return data;
-});
 
 export async function generateStaticParams() {
   return client.fetch(PROJECT_SLUGS_QUERY);
@@ -75,7 +64,10 @@ export async function generateMetadata({
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const { slug } = await params;
-  const project = await getProject(slug);
+  const { isEnabled: isDraft } = await draftMode();
+  const project = isDraft
+    ? await getProjectDraft(slug)
+    : await getProject(slug);
 
   if (!project) notFound();
 

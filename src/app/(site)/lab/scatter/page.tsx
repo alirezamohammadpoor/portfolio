@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { client } from "@/sanity/lib/client";
-import { PROJECTS_QUERY } from "@/sanity/lib/queries";
+import { getProjects } from "@/sanity/lib/data";
 import ScatterField from "@/components/lab/ScatterField";
 
 // Prototype route. Not linked, not indexed.
@@ -10,6 +9,6 @@ export const metadata: Metadata = {
 };
 
 export default async function ScatterLabPage() {
-  const projects = await client.fetch(PROJECTS_QUERY);
+  const projects = await getProjects();
   return <ScatterField projects={projects} />;
 }
