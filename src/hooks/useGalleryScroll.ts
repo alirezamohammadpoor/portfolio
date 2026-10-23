@@ -97,8 +97,16 @@ export function useGalleryScroll({
     if (hasScrolledDown.current && lenis.scroll <= TOP_EDGE_PX) hasScrolledBack.current = true;
   });
 
-  // Lock scroll on mount, reset to top, unlock after delay
+  // Lock scroll on mount, reset to top, unlock after delay. Desktop only:
+  // below the desktop breakpoint the page is the horizontal stage and the
+  // global touchmove lock would make it unswipeable for UNLOCK_DELAY_MS.
   useEffect(() => {
+    const isDesktop = window.matchMedia("(min-width: 75rem)").matches;
+    if (!isDesktop) {
+      isReady.current = true;
+      hasNavigated.current = false;
+      return;
+    }
     lockScroll();
 
     // Next tick: reset scroll + force-hide hint wrappers
@@ -136,13 +144,19 @@ export function useGalleryScroll({
   const firstReady = useRef(false);
   const cloneFired = useRef(false);
 
-  const fireAnimateClone = useCallback(() => {
+  const fireAnimateClone = useCallback((force = false) => {
     if (cloneFired.current) return;
-    if (!firstImageRef.current) return;
+    if (!firstImageRef.current && !force) return;
     cloneFired.current = true;
     requestAnimationFrame(() => {
       const el = firstImageRef.current;
-      if (!el) return;
+      if (!el) {
+        // No landing element (empty gallery): collapse the clone at the
+        // viewport centre so the transition still clears instead of leaving
+        // the page hidden behind isTransitioning forever.
+        animateClone({ top: window.innerHeight / 2, left: window.innerWidth / 2, width: 0, height: 0 });
+        return;
+      }
       const rect = el.getBoundingClientRect();
       animateClone({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
     });
@@ -163,7 +177,7 @@ export function useGalleryScroll({
       fireAnimateClone();
       return;
     }
-    const timeout = setTimeout(fireAnimateClone, 600);
+    const timeout = setTimeout(() => fireAnimateClone(true), 600);
     return () => clearTimeout(timeout);
   }, [isTransitioning, fireAnimateClone]);
 

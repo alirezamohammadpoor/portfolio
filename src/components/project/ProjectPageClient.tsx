@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTransitionRouter } from "next-view-transitions";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -16,6 +16,8 @@ import Footer from "@/components/layout/Footer";
 import DetailsDrawer from "@/components/project/DetailsDrawer";
 import ProjectInfoPanel from "@/components/project/ProjectInfoPanel";
 import ProjectGallery from "@/components/project/ProjectGallery";
+import ProjectStage from "@/components/project/ProjectStage";
+import { useIsDesktop } from "@/hooks/useIsDesktop";
 import ScrollProgress from "@/components/project/ScrollProgress";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
@@ -30,6 +32,12 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
   const router = useTransitionRouter();
   const { isTransitioning, animateClone } = usePageTransition();
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const isDesktop = useIsDesktop();
+  // Media trees mount only on the client so a phone never requests the
+  // desktop gallery's six videos from the server HTML (the server snapshot
+  // of useIsDesktop is "desktop").
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const panelRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -80,6 +88,22 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
     },
     { scope: panelRef, dependencies: [isTransitioning] },
   );
+
+  // Mobile and tablet get the stage (horizontal strip, pills); laptop and up
+  // keep the fixed info panel + vertical gallery. Only one tree mounts, so a
+  // phone never decodes the desktop gallery's videos.
+  if (!mounted) return null;
+
+  if (!isDesktop) {
+    return (
+      <ProjectStage
+        project={project}
+        hidden={skip}
+        firstCardRef={firstImageRef}
+        onFirstReady={onFirstReady}
+      />
+    );
+  }
 
   return (
     <>
