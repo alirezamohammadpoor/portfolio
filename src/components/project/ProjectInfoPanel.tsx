@@ -30,7 +30,7 @@ export default function ProjectInfoPanel({
   return (
     <div
       ref={panelRef}
-      className={`hidden desktop:flex fixed top-[var(--header-height)] left-0 w-1/2 h-[calc(100dvh-var(--header-height))] items-center px-6${hidden ? " invisible" : ""}`}
+      className={`hidden desktop:flex fixed top-[var(--header-height)] left-0 w-[calc(var(--grid-margin)+4*var(--grid-col)+3*var(--grid-gutter))] h-[calc(100dvh-var(--header-height))] items-start pt-6 pl-margin${hidden ? " invisible" : ""}`}
     >
       <div>
         {project.title && (

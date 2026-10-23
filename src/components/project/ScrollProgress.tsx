@@ -20,7 +20,7 @@ export default function ScrollProgress({
   prevTextRef,
 }: ScrollProgressProps) {
   return (
-    <div className="fixed bottom-0 left-0 hidden w-1/2 px-6 pb-6 text-right desktop:block">
+    <div className="fixed bottom-0 left-0 hidden w-[calc(var(--grid-margin)+4*var(--grid-col)+3*var(--grid-gutter))] pl-margin pr-0 pb-6 text-left desktop:block">
       {/* Prev project hint — top-anchored */}
       {prevProjectSlug && (
         <div ref={prevTextWrapperRef} className="relative mb-2" style={{ visibility: "hidden", opacity: 0 }}>
