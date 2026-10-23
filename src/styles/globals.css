@@ -38,6 +38,40 @@
   --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
 }
 
+/* Layout grid (feature/grid-layouts): margin = gutter, 4 columns on mobile,
+   12 on desktop. Flip the numbers here to compare densities. */
+:root {
+  --grid-margin: 16px;
+  --grid-gutter: 16px;
+  --grid-columns: 4;
+  --grid-col: calc(
+    (100vw - 2 * var(--grid-margin) - (var(--grid-columns) - 1) * var(--grid-gutter)) /
+      var(--grid-columns)
+  );
+}
+@media (min-width: 75rem) {
+  :root {
+    --grid-margin: 24px;
+    --grid-gutter: 24px;
+    --grid-columns: 12;
+  }
+}
+
+@utility grid-site {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-columns), minmax(0, 1fr));
+  column-gap: var(--grid-gutter);
+}
+@utility px-margin {
+  padding-inline: var(--grid-margin);
+}
+@utility pl-margin {
+  padding-left: var(--grid-margin);
+}
+@utility bleed-right {
+  margin-right: calc(-1 * var(--grid-margin));
+}
+
 @layer base {
   html {
     background-color: var(--color-bg);

@@ -85,10 +85,11 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
       {/* Hero: stacked on mobile, 50/50 split on desktop */}
       <div
         ref={heroRef}
-        className="flex flex-col-reverse desktop:flex-row desktop:h-[calc(100dvh-var(--header-height))]"
+        className="flex flex-col-reverse desktop:flex-col"
       >
-        <div className="px-4 py-6 desktop:flex desktop:w-1/2 desktop:items-center desktop:px-6">
-          <div>
+        <div className="px-4 py-6 desktop:px-margin desktop:pt-16 desktop:pb-10">
+          <div className="desktop:grid-site">
+            <div className="desktop:col-span-10 desktop:[&>h1]:max-w-none desktop:[&>p]:max-w-[calc(6*var(--grid-col)+5*var(--grid-gutter))]">
             <h1 ref={titleRef} className="text-primary text-[32px] leading-[40px] desktop:text-[48px] desktop:leading-[56px] font-normal">
               {post.title}
             </h1>
@@ -116,19 +117,20 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
                 </time>
               </p>
             )}
+            </div>
           </div>
         </div>
         {post.coverImage?.asset && (
           <div
             ref={imageRef}
-            className="invisible relative aspect-[3/4] w-full shrink-0 overflow-hidden bg-tertiary desktop:aspect-auto desktop:w-1/2"
+            className="invisible relative aspect-[3/4] w-full shrink-0 overflow-hidden bg-tertiary desktop:aspect-video"
           >
             <Image
               src={imageUrl(post.coverImage, 1400)}
               alt={post.coverImage.alt ?? post.title ?? ""}
               fill
               className="object-cover"
-              sizes="(min-width: 75rem) 50vw, 100vw"
+              sizes="100vw"
               priority
               fetchPriority="high"
             />
@@ -136,11 +138,31 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
         )}
       </div>
       {/* Body content */}
-      <article className="mx-auto desktop:max-w-[50vw] px-4 py-6 desktop:px-6">
+      <article className="px-4 py-6 desktop:px-margin desktop:grid-site desktop:pt-16">
+        <aside className="hidden desktop:block desktop:col-span-3 desktop:self-start desktop:sticky desktop:top-[calc(var(--header-height)+24px)] text-sub text-primary">
+          {post.publishedAt && (
+            <div>
+              <p className="uppercase text-secondary">Published</p>
+              <p className="mt-1">
+                {new Date(post.publishedAt).toLocaleDateString("en-US", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </p>
+            </div>
+          )}
+          {post.tags && post.tags.length > 0 && (
+            <div className="mt-6">
+              <p className="uppercase text-secondary">Tags</p>
+              <p className="mt-1">{post.tags.join(" · ")}</p>
+            </div>
+          )}
+        </aside>
         {post.body && (
           <div
             ref={bodyRef}
-            className="invisible text-sub desktop:text-body text-primary space-y-4 mx-auto max-w-[75ch] [&>h2]:mt-12 [&>h3]:mt-10 [&>h4]:mt-8 [&_h2]:text-[32px] [&_h2]:leading-[40px] desktop:[&_h2]:text-[40px] desktop:[&_h2]:leading-[48px] [&_h3]:text-[24px] [&_h3]:leading-[32px] desktop:[&_h3]:text-[32px] desktop:[&_h3]:leading-[40px] [&_h4]:text-[16px] [&_h4]:leading-[24px] desktop:[&_h4]:text-[24px] desktop:[&_h4]:leading-[32px] [&_h5]:text-[14px] [&_h5]:leading-[20px] desktop:[&_h5]:text-[20px] desktop:[&_h5]:leading-[28px] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+            className="invisible text-sub desktop:text-body text-primary space-y-4 desktop:col-span-7 desktop:col-start-5 [&>h2]:mt-12 [&>h3]:mt-10 [&>h4]:mt-8 [&_h2]:text-[32px] [&_h2]:leading-[40px] desktop:[&_h2]:text-[40px] desktop:[&_h2]:leading-[48px] [&_h3]:text-[24px] [&_h3]:leading-[32px] desktop:[&_h3]:text-[32px] desktop:[&_h3]:leading-[40px] [&_h4]:text-[16px] [&_h4]:leading-[24px] desktop:[&_h4]:text-[24px] desktop:[&_h4]:leading-[32px] [&_h5]:text-[14px] [&_h5]:leading-[20px] desktop:[&_h5]:text-[20px] desktop:[&_h5]:leading-[28px] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
           >
             <PortableText
               value={post.body as PortableTextBlock[]}
@@ -152,14 +174,14 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
       {relatedPosts.length > 0 && (
         <section
           ref={carouselRef}
-          className="invisible mx-auto desktop:max-w-[50vw] mt-16 pb-8 px-4 desktop:px-6"
+          className="invisible mt-16 pb-8 px-4 desktop:px-margin"
         >
           <h2 className="uppercase text-sub desktop:text-body">More posts</h2>
           <div className="mt-4 flex gap-2 overflow-x-auto snap-x snap-mandatory">
             {relatedPosts.map((relatedPost) => (
               <div
                 key={relatedPost._id}
-                className="min-w-[280px] max-w-[400px] shrink-0 snap-start"
+                className="min-w-[280px] max-w-[400px] shrink-0 snap-start desktop:w-[calc(4*var(--grid-col)+3*var(--grid-gutter))] desktop:max-w-none"
               >
                 <JournalCard post={relatedPost} />
               </div>
