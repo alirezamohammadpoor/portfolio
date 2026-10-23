@@ -46,14 +46,14 @@ export default function JournalContent({
   );
 
   return (
-    <section ref={sectionRef} className="px-margin py-4 desktop:py-6">
+    <section ref={sectionRef} className="px-4 py-4 desktop:px-6 desktop:py-6">
       <h1 ref={titleRef} className="text-primary">
         Journal
       </h1>
       {description && (
         <p
           ref={descRef}
-          className="mt-2 text-sub desktop:text-body text-primary desktop:max-w-[calc(6*var(--grid-col)+5*var(--grid-gutter))]"
+          className="mt-2 desktop:max-w-[100vw] text-sub desktop:text-body text-primary"
         >
           {description}
         </p>
@@ -61,14 +61,12 @@ export default function JournalContent({
 
       <div
         ref={gridRef}
-        className="mt-8 flex flex-col gap-8 desktop:mt-16 desktop:gap-0"
+        className="mt-8 grid grid-cols-1 gap-8 desktop:grid-cols-3"
       >
         {posts.length === 0 ? (
           <p className="text-body text-secondary">No posts yet.</p>
         ) : (
-          posts.map((post) => (
-            <JournalCard key={post._id} post={post} layout="row" />
-          ))
+          posts.map((post) => <JournalCard key={post._id} post={post} />)
         )}
       </div>
     </section>
