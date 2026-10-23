@@ -1,3 +1,4 @@
+import { cacheLife, cacheTag } from "next/cache";
 import type { MetadataRoute } from "next";
 import { client } from "@/sanity/lib/client";
 import {
@@ -8,28 +9,35 @@ import { SITE_URL as siteUrl } from "@/lib/site";
 
 type SitemapEntry = { slug: string | null; _updatedAt?: string | null };
 
-function parseUpdatedAt(value: string | null | undefined, fallback: Date): Date {
-  if (!value) return fallback;
+// Returns undefined rather than "now" when the timestamp is missing or
+// unparseable: lastModified is optional, and omitting it is more honest than
+// claiming the document changed at build time.
+function parseUpdatedAt(value: string | null | undefined): Date | undefined {
+  if (!value) return undefined;
   const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? fallback : parsed;
+  return Number.isNaN(parsed.getTime()) ? undefined : parsed;
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  "use cache";
+  cacheLife("max");
+  cacheTag("project");
+  cacheTag("journalPost");
+
   const [projectEntries, journalEntries] = await Promise.all([
     client.fetch(PROJECT_SITEMAP_QUERY),
     client.fetch(JOURNAL_POST_SITEMAP_QUERY),
   ]);
 
-  const now = new Date();
   const allUpdates = [...(projectEntries ?? []), ...(journalEntries ?? [])]
-    .map((e: SitemapEntry) => parseUpdatedAt(e._updatedAt, now).getTime())
-    .filter((t) => t > 0);
+    .map((e: SitemapEntry) => parseUpdatedAt(e._updatedAt)?.getTime())
+    .filter((t): t is number => typeof t === "number");
   // Static routes don't have their own _updatedAt; use the most recent
   // content update as a proxy so the homepage and listing pages reflect
   // when their content actually changed.
   const latestContentUpdate = allUpdates.length
     ? new Date(Math.max(...allUpdates))
-    : now;
+    : undefined;
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${siteUrl}/`, lastModified: latestContentUpdate, priority: 1 },
@@ -43,7 +51,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     )
     .map((entry) => ({
       url: `${siteUrl}/project/${entry.slug}`,
-      lastModified: parseUpdatedAt(entry._updatedAt, now),
+      lastModified: parseUpdatedAt(entry._updatedAt),
       priority: 0.7,
     }));
 
@@ -53,7 +61,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     )
     .map((entry) => ({
       url: `${siteUrl}/journal/${entry.slug}`,
-      lastModified: parseUpdatedAt(entry._updatedAt, now),
+      lastModified: parseUpdatedAt(entry._updatedAt),
       priority: 0.7,
     }));
 
