@@ -146,7 +146,7 @@ export default function ProjectGallery({
   return (
     <div
       ref={galleryRef}
-      className={`flex flex-col gap-2 px-4 pb-10 desktop:grid desktop:grid-cols-2 desktop:gap-6 desktop:px-0 desktop:ml-[calc(var(--grid-margin)+5*var(--grid-col)+5*var(--grid-gutter))] desktop:w-[calc(7*var(--grid-col)+6*var(--grid-gutter)+var(--grid-margin))] desktop:pb-16${isTransitioning ? " opacity-0 pointer-events-none" : ""}`}
+      className={`flex flex-col gap-2 px-4 pb-10 desktop:px-6 desktop:ml-[50%] desktop:w-1/2${isTransitioning ? " opacity-0 pointer-events-none" : ""}`}
     >
       {gallery.map((item, i) => {
         const isImage = item._type === "galleryImage";
@@ -158,7 +158,7 @@ export default function ProjectGallery({
               itemRefs.current[i] = el;
               if (i === 0) firstImageRef.current = el;
             }}
-            className={`relative w-full overflow-hidden bg-black${i === 0 || i === gallery.length - 1 ? " desktop:col-span-2" : ""}`}
+            className="relative w-full overflow-hidden bg-black"
             style={{ aspectRatio: 4 / 3 }}
           >
             {isImage && item.image?.asset && (
@@ -167,7 +167,7 @@ export default function ProjectGallery({
                 alt={`${projectTitle} — ${i + 1}`}
                 fill
                 className={`object-cover${i > 0 ? " scale-[1.06]" : ""}`}
-                sizes="(min-width: 75rem) 60vw, 100vw"
+                sizes="(min-width: 75rem) 50vw, 100vw"
                 priority={i === 0}
                 onLoad={i === 0 ? onFirstReady : undefined}
               />
