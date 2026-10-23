@@ -8,8 +8,9 @@
  * the last card) and a 4 px progress line.
  *
  * Rules (see the action plan, phase 2): 1 item → no strip chrome; only the
- * current card and its two neighbours mount <video>; media keeps a 4:3 frame
- * whatever its own ratio; reduced motion drops the depth transforms.
+ * current card and its two neighbours mount <video>; media fills a 4:3 frame
+ * (object-cover, like the desktop gallery and the home → project clone);
+ * reduced motion drops the depth transforms.
  */
 
 import { useEffect, useRef, useState, type RefObject } from "react";
@@ -54,6 +55,10 @@ export default function ProjectStage({
   const last = gallery.length - 1;
   const atEnd = index >= last;
   const single = gallery.length <= 1;
+  // Titles longer than ~11 characters don't fit two columns at h2 (phase 2
+  // rule: "Deploymentbar" overflowed), so the title takes all four columns
+  // and the meta drops below it.
+  const longTitle = (project.title?.length ?? 0) > 11;
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -63,8 +68,8 @@ export default function ProjectStage({
     return () => mq.removeEventListener("change", update);
   }, []);
 
-  // Which card is centred: `scrollend` where supported, rAF-throttled scroll
-  // elsewhere (iOS < 17.4). Depth transforms are applied per frame only while
+  // Which card is centred: `scrollend` where supported (Chrome, Firefox),
+  // rAF-throttled scroll elsewhere (Safari has no scrollend). Depth transforms are applied per frame only while
   // scrolling, so an idle page costs nothing.
   useEffect(() => {
     const strip = stripRef.current;
@@ -133,8 +138,8 @@ export default function ProjectStage({
     >
       {/* Title block B: title cols 1–2, meta cols 3–4 */}
       <div className="grid-site px-margin pt-4 pb-4">
-        <h1 className="col-span-2 text-h2 text-primary">{project.title}</h1>
-        <div className="col-span-2 pt-1.5 text-sub text-primary">
+        <h1 className={`${longTitle ? "col-span-4" : "col-span-2"} text-h2 text-primary`}>{project.title}</h1>
+        <div className={`${longTitle ? "col-span-4 pt-2" : "col-span-2 pt-1.5"} text-sub text-primary`}>
           {project.shortDescription && <p>{project.shortDescription}</p>}
           {project.techStack && project.techStack.length > 0 && (
             <p className="mt-3 text-primary">{project.techStack.join(", ")}</p>
@@ -143,11 +148,12 @@ export default function ProjectStage({
       </div>
 
       {/* Strip, vertically centred in the remaining space */}
-      <div className="flex flex-1 items-center">
+      <div className="flex flex-1 items-center pb-[52px]">
         <div
           ref={stripRef}
           className={`flex w-full overflow-x-auto py-6 ${single ? "justify-center" : "snap-x snap-mandatory"}`}
           style={{ scrollPaddingInline: "var(--grid-margin)", paddingInline: "var(--grid-margin)" }}
+          data-lenis-prevent
           role="region"
           aria-roledescription="carousel"
           aria-label={`${project.title} gallery, ${gallery.length} items`}
@@ -194,7 +200,7 @@ export default function ProjectStage({
                     src={imageUrl(item.image, 900)}
                     alt={`${project.title} — ${i + 1}`}
                     fill
-                    className="object-contain"
+                    className="object-cover"
                     sizes="100vw"
                     priority={i === 0}
                     onLoad={i === 0 ? onFirstReady : undefined}
@@ -203,7 +209,7 @@ export default function ProjectStage({
                 {!isImage && item.video?.asset?._ref && near && (
                   <video
                     src={fileUrl(item.video.asset._ref)}
-                    className="h-full w-full object-contain"
+                    className="h-full w-full object-cover"
                     aria-label={`${project.title} — ${i + 1}`}
                     muted
                     loop
@@ -219,6 +225,11 @@ export default function ProjectStage({
         </div>
       </div>
 
+      {/* Position for screen readers; the progress line is decorative */}
+      <p className="sr-only" aria-live="polite">
+        {single ? "" : `${index + 1} of ${gallery.length}`}
+      </p>
+
       {/* Bottom row: pills */}
       <div className="absolute inset-x-0 bottom-0 z-30 flex items-center justify-end gap-2 px-margin pb-4">
         {atEnd && !single && project.nextProject?.slug?.current ? (
@@ -232,7 +243,7 @@ export default function ProjectStage({
         ) : null}
         {project.siteUrl && (
           <NextLink href={project.siteUrl} target="_blank" rel="noopener noreferrer" className={pillGreen}>
-            Visit
+            Visit<span className="sr-only"> (opens in a new tab)</span>
           </NextLink>
         )}
       </div>
