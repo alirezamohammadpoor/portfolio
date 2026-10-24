@@ -8,6 +8,7 @@ import { useGSAP } from "@gsap/react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { ease, prefersReducedMotion } from "@/lib/motion";
+import NextProjectPreview, { type NextProject } from "@/components/project/NextProjectPreview";
 
 type ProjectGalleryItems = NonNullable<
   NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["gallery"]
@@ -20,6 +21,9 @@ interface ProjectGalleryProps {
   firstImageRef: React.RefObject<HTMLDivElement | null>;
   isTransitioning: boolean;
   onFirstReady?: () => void;
+  nextProject?: NextProject | null;
+  previewRef?: React.RefObject<HTMLDivElement | null>;
+  onNavigateNext?: () => void;
 }
 
 export default function ProjectGallery({
@@ -29,7 +33,11 @@ export default function ProjectGallery({
   firstImageRef,
   isTransitioning,
   onFirstReady,
+  nextProject,
+  previewRef,
+  onNavigateNext,
 }: ProjectGalleryProps) {
+  const previewWrapRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
 
@@ -127,7 +135,8 @@ export default function ProjectGallery({
       if (!galleryRef.current || isTransitioning) return;
 
       const lift = prefersReducedMotion() ? 0 : 40;
-      itemRefs.current.forEach((el, i) => {
+      const targets: (HTMLDivElement | null)[] = [...itemRefs.current, previewWrapRef.current];
+      targets.forEach((el, i) => {
         if (!el || i === 0) return;
 
         // Fade in on scroll
@@ -148,6 +157,7 @@ export default function ProjectGallery({
   return (
     <div
       ref={galleryRef}
+      data-project-gallery
       className={`flex flex-col gap-2 px-4 pb-10 desktop:px-6 desktop:ml-[50%] desktop:w-1/2${isTransitioning ? " opacity-0 pointer-events-none" : ""}`}
     >
       {gallery.map((item, i) => {
@@ -193,6 +203,15 @@ export default function ProjectGallery({
           </div>
         );
       })}
+      {nextProject && onNavigateNext && (
+        <div ref={previewWrapRef} className="pt-6">
+          <NextProjectPreview
+            nextProject={nextProject}
+            previewRef={previewRef}
+            onNavigate={onNavigateNext}
+          />
+        </div>
+      )}
     </div>
   );
 }
