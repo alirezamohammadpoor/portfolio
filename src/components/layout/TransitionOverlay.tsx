@@ -4,7 +4,21 @@ import { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { usePageTransition } from "@/context/TransitionContext";
+import { dur, ease, prefersReducedMotion } from "@/lib/motion";
 
+/** Progress of the morph at which the destination text starts masking in. */
+export const REVEAL_AT = 0.4;
+
+/**
+ * The media clone that carries the home cover onto the project page.
+ *
+ * FLIP: the clone is laid out once at the source rect and the morph is a
+ * transform (translate + scale) on a compositor layer, so nothing lays out or
+ * paints per frame while the new route hydrates. The window stretches
+ * non-uniformly (home panel → 4:3 item); the media inside counter-scales to a
+ * uniform `max(sx, sy)` each frame so it keeps covering the window instead
+ * of distorting, exactly like `object-fit: cover` would.
+ */
 export default function TransitionOverlay() {
   const {
     isTransitioning,
@@ -13,39 +27,86 @@ export default function TransitionOverlay() {
     sourceVideoElement,
     sourceRect,
     targetRect,
+    revealContent,
     clearTransition,
   } = usePageTransition();
+  const windowRef = useRef<HTMLDivElement>(null);
   const mediaRef = useRef<HTMLElement>(null);
   const targetKey = targetRect
     ? `${targetRect.top}:${targetRect.left}:${targetRect.width}:${targetRect.height}`
     : "none";
 
-  // Animate clone from sourceRect → targetRect
-  useGSAP(() => {
-    if (!mediaRef.current || !targetRect) return;
+  useGSAP(
+    () => {
+      const win = windowRef.current;
+      const media = mediaRef.current;
+      if (!win || !media || !sourceRect || !targetRect) return;
 
-    gsap.to(mediaRef.current, {
-      top: targetRect.top,
-      left: targetRect.left,
-      width: targetRect.width,
-      height: targetRect.height,
-      duration: 0.7,
-      ease: "power3.inOut",
-      onComplete: clearTransition,
-    });
-  }, { dependencies: [targetKey, clearTransition] });
+      if (prefersReducedMotion()) {
+        revealContent();
+        gsap.to(win, {
+          autoAlpha: 0,
+          duration: dur.fast,
+          ease: "none",
+          onComplete: clearTransition,
+        });
+        return;
+      }
+
+      const dx = targetRect.left - sourceRect.left;
+      const dy = targetRect.top - sourceRect.top;
+      const sx = targetRect.width / Math.max(sourceRect.width, 1);
+      const sy = targetRect.height / Math.max(sourceRect.height, 1);
+
+      const setWin = gsap.quickSetter(win, "transform");
+      const setMedia = gsap.quickSetter(media, "transform");
+      const proxy = { p: 0 };
+      let revealed = false;
+
+      gsap.to(proxy, {
+        p: 1,
+        duration: dur.page,
+        ease: ease.inOut,
+        onUpdate: () => {
+          const p = proxy.p;
+          const wx = 1 + (sx - 1) * p;
+          const wy = 1 + (sy - 1) * p;
+          const k = Math.max(wx, wy);
+          setWin(`translate3d(${dx * p}px, ${dy * p}px, 0) scale(${wx}, ${wy})`);
+          setMedia(`scale(${k / wx}, ${k / wy})`);
+          if (!revealed && p >= REVEAL_AT) {
+            revealed = true;
+            revealContent();
+          }
+        },
+        onComplete: clearTransition,
+      });
+    },
+    { dependencies: [targetKey, clearTransition, revealContent] },
+  );
 
   if (!isTransitioning || !sourceRect) return null;
 
-  const commonStyle: React.CSSProperties = {
+  const windowStyle: React.CSSProperties = {
     position: "fixed",
     top: sourceRect.top,
     left: sourceRect.left,
     width: sourceRect.width,
     height: sourceRect.height,
     zIndex: 50,
-    objectFit: "cover",
+    overflow: "hidden",
     pointerEvents: "none",
+    transformOrigin: "0 0",
+    willChange: "transform",
+  };
+
+  const mediaStyle: React.CSSProperties = {
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    transformOrigin: "50% 50%",
   };
 
   // Video: paint the source video's current frame onto a canvas. Avoids
@@ -54,8 +115,8 @@ export default function TransitionOverlay() {
   // instant-ready clone that morphs cleanly. Canvas taint from a
   // cross-origin drawImage only blocks readback methods — plain display
   // works, so no CORS setup is needed.
-  if (mediaType === "video") {
-    return (
+  const media =
+    mediaType === "video" ? (
       <canvas
         ref={(el) => {
           mediaRef.current = el;
@@ -74,24 +135,25 @@ export default function TransitionOverlay() {
             // been autoplaying on the homepage, but don't crash if it does).
           }
         }}
-        style={commonStyle}
+        style={mediaStyle}
         aria-hidden="true"
       />
-    );
-  }
-
-  if (mediaType === "image" && imageUrl) {
-    return (
+    ) : mediaType === "image" && imageUrl ? (
       // eslint-disable-next-line @next/next/no-img-element
       <img
         ref={mediaRef as React.RefObject<HTMLImageElement>}
         src={imageUrl}
         alt=""
         aria-hidden="true"
-        style={commonStyle}
+        style={mediaStyle}
       />
-    );
-  }
+    ) : null;
 
-  return null;
+  if (!media) return null;
+
+  return (
+    <div ref={windowRef} style={windowStyle} aria-hidden="true">
+      {media}
+    </div>
+  );
 }

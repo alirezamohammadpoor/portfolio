@@ -37,7 +37,6 @@ export default function DetailsDrawer({ project, isOpen }: DetailsDrawerProps) {
         yPercent: 0,
         duration: 0.4,
         ease: "power3.out",
-        delay: 0.1,
         onComplete: () => drawerRef.current?.focus(),
       });
     } else if (hasOpened.current) {

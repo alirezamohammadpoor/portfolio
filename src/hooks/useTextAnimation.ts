@@ -4,17 +4,13 @@ import { type RefObject } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { SplitText } from "gsap/SplitText";
+import { prefersReducedMotion } from "@/lib/motion";
 
 interface AnimationOptions {
   duration?: number;
   delay?: number;
   skip?: boolean;
   dependencies?: unknown[];
-}
-
-function prefersReducedMotion() {
-  return typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 /**
@@ -42,7 +38,6 @@ export function useTitleAnimation(
           gsap.from(self.chars, {
             duration,
             yPercent: -120,
-            filter: "blur(1.5px)",
             ease: "power4.out",
             delay,
           }),
@@ -77,7 +72,6 @@ export function useBodyAnimation(
           gsap.from(self.lines, {
             duration,
             yPercent: 105,
-            filter: "blur(1px)",
             ease: "power4.out",
             delay,
           }),
@@ -115,8 +109,7 @@ export function useInlineAnimation(
             gsap.from(self.lines, {
               duration,
               yPercent: 105,
-              filter: "blur(1px)",
-              ease: "power4.out",
+                ease: "power4.out",
               delay,
             }),
         });

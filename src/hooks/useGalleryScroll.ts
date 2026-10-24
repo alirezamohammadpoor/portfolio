@@ -29,8 +29,11 @@ interface UseGalleryScrollOptions {
 
 // Wheel deltaY units needed to trigger navigation (~20 mouse clicks or ~4 trackpad swipes)
 const THRESHOLD = 2500;
-// Delay before scroll + accumulation enable after mount (lets view transition settle)
-const UNLOCK_DELAY_MS = 2000;
+// Scroll + accumulation stay off while the arrival animation runs: the
+// clone morph (home → project) or, for now, the root view transition
+// (project → project).
+const UNLOCK_DELAY_CLONE_MS = 800;
+const UNLOCK_DELAY_MS = 1300;
 const BOTTOM_EDGE_PX = 10;
 const TOP_EDGE_PX = 2;
 
@@ -86,6 +89,9 @@ export function useGalleryScroll({
   const hasScrolledBack = useRef(false);
   const isReady = useRef(false);
 
+  // Read once at mount: whether this page is the landing side of the clone.
+  const arrivedByCloneRef = useRef(isTransitioning);
+
   const prevTextWrapperRef = useRef<HTMLDivElement>(null);
   const prevTextRef = useRef<HTMLDivElement>(null);
   const [showMobileNav, setShowMobileNav] = useState(false);
@@ -124,7 +130,7 @@ export function useGalleryScroll({
       lenisRef.current?.start();
       lenisRef.current?.scrollTo(0, { immediate: true });
       unlockScroll();
-    }, UNLOCK_DELAY_MS);
+    }, arrivedByCloneRef.current ? UNLOCK_DELAY_CLONE_MS : UNLOCK_DELAY_MS);
 
     return () => {
       clearTimeout(timer);

@@ -19,6 +19,7 @@ import Image from "next/image";
 import { Link } from "next-view-transitions";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
+import { EASE_OUT_CSS } from "@/lib/motion";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -52,6 +53,9 @@ export default function ProjectStage({
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [index, setIndex] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
+  // While the finger is down the cards track scroll 1:1 (no CSS transition
+  // fighting the per-frame transform); the 200 ms settle applies once idle.
+  const [scrolling, setScrolling] = useState(false);
   const last = gallery.length - 1;
   const atEnd = index >= last;
   const single = gallery.length <= 1;
@@ -96,19 +100,29 @@ export default function ProjectStage({
       });
       setIndex((prev) => (prev === best.i ? prev : best.i));
     };
+    let idle = 0;
+    const settle = () => {
+      measure();
+      setScrolling(false);
+    };
     const onScroll = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(measure);
+      setScrolling(true);
+      // Safari has no scrollend: treat 120 ms of silence as idle.
+      clearTimeout(idle);
+      idle = window.setTimeout(settle, 120);
     };
     measure();
     strip.addEventListener("scroll", onScroll, { passive: true });
-    strip.addEventListener("scrollend", measure);
+    strip.addEventListener("scrollend", settle);
     window.addEventListener("resize", measure);
     return () => {
       strip.removeEventListener("scroll", onScroll);
-      strip.removeEventListener("scrollend", measure);
+      strip.removeEventListener("scrollend", settle);
       window.removeEventListener("resize", measure);
       cancelAnimationFrame(raf);
+      clearTimeout(idle);
     };
   }, [gallery.length, reduceMotion]);
 
@@ -187,9 +201,10 @@ export default function ProjectStage({
                   aspectRatio: "4 / 3",
                   marginLeft: i === 0 ? 0 : -OVERLAP,
                   boxShadow: i === index && !reduceMotion ? "0 8px 24px rgba(0,0,0,0.18)" : "none",
-                  transition: reduceMotion
-                    ? "none"
-                    : `transform ${SETTLE_MS}ms ease-out, opacity ${SETTLE_MS}ms ease-out, box-shadow ${SETTLE_MS}ms`,
+                  transition:
+                    reduceMotion || scrolling
+                      ? "none"
+                      : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}, box-shadow ${SETTLE_MS}ms`,
                 }}
                 role="group"
                 aria-roledescription="slide"
@@ -252,10 +267,10 @@ export default function ProjectStage({
       {!single && (
         <div className="absolute inset-x-0 bottom-0 z-30 h-1 bg-tertiary" aria-hidden="true">
           <div
-            className="h-full bg-pistachio"
+            className="h-full w-full origin-left bg-pistachio"
             style={{
-              width: `${((index + 1) / gallery.length) * 100}%`,
-              transition: reduceMotion ? "none" : "width 300ms",
+              transform: `scaleX(${(index + 1) / gallery.length})`,
+              transition: reduceMotion ? "none" : `transform 200ms ${EASE_OUT_CSS}`,
             }}
           />
         </div>
