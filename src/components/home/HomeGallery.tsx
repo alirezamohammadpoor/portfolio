@@ -9,6 +9,7 @@ import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { usePageTransition } from "@/context/TransitionContext";
 import { lockScroll, unlockScroll } from "@/hooks/useScrollLock";
+import { prefersReducedMotion } from "@/lib/motion";
 import ProjectCard from "./ProjectCard";
 import MediaPanel from "./MediaPanel";
 
@@ -83,18 +84,16 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
           onComplete: () => {
             currentIndex = nextIndex;
             setActiveIndex(nextIndex);
-            // Hold lock during trackpad inertia decay
+            // The wheel handler already gates one gesture → one slide, so
+            // this only needs to cover the last frame of the tween.
             setTimeout(() => {
               isAnimating = false;
-            }, 400);
+            }, 100);
           },
         });
 
         // Honor prefers-reduced-motion: snap instantly instead of sliding.
-        const reduced =
-          typeof window !== "undefined" &&
-          window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        const slideDuration = reduced ? 0 : 0.35;
+        const slideDuration = prefersReducedMotion() ? 0 : 0.35;
 
         tl.to(
           currentEl,
