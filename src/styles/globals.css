@@ -38,7 +38,7 @@
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --dur-fast: 160ms;
   --dur-ui: 240ms;
-  --dur-page: 600ms;
+  --dur-page: 700ms;
 }
 
 @theme inline {
@@ -282,15 +282,12 @@
     page-enter 0.5s ease;
 }
 
-/* Custom clone path (home→project) on mobile: suppress the page slide
-   so the clone overlay is the only visible motion. Desktop keeps the
-   slide running underneath the clone — it was already tuned that way
-   and gives the destination page visual coverage while it paints. */
-@media not (min-width: 75rem) {
-  html[data-custom-clone] ::view-transition-old(root),
-  html[data-custom-clone] ::view-transition-new(root) {
-    animation: none;
-  }
+/* Custom clone path (home→project): the clone overlay and the text
+   choreography are the only motion, on every viewport. Two motion systems
+   at once (page slide under a morph) read as mud. */
+html[data-custom-clone] ::view-transition-old(root),
+html[data-custom-clone] ::view-transition-new(root) {
+  animation: none;
 }
 
 /* Black backdrop behind the transition snapshot on every viewport —

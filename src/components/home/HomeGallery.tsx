@@ -9,7 +9,7 @@ import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { usePageTransition } from "@/context/TransitionContext";
 import { lockScroll, unlockScroll } from "@/hooks/useScrollLock";
-import { prefersReducedMotion } from "@/lib/motion";
+import { dur, ease, prefersReducedMotion } from "@/lib/motion";
 import ProjectCard from "./ProjectCard";
 import MediaPanel from "./MediaPanel";
 
@@ -26,6 +26,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
   const scrollHintRef = useRef<HTMLDivElement>(null);
   const tapHintRef = useRef<HTMLDivElement>(null);
   const cursorHintRef = useRef<HTMLDivElement>(null);
+  const cardLinkRef = useRef<HTMLAnchorElement>(null);
   const hasScrolled = useRef(false);
   const hasTapped = useRef(false);
   const router = useRouter();
@@ -369,7 +370,23 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
         });
       }
 
-      router.push(href);
+      // Exit choreography: the card's title chars and description lines
+      // leave upward through the masks SplitText already wrapped them in
+      // (the reverse of their entrance). The push waits just long enough
+      // for most of that to be visible; the clone is already covering the
+      // media, so the click still reads as immediate.
+      const card = cardLinkRef.current;
+      const chars = card?.querySelectorAll(".char") ?? [];
+      const lines = card?.querySelectorAll(".line") ?? [];
+      const reduced = prefersReducedMotion();
+      if (!reduced && (chars.length || lines.length)) {
+        gsap.to(chars, { yPercent: -120, duration: dur.exit, ease: ease.out, stagger: 0.004, overwrite: true });
+        gsap.to(lines, { yPercent: -105, duration: dur.exit, ease: ease.out, delay: 0.04, overwrite: true });
+        gsap.to([scrollHintRef.current, tapHintRef.current, cursorHintRef.current], { autoAlpha: 0, duration: dur.fast, overwrite: true });
+        setTimeout(() => router.push(href), 180);
+      } else {
+        router.push(href);
+      }
     },
     [startTransition, router, projects],
   );
@@ -382,6 +399,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       {/* Project info — updates on scroll */}
       <div className="desktop:w-1/2 desktop:flex desktop:items-center">
         <Link
+          ref={cardLinkRef}
           href={`/project/${activeProject?.slug?.current}`}
           className="block w-full px-4 py-2 desktop:px-6 desktop:py-0"
           onClick={(e) => activeProject && handleProjectClick(e, activeProject)}
