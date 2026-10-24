@@ -27,7 +27,7 @@ interface TransitionState {
   targetRect: Rect | null;
 }
 
-interface StartTransitionArgs {
+export interface StartTransitionArgs {
   mediaType: MediaType;
   imageUrl?: string;
   videoSrc?: string;

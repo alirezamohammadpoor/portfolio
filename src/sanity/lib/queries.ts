@@ -23,6 +23,19 @@ const PROJECT_FIELDS = `
   seo { title, description, ogImage, noIndex }
 `;
 
+// The next project's first gallery item: preloaded on arrival and shown as the
+// 4:3 preview block at the end of the gallery, which is the morph source for
+// the in-place project → project transition.
+const NEXT_PROJECT_MEDIA = `
+  "firstMedia": gallery[0]{
+    ...,
+    _type == "galleryImage" => {
+      ...,
+      image { ..., asset-> { ..., metadata { dimensions } } }
+    }
+  }
+`;
+
 const JOURNAL_FIELDS = `
   _id,
   _updatedAt,
@@ -55,8 +68,8 @@ export const PROJECT_BY_SLUG_QUERY = defineQuery(`
   *[_type == "project" && slug.current == $slug][0] {
     ${PROJECT_FIELDS},
     "nextProject": coalesce(
-      *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug },
-      *[_type == "project"] | order(order asc) [0] { title, slug }
+      *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug, ${NEXT_PROJECT_MEDIA} },
+      *[_type == "project"] | order(order asc) [0] { title, slug, ${NEXT_PROJECT_MEDIA} }
     ),
     "prevProject": coalesce(
       *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug },
