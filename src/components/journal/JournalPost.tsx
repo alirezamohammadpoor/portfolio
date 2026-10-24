@@ -8,6 +8,7 @@ import { PortableText } from "next-sanity";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { useTitleAnimation, useBodyAnimation } from "@/hooks/useTextAnimation";
+import { dur, ease, prefersReducedMotion, stagger } from "@/lib/motion";
 import type {
   JOURNAL_POST_BY_SLUG_QUERY_RESULT,
   JOURNAL_POSTS_QUERY_RESULT,
@@ -31,8 +32,10 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
   const carouselRef = useRef<HTMLElement>(null);
 
   // Hero text animations (SplitText)
-  useTitleAnimation(titleRef, heroRef, { duration: 2, delay: 1 });
-  useBodyAnimation(excerptRef, heroRef, { duration: 2, delay: 1.3 });
+  // Hero settles within ~1.2 s of navigation: short lead-in, one stagger step
+  // per block (title → excerpt → byline → body → more posts).
+  useTitleAnimation(titleRef, heroRef, { duration: 1, delay: 0.1 });
+  useBodyAnimation(excerptRef, heroRef, { duration: dur.text, delay: 0.1 + stagger });
 
   // Byline gets a plain fade-up instead of SplitText. SplitText wraps each
   // word in an inline-block span; CSS text-decoration doesn't propagate to
@@ -41,12 +44,13 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
   useGSAP(
     () => {
       if (!bylineRef.current) return;
+      const reduced = prefersReducedMotion();
       gsap.from(bylineRef.current, {
         autoAlpha: 0,
-        y: 20,
-        duration: 1.5,
-        delay: 1.6,
-        ease: "power3.out",
+        y: reduced ? 0 : 12,
+        duration: 0.8,
+        delay: 0.1 + 2 * stagger,
+        ease: ease.out,
       });
     },
     { scope: heroRef },
@@ -55,25 +59,27 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
   // Image, body, and carousel animations (opacity fade)
   useGSAP(
     () => {
+      const reduced = prefersReducedMotion();
+      const y = (px: number) => (reduced ? 0 : px);
       if (imageRef.current) {
         gsap.fromTo(
           imageRef.current,
           { autoAlpha: 0 },
-          { autoAlpha: 1, duration: 1.5, ease: "power3.out", delay: 1 },
+          { autoAlpha: 1, duration: 0.8, ease: ease.out, delay: 0.1 },
         );
       }
       if (bodyRef.current) {
         gsap.fromTo(
           bodyRef.current,
-          { autoAlpha: 0, y: 20 },
-          { autoAlpha: 1, y: 0, duration: 1.2, ease: "power3.out", delay: 1.5 },
+          { autoAlpha: 0, y: y(16) },
+          { autoAlpha: 1, y: 0, duration: 0.8, ease: ease.out, delay: 0.1 + 3 * stagger },
         );
       }
       if (carouselRef.current) {
         gsap.fromTo(
           carouselRef.current,
-          { autoAlpha: 0, y: 30 },
-          { autoAlpha: 1, y: 0, duration: 1.2, ease: "power3.out", delay: 1.8 },
+          { autoAlpha: 0, y: y(16) },
+          { autoAlpha: 1, y: 0, duration: 0.8, ease: ease.out, delay: 0.1 + 4 * stagger },
         );
       }
     },

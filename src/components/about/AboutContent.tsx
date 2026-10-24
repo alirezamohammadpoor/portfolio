@@ -12,6 +12,7 @@ import {
 } from "@/hooks/useTextAnimation";
 import type { ABOUT_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl } from "@/sanity/lib/image";
+import { dur, ease, prefersReducedMotion, stagger } from "@/lib/motion";
 import dynamic from "next/dynamic";
 import CopyButton from "@/components/CopyButton";
 import SocialLink from "./SocialLink";
@@ -46,11 +47,11 @@ export default function AboutContent({
   const portraitDesktopRef = useRef<HTMLDivElement>(null);
   const spotifyRef = useRef<HTMLDivElement>(null);
 
-  useTitleAnimation(titleRef, sectionRef, { duration: 2, delay: 1 });
-  useInlineAnimation(bioRef, sectionRef, "p", { duration: 2, delay: 1.3 });
+  useTitleAnimation(titleRef, sectionRef, { duration: 1, delay: 0.1 });
+  useInlineAnimation(bioRef, sectionRef, "p", { duration: dur.text, delay: 0.1 + stagger });
   useInlineAnimation(linksRef, sectionRef, "[data-animate], a", {
-    duration: 2,
-    delay: 1.7,
+    duration: dur.text,
+    delay: 0.1 + 2 * stagger,
   });
 
   useGSAP(
@@ -59,29 +60,31 @@ export default function AboutContent({
         portraitMobileRef.current,
         portraitDesktopRef.current,
       ].filter((el) => el && getComputedStyle(el).display !== "none");
+      const reduced = prefersReducedMotion();
       if (targets.length) {
+        // A nudge and a fade, not a full-width slide.
         gsap.fromTo(
           targets,
-          { xPercent: 100, autoAlpha: 0 },
+          { xPercent: reduced ? 0 : 6, autoAlpha: 0 },
           {
             xPercent: 0,
             autoAlpha: 1,
-            duration: 2,
-            ease: "power3.out",
-            delay: 1.3,
+            duration: dur.text,
+            ease: ease.out,
+            delay: 0.1 + stagger,
           },
         );
       }
       if (spotifyRef.current) {
         gsap.fromTo(
           spotifyRef.current,
-          { yPercent: 40, autoAlpha: 0 },
+          { yPercent: reduced ? 0 : 20, autoAlpha: 0 },
           {
             yPercent: 0,
             autoAlpha: 1,
-            duration: 2,
-            ease: "power4.out",
-            delay: 2,
+            duration: 0.8,
+            ease: ease.out,
+            delay: 0.4,
           },
         );
       }

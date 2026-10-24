@@ -12,6 +12,7 @@ import {
   useInlineAnimation,
 } from "@/hooks/useTextAnimation";
 import { useGalleryScroll } from "@/hooks/useGalleryScroll";
+import { dur, ease, stagger } from "@/lib/motion";
 import Footer from "@/components/layout/Footer";
 import DetailsDrawer from "@/components/project/DetailsDrawer";
 import ProjectInfoPanel from "@/components/project/ProjectInfoPanel";
@@ -30,7 +31,7 @@ interface ProjectPageClientProps {
 
 export default function ProjectPageClient({ project, nextProject, prevProject }: ProjectPageClientProps) {
   const router = useTransitionRouter();
-  const { isTransitioning, animateClone } = usePageTransition();
+  const { isTransitioning, contentRevealed, animateClone } = usePageTransition();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const isDesktop = useIsDesktop();
   // Media trees mount only on the client so a phone never requests the
@@ -67,26 +68,32 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
     routerPush: router.push,
   });
 
+  // Chrome (counter, footer) waits for the whole morph; the text does not.
+  // It masks in once the clone is ~40 % of the way (contentRevealed), while
+  // the media is still moving, so the sequence reads as one gesture. The key
+  // is stable from "go" onwards so the end of the morph does not re-run it.
   const skip = isTransitioning;
+  const textWaiting = isTransitioning && !contentRevealed;
+  const textKey = textWaiting ? "wait" : "go";
 
-  useTitleAnimation(titleRef, panelRef, { duration: 1.2, skip, dependencies: [isTransitioning] });
-  useBodyAnimation(descRef, panelRef, { duration: 1, delay: 0.15, skip, dependencies: [isTransitioning] });
-  useBodyAnimation(techRef, panelRef, { duration: 1, delay: 0.25, skip, dependencies: [isTransitioning] });
-  useInlineAnimation(linksRef, panelRef, "a:not([data-pill])", { duration: 1, delay: 0.35, skip, dependencies: [isTransitioning] });
+  useTitleAnimation(titleRef, panelRef, { duration: 1, skip: textWaiting, dependencies: [textKey] });
+  useBodyAnimation(descRef, panelRef, { duration: dur.text, delay: stagger, skip: textWaiting, dependencies: [textKey] });
+  useBodyAnimation(techRef, panelRef, { duration: dur.text, delay: 2 * stagger, skip: textWaiting, dependencies: [textKey] });
+  useInlineAnimation(linksRef, panelRef, "a:not([data-pill])", { duration: dur.text, delay: 3 * stagger, skip: textWaiting, dependencies: [textKey] });
 
   // Pill button animation (SplitText mask clips rounded corners)
   useGSAP(
     () => {
-      if (skip || !linksRef.current) return;
+      if (textWaiting || !linksRef.current) return;
       const pill = linksRef.current.querySelector("[data-pill]");
       if (!pill) return;
       gsap.fromTo(
         pill,
         { yPercent: 40, autoAlpha: 0 },
-        { yPercent: 0, autoAlpha: 1, duration: 1, ease: "power4.out", delay: 0.35 },
+        { yPercent: 0, autoAlpha: 1, duration: dur.text, ease: ease.out, delay: 3 * stagger },
       );
     },
-    { scope: panelRef, dependencies: [isTransitioning] },
+    { scope: panelRef, dependencies: [textKey] },
   );
 
   // Mobile and tablet get the stage (horizontal strip, pills); laptop and up
@@ -96,6 +103,8 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
 
   if (!isDesktop) {
     return (
+      // The stage holds the media too, so it stays hidden until the clone
+      // has landed (no double image); the desktop panel reveals early.
       <ProjectStage
         project={project}
         hidden={skip}
@@ -109,7 +118,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
     <>
       <ProjectInfoPanel
         project={project}
-        hidden={skip}
+        hidden={textWaiting}
         panelRef={panelRef}
         titleRef={titleRef}
         descRef={descRef}
