@@ -25,6 +25,8 @@ interface UseGalleryScrollOptions {
   isTransitioning: boolean;
   animateClone: (rect: Rect) => void;
   routerPush: (url: string) => void;
+  /** Threshold passed at the bottom: run the in-place next-project transition. */
+  navigateNext: () => void;
 }
 
 // Wheel deltaY units needed to trigger navigation (~20 mouse clicks or ~4 trackpad swipes)
@@ -34,6 +36,8 @@ const THRESHOLD = 2500;
 // (project → project).
 const UNLOCK_DELAY_CLONE_MS = 800;
 const UNLOCK_DELAY_MS = 1300;
+
+export const NEXT_THRESHOLD = THRESHOLD;
 const BOTTOM_EDGE_PX = 10;
 const TOP_EDGE_PX = 2;
 
@@ -70,6 +74,7 @@ export function useGalleryScroll({
   isTransitioning,
   animateClone,
   routerPush,
+  navigateNext,
 }: UseGalleryScrollOptions) {
   const scrollProgressElRef = useRef<HTMLElement>(null);
   const mobileProgressElRef = useRef<HTMLElement>(null);
@@ -260,7 +265,7 @@ export function useGalleryScroll({
           hasNavigated.current = true;
           lockScroll();
           lenisRef.current?.stop();
-          routerPush(`/project/${nextProjectSlug}`);
+          navigateNext();
         }
         return;
       }
@@ -298,7 +303,7 @@ export function useGalleryScroll({
 
     window.addEventListener("wheel", onWheel, { passive: false });
     return () => window.removeEventListener("wheel", onWheel);
-  }, [isTransitioning, nextProjectSlug, prevProjectSlug, routerPush, isAtBottom, isAtTop, updateBottomVisuals, updateTopVisuals]);
+  }, [isTransitioning, nextProjectSlug, prevProjectSlug, routerPush, navigateNext, isAtBottom, isAtTop, updateBottomVisuals, updateTopVisuals]);
 
   return {
     galleryRef,

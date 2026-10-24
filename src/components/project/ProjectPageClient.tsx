@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTransitionRouter } from "next-view-transitions";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -12,7 +13,9 @@ import {
   useInlineAnimation,
 } from "@/hooks/useTextAnimation";
 import { useGalleryScroll } from "@/hooks/useGalleryScroll";
-import { dur, ease, stagger } from "@/lib/motion";
+import { EXIT_LEAD_MS, dur, ease, maskOutText, stagger } from "@/lib/motion";
+import { cloneSourceFromElement } from "@/lib/cloneSource";
+import { usePrefetchProject } from "@/hooks/usePrefetchProject";
 import Footer from "@/components/layout/Footer";
 import DetailsDrawer from "@/components/project/DetailsDrawer";
 import ProjectInfoPanel from "@/components/project/ProjectInfoPanel";
@@ -31,7 +34,8 @@ interface ProjectPageClientProps {
 
 export default function ProjectPageClient({ project, nextProject, prevProject }: ProjectPageClientProps) {
   const router = useTransitionRouter();
-  const { isTransitioning, contentRevealed, animateClone } = usePageTransition();
+  const plainRouter = useRouter();
+  const { isTransitioning, contentRevealed, animateClone, startTransition } = usePageTransition();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const isDesktop = useIsDesktop();
   // Media trees mount only on the client so a phone never requests the
@@ -45,6 +49,36 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
   const descRef = useRef<HTMLDivElement>(null);
   const techRef = useRef<HTMLDivElement>(null);
   const linksRef = useRef<HTMLDivElement>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  const nextSlug = nextProject?.slug?.current ?? undefined;
+
+  // Next project only, on arrival: its route and first media are ready long
+  // before the reader reaches the end of the gallery. Previous gets nothing;
+  // back navigation is cheap already.
+  usePrefetchProject(nextSlug, nextProject?.firstMedia);
+
+  // Project → project, in place: the preview block at the end of the gallery
+  // becomes the clone, this page's text masks out, and the route push lands
+  // on the next page where the same arrival choreography as home → project
+  // runs. Falls back to a plain push when there is nothing to clone.
+  const navigateNext = useCallback(() => {
+    if (!nextSlug) return;
+    const href = `/project/${nextSlug}`;
+    const source = cloneSourceFromElement(previewRef.current);
+    if (!source) {
+      router.push(href);
+      return;
+    }
+    startTransition(source);
+    const exiting = maskOutText(panelRef.current);
+    const gallery = previewRef.current?.closest<HTMLElement>("[data-project-gallery]") ?? null;
+    if (gallery && exiting) {
+      gsap.to(gallery, { autoAlpha: 0, duration: dur.exit, ease: ease.out, overwrite: true });
+    }
+    // The plain router: the view-transition slide must not run under the clone.
+    window.setTimeout(() => plainRouter.push(href), exiting ? EXIT_LEAD_MS : 0);
+  }, [nextSlug, router, plainRouter, startTransition]);
 
   const {
     galleryRef,
@@ -66,6 +100,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
     isTransitioning,
     animateClone,
     routerPush: router.push,
+    navigateNext,
   });
 
   // Chrome (counter, footer) waits for the whole morph; the text does not.
@@ -110,6 +145,8 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
         hidden={skip}
         firstCardRef={firstImageRef}
         onFirstReady={onFirstReady}
+        previewRef={previewRef}
+        onNavigateNext={nextSlug ? navigateNext : undefined}
       />
     );
   }
@@ -133,6 +170,9 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
         firstImageRef={firstImageRef}
         isTransitioning={isTransitioning}
         onFirstReady={onFirstReady}
+        nextProject={nextProject}
+        previewRef={previewRef}
+        onNavigateNext={nextSlug ? navigateNext : undefined}
       />
 
       {!skip && (
