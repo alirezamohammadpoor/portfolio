@@ -38,10 +38,12 @@ export const dur = {
   fast: 0.16,
   /** Small UI: drawers, pills, crossfades. */
   ui: 0.24,
+  /** A block of text masking out before a page change. */
+  exit: 0.4,
   /** Entrances of a block of text. */
   text: 0.9,
   /** Page-level moves: the media morph. */
-  page: 0.6,
+  page: 0.7,
 } as const;
 
 /** Stagger between title → body → byline → image, seconds. */
