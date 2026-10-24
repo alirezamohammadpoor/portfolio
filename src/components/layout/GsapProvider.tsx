@@ -9,8 +9,10 @@ import { ReactLenis, useLenis } from "lenis/react";
 import type { LenisRef } from "lenis/react";
 import { useEffect, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
+import { registerMotion } from "@/lib/motion";
 
 gsap.registerPlugin(ScrollTrigger, SplitText, ScrambleTextPlugin, useGSAP);
+registerMotion();
 gsap.ticker.lagSmoothing(0);
 
 function ScrollTriggerSync() {

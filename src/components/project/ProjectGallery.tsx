@@ -7,6 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
+import { ease, prefersReducedMotion } from "@/lib/motion";
 
 type ProjectGalleryItems = NonNullable<
   NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["gallery"]
@@ -125,17 +126,18 @@ export default function ProjectGallery({
     () => {
       if (!galleryRef.current || isTransitioning) return;
 
+      const lift = prefersReducedMotion() ? 0 : 40;
       itemRefs.current.forEach((el, i) => {
         if (!el || i === 0) return;
 
         // Fade in on scroll
-        gsap.set(el, { opacity: 0, y: 40 });
+        gsap.set(el, { opacity: 0, y: lift });
         ScrollTrigger.create({
           trigger: el,
           start: "top 85%",
           once: true,
           onEnter: () => {
-            gsap.to(el, { opacity: 1, y: 0, duration: 1, ease: "power3.out" });
+            gsap.to(el, { opacity: 1, y: 0, duration: 1, ease: ease.out });
           },
         });
       });
