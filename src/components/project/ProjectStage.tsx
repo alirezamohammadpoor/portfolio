@@ -28,6 +28,7 @@ import NextProjectPreview from "@/components/project/NextProjectPreview";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
+import { isPlainLeftClick } from "@/lib/clicks";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -357,7 +358,7 @@ export default function ProjectStage({
             href={`/project/${project.nextProject.slug.current}`}
             className={pillWhite}
             onClick={(e) => {
-              if (!onNavigateNext) return;
+              if (!onNavigateNext || !isPlainLeftClick(e)) return;
               e.preventDefault();
               onNavigateNext();
             }}

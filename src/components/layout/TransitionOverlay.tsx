@@ -67,6 +67,29 @@ export default function TransitionOverlay() {
       video.remove();
     };
   }, [adopt, sourceVideoElement]);
+  // The snapshot is painted once per source element. An inline ref callback
+  // would run again on every overlay render (landed, targetRect, the reveal
+  // flags) and, by resetting width/height, clear and repaint the canvas from
+  // a source that may have moved on a frame: a visible jump mid-morph.
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const paintSnapshot = !adopt && mediaType === "video";
+  useLayoutEffect(() => {
+    const el = canvasRef.current;
+    if (!paintSnapshot || !el || !sourceVideoElement) return;
+    const vw = sourceVideoElement.videoWidth;
+    const vh = sourceVideoElement.videoHeight;
+    if (vw === 0 || vh === 0) return;
+    el.width = vw;
+    el.height = vh;
+    const ctx = el.getContext("2d");
+    if (!ctx) return;
+    try {
+      ctx.drawImage(sourceVideoElement, 0, 0);
+    } catch {
+      // Source video not paintable yet (shouldn't happen since it's
+      // been autoplaying on the homepage, but don't crash if it does).
+    }
+  }, [paintSnapshot, sourceVideoElement]);
   const targetKey = targetRect
     ? `${targetRect.top}:${targetRect.left}:${targetRect.width}:${targetRect.height}`
     : "none";
@@ -202,20 +225,7 @@ export default function TransitionOverlay() {
       <canvas
         ref={(el) => {
           mediaRef.current = el;
-          if (!el || !sourceVideoElement) return;
-          const vw = sourceVideoElement.videoWidth;
-          const vh = sourceVideoElement.videoHeight;
-          if (vw === 0 || vh === 0) return;
-          el.width = vw;
-          el.height = vh;
-          const ctx = el.getContext("2d");
-          if (!ctx) return;
-          try {
-            ctx.drawImage(sourceVideoElement, 0, 0);
-          } catch {
-            // Source video not paintable yet (shouldn't happen since it's
-            // been autoplaying on the homepage, but don't crash if it does).
-          }
+          canvasRef.current = el;
         }}
         style={mediaStyle}
         aria-hidden="true"
