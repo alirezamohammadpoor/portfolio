@@ -12,6 +12,7 @@ import { lockScroll, unlockScroll } from "@/hooks/useScrollLock";
 import { EXIT_LEAD_MS, dur, ease, maskOutText, prefersReducedMotion } from "@/lib/motion";
 import { usePrefetchProject } from "@/hooks/usePrefetchProject";
 import { lastProjectSlug } from "@/lib/lastProject";
+import { isPlainLeftClick } from "@/lib/clicks";
 import ProjectCard from "./ProjectCard";
 import MediaPanel from "./MediaPanel";
 
@@ -327,6 +328,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
           : null;
 
       if (!image && !videoRef) return;
+      if (!isPlainLeftClick(e)) return;
 
       e.preventDefault();
 

@@ -64,16 +64,19 @@ export const PROJECTS_QUERY = defineQuery(`
   *[_type == "project"] | order(order asc) { ${PROJECT_FIELDS} }
 `);
 
+// Siblings exclude the current document: with one project, or a project
+// without `order`, the fallback would otherwise be the page itself, and a
+// self-link runs the in-place transition against a route that never changes.
 export const PROJECT_BY_SLUG_QUERY = defineQuery(`
   *[_type == "project" && slug.current == $slug][0] {
     ${PROJECT_FIELDS},
     "nextProject": coalesce(
-      *[_type == "project" && order > ^.order] | order(order asc) [0] { title, slug, ${NEXT_PROJECT_MEDIA} },
-      *[_type == "project"] | order(order asc) [0] { title, slug, ${NEXT_PROJECT_MEDIA} }
+      *[_type == "project" && _id != ^._id && order > ^.order] | order(order asc) [0] { title, slug, ${NEXT_PROJECT_MEDIA} },
+      *[_type == "project" && _id != ^._id] | order(order asc) [0] { title, slug, ${NEXT_PROJECT_MEDIA} }
     ),
     "prevProject": coalesce(
-      *[_type == "project" && order < ^.order] | order(order desc) [0] { title, slug },
-      *[_type == "project"] | order(order desc) [0] { title, slug }
+      *[_type == "project" && _id != ^._id && order < ^.order] | order(order desc) [0] { title, slug },
+      *[_type == "project" && _id != ^._id] | order(order desc) [0] { title, slug }
     )
   }
 `);
