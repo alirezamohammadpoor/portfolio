@@ -54,6 +54,11 @@ export default function MediaPanel({
     } else {
       video.pause();
     }
+    // Next keeps the page mounted but hidden after a navigation away (its
+    // effects are torn down and run again on return), so this pauses the
+    // cover while another page is up and resumes it, from the same frame,
+    // when home shows again.
+    return () => video.pause();
   }, [isActive]);
 
   if (coverMedia?.type === "video" && coverMedia.video?.asset?._ref) {
