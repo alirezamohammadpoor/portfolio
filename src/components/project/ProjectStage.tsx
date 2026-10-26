@@ -20,6 +20,7 @@ import { Link } from "next-view-transitions";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { EASE_OUT_CSS } from "@/lib/motion";
+import NextProjectPreview from "@/components/project/NextProjectPreview";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -31,6 +32,10 @@ interface ProjectStageProps {
   firstCardRef?: RefObject<HTMLDivElement | null>;
   /** First card's media is decoded; the clone may morph. */
   onFirstReady?: () => void;
+  /** The next project's preview card at the end of the strip: its media rect. */
+  previewRef?: RefObject<HTMLDivElement | null>;
+  /** Run the in-place next-project transition (preview tap or pill). */
+  onNavigateNext?: () => void;
 }
 
 // Motion spec (phase 2). Reference: Swiper coverflow demo at 390 px —
@@ -47,8 +52,12 @@ export default function ProjectStage({
   hidden = false,
   firstCardRef,
   onFirstReady,
+  previewRef,
+  onNavigateNext,
 }: ProjectStageProps) {
   const gallery = project.gallery ?? [];
+  const nextProject = project.nextProject;
+  const hasPreview = Boolean(nextProject?.firstMedia && nextProject?.slug?.current && onNavigateNext);
   const stripRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [index, setIndex] = useState(0);
@@ -84,6 +93,15 @@ export default function ProjectStage({
       let best = { d: Infinity, i: 0 };
       itemRefs.current.forEach((el, i) => {
         if (!el) return;
+        // The preview card is not part of the gallery's progress; it only
+        // gets the depth treatment.
+        if (i > last) {
+          const c = el.offsetLeft + el.offsetWidth / 2;
+          const t = Math.min(1, Math.abs(c - mid) / el.offsetWidth);
+          el.style.transform = reduceMotion ? "" : `scale(${1 - (1 - NEIGHBOUR_SCALE) * t})`;
+          el.style.opacity = reduceMotion ? "" : String(1 - (1 - NEIGHBOUR_OPACITY) * t);
+          return;
+        }
         const c = el.offsetLeft + el.offsetWidth / 2;
         const d = Math.abs(c - mid);
         if (d < best.d) best = { d, i };
@@ -124,7 +142,7 @@ export default function ProjectStage({
       cancelAnimationFrame(raf);
       clearTimeout(idle);
     };
-  }, [gallery.length, reduceMotion]);
+  }, [gallery.length, reduceMotion, last]);
 
   // Video budget: only the centred card plays; neighbours sit paused on their
   // first frame; everything else is unmounted (see `near` below).
@@ -237,6 +255,26 @@ export default function ProjectStage({
               </div>
             );
           })}
+          {hasPreview && nextProject && (
+            <div
+              ref={(el) => {
+                itemRefs.current[gallery.length] = el;
+              }}
+              className="relative shrink-0 snap-center will-change-transform"
+              style={{ width: ITEM_W, marginLeft: -OVERLAP }}
+              role="group"
+              aria-roledescription="slide"
+              aria-label="Next project"
+            >
+              <NextProjectPreview
+                nextProject={nextProject}
+                previewRef={previewRef}
+                onNavigate={onNavigateNext!}
+                imageWidth={900}
+                sizes="100vw"
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -248,7 +286,15 @@ export default function ProjectStage({
       {/* Bottom row: pills */}
       <div className="absolute inset-x-0 bottom-0 z-30 flex items-center justify-end gap-2 px-margin pb-4">
         {atEnd && !single && project.nextProject?.slug?.current ? (
-          <Link href={`/project/${project.nextProject.slug.current}`} className={pillWhite}>
+          <Link
+            href={`/project/${project.nextProject.slug.current}`}
+            className={pillWhite}
+            onClick={(e) => {
+              if (!onNavigateNext) return;
+              e.preventDefault();
+              onNavigateNext();
+            }}
+          >
             Next project
           </Link>
         ) : project.caseStudy?.slug?.current ? (

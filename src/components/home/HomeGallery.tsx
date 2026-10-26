@@ -9,7 +9,8 @@ import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { usePageTransition } from "@/context/TransitionContext";
 import { lockScroll, unlockScroll } from "@/hooks/useScrollLock";
-import { dur, ease, prefersReducedMotion } from "@/lib/motion";
+import { EXIT_LEAD_MS, dur, maskOutText, prefersReducedMotion } from "@/lib/motion";
+import { usePrefetchProject } from "@/hooks/usePrefetchProject";
 import ProjectCard from "./ProjectCard";
 import MediaPanel from "./MediaPanel";
 
@@ -187,44 +188,8 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
   // Prefetch the active project's route + preload its first gallery item.
   // Mobile has no hover, so Next's Link prefetch never fires before tap —
   // this gives the destination a head start so the clone overlay doesn't
-  // morph onto an empty box. Handles both image and video first items so
-  // the video case isn't a regression vs the image case.
-  useEffect(() => {
-    const project = projects[activeIndex];
-    const slug = project?.slug?.current;
-    if (!slug) return;
-
-    router.prefetch(`/project/${slug}`);
-
-    const firstGalleryItem = project?.gallery?.[0];
-    let href: string | null = null;
-    let asAttr: "image" | "video" | null = null;
-
-    if (
-      firstGalleryItem?._type === "galleryImage" &&
-      firstGalleryItem.image?.asset
-    ) {
-      href = imageUrl(firstGalleryItem.image, 1200);
-      asAttr = "image";
-    } else if (
-      firstGalleryItem?._type === "galleryVideo" &&
-      firstGalleryItem.video?.asset?._ref
-    ) {
-      href = fileUrl(firstGalleryItem.video.asset._ref);
-      asAttr = "video";
-    }
-
-    if (!href || !asAttr) return;
-
-    const link = document.createElement("link");
-    link.rel = "preload";
-    link.as = asAttr;
-    link.href = href;
-    document.head.appendChild(link);
-    return () => {
-      document.head.removeChild(link);
-    };
-  }, [activeIndex, projects, router]);
+  // morph onto an empty box.
+  usePrefetchProject(projects[activeIndex]?.slug?.current, projects[activeIndex]?.gallery?.[0]);
 
   // Desktop: cursor-follow scroll hint with adaptive color
   useEffect(() => {
@@ -375,15 +340,9 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       // (the reverse of their entrance). The push waits just long enough
       // for most of that to be visible; the clone is already covering the
       // media, so the click still reads as immediate.
-      const card = cardLinkRef.current;
-      const chars = card?.querySelectorAll(".char") ?? [];
-      const lines = card?.querySelectorAll(".line") ?? [];
-      const reduced = prefersReducedMotion();
-      if (!reduced && (chars.length || lines.length)) {
-        gsap.to(chars, { yPercent: -120, duration: dur.exit, ease: ease.out, stagger: 0.004, overwrite: true });
-        gsap.to(lines, { yPercent: -105, duration: dur.exit, ease: ease.out, delay: 0.04, overwrite: true });
+      if (maskOutText(cardLinkRef.current)) {
         gsap.to([scrollHintRef.current, tapHintRef.current, cursorHintRef.current], { autoAlpha: 0, duration: dur.fast, overwrite: true });
-        setTimeout(() => router.push(href), 180);
+        setTimeout(() => router.push(href), EXIT_LEAD_MS);
       } else {
         router.push(href);
       }
