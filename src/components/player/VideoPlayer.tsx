@@ -128,6 +128,14 @@ export default function VideoPlayer({
   const [blocked, setBlocked] = useState(false);
   const [scrubbing, setScrubbing] = useState(false);
   const [audio, setAudio] = useState<boolean | undefined>(hasAudio);
+  // Read by the media-events effect without being one of its dependencies:
+  // detection flips `audio` mid-playback, and re-running that effect would
+  // cancel the rAF loop (its cleanup) with nothing to start it again.
+  const audioRef = useRef(audio);
+  const setAudioDetected = useCallback((value: boolean) => {
+    audioRef.current = value;
+    setAudio(value);
+  }, []);
   const [ratio, setRatio] = useState<string>(
     aspect === "auto" ? "4 / 3" : aspect.replace("/", " / "),
   );
@@ -207,7 +215,6 @@ export default function VideoPlayer({
       setMuted(v.muted);
       track("player_volumechange", { id: trackId ?? src, muted: v.muted });
     };
-    const onSeeking = () => track("player_seeking", { id: trackId ?? src, t: Math.round(v.currentTime) });
     const detect = () => {
       if (hasAudio !== undefined) return;
       const anyV = v as HTMLVideoElement & {
@@ -215,13 +222,13 @@ export default function VideoPlayer({
         webkitAudioDecodedByteCount?: number;
         audioTracks?: { length: number };
       };
-      if (typeof anyV.mozHasAudio === "boolean") setAudio(anyV.mozHasAudio);
-      else if (anyV.audioTracks) setAudio(anyV.audioTracks.length > 0);
+      if (typeof anyV.mozHasAudio === "boolean") setAudioDetected(anyV.mozHasAudio);
+      else if (anyV.audioTracks) setAudioDetected(anyV.audioTracks.length > 0);
       else if (typeof anyV.webkitAudioDecodedByteCount === "number") {
         // Chromium: the counter is 0 until audio frames decode, so 0 only
         // means "silent" once a second of playback has gone by.
-        if (anyV.webkitAudioDecodedByteCount > 0) setAudio(true);
-        else if (v.currentTime > 1) setAudio(false);
+        if (anyV.webkitAudioDecodedByteCount > 0) setAudioDetected(true);
+        else if (v.currentTime > 1) setAudioDetected(false);
       }
     };
     const onMeta = () => {
@@ -233,27 +240,30 @@ export default function VideoPlayer({
     };
     const onTime = () => {
       // webkitAudioDecodedByteCount only moves once frames are decoded.
-      if (audio === undefined) detect();
+      if (audioRef.current === undefined) detect();
     };
     v.addEventListener("play", onPlay);
     v.addEventListener("pause", onPause);
     v.addEventListener("ended", onEnded);
     v.addEventListener("volumechange", onVol);
-    v.addEventListener("seeking", onSeeking);
     v.addEventListener("loadedmetadata", onMeta);
     v.addEventListener("timeupdate", onTime);
     if (v.readyState >= 1) onMeta();
+    // Already playing when (re)attached: keep the tracker moving.
+    if (!v.paused) {
+      stopLoop();
+      rafRef.current = requestAnimationFrame(loop60);
+    }
     return () => {
       v.removeEventListener("play", onPlay);
       v.removeEventListener("pause", onPause);
       v.removeEventListener("ended", onEnded);
       v.removeEventListener("volumechange", onVol);
-      v.removeEventListener("seeking", onSeeking);
-      v.removeEventListener("loadedmetadata", onMeta);
+        v.removeEventListener("loadedmetadata", onMeta);
       v.removeEventListener("timeupdate", onTime);
       stopLoop();
     };
-  }, [aspect, audio, hasAudio, loop60, paint, src, stopLoop, trackId]);
+  }, [aspect, hasAudio, loop60, paint, setAudioDetected, src, stopLoop, trackId]);
 
   /* in-view autoplay (muted) */
   useEffect(() => {
@@ -309,6 +319,12 @@ export default function VideoPlayer({
   };
 
   /* scrub */
+  // One analytics event per seek gesture (drag end, key press), not one per
+  // `seeking` event: a drag fires one of those per pointer move.
+  const trackSeek = () => {
+    const v = videoRef.current;
+    if (v) track("player_seek", { id: trackId ?? src, t: Math.round(v.currentTime) });
+  };
   const seekFromPointer = (e: PointerEvent<HTMLDivElement>) => {
     const v = videoRef.current;
     const r = e.currentTarget.getBoundingClientRect();
@@ -334,6 +350,7 @@ export default function VideoPlayer({
     if (!scrubbing) return;
     e.currentTarget.releasePointerCapture(e.pointerId);
     setScrubbing(false);
+    trackSeek();
     if (wasPlayingRef.current) play();
   };
   const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -348,6 +365,7 @@ export default function VideoPlayer({
     e.preventDefault();
     lastSecRef.current = -1;
     paint();
+    trackSeek();
   };
 
   /* ---------- pieces ---------- */
