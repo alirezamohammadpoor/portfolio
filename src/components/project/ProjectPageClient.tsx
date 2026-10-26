@@ -78,13 +78,13 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
     if (!nextSlug) return;
     const href = `/project/${nextSlug}`;
     const preview = previewRef.current;
-    if (!cloneSourceFromElement(preview)) {
+    if (!cloneSourceFromElement(preview, { allowLoadingVideo: true })) {
       router.push(href);
       return;
     }
     // The plain router: the view-transition slide must not run under the clone.
     const swap = () => {
-      const source = cloneSourceFromElement(preview);
+      const source = cloneSourceFromElement(preview, { allowLoadingVideo: true });
       if (!source) {
         router.push(href);
         return;
