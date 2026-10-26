@@ -7,7 +7,7 @@ import { PROJECT_SLUGS_QUERY } from "@/sanity/lib/queries";
 import ProjectPageClient from "@/components/project/ProjectPageClient";
 import JsonLd from "@/components/seo/JsonLd";
 import { ogImageUrl } from "@/sanity/lib/image";
-import { SITE_URL as siteUrl } from "@/lib/site";
+import { SITE_URL as siteUrl, OPEN_GRAPH_BASE } from "@/lib/site";
 
 interface ProjectPageProps {
   params: Promise<{ slug: string }>;
@@ -47,6 +47,7 @@ export async function generateMetadata({
       robots: { index: false, follow: false },
     }),
     openGraph: {
+      ...OPEN_GRAPH_BASE,
       type: "article",
       title: seoTitle,
       description: seoDescription,

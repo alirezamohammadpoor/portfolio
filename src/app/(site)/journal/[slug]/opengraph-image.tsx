@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
-import { client } from "@/sanity/lib/client";
-import { JOURNAL_POST_BY_SLUG_QUERY } from "@/sanity/lib/queries";
+import { getJournalPost } from "@/sanity/lib/data";
 
 export const alt = "Ali Reza Mohammad Poor — Journal";
 export const size = { width: 1200, height: 630 };
@@ -12,7 +11,8 @@ export default async function JournalOgImage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const post = await client.fetch(JOURNAL_POST_BY_SLUG_QUERY, { slug });
+  // The page's own cached, tagged fetcher: no uncached round trip per share.
+  const post = await getJournalPost(slug);
 
   const title = post?.title ?? "Journal";
   const excerpt = post?.excerpt ?? "";

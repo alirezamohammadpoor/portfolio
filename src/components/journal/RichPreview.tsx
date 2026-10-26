@@ -89,22 +89,21 @@ export default function RichPreview({
     { scope: triggerRef, dependencies: [isMobile, videoUrl, imageUrl, label] },
   );
 
-  const tick = () => {
-    if (videoRef.current && videoRef.current.duration && progressRef.current) {
-      const pct = videoRef.current.currentTime / videoRef.current.duration;
-      progressRef.current.style.transform = `scaleX(${pct})`;
-    }
-    rafRef.current = requestAnimationFrame(tick);
-  };
-
-  const startRAF = () => {
+  const startRAF = useCallback(() => {
+    const tick = () => {
+      if (videoRef.current && videoRef.current.duration && progressRef.current) {
+        const pct = videoRef.current.currentTime / videoRef.current.duration;
+        progressRef.current.style.transform = `scaleX(${pct})`;
+      }
+      rafRef.current = requestAnimationFrame(tick);
+    };
     cancelAnimationFrame(rafRef.current);
     rafRef.current = requestAnimationFrame(tick);
-  };
+  }, []);
 
-  const stopRAF = () => {
+  const stopRAF = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
-  };
+  }, []);
 
   const playVideo = useCallback(() => {
     const video = videoRef.current;
@@ -164,7 +163,7 @@ export default function RichPreview({
       document.removeEventListener("visibilitychange", handleVisibility);
       stopRAF();
     };
-  }, [visible, playVideo, hasVideo]);
+  }, [visible, playVideo, hasVideo, startRAF, stopRAF]);
 
   const videoCard = (width: string | number, mobile = false) => (
     <span className="relative flex flex-col" style={{ width }}>

@@ -2,7 +2,9 @@
 
 import { useSyncExternalStore } from "react";
 
-const QUERY = "(min-width: 75rem)"; // Tailwind `desktop:` breakpoint
+/** Tailwind's `desktop:` screen. The one place the breakpoint is spelled. */
+export const DESKTOP_QUERY = "(min-width: 75rem)";
+const QUERY = DESKTOP_QUERY;
 
 function subscribe(onChange: () => void) {
   const mq = window.matchMedia(QUERY);
@@ -16,4 +18,9 @@ const getServerSnapshot = () => true;
 
 export function useIsDesktop(): boolean {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+}
+
+/** Below the desktop breakpoint. Server and hydration render as desktop. */
+export function useIsMobile(): boolean {
+  return !useIsDesktop();
 }
