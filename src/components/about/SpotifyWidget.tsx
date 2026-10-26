@@ -148,7 +148,8 @@ function readCache(): { track: TrackData; cachedAt: string } | null {
 }
 
 function useSpotifyData() {
-  const initialCache = readCache();
+  // Read (and JSON.parse) once, on the first render only; it seeds state.
+  const [initialCache] = useState(readCache);
   const [data, setData] = useState<TrackData | null>(
     initialCache ? { ...initialCache.track, isPlaying: false } : null,
   );

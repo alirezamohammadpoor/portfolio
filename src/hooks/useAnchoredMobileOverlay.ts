@@ -8,9 +8,8 @@ import {
   useCallback,
   type RefObject,
 } from "react";
+import { useIsMobile } from "@/hooks/useIsDesktop";
 
-const DESKTOP_BREAKPOINT_REM = 75;
-export const DESKTOP_BREAKPOINT_PX = DESKTOP_BREAKPOINT_REM * 16;
 const SIDE_PADDING = 16;
 const GAP = 10;
 const TOP_PADDING = 12;
@@ -31,19 +30,6 @@ interface UseAnchoredMobileOverlayOptions {
   forceAbove?: boolean;
 }
 
-export function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < DESKTOP_BREAKPOINT_PX);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
-
-  return isMobile;
-}
-
 export function useAnchoredMobileOverlay(
   triggerRef: RefObject<HTMLElement | null>,
   popupRef: RefObject<HTMLElement | null>,
@@ -53,7 +39,9 @@ export function useAnchoredMobileOverlay(
   const [position, setPosition] = useState<OverlayPosition | null>(null);
   const [ready, setReady] = useState(false);
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   const measurePosition = useCallback(() => {
     const trigger = triggerRef.current;
@@ -126,7 +114,7 @@ export function useAnchoredMobileOverlay(
     caretLeft = Math.max(CARET_INSET, Math.min(caretLeft, popupRect.width - CARET_INSET));
 
     return { top, left, caretLeft, placement };
-  }, [anchorPoint, popupRef, triggerRef]);
+  }, [anchorPoint, forceAbove, popupRef, triggerRef]);
 
   useLayoutEffect(() => {
     if (!visible || !isMobile) {

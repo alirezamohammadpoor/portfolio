@@ -8,6 +8,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { lockScroll, unlockScroll } from "@/hooks/useScrollLock";
+import { DESKTOP_QUERY } from "@/hooks/useIsDesktop";
 import { dur, ease, prefersReducedMotion } from "@/lib/motion";
 
 type ProjectGalleryItems = NonNullable<NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["gallery"]>;
@@ -123,7 +124,7 @@ export function useGalleryScroll({
   // below the desktop breakpoint the page is the horizontal stage and the
   // global touchmove lock would make it unswipeable for UNLOCK_DELAY_MS.
   useEffect(() => {
-    const isDesktop = window.matchMedia("(min-width: 75rem)").matches;
+    const isDesktop = window.matchMedia(DESKTOP_QUERY).matches;
     if (!isDesktop) {
       isReady.current = true;
       hasNavigated.current = false;
@@ -297,7 +298,7 @@ export function useGalleryScroll({
   // Wheel accumulation at the bottom edge — desktop only
   useEffect(() => {
     if (isTransitioning) return;
-    if (!window.matchMedia("(min-width: 75rem)").matches) return;
+    if (!window.matchMedia(DESKTOP_QUERY).matches) return;
 
     const onWheel = (e: WheelEvent) => {
       if (!isReady.current || hasNavigated.current) return;
