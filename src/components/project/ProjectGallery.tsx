@@ -9,6 +9,7 @@ import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { ease, prefersReducedMotion } from "@/lib/motion";
 import NextProjectPreview, { type NextProject } from "@/components/project/NextProjectPreview";
+import { onFirstVideoFrame } from "@/lib/firstFrame";
 
 type ProjectGalleryItems = NonNullable<
   NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["gallery"]
@@ -19,7 +20,8 @@ interface ProjectGalleryProps {
   projectTitle: string | null;
   galleryRef: React.RefObject<HTMLDivElement | null>;
   firstImageRef: React.RefObject<HTMLDivElement | null>;
-  isTransitioning: boolean;
+  /** Under the clone: invisible, no scroll reveals, no playback retries. */
+  hidden: boolean;
   onFirstReady?: () => void;
   nextProject?: NextProject | null;
   previewRef?: React.RefObject<HTMLDivElement | null>;
@@ -31,7 +33,7 @@ export default function ProjectGallery({
   projectTitle,
   galleryRef,
   firstImageRef,
-  isTransitioning,
+  hidden,
   onFirstReady,
   nextProject,
   previewRef,
@@ -102,6 +104,14 @@ export default function ProjectGallery({
     };
   }, [gallery]);
 
+  // A video first item reports ready on its first presented frame, so the
+  // clone covering it never leaves while it still paints black.
+  useEffect(() => {
+    const first = videoRefs.current[0];
+    if (!first || !onFirstReady) return;
+    return onFirstVideoFrame(first, onFirstReady);
+  }, [gallery, onFirstReady]);
+
   // Retry playback when the home→project clone transition ends. During the
   // transition the gallery container is opacity:0 (and was previously
   // visibility:hidden, which broke iOS Safari's IntersectionObserver — see
@@ -114,7 +124,7 @@ export default function ProjectGallery({
   // page" rather than "gallery item 0" (broken when gallery[0] is an
   // image and the actual first video is at gallery[3]).
   useEffect(() => {
-    if (isTransitioning) return;
+    if (hidden) return;
     videoRefs.current.forEach((video, galleryIndex) => {
       if (!video) return;
       // First gallery item is always retried because the clone targets it
@@ -127,12 +137,12 @@ export default function ProjectGallery({
         playPromise.catch(() => {});
       }
     });
-  }, [isTransitioning]);
+  }, [hidden]);
 
   // Scroll-reveal + parallax (skip first item — clone transition targets it)
   useGSAP(
     () => {
-      if (!galleryRef.current || isTransitioning) return;
+      if (!galleryRef.current || hidden) return;
 
       const lift = prefersReducedMotion() ? 0 : 40;
       const targets: (HTMLDivElement | null)[] = [...itemRefs.current, previewWrapRef.current];
@@ -151,14 +161,14 @@ export default function ProjectGallery({
         });
       });
     },
-    { scope: galleryRef, dependencies: [isTransitioning, gallery] },
+    { scope: galleryRef, dependencies: [hidden, gallery] },
   );
 
   return (
     <div
       ref={galleryRef}
       data-project-gallery
-      className={`flex flex-col gap-2 px-4 pb-10 desktop:px-6 desktop:ml-[50%] desktop:w-1/2${isTransitioning ? " opacity-0 pointer-events-none" : ""}`}
+      className={`flex flex-col gap-2 px-4 pb-10 desktop:px-6 desktop:ml-[50%] desktop:w-1/2${hidden ? " opacity-0 pointer-events-none" : ""}`}
     >
       {gallery.map((item, i) => {
         const isImage = item._type === "galleryImage";
@@ -197,7 +207,6 @@ export default function ProjectGallery({
                 loop
                 playsInline
                 preload="metadata"
-                onLoadedMetadata={i === 0 ? onFirstReady : undefined}
               />
             )}
           </div>

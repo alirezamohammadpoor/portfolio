@@ -22,6 +22,7 @@ import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { EASE_OUT_CSS } from "@/lib/motion";
 import NextProjectPreview from "@/components/project/NextProjectPreview";
+import { onFirstVideoFrame } from "@/lib/firstFrame";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -61,6 +62,7 @@ export default function ProjectStage({
   const hasPreview = Boolean(nextProject?.firstMedia && nextProject?.slug?.current && onNavigateNext);
   const stripRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const firstVideoRef = useRef<HTMLVideoElement | null>(null);
   const [index, setIndex] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
   // While the finger is down the cards track scroll 1:1 (no CSS transition
@@ -144,6 +146,14 @@ export default function ProjectStage({
       clearTimeout(idle);
     };
   }, [gallery.length, reduceMotion, last]);
+
+  // A video first card reports ready on its first presented frame (see
+  // ProjectGallery): the clone covering it must not leave on a black frame.
+  useEffect(() => {
+    const first = firstVideoRef.current;
+    if (!first || !onFirstReady) return;
+    return onFirstVideoFrame(first, onFirstReady);
+  }, [onFirstReady]);
 
   // Video budget: only the centred card plays; neighbours sit paused on their
   // first frame; everything else is unmounted (see `near` below).
@@ -242,6 +252,7 @@ export default function ProjectStage({
                 )}
                 {!isImage && item.video?.asset?._ref && near && (
                   <video
+                    ref={i === 0 ? firstVideoRef : undefined}
                     src={fileUrl(item.video.asset._ref)}
                     className="h-full w-full object-cover"
                     aria-label={`${project.title} — ${i + 1}`}
@@ -250,7 +261,6 @@ export default function ProjectStage({
                     playsInline
                     preload="metadata"
                     autoPlay={i === 0}
-                    onLoadedMetadata={i === 0 ? onFirstReady : undefined}
                   />
                 )}
               </div>
