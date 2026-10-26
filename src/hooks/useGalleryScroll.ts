@@ -39,6 +39,12 @@ const THRESHOLD = 2500;
 const UNLOCK_DELAY_CLONE_MS = 800;
 const UNLOCK_DELAY_IN_PLACE_MS = 250;
 const UNLOCK_DELAY_MS = 1300;
+// A trackpad keeps delivering inertia wheel events for up to ~1.5 s after
+// the swipe that crossed the threshold. Unlocking on the timer alone lets
+// that tail scroll the page that just landed, which reads as a yank, so the
+// unlock also waits for the wheel to have been quiet for a moment.
+const WHEEL_QUIET_MS = 160;
+const UNLOCK_INERTIA_CAP_MS = 1500;
 
 export const NEXT_THRESHOLD = THRESHOLD;
 const BOTTOM_EDGE_PX = 10;
@@ -125,17 +131,41 @@ export function useGalleryScroll({
       if (nextTextWrapperRef.current) gsap.set(nextTextWrapperRef.current, { autoAlpha: 0 });
     }, 0);
 
-    const timer = setTimeout(() => {
+    const delay = arrivedInPlaceRef.current
+      ? UNLOCK_DELAY_IN_PLACE_MS
+      : arrivedByCloneRef.current
+        ? UNLOCK_DELAY_CLONE_MS
+        : UNLOCK_DELAY_MS;
+    const started = performance.now();
+    let lastWheel = -Infinity;
+    const onWheel = () => {
+      lastWheel = performance.now();
+    };
+    window.addEventListener("wheel", onWheel, { capture: true, passive: true });
+
+    const unlock = () => {
       isReady.current = true;
       hasNavigated.current = false;
       window.scrollTo(0, 0);
       lenisRef.current?.start();
       lenisRef.current?.scrollTo(0, { immediate: true });
       unlockScroll();
-    }, arrivedInPlaceRef.current ? UNLOCK_DELAY_IN_PLACE_MS : arrivedByCloneRef.current ? UNLOCK_DELAY_CLONE_MS : UNLOCK_DELAY_MS);
+    };
+    let timer = 0;
+    const tryUnlock = () => {
+      const now = performance.now();
+      const sinceWheel = now - lastWheel;
+      if (sinceWheel >= WHEEL_QUIET_MS || now - started >= delay + UNLOCK_INERTIA_CAP_MS) {
+        unlock();
+        return;
+      }
+      timer = window.setTimeout(tryUnlock, WHEEL_QUIET_MS - sinceWheel);
+    };
+    timer = window.setTimeout(tryUnlock, delay);
 
     return () => {
       clearTimeout(timer);
+      window.removeEventListener("wheel", onWheel, { capture: true });
       // Always release the global lock on unmount. Without this, if the user
       // navigates away before the timer fires (common on mobile where taps
       // happen within 2s), the lock persists forever and scroll stays frozen
