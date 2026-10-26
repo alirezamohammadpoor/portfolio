@@ -184,7 +184,7 @@ export default function ProjectStage({
       <div className="flex flex-1 items-center pb-[52px]">
         <div
           ref={stripRef}
-          className={`flex w-full overflow-x-auto py-6 ${single ? "justify-center" : "snap-x snap-mandatory"}`}
+          className={`flex w-full items-start overflow-x-auto py-6 ${single ? "justify-center" : "snap-x snap-mandatory"}`}
           style={{ scrollPaddingInline: "var(--grid-margin)", paddingInline: "var(--grid-margin)" }}
           data-lenis-prevent
           role="region"

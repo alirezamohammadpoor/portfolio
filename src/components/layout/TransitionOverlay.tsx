@@ -28,6 +28,7 @@ export default function TransitionOverlay() {
     sourceRect,
     targetRect,
     targetReady,
+    inPlace,
     revealContent,
     clearTransition,
   } = usePageTransition();
@@ -62,6 +63,19 @@ export default function TransitionOverlay() {
       const sx = targetRect.width / Math.max(sourceRect.width, 1);
       const sy = targetRect.height / Math.max(sourceRect.height, 1);
 
+      // Already on the landing rect (project → project after the gallery has
+      // carried the preview into the first-item slot): nothing to morph. The
+      // clone just covers the swap until the media under it has decoded.
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) {
+        revealContent();
+        setLanded(true);
+        return;
+      }
+      // In place but not pixel-exact (the stage's title block differs in
+      // height, or the preview card was tapped before it centred): a short
+      // settle, not the page-level morph, and the text does not wait for it.
+      if (inPlace) revealContent();
+
       // Plain style writes: GSAP's quickSetter("transform") does not take a
       // raw transform string, and a silent no-op here means no morph at all.
       const setWin = (v: string) => {
@@ -75,8 +89,8 @@ export default function TransitionOverlay() {
 
       gsap.to(proxy, {
         p: 1,
-        duration: dur.page,
-        ease: ease.inOut,
+        duration: inPlace ? dur.ui : dur.page,
+        ease: inPlace ? ease.out : ease.inOut,
         onUpdate: () => {
           const p = proxy.p;
           const wx = 1 + (sx - 1) * p;
@@ -92,7 +106,7 @@ export default function TransitionOverlay() {
         onComplete: () => setLanded(true),
       });
     },
-    { dependencies: [targetKey, clearTransition, revealContent] },
+    { dependencies: [targetKey, inPlace, clearTransition, revealContent] },
   );
 
   useEffect(() => {
