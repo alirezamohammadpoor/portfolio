@@ -8,6 +8,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { lockScroll, unlockScroll } from "@/hooks/useScrollLock";
+import { dur, ease, prefersReducedMotion } from "@/lib/motion";
 
 type ProjectGalleryItems = NonNullable<NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["gallery"]>;
 
@@ -45,6 +46,12 @@ const UNLOCK_DELAY_MS = 1300;
 // unlock also waits for the wheel to have been quiet for a moment.
 const WHEEL_QUIET_MS = 160;
 const UNLOCK_INERTIA_CAP_MS = 1500;
+// While that tail is swallowed the page would sit dead under a finger that
+// is still moving. Instead the gallery column gives a little, with friction,
+// like an overscroll edge: at most PULL_MAX px, approached exponentially per
+// PULL_SCALE wheel units, and it springs back when the hold ends.
+const PULL_MAX = 48;
+const PULL_SCALE = 1200;
 
 export const NEXT_THRESHOLD = THRESHOLD;
 const BOTTOM_EDGE_PX = 10;
@@ -138,18 +145,34 @@ export function useGalleryScroll({
         : UNLOCK_DELAY_MS;
     const started = performance.now();
     let lastWheel = -Infinity;
-    const onWheel = () => {
+    let unlocked = false;
+    // The column mounts one tick after this effect, so it is resolved lazily.
+    const canPull = arrivedInPlaceRef.current && !prefersReducedMotion();
+    let pull: ((y: number) => void) | null = null;
+    let column: HTMLDivElement | null = null;
+    let pulled = 0;
+    const onWheel = (e: WheelEvent) => {
       lastWheel = performance.now();
+      if (!canPull || unlocked) return;
+      if (!column) {
+        column = galleryRef.current;
+        if (!column) return;
+        pull = gsap.quickTo(column, "y", { duration: dur.fast, ease: ease.out });
+      }
+      pulled = Math.max(0, pulled + e.deltaY);
+      pull?.(-PULL_MAX * (1 - Math.exp(-pulled / PULL_SCALE)));
     };
     window.addEventListener("wheel", onWheel, { capture: true, passive: true });
 
     const unlock = () => {
+      unlocked = true;
       isReady.current = true;
       hasNavigated.current = false;
       window.scrollTo(0, 0);
       lenisRef.current?.start();
       lenisRef.current?.scrollTo(0, { immediate: true });
       unlockScroll();
+      if (pull && column) gsap.to(column, { y: 0, duration: dur.ui, ease: ease.out, overwrite: true });
     };
     let timer = 0;
     const tryUnlock = () => {
