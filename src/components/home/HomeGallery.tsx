@@ -9,7 +9,7 @@ import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { usePageTransition } from "@/context/TransitionContext";
 import { lockScroll, unlockScroll } from "@/hooks/useScrollLock";
-import { EXIT_LEAD_MS, dur, maskOutText, prefersReducedMotion } from "@/lib/motion";
+import { EXIT_LEAD_MS, dur, ease, maskOutText, prefersReducedMotion } from "@/lib/motion";
 import { usePrefetchProject } from "@/hooks/usePrefetchProject";
 import ProjectCard from "./ProjectCard";
 import MediaPanel from "./MediaPanel";
@@ -214,13 +214,18 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       gsap.to(cursor!, { autoAlpha: 1, duration: 0.3, ease: "power2.out" });
     }
 
-    // No mouseleave handler — cursor hint stays visible once shown
+    function onLeave() {
+      gsap.to(cursor!, { autoAlpha: 0, duration: dur.fast, ease: ease.out });
+    }
+
     wrapper.addEventListener("mousemove", onMove);
     wrapper.addEventListener("mouseenter", onEnter);
+    wrapper.addEventListener("mouseleave", onLeave);
 
     return () => {
       wrapper.removeEventListener("mousemove", onMove);
       wrapper.removeEventListener("mouseenter", onEnter);
+      wrapper.removeEventListener("mouseleave", onLeave);
       gsap.killTweensOf(cursor);
     };
   }, []);

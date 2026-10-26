@@ -178,7 +178,7 @@ export default function ProjectGallery({
                 src={imageUrl(item.image, 1200)}
                 alt={`${projectTitle} — ${i + 1}`}
                 fill
-                className={`object-cover${i > 0 ? " scale-[1.06]" : ""}`}
+                className="object-cover"
                 sizes="(min-width: 75rem) 50vw, 100vw"
                 priority={i === 0}
                 onLoad={i === 0 ? onFirstReady : undefined}
@@ -190,7 +190,7 @@ export default function ProjectGallery({
                   videoRefs.current[i] = el;
                 }}
                 src={fileUrl(item.video.asset._ref)}
-                className={`h-full w-full object-cover${i > 0 ? " scale-[1.06]" : ""}`}
+                className="h-full w-full object-cover"
                 aria-label={`${projectTitle} — ${i + 1}`}
                 autoPlay
                 muted
