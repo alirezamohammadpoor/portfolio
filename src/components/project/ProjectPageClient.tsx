@@ -136,10 +136,15 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
   const textWaiting = isTransitioning && !contentRevealed;
   const textKey = textWaiting ? "wait" : "go";
 
-  useTitleAnimation(titleRef, panelRef, { duration: 1, skip: textWaiting, dependencies: [textKey] });
-  useBodyAnimation(descRef, panelRef, { duration: dur.text, delay: stagger, skip: textWaiting, dependencies: [textKey] });
-  useBodyAnimation(techRef, panelRef, { duration: dur.text, delay: 2 * stagger, skip: textWaiting, dependencies: [textKey] });
-  useInlineAnimation(linksRef, panelRef, "a:not([data-pill])", { duration: dur.text, delay: 3 * stagger, skip: textWaiting, dependencies: [textKey] });
+  // `mounted` is a dependency because the panel renders one tick after this
+  // component: without it a direct load (or an arrival whose text is never
+  // "waiting", project → project) runs the hooks once against empty refs and
+  // the text simply appears.
+  const textDeps = [textKey, mounted];
+  useTitleAnimation(titleRef, panelRef, { duration: 1, skip: textWaiting, dependencies: textDeps });
+  useBodyAnimation(descRef, panelRef, { duration: dur.text, delay: stagger, skip: textWaiting, dependencies: textDeps });
+  useBodyAnimation(techRef, panelRef, { duration: dur.text, delay: 2 * stagger, skip: textWaiting, dependencies: textDeps });
+  useInlineAnimation(linksRef, panelRef, "a:not([data-pill])", { duration: dur.text, delay: 3 * stagger, skip: textWaiting, dependencies: textDeps });
 
   // Pill button animation (SplitText mask clips rounded corners)
   useGSAP(
@@ -153,7 +158,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
         { yPercent: 0, autoAlpha: 1, duration: dur.text, ease: ease.out, delay: 3 * stagger },
       );
     },
-    { scope: panelRef, dependencies: [textKey] },
+    { scope: panelRef, dependencies: textDeps },
   );
 
   // Mobile and tablet get the stage (horizontal strip, pills); laptop and up
