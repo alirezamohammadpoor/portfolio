@@ -30,6 +30,7 @@ export default function TransitionOverlay() {
     targetReady,
     inPlace,
     revealContent,
+    revealPage,
     clearTransition,
   } = usePageTransition();
   // The morph has landed; the clone leaves once the media under it is ready
@@ -116,12 +117,18 @@ export default function TransitionOverlay() {
     }
     if (!landed) return;
     if (targetReady) {
-      clearTransition();
-      return;
+      // Show the page under the clone first, then give the compositor two
+      // frames to draw it (a <video> coming out of an opacity-0 subtree paints
+      // black for a frame otherwise) before the cover goes.
+      revealPage();
+      let raf = requestAnimationFrame(() => {
+        raf = requestAnimationFrame(clearTransition);
+      });
+      return () => cancelAnimationFrame(raf);
     }
     const grace = window.setTimeout(clearTransition, 1000);
     return () => window.clearTimeout(grace);
-  }, [isTransitioning, landed, targetReady, clearTransition]);
+  }, [isTransitioning, landed, targetReady, revealPage, clearTransition]);
 
   if (!isTransitioning || !sourceRect) return null;
 
