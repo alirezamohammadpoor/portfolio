@@ -62,8 +62,14 @@ export default function MediaPanel({
   }, [isActive]);
 
   if (coverMedia?.type === "video" && coverMedia.video?.asset?._ref) {
+    // Only the active slide and its two neighbours carry a <video>: the
+    // others would each open a metadata request on first paint for a slide
+    // nobody has scrolled to, and they get their element (and its preload)
+    // the moment they become a neighbour, before they can scroll into view.
+    const mountVideo = priority || isActive || shouldPreload;
     return (
       <div className="relative w-full overflow-hidden bg-black h-full">
+        {mountVideo && (
         <video
           ref={videoRef}
           src={fileUrl(coverMedia.video.asset._ref)}
@@ -75,8 +81,9 @@ export default function MediaPanel({
           muted
           loop
           playsInline
-          preload={priority || isActive || shouldPreload ? "auto" : "metadata"}
+          preload="auto"
         />
+        )}
       </div>
     );
   }

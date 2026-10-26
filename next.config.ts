@@ -6,6 +6,9 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ["gsap", "lenis", "@sanity/client", "next-sanity"],
   },
   images: {
+    // Sanity's CDN does the resizing; see src/sanity/lib/imageLoader.ts.
+    loader: "custom",
+    loaderFile: "./src/sanity/lib/imageLoader.ts",
     remotePatterns: [
       {
         protocol: "https",

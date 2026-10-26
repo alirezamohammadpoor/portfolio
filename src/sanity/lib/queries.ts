@@ -60,8 +60,19 @@ export const ABOUT_QUERY = defineQuery(`
   }
 `);
 
+// The home gallery and the lab scatter field: cover, card text and the first
+// gallery item (preloaded for the active slide). Everything else a project
+// carries (full gallery with asset documents, description, seo, password)
+// stays on the server and is only sent to the browser by the project page.
 export const PROJECTS_QUERY = defineQuery(`
-  *[_type == "project"] | order(order asc) { ${PROJECT_FIELDS} }
+  *[_type == "project"] | order(order asc) {
+    _id,
+    title,
+    slug,
+    shortDescription,
+    coverMedia,
+    ${NEXT_PROJECT_MEDIA}
+  }
 `);
 
 // Siblings exclude the current document: with one project, or a project
