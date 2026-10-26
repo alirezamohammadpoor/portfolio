@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { usePageTransition } from "@/context/TransitionContext";
@@ -27,9 +27,13 @@ export default function TransitionOverlay() {
     sourceVideoElement,
     sourceRect,
     targetRect,
+    targetReady,
     revealContent,
     clearTransition,
   } = usePageTransition();
+  // The morph has landed; the clone leaves once the media under it is ready
+  // (or after a grace period, so a broken asset never leaves it stuck).
+  const [landed, setLanded] = useState(false);
   const windowRef = useRef<HTMLDivElement>(null);
   const mediaRef = useRef<HTMLElement>(null);
   const targetKey = targetRect
@@ -58,8 +62,14 @@ export default function TransitionOverlay() {
       const sx = targetRect.width / Math.max(sourceRect.width, 1);
       const sy = targetRect.height / Math.max(sourceRect.height, 1);
 
-      const setWin = gsap.quickSetter(win, "transform");
-      const setMedia = gsap.quickSetter(media, "transform");
+      // Plain style writes: GSAP's quickSetter("transform") does not take a
+      // raw transform string, and a silent no-op here means no morph at all.
+      const setWin = (v: string) => {
+        win.style.transform = v;
+      };
+      const setMedia = (v: string) => {
+        media.style.transform = v;
+      };
       const proxy = { p: 0 };
       let revealed = false;
 
@@ -79,11 +89,25 @@ export default function TransitionOverlay() {
             revealContent();
           }
         },
-        onComplete: clearTransition,
+        onComplete: () => setLanded(true),
       });
     },
     { dependencies: [targetKey, clearTransition, revealContent] },
   );
+
+  useEffect(() => {
+    if (!isTransitioning) {
+      setLanded(false);
+      return;
+    }
+    if (!landed) return;
+    if (targetReady) {
+      clearTransition();
+      return;
+    }
+    const grace = window.setTimeout(clearTransition, 1000);
+    return () => window.clearTimeout(grace);
+  }, [isTransitioning, landed, targetReady, clearTransition]);
 
   if (!isTransitioning || !sourceRect) return null;
 

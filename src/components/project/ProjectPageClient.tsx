@@ -35,7 +35,7 @@ interface ProjectPageClientProps {
 export default function ProjectPageClient({ project, nextProject, prevProject }: ProjectPageClientProps) {
   const router = useTransitionRouter();
   const plainRouter = useRouter();
-  const { isTransitioning, contentRevealed, animateClone, startTransition } = usePageTransition();
+  const { isTransitioning, contentRevealed, animateClone, startTransition, markTargetReady } = usePageTransition();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const isDesktop = useIsDesktop();
   // Media trees mount only on the client so a phone never requests the
@@ -99,6 +99,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
     prevProjectSlug: prevProject?.slug?.current ?? undefined,
     isTransitioning,
     animateClone,
+    markTargetReady,
     routerPush: router.push,
     navigateNext,
   });
