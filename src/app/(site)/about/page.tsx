@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { draftMode } from "next/headers";
 import { getAbout, getAboutDraft } from "@/sanity/lib/data";
 import AboutContent from "@/components/about/AboutContent";
+import { OPEN_GRAPH_BASE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "About",
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
     "Ali Reza Mohammad Poor — Frontend Developer specializing in eCommerce.",
   alternates: { canonical: "/about" },
   openGraph: {
+    ...OPEN_GRAPH_BASE,
     type: "profile",
     url: "/about",
     title: "About",

@@ -1,6 +1,5 @@
 import { ImageResponse } from "next/og";
-import { client } from "@/sanity/lib/client";
-import { PROJECT_BY_SLUG_QUERY } from "@/sanity/lib/queries";
+import { getProject } from "@/sanity/lib/data";
 
 export const alt = "Ali Reza Mohammad Poor — Project";
 export const size = { width: 1200, height: 630 };
@@ -12,7 +11,8 @@ export default async function ProjectOgImage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const project = await client.fetch(PROJECT_BY_SLUG_QUERY, { slug });
+  // The page's own cached, tagged fetcher: no uncached round trip per share.
+  const project = await getProject(slug);
 
   const title = project?.title ?? "Project";
   const description = project?.shortDescription ?? "";

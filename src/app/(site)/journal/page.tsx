@@ -7,6 +7,7 @@ import {
   getJournalPostsDraft,
 } from "@/sanity/lib/data";
 import JournalContent from "@/components/journal/JournalContent";
+import { OPEN_GRAPH_BASE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Journal",
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
     "Insights and case studies from recent projects.",
   alternates: { canonical: "/journal" },
   openGraph: {
+    ...OPEN_GRAPH_BASE,
     type: "website",
     url: "/journal",
     title: "Journal",
