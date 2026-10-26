@@ -151,13 +151,19 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
     }
 
     // Capture wheel events — one GESTURE = one slide. A trackpad flick emits
-    // a stream of decaying deltas for ~1 s, longer than the slide animation
-    // plus its 400 ms lock, so without gating one flick advanced two or three
-    // slides. A new gesture starts after a 150 ms silence, on a direction
-    // change, or when the delta re-accelerates (a second flick mid-inertia).
+    // a stream of deltas for ~1 s: a short ramp up, then a long decaying
+    // inertia tail, longer than the slide animation plus its lock, so without
+    // gating one flick advanced two or three slides. A new gesture starts
+    // after a 150 ms silence, on a direction change, or when the delta jumps
+    // back up AFTER the stream has started to fall (a second flick
+    // mid-inertia). The ramp-up itself must not count: each of its events is
+    // larger than the last, and treating them as new gestures re-armed the
+    // trigger while the first slide was still animating, so the tail fired a
+    // second slide once the animation ended.
     let lastWheelAt = 0;
     let lastDelta = 0;
     let gestureConsumed = false;
+    let decaying = false;
     function onWheel(e: WheelEvent) {
       e.preventDefault();
       const now = performance.now();
@@ -165,10 +171,15 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       const newGesture =
         now - lastWheelAt > 150 ||
         Math.sign(e.deltaY) !== Math.sign(lastDelta) ||
-        magnitude > lastDelta * 1.5;
+        (decaying && magnitude > lastDelta * 1.5);
+      if (newGesture) {
+        gestureConsumed = false;
+        decaying = false;
+      } else if (magnitude < lastDelta) {
+        decaying = true;
+      }
       lastWheelAt = now;
       lastDelta = magnitude;
-      if (newGesture) gestureConsumed = false;
       if (gestureConsumed || isAnimating || magnitude < 2) return;
       gestureConsumed = true;
       if (e.deltaY > 0) goToSlide(1);
