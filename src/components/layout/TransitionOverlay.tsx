@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { usePageTransition } from "@/context/TransitionContext";
@@ -38,6 +38,35 @@ export default function TransitionOverlay() {
   const [landed, setLanded] = useState(false);
   const windowRef = useRef<HTMLDivElement>(null);
   const mediaRef = useRef<HTMLElement>(null);
+  const adoptRef = useRef<HTMLDivElement>(null);
+  // Project → project: the preview's <video> is moved into the clone as is,
+  // so it keeps playing through the route swap instead of freezing on a
+  // snapshot. React never removes it individually: the old page unmounts by
+  // its root. When the clone goes, the landing page's first item takes the
+  // element in the same commit (see adoptVideo.ts), so it is never paused
+  // here: a detached media element only pauses if it is still detached at
+  // the next stable state.
+  const adopt = inPlace && mediaType === "video" && Boolean(sourceVideoElement);
+  useLayoutEffect(() => {
+    const host = adoptRef.current;
+    const video = sourceVideoElement;
+    if (!adopt || !host || !video) return;
+    const prev = {
+      position: video.style.position,
+      inset: video.style.inset,
+      width: video.style.width,
+      height: video.style.height,
+      objectFit: video.style.objectFit,
+    };
+    Object.assign(video.style, { position: "absolute", inset: "0", width: "100%", height: "100%", objectFit: "cover" });
+    host.appendChild(video);
+    const p = video.play();
+    if (p && typeof p.catch === "function") p.catch(() => {});
+    return () => {
+      Object.assign(video.style, prev);
+      video.remove();
+    };
+  }, [adopt, sourceVideoElement]);
   const targetKey = targetRect
     ? `${targetRect.top}:${targetRect.left}:${targetRect.width}:${targetRect.height}`
     : "none";
@@ -160,8 +189,16 @@ export default function TransitionOverlay() {
   // instant-ready clone that morphs cleanly. Canvas taint from a
   // cross-origin drawImage only blocks readback methods — plain display
   // works, so no CORS setup is needed.
-  const media =
-    mediaType === "video" ? (
+  const media = adopt ? (
+    <div
+      ref={(el) => {
+        adoptRef.current = el;
+        mediaRef.current = el;
+      }}
+      style={mediaStyle}
+      aria-hidden="true"
+    />
+  ) : mediaType === "video" ? (
       <canvas
         ref={(el) => {
           mediaRef.current = el;

@@ -180,6 +180,10 @@ export function useGalleryScroll({
       cloneFired.current = false;
       return;
     }
+    // Only the landing page targets the clone. The page being left also sees
+    // isTransitioning flip (project → project) and must not aim the clone at
+    // its own, off-screen first item.
+    if (!arrivedByCloneRef.current) return;
     // Poll a few frames for the slot (the media tree mounts one effect tick
     // after the page), then force-fire so the page can never stay hidden.
     let raf = 0;
