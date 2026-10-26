@@ -147,6 +147,10 @@ export default function ProjectStage({
           const t = Math.min(1, Math.abs(c - mid) / el.offsetWidth);
           el.style.transform = reduceMotion ? "" : `scale(${1 - (1 - NEIGHBOUR_SCALE) * t})`;
           el.style.opacity = reduceMotion ? "" : String(1 - (1 - NEIGHBOUR_OPACITY) * t);
+          // Same stacking rule as the gallery cards. Without it the preview
+          // stayed at z-index auto, and the last gallery card (overlapping it
+          // by 44 px, z-index 5 when one card away) painted over its left edge.
+          el.style.zIndex = reduceMotion ? String(t < 0.5 ? 10 : 5) : String(10 - Math.round(t * 5));
           return;
         }
         const c = el.offsetLeft + el.offsetWidth / 2;
