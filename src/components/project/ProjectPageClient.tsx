@@ -13,7 +13,7 @@ import {
   useInlineAnimation,
 } from "@/hooks/useTextAnimation";
 import { useGalleryScroll } from "@/hooks/useGalleryScroll";
-import { EXIT_LEAD_MS, dur, ease, maskOutText, stagger } from "@/lib/motion";
+import { dur, ease, maskOutText, prefersReducedMotion, stagger } from "@/lib/motion";
 import { cloneSourceFromElement } from "@/lib/cloneSource";
 import { usePrefetchProject } from "@/hooks/usePrefetchProject";
 import Footer from "@/components/layout/Footer";
@@ -35,7 +35,7 @@ interface ProjectPageClientProps {
 export default function ProjectPageClient({ project, nextProject, prevProject }: ProjectPageClientProps) {
   const router = useTransitionRouter();
   const plainRouter = useRouter();
-  const { isTransitioning, contentRevealed, animateClone, startTransition, markTargetReady } = usePageTransition();
+  const { isTransitioning, contentRevealed, inPlace, animateClone, startTransition, markTargetReady } = usePageTransition();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const isDesktop = useIsDesktop();
   // Media trees mount only on the client so a phone never requests the
@@ -58,26 +58,51 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
   // back navigation is cheap already.
   usePrefetchProject(nextSlug, nextProject?.firstMedia);
 
-  // Project → project, in place: the preview block at the end of the gallery
-  // becomes the clone, this page's text masks out, and the route push lands
-  // on the next page where the same arrival choreography as home → project
-  // runs. Falls back to a plain push when there is nothing to clone.
+  // Project → project reads as one page: the gallery column carries the
+  // preview block up into the first-item slot (the same move the reader has
+  // been making all the way down) while this page's text masks out. By the
+  // time the route swaps, the preview already sits exactly where the next
+  // page's first item renders, so the clone covers the swap without moving
+  // and the next page's text masks in at once. On the stage (mobile) the
+  // preview card is already centred where the first card lands, so it swaps
+  // straight away. Falls back to a plain push when there is nothing to clone.
   const navigateNext = useCallback(() => {
     if (!nextSlug) return;
     const href = `/project/${nextSlug}`;
-    const source = cloneSourceFromElement(previewRef.current);
-    if (!source) {
+    const preview = previewRef.current;
+    if (!cloneSourceFromElement(preview)) {
       router.push(href);
       return;
     }
-    startTransition(source);
-    const exiting = maskOutText(panelRef.current);
-    const gallery = previewRef.current?.closest<HTMLElement>("[data-project-gallery]") ?? null;
-    if (gallery && exiting) {
-      gsap.to(gallery, { autoAlpha: 0, duration: dur.exit, ease: ease.out, overwrite: true });
-    }
     // The plain router: the view-transition slide must not run under the clone.
-    window.setTimeout(() => plainRouter.push(href), exiting ? EXIT_LEAD_MS : 0);
+    const swap = () => {
+      const source = cloneSourceFromElement(preview);
+      if (!source) {
+        router.push(href);
+        return;
+      }
+      startTransition({ ...source, inPlace: true });
+      plainRouter.push(href);
+    };
+
+    const gallery = preview?.closest<HTMLElement>("[data-project-gallery]") ?? null;
+    const slot = gallery?.firstElementChild ?? null;
+    if (!gallery || !slot || !preview || prefersReducedMotion()) {
+      swap();
+      return;
+    }
+    // Where the first item sits with the page scrolled to the top (the
+    // document offset) is where the next page's first item will be.
+    const slotTop = slot.getBoundingClientRect().top + window.scrollY;
+    const delta = preview.getBoundingClientRect().top - slotTop;
+    maskOutText(panelRef.current);
+    gsap.to(gallery, {
+      y: -delta,
+      duration: dur.page,
+      ease: ease.inOut,
+      overwrite: true,
+      onComplete: swap,
+    });
   }, [nextSlug, router, plainRouter, startTransition]);
 
   const {
@@ -95,6 +120,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
     gallery: project.gallery ?? [],
     nextProjectSlug: nextSlug,
     isTransitioning,
+    inPlace,
     animateClone,
     markTargetReady,
     navigateNext,
