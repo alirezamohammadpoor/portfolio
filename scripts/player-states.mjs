@@ -41,10 +41,27 @@ for (let i = 0; i < Math.min(alts, 6); i++) {
   await page.evaluate((el) => { el.loop = true; el.currentTime = 0; el.play(); }, await video.elementHandle());
 }
 
-// Tap-target audit: every control ≥ 24px, report < 44px
+// Tap-target audit: every control ≥ 24px, report < 44px.
+// The hit box includes a ::before extension (pills grow theirs to 44px).
 const small = await page.evaluate(() =>
   [...document.querySelectorAll("[data-player] button, [data-player] [role=slider]")]
-    .map((b) => ({ label: b.getAttribute("aria-label") ?? b.textContent?.trim(), ...b.getBoundingClientRect().toJSON() }))
+    .map((b) => {
+      const r = b.getBoundingClientRect();
+      let { top, right, bottom, left } = r;
+      const cs = getComputedStyle(b, "::before");
+      if (cs.content !== "none" && cs.position === "absolute") {
+        // offsets are from the padding box, so account for the border
+        const s = getComputedStyle(b);
+        const bt = parseFloat(s.borderTopWidth), bb = parseFloat(s.borderBottomWidth);
+        const bl = parseFloat(s.borderLeftWidth), br = parseFloat(s.borderRightWidth);
+        const o = (v) => (v === "auto" ? 0 : parseFloat(v));
+        top = Math.min(top, r.top + bt + o(cs.top));
+        bottom = Math.max(bottom, r.bottom - bb - o(cs.bottom));
+        left = Math.min(left, r.left + bl + o(cs.left));
+        right = Math.max(right, r.right - br - o(cs.right));
+      }
+      return { label: b.getAttribute("aria-label") ?? b.textContent?.trim(), width: right - left, height: bottom - top };
+    })
     .filter((r) => r.width < 44 || r.height < 44)
     .map((r) => `${r.label}: ${Math.round(r.width)}×${Math.round(r.height)}`),
 );
