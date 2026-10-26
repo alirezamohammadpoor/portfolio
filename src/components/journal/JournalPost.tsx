@@ -14,6 +14,7 @@ import type {
   JOURNAL_POSTS_QUERY_RESULT,
 } from "@/sanity/types";
 import { imageUrl } from "@/sanity/lib/image";
+import { formatPostDate } from "@/lib/dates";
 import { portableTextComponents } from "@/components/portableText/components";
 import JournalCard from "./JournalCard";
 
@@ -114,11 +115,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
                 </Link>
                 {" · "}
                 <time dateTime={post.publishedAt}>
-                  {new Date(post.publishedAt).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
+                  {formatPostDate(post.publishedAt)}
                 </time>
               </p>
             )}
