@@ -387,6 +387,16 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
     [startTransition, router, projects],
   );
 
+  // No published projects (a fresh dataset, everything unpublished): an
+  // empty gallery instead of a crash on `projects[0].title`.
+  if (!activeProject) {
+    return (
+      <div className="flex h-[calc(100dvh-var(--header-height))] items-center justify-center px-4 desktop:px-6">
+        <p className="text-sub text-secondary">No projects yet.</p>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={containerRef}
@@ -396,11 +406,11 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       <div className="desktop:w-1/2 desktop:flex desktop:items-center">
         <Link
           ref={cardLinkRef}
-          href={`/project/${activeProject?.slug?.current}`}
+          href={`/project/${activeProject.slug?.current}`}
           className="block w-full px-4 py-2 desktop:px-6 desktop:py-0"
-          onClick={(e) => activeProject && handleProjectClick(e, activeProject)}
+          onClick={(e) => handleProjectClick(e, activeProject)}
         >
-          <ProjectCard key={`${activeProject?._id}-${visit}`} project={activeProject} />
+          <ProjectCard key={`${activeProject._id}-${visit}`} project={activeProject} />
         </Link>
       </div>
 

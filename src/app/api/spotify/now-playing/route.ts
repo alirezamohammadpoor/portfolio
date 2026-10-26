@@ -1,3 +1,5 @@
+import { connection } from "next/server";
+
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID!;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET!;
 const REFRESH_TOKEN = process.env.SPOTIFY_REFRESH_TOKEN!;
@@ -7,11 +9,13 @@ const basic = Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64");
 // Cache access token (valid ~3600s) separately from response data
 let tokenCache: { token: string; expiresAt: number } | null = null;
 
-// Cache response data for 1s to deduplicate concurrent requests
+// Cache response data for 1s, and share the in-flight request: visitors
+// who arrive while a fetch is running get that fetch, not their own.
 const CACHE_TTL = 1_000;
 let cachedData: Record<string, unknown> | null = null;
 let cachedAt = 0;
 let cachedStatus = 200;
+let inFlight: Promise<{ data: Record<string, unknown>; status: number }> | null = null;
 
 async function getAccessToken(): Promise<string> {
   const now = Date.now();
@@ -30,8 +34,10 @@ async function getAccessToken(): Promise<string> {
       refresh_token: REFRESH_TOKEN,
     }),
   });
+  if (!res.ok) throw new Error(`Spotify token refresh failed: ${res.status}`);
   const { access_token, expires_in } = await res.json();
-  tokenCache = { token: access_token, expiresAt: now + (expires_in - 60) * 1000 };
+  if (typeof access_token !== "string") throw new Error("Spotify token refresh returned no token");
+  tokenCache = { token: access_token, expiresAt: now + ((expires_in ?? 3600) - 60) * 1000 };
   return access_token;
 }
 
@@ -86,17 +92,13 @@ async function fetchSpotifyData(): Promise<{ data: Record<string, unknown>; stat
     return { status: 404, data: { error: "No data" } };
   }
 
-  // Infer "still playing" from timestamp + duration. Spotify's `played_at`
-  // is when the track started, so if now < played_at + duration_ms the track
-  // is almost certainly still playing, just not visible to `currently-playing`.
-  const playedAtMs = new Date(item.played_at).getTime();
-  const durationMs = typeof item.track.duration_ms === "number" ? item.track.duration_ms : 0;
-  const inferredStillPlaying = Date.now() < playedAtMs + durationMs;
-
+  // `played_at` is when the track finished (or was skipped), not when it
+  // started, so nothing about "still playing" can be read from it: a track
+  // that is not in `currently-playing` is reported as last listened to.
   return {
     status: 200,
     data: {
-      isPlaying: inferredStillPlaying,
+      isPlaying: false,
       title: item.track.name,
       artist: item.track.artists.map((a: { name: string }) => a.name).join(", "),
       album: item.track.album.name,
@@ -108,14 +110,29 @@ async function fetchSpotifyData(): Promise<{ data: Record<string, unknown>; stat
 }
 
 export async function GET() {
+  // Always served on request (cacheComponents would otherwise try to
+  // prerender this handler at build time, where the upstream fetch rejects).
+  await connection();
   const now = Date.now();
   if (cachedData && now - cachedAt < CACHE_TTL) {
     return Response.json(cachedData, { status: cachedStatus });
   }
 
-  const { data, status } = await fetchSpotifyData();
+  if (!inFlight) {
+    inFlight = fetchSpotifyData()
+      .catch((err) => {
+        // A non-JSON upstream body (an HTML 502) or a failed token refresh:
+        // the shape the widget already handles, not an unhandled 500.
+        console.error("Spotify now-playing error:", err);
+        return { status: 503, data: { error: "Spotify unavailable" } };
+      })
+      .finally(() => {
+        inFlight = null;
+      });
+  }
+  const { data, status } = await inFlight;
   cachedData = data;
   cachedStatus = status;
-  cachedAt = now;
+  cachedAt = Date.now();
   return Response.json(data, { status });
 }

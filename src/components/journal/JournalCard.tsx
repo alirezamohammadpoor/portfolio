@@ -2,6 +2,7 @@ import { Link } from "next-view-transitions";
 import Image from "next/image";
 import type { JOURNAL_POSTS_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl } from "@/sanity/lib/image";
+import { formatPostDate } from "@/lib/dates";
 
 interface JournalCardProps {
   post: JOURNAL_POSTS_QUERY_RESULT[number];
@@ -28,11 +29,7 @@ export default function JournalCard({ post }: JournalCardProps) {
       <div className="mt-auto flex items-center justify-between pt-6">
         {post.publishedAt && (
           <span className="text-sub desktop:text-body text-primary">
-            {new Date(post.publishedAt).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
+            {formatPostDate(post.publishedAt)}
           </span>
         )}
         {post.tags && post.tags.length > 0 && (
