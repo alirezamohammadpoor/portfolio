@@ -24,6 +24,7 @@ import ProjectGallery from "@/components/project/ProjectGallery";
 import ProjectStage from "@/components/project/ProjectStage";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import ScrollProgress from "@/components/project/ScrollProgress";
+import ProjectTextShell from "@/components/project/ProjectTextShell";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -42,7 +43,8 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
   const isDesktop = useIsDesktop();
   // Media trees mount only on the client so a phone never requests the
   // desktop gallery's six videos from the server HTML (the server snapshot
-  // of useIsDesktop is "desktop").
+  // of useIsDesktop is "desktop"). The text is still in the server HTML: see
+  // the shell below.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -169,7 +171,12 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
   // Mobile and tablet get the stage (horizontal strip, pills); laptop and up
   // keep the fixed info panel + vertical gallery. Only one tree mounts, so a
   // phone never decodes the desktop gallery's videos.
-  if (!mounted) return null;
+  // Before the client picks a layout the server HTML carries the project's
+  // text (title, description, stack, links) for both breakpoints, so a
+  // crawler, a share preview or a visitor without JS gets the page instead of
+  // an empty main. It is invisible: the real tree replaces it on mount and
+  // masks the text in, as on any arrival.
+  if (!mounted) return <ProjectTextShell project={project} />;
 
   if (!isDesktop) {
     return (

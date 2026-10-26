@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { getImageProps } from "next/image";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import type { SanityImageSource } from "@sanity/image-url/lib/types/types";
 
@@ -12,11 +13,21 @@ export interface PreloadableMedia {
   video?: { asset?: { _ref?: string | null } | null } | null;
 }
 
+/** The landing item's `sizes` (ProjectGallery and ProjectStage agree). */
+const LANDING_SIZES = "(min-width: 75rem) 50vw, 100vw";
+
 /**
  * Give a project route a head start: prefetch its RSC payload and preload
  * its first gallery media, so the clone morph onto that page lands on a
  * painted box instead of a black one. Used by the home gallery for the
  * active slide and by the project page for the next project.
+ *
+ * The image preload carries the same srcset and sizes next/image will
+ * render for the landing item, so the browser picks the very URL it is
+ * about to request; a bare `href` of the source URL would download a file
+ * the <Image> never uses. `as="video"` is not a preload destination, so the
+ * video goes out as a prefetch, which the media element then serves from
+ * cache.
  */
 export function usePrefetchProject(
   slug: string | null | undefined,
@@ -28,26 +39,29 @@ export function usePrefetchProject(
     if (!slug) return;
     router.prefetch(`/project/${slug}`);
 
-    let href: string | null = null;
-    let asAttr: "image" | "video" | null = null;
-
+    const link = document.createElement("link");
     if (firstMedia?._type === "galleryImage" && firstMedia.image?.asset) {
-      href = imageUrl(firstMedia.image as SanityImageSource, 1200);
-      asAttr = "image";
+      const { props } = getImageProps({
+        src: imageUrl(firstMedia.image as SanityImageSource, 1200),
+        alt: "",
+        fill: true,
+        sizes: LANDING_SIZES,
+      });
+      link.rel = "preload";
+      link.as = "image";
+      link.href = props.src;
+      if (props.srcSet) link.setAttribute("imagesrcset", props.srcSet);
+      if (props.sizes) link.setAttribute("imagesizes", props.sizes);
     } else if (firstMedia?._type === "galleryVideo" && firstMedia.video?.asset?._ref) {
-      href = fileUrl(firstMedia.video.asset._ref);
-      asAttr = "video";
+      link.rel = "prefetch";
+      link.href = fileUrl(firstMedia.video.asset._ref);
+    } else {
+      return;
     }
 
-    if (!href || !asAttr) return;
-
-    const link = document.createElement("link");
-    link.rel = "preload";
-    link.as = asAttr;
-    link.href = href;
     document.head.appendChild(link);
     return () => {
-      document.head.removeChild(link);
+      link.remove();
     };
   }, [slug, firstMedia, router]);
 }
