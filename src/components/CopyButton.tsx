@@ -26,20 +26,29 @@ export default function CopyButton({
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
 
+    // execCommand path for the contexts without the async clipboard API
+    // (plain http previews, some in-app webviews) and for a rejected write.
+    const fallback = () => {
+      const ta = document.createElement("textarea");
+      ta.value = value;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand("copy");
+      } catch {}
+      document.body.removeChild(ta);
+    };
     try {
-      navigator.clipboard?.writeText(value).catch(() => {
-        const ta = document.createElement("textarea");
-        ta.value = value;
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        try {
-          document.execCommand("copy");
-        } catch {}
-        document.body.removeChild(ta);
-      });
-    } catch {}
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(value).catch(fallback);
+      } else {
+        fallback();
+      }
+    } catch {
+      fallback();
+    }
   };
 
   const longerLabel = label.length > copiedLabel.length ? label : copiedLabel;
