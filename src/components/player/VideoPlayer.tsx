@@ -355,9 +355,10 @@ export default function VideoPlayer({
   const ink = overlay ? "text-white" : "text-primary";
   const showPlayIcon = !playing || ended || blocked;
 
+  // 36px pill, 44px hit area: ::before is positioned from the padding box, so 5px past it = 4px past the border.
   const pill =
-    "inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sub uppercase font-medium text-primary transition-[transform,background-color] duration-[var(--dur-fast)] ease-[var(--ease-out)] active:scale-[0.97] " +
-    "bg-white border border-tertiary";
+    "relative inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sub uppercase font-medium text-primary transition-[transform,background-color] duration-[var(--dur-fast)] ease-[var(--ease-out)] active:scale-[0.97] " +
+    "bg-white border border-tertiary before:absolute before:inset-x-0 before:-inset-y-[5px] before:content-['']";
   const word = `text-sub uppercase font-medium tracking-[0.02em] ${ink} link-underline`;
   const bare = `flex size-11 -m-3 items-center justify-center ${ink} transition-opacity duration-[var(--dur-fast)] hover:opacity-70`;
 
