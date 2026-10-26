@@ -20,7 +20,10 @@ import Image from "next/image";
 import { Link } from "next-view-transitions";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
-import { EASE_OUT_CSS } from "@/lib/motion";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { EASE_OUT_CSS, dur, ease, stagger } from "@/lib/motion";
+import { useBodyAnimation, useTitleAnimation } from "@/hooks/useTextAnimation";
 import NextProjectPreview from "@/components/project/NextProjectPreview";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
@@ -82,6 +85,29 @@ export default function ProjectStage({
   }, [adopted, isTransitioning, project.title]);
   const [index, setIndex] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
+
+  // Text entrance, same vocabulary as the desktop panel: title chars drop in,
+  // the meta lines mask up 70 ms later, the pills lift in after that. It runs
+  // once the stage is shown (a direct load at once; an arrival when the clone
+  // has landed). The cards do not animate: card 1 is the shared element the
+  // clone lands on, and the neighbours are already placed by the depth model.
+  const rootRef = useRef<HTMLDivElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const metaRef = useRef<HTMLDivElement>(null);
+  const pillsRef = useRef<HTMLDivElement>(null);
+  useTitleAnimation(titleRef, rootRef, { duration: 1, skip: hidden, dependencies: [hidden] });
+  useBodyAnimation(metaRef, rootRef, { duration: dur.text, delay: stagger, skip: hidden, dependencies: [hidden] });
+  useGSAP(
+    () => {
+      if (hidden || !pillsRef.current) return;
+      gsap.fromTo(
+        pillsRef.current,
+        { yPercent: 40, autoAlpha: 0 },
+        { yPercent: 0, autoAlpha: 1, duration: dur.text, ease: ease.out, delay: 2 * stagger },
+      );
+    },
+    { scope: rootRef, dependencies: [hidden] },
+  );
   // While the finger is down the cards track scroll 1:1 (no CSS transition
   // fighting the per-frame transform); the 200 ms settle applies once idle.
   const [scrolling, setScrolling] = useState(false);
@@ -199,12 +225,15 @@ export default function ProjectStage({
 
   return (
     <div
+      ref={rootRef}
       className={`fixed inset-x-0 bottom-0 top-[var(--header-height)] flex flex-col overflow-hidden bg-bg${hidden ? " opacity-0 pointer-events-none" : ""}`}
     >
       {/* Title block B: title cols 1–2, meta cols 3–4 */}
       <div className="grid-site px-margin pt-4 pb-4">
-        <h1 className={`${longTitle ? "col-span-4" : "col-span-2"} text-h2 text-primary`}>{project.title}</h1>
-        <div className={`${longTitle ? "col-span-4 pt-2" : "col-span-2 pt-1.5"} text-sub text-primary`}>
+        <h1 ref={titleRef} className={`${longTitle ? "col-span-4" : "col-span-2"} text-h2 text-primary`}>
+          {project.title}
+        </h1>
+        <div ref={metaRef} className={`${longTitle ? "col-span-4 pt-2" : "col-span-2 pt-1.5"} text-sub text-primary`}>
           {project.shortDescription && <p>{project.shortDescription}</p>}
           {project.techStack && project.techStack.length > 0 && (
             <p className="mt-3 text-primary">{project.techStack.join(", ")}</p>
@@ -318,7 +347,7 @@ export default function ProjectStage({
       </p>
 
       {/* Bottom row: pills */}
-      <div className="absolute inset-x-0 bottom-0 z-30 flex items-center justify-end gap-2 px-margin pb-4">
+      <div ref={pillsRef} className="invisible absolute inset-x-0 bottom-0 z-30 flex items-center justify-end gap-2 px-margin pb-4">
         {atEnd && !single && !hasPreview && project.nextProject?.slug?.current ? (
           <Link
             href={`/project/${project.nextProject.slug.current}`}
