@@ -228,8 +228,12 @@ export default function ProjectStage({
       ref={rootRef}
       className={`fixed inset-x-0 bottom-0 top-[var(--header-height)] flex flex-col overflow-hidden bg-bg${hidden ? " opacity-0 pointer-events-none" : ""}`}
     >
-      {/* Title block B: title cols 1–2, meta cols 3–4 */}
-      <div className="grid-site px-margin pt-4 pb-4">
+      {/* Title block B: title cols 1–2, meta cols 3–4. Reserved height: the
+          strip below is centred in the remaining space, so a block that
+          varies with title and description length (114–190px across the
+          current projects) would put card 1 on a different y per project,
+          and project → project lands the clone on the previous page's y. */}
+      <div className="grid-site px-margin pt-4 pb-4 min-h-[12rem]">
         <h1 ref={titleRef} className={`${longTitle ? "col-span-4" : "col-span-2"} text-h2 text-primary`}>
           {project.title}
         </h1>
