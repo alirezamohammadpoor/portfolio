@@ -220,7 +220,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
   // Mobile has no hover, so Next's Link prefetch never fires before tap —
   // this gives the destination a head start so the clone overlay doesn't
   // morph onto an empty box.
-  usePrefetchProject(projects[activeIndex]?.slug?.current, projects[activeIndex]?.gallery?.[0]);
+  usePrefetchProject(projects[activeIndex]?.slug?.current, projects[activeIndex]?.firstMedia);
 
   // Desktop: cursor-follow scroll hint with adaptive color
   useEffect(() => {
@@ -455,7 +455,12 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
                 title={project.title ?? ""}
                 priority={index === 0}
                 isActive={index === activeIndex}
-                shouldPreload={Math.abs(index - activeIndex) === 1}
+                shouldPreload={
+                  Math.min(
+                    Math.abs(index - activeIndex),
+                    projects.length - Math.abs(index - activeIndex),
+                  ) === 1
+                }
               />
             </Link>
           ))}

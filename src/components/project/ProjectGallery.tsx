@@ -229,7 +229,10 @@ export default function ProjectGallery({
                 src={fileUrl(item.video.asset._ref)}
                 className="h-full w-full object-cover"
                 aria-label={`${projectTitle} — ${i + 1}`}
-                autoPlay
+                // Only item 1 starts on its own (the clone lands on it); the
+                // observer plays the rest as they scroll in, so six videos do
+                // not fetch and decode at once against the first.
+                autoPlay={i === 0}
                 muted
                 loop
                 playsInline

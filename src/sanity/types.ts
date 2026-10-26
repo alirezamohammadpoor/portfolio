@@ -580,77 +580,12 @@ export type ABOUT_QUERY_RESULT = {
 
 // Source: src/sanity/lib/queries.ts
 // Variable: PROJECTS_QUERY
-// Query: *[_type == "project"] | order(order asc) {   _id,  _updatedAt,  title,  slug,  shortDescription,  fullDescription,  techStack,  siteUrl,  sitePassword,  caseStudy->{ _id, slug },  coverMedia,  gallery[]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  },  order,  seo { title, description, ogImage, noIndex } }
+// Query: *[_type == "project"] | order(order asc) {    _id,    title,    slug,    shortDescription,    coverMedia,      "firstMedia": gallery[0]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  }  }
 export type PROJECTS_QUERY_RESULT = Array<{
   _id: string;
-  _updatedAt: string;
   title: string | null;
   slug: Slug | null;
   shortDescription: string | null;
-  fullDescription: Array<
-    | {
-        children?: Array<{
-          marks?: Array<string>;
-          text?: string;
-          _type: "span";
-          _key: string;
-        }>;
-        style?:
-          | "blockquote"
-          | "h1"
-          | "h2"
-          | "h3"
-          | "h4"
-          | "h5"
-          | "h6"
-          | "normal";
-        listItem?: "bullet" | "number";
-        markDefs?: Array<
-          | {
-              explanation?: string;
-              _type: "glossary";
-              _key: string;
-            }
-          | {
-              href?: string;
-              _type: "link";
-              _key: string;
-            }
-          | {
-              videoUrl?: string;
-              image?: {
-                asset?: SanityImageAssetReference;
-                media?: unknown;
-                hotspot?: SanityImageHotspot;
-                crop?: SanityImageCrop;
-                _type: "image";
-              };
-              url?: string;
-              label?: string;
-              _type: "richPreview";
-              _key: string;
-            }
-        >;
-        level?: number;
-        _type: "block";
-        _key: string;
-      }
-    | {
-        asset?: SanityImageAssetReference;
-        media?: unknown;
-        hotspot?: SanityImageHotspot;
-        crop?: SanityImageCrop;
-        _type: "image";
-        _key: string;
-      }
-  > | null;
-  techStack: Array<string> | null;
-  siteUrl: string | null;
-  sitePassword: string | null;
-  caseStudy: {
-    _id: string;
-    slug: Slug | null;
-  } | null;
   coverMedia: {
     type?: "image" | "video";
     image?: {
@@ -666,7 +601,7 @@ export type PROJECTS_QUERY_RESULT = Array<{
       _type: "file";
     };
   } | null;
-  gallery: Array<
+  firstMedia:
     | {
         image: {
           asset: {
@@ -710,20 +645,7 @@ export type PROJECTS_QUERY_RESULT = Array<{
         _type: "galleryVideo";
         _key: string;
       }
-  > | null;
-  order: number | null;
-  seo: {
-    title: string | null;
-    description: string | null;
-    ogImage: {
-      asset?: SanityImageAssetReference;
-      media?: unknown;
-      hotspot?: SanityImageHotspot;
-      crop?: SanityImageCrop;
-      _type: "image";
-    } | null;
-    noIndex: boolean | null;
-  } | null;
+    | null;
 }>;
 
 // Source: src/sanity/lib/queries.ts
@@ -1213,7 +1135,7 @@ import "@sanity/client";
 declare module "@sanity/client" {
   interface SanityQueries {
     '\n  *[_type == "about"][0] {\n    heading,\n    bio,\n    portrait,\n    email,\n    linkedinUrl,\n    githubUrl\n  }\n': ABOUT_QUERY_RESULT;
-    '\n  *[_type == "project"] | order(order asc) { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  sitePassword,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  gallery[]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  },\n  order,\n  seo { title, description, ogImage, noIndex }\n }\n': PROJECTS_QUERY_RESULT;
+    '\n  *[_type == "project"] | order(order asc) {\n    _id,\n    title,\n    slug,\n    shortDescription,\n    coverMedia,\n    \n  "firstMedia": gallery[0]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  }\n\n  }\n': PROJECTS_QUERY_RESULT;
     '\n  *[_type == "project" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  sitePassword,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  gallery[]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  },\n  order,\n  seo { title, description, ogImage, noIndex }\n,\n    "nextProject": coalesce(\n      *[_type == "project" && _id != ^._id && order > ^.order] | order(order asc) [0] { title, slug, \n  "firstMedia": gallery[0]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  }\n },\n      *[_type == "project" && _id != ^._id] | order(order asc) [0] { title, slug, \n  "firstMedia": gallery[0]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  }\n }\n    ),\n    "prevProject": coalesce(\n      *[_type == "project" && _id != ^._id && order < ^.order] | order(order desc) [0] { title, slug },\n      *[_type == "project" && _id != ^._id] | order(order desc) [0] { title, slug }\n    )\n  }\n': PROJECT_BY_SLUG_QUERY_RESULT;
     '\n  *[_type == "journalPage"][0] { description }\n': JOURNAL_PAGE_QUERY_RESULT;
     '\n  *[_type == "journalPost"] | order(publishedAt desc) { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n }\n': JOURNAL_POSTS_QUERY_RESULT;
