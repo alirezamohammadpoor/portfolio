@@ -23,6 +23,11 @@ interface TransitionState {
    * layout alone; this only gates when the clone may be removed.
    */
   targetReady: boolean;
+  /**
+   * The clone already sits on its landing rect (project → project): no morph,
+   * the destination reveals at once and scroll unlocks early.
+   */
+  inPlace: boolean;
   mediaType: MediaType | null;
   imageUrl: string | null;
   videoSrc: string | null;
@@ -39,6 +44,7 @@ export interface StartTransitionArgs {
   videoCurrentTime?: number;
   sourceVideoElement?: HTMLVideoElement;
   sourceRect: Rect;
+  inPlace?: boolean;
 }
 
 interface TransitionContextValue extends TransitionState {
@@ -53,6 +59,7 @@ const initial: TransitionState = {
   isTransitioning: false,
   contentRevealed: false,
   targetReady: false,
+  inPlace: false,
   mediaType: null,
   imageUrl: null,
   videoSrc: null,
@@ -82,6 +89,7 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
       isTransitioning: true,
       contentRevealed: false,
       targetReady: false,
+      inPlace: args.inPlace ?? false,
       mediaType: args.mediaType,
       imageUrl: args.imageUrl ?? null,
       videoSrc: args.videoSrc ?? null,
