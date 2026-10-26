@@ -14,7 +14,7 @@
  * reduced motion drops the depth transforms.
  */
 
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import NextLink from "next/link";
 import Image from "next/image";
 import { Link } from "next-view-transitions";
@@ -23,6 +23,8 @@ import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { EASE_OUT_CSS } from "@/lib/motion";
 import NextProjectPreview from "@/components/project/NextProjectPreview";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
+import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
+import { usePageTransition } from "@/context/TransitionContext";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -63,6 +65,21 @@ export default function ProjectStage({
   const stripRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const firstVideoRef = useRef<HTMLVideoElement | null>(null);
+  // Project → project: card 1 takes the live <video> the clone carries when
+  // it is the same file (see ProjectGallery / adoptVideo.ts).
+  const { isTransitioning, inPlace, sourceVideoElement } = usePageTransition();
+  const [adopted] = useState(() => {
+    const first = gallery[0];
+    const src = first?._type === "galleryVideo" && first.video?.asset?._ref ? fileUrl(first.video.asset._ref) : undefined;
+    return adoptableVideo(sourceVideoElement, inPlace, src);
+  });
+  const adoptHostRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const host = adoptHostRef.current;
+    if (!adopted || !host || isTransitioning || adopted.parentElement === host) return;
+    mountAdoptedVideo(host, adopted, `${project.title} — 1`);
+    firstVideoRef.current = adopted;
+  }, [adopted, isTransitioning, project.title]);
   const [index, setIndex] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
   // While the finger is down the cards track scroll 1:1 (no CSS transition
@@ -150,10 +167,15 @@ export default function ProjectStage({
   // A video first card reports ready on its first presented frame (see
   // ProjectGallery): the clone covering it must not leave on a black frame.
   useEffect(() => {
+    if (!onFirstReady) return;
+    if (adopted) {
+      onFirstReady();
+      return;
+    }
     const first = firstVideoRef.current;
-    if (!first || !onFirstReady) return;
+    if (!first) return;
     return onFirstVideoFrame(first, onFirstReady);
-  }, [onFirstReady]);
+  }, [onFirstReady, adopted]);
 
   // Video budget: only the centred card plays; neighbours sit paused on their
   // first frame; everything else is unmounted (see `near` below).
@@ -250,7 +272,8 @@ export default function ProjectStage({
                     onLoad={i === 0 ? onFirstReady : undefined}
                   />
                 )}
-                {!isImage && item.video?.asset?._ref && near && (
+                {!isImage && i === 0 && adopted && <div ref={adoptHostRef} className="absolute inset-0" />}
+                {!isImage && item.video?.asset?._ref && near && !(i === 0 && adopted) && (
                   <video
                     ref={i === 0 ? firstVideoRef : undefined}
                     src={fileUrl(item.video.asset._ref)}
