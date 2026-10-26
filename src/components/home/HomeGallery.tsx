@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Link } from "next-view-transitions";
 import gsap from "gsap";
@@ -11,6 +11,7 @@ import { usePageTransition } from "@/context/TransitionContext";
 import { lockScroll, unlockScroll } from "@/hooks/useScrollLock";
 import { EXIT_LEAD_MS, dur, ease, maskOutText, prefersReducedMotion } from "@/lib/motion";
 import { usePrefetchProject } from "@/hooks/usePrefetchProject";
+import { lastProjectSlug } from "@/lib/lastProject";
 import ProjectCard from "./ProjectCard";
 import MediaPanel from "./MediaPanel";
 
@@ -18,8 +19,32 @@ interface HomeGalleryProps {
   projects: PROJECTS_QUERY_RESULT;
 }
 
+/** Index of the project the visitor was on most recently, or -1. */
+function rememberedIndex(projects: PROJECTS_QUERY_RESULT) {
+  const slug = lastProjectSlug();
+  return slug ? projects.findIndex((p) => p.slug?.current === slug) : -1;
+}
+
 export default function HomeGallery({ projects }: HomeGalleryProps) {
-  const [activeIndex, setActiveIndex] = useState(0);
+  // Home is kept mounted but hidden while a project page is up (Next's
+  // cacheComponents keeps the last pages in a hidden Activity): state lives
+  // on, effects are torn down on leave and run again on return. So the
+  // gallery opens on the project the visitor was just on, and each return
+  // counts as a visit so the card plays its entrance again.
+  const [activeIndex, setActiveIndex] = useState(() => Math.max(rememberedIndex(projects), 0));
+  const activeIndexRef = useRef(activeIndex);
+  useLayoutEffect(() => {
+    activeIndexRef.current = activeIndex;
+  }, [activeIndex]);
+  const [visit, setVisit] = useState(0);
+  const shownOnce = useRef(false);
+  useEffect(() => {
+    if (!shownOnce.current) {
+      shownOnce.current = true;
+      return;
+    }
+    setVisit((v) => v + 1);
+  }, []);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -50,8 +75,13 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
     const slides = slideRefs.current.filter(Boolean) as HTMLElement[];
     const slideCount = slides.length;
     if (!slideCount) return;
-    let currentIndex = 0; // always 0..slideCount-1
+    // On return, continue from the project the visitor was just on (which
+    // may differ from the one they left home on after project → project).
+    const remembered = rememberedIndex(projects);
+    const start = Math.min(remembered >= 0 ? remembered : activeIndexRef.current, slideCount - 1);
+    let currentIndex = start; // always 0..slideCount-1
     let isAnimating = false;
+    if (start !== activeIndexRef.current) setActiveIndex(start);
 
     function goToSlide(direction: 1 | -1) {
       if (isAnimating) return;
@@ -168,7 +198,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
     // Using opacity (not autoAlpha) keeps visibility:visible so iOS Safari
     // will fetch video resources on inactive slides.
     slides.forEach((el, i) => {
-      if (i > 0) gsap.set(el, { yPercent: 100, opacity: 0 });
+      gsap.set(el, i === start ? { yPercent: 0, opacity: 1 } : { yPercent: 100, opacity: 0 });
     });
 
     const wrapper = wrapperRef.current;
@@ -236,7 +266,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       // First slide is in its final position from mount — no entrance.
       // Setting opacity:1 explicitly here in case the className's opacity-0
       // hasn't been overridden by a later gsap.set yet.
-      const firstSlide = slideRefs.current[0];
+      const firstSlide = slideRefs.current[activeIndexRef.current];
       if (firstSlide) {
         gsap.set(firstSlide, { yPercent: 0, opacity: 1 });
       }
@@ -368,7 +398,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
           className="block w-full px-4 py-2 desktop:px-6 desktop:py-0"
           onClick={(e) => activeProject && handleProjectClick(e, activeProject)}
         >
-          <ProjectCard key={activeProject?._id} project={activeProject} />
+          <ProjectCard key={`${activeProject?._id}-${visit}`} project={activeProject} />
         </Link>
       </div>
 
