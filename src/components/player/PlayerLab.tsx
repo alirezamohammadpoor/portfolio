@@ -23,8 +23,8 @@ const ALTS: { key: string; title: string; language: ControlLanguage; tracker: Tr
 ];
 
 export default function PlayerLab({ masters, journal }: { masters: Clip[]; journal: Clip[] }) {
-  const [alt, setAlt] = useState(0);
-  const [layout, setLayout] = useState<Layout | "both">("both");
+  const [alt, setAlt] = useState(5);
+  const [layout, setLayout] = useState<Layout | "both">("strip");
   const a = ALTS[alt];
   const master = masters[0];
   const master2 = masters[1] ?? masters[0];

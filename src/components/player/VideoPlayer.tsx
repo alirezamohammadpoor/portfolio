@@ -34,6 +34,10 @@ export type Aspect = "4/3" | "16/9" | "9/16" | "auto";
 
 export interface VideoPlayerProps {
   src: string;
+  /**
+   * First frame as an image. Without it the browser paints black until
+   * metadata arrives; the encode step should emit one (not done here).
+   */
   poster?: string;
   /** Uppercase label in the strip; ignored in overlay layout. */
   label?: string;
@@ -94,8 +98,8 @@ export default function VideoPlayer({
   label,
   aspect = "auto",
   layout = "strip",
-  language = "icons",
-  tracker = "line",
+  language = "pills",
+  tracker = "ring",
   loop = true,
   hasAudio,
   autoplay = true,
@@ -107,6 +111,7 @@ export default function VideoPlayer({
   const videoRef = useRef<HTMLVideoElement>(null);
   const lineRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<HTMLDivElement>(null);
+  const lastSecRef = useRef(-1);
   const ringRef = useRef<SVGCircleElement>(null);
   const fillRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -138,12 +143,16 @@ export default function VideoPlayer({
     const d = v.duration || 0;
     const pct = d ? v.currentTime / d : 0;
     if (lineRef.current) lineRef.current.style.transform = `scaleX(${pct})`;
-    if (handleRef.current) handleRef.current.style.left = `${pct * 100}%`;
+    if (handleRef.current) handleRef.current.style.transform = `translateX(${pct * 100}%)`;
     if (fillRef.current) fillRef.current.style.transform = `scaleX(${pct})`;
     if (ringRef.current) {
       const c = 2 * Math.PI * 12;
       ringRef.current.style.strokeDashoffset = `${c * (1 - pct)}`;
     }
+    // Text and ARIA only change once a second; skip the DOM write otherwise.
+    const sec = Math.floor(v.currentTime);
+    if (sec === lastSecRef.current) return;
+    lastSecRef.current = sec;
     if (sliderRef.current) {
       sliderRef.current.setAttribute("aria-valuenow", String(Math.round(pct * 100)));
       sliderRef.current.setAttribute("aria-valuetext", `${fmt(v.currentTime)} of ${fmt(d)}`);
@@ -208,12 +217,17 @@ export default function VideoPlayer({
       };
       if (typeof anyV.mozHasAudio === "boolean") setAudio(anyV.mozHasAudio);
       else if (anyV.audioTracks) setAudio(anyV.audioTracks.length > 0);
-      else if (typeof anyV.webkitAudioDecodedByteCount === "number")
-        setAudio(anyV.webkitAudioDecodedByteCount > 0);
+      else if (typeof anyV.webkitAudioDecodedByteCount === "number") {
+        // Chromium: the counter is 0 until audio frames decode, so 0 only
+        // means "silent" once a second of playback has gone by.
+        if (anyV.webkitAudioDecodedByteCount > 0) setAudio(true);
+        else if (v.currentTime > 1) setAudio(false);
+      }
     };
     const onMeta = () => {
       if (aspect === "auto" && v.videoWidth && v.videoHeight)
         setRatio(`${v.videoWidth} / ${v.videoHeight}`);
+      lastSecRef.current = -1; // duration text must repaint
       paint();
       detect();
     };
@@ -301,6 +315,7 @@ export default function VideoPlayer({
     if (!v || !v.duration || !r.width) return;
     const pct = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
     v.currentTime = pct * v.duration;
+    lastSecRef.current = -1;
     paint();
   };
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
@@ -331,6 +346,7 @@ export default function VideoPlayer({
     else if (e.key === "End") v.currentTime = v.duration;
     else return;
     e.preventDefault();
+    lastSecRef.current = -1;
     paint();
   };
 
@@ -441,16 +457,17 @@ export default function VideoPlayer({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
       onKeyDown={onKey}
-      className="group absolute inset-x-0 bottom-0 z-10 h-6 cursor-pointer touch-none outline-none"
+      className={`group absolute inset-x-0 z-10 h-6 cursor-pointer touch-none outline-none ${overlay ? "bottom-0" : "-top-6"}`}
     >
       <div className={`absolute inset-x-0 bottom-0 h-1 ${overlay ? "bg-white/30" : "bg-tertiary"}`}>
         <div ref={lineRef} className="h-full w-full origin-left bg-pistachio" style={{ transform: "scaleX(0)" }} />
       </div>
-      <div
-        ref={handleRef}
-        className={`absolute bottom-[-3px] size-2.5 -translate-x-1/2 rounded-full bg-pistachio opacity-0 transition-opacity duration-[var(--dur-fast)] group-hover:opacity-100 group-focus-visible:opacity-100 ${scrubbing ? "opacity-100" : ""}`}
-        style={{ left: "0%" }}
-      />
+      {/* full-width track moved by transform; the dot sits at its left edge */}
+      <div ref={handleRef} className="pointer-events-none absolute inset-x-0 bottom-[-3px] h-2.5" style={{ transform: "translateX(0%)" }}>
+        <div
+          className={`absolute left-0 size-2.5 -translate-x-1/2 rounded-full bg-pistachio opacity-0 transition-opacity duration-[var(--dur-fast)] group-hover:opacity-100 group-focus-visible:opacity-100 ${scrubbing ? "opacity-100" : ""}`}
+        />
+      </div>
     </div>
   );
 
@@ -474,7 +491,6 @@ export default function VideoPlayer({
           <span className="flex size-14 items-center justify-center rounded-full bg-black/50"><IconPlay size={24} /></span>
         </button>
       )}
-      {tracker === "line" && edgeLine}
       {overlay && (
         <div className="absolute inset-x-0 bottom-0 z-20 flex items-center gap-3 px-4 pb-4 pt-6 text-white" style={{ paddingBottom: tracker === "line" ? 16 : 16 }}>
           {playButton}
@@ -483,6 +499,8 @@ export default function VideoPlayer({
           {tracker === "counter" ? counter : timecodeSmall}
         </div>
       )}
+      {/* after the controls in DOM so Tab goes Play → Sound → Seek */}
+      {overlay && tracker === "line" && edgeLine}
     </div>
   );
 
@@ -512,11 +530,13 @@ export default function VideoPlayer({
           </div>
         ) : (
           <>
-            {label && <span className="relative min-w-0 flex-1 truncate text-right text-sub font-medium uppercase tracking-[0.02em] text-primary">{label}</span>}
+            {label && <span className="relative min-w-0 flex-1 line-clamp-2 text-left text-sub font-medium uppercase leading-4 tracking-[0.02em] text-primary">{label}</span>}
             {!label && <span className="flex-1" />}
             {timecodeSmall}
           </>
         )}
+        {/* overlaps the media's bottom edge; after the buttons so Tab goes Play → Sound → Seek */}
+        {tracker === "line" && edgeLine}
       </div>
     </div>
   );
