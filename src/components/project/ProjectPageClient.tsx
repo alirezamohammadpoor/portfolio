@@ -35,7 +35,8 @@ interface ProjectPageClientProps {
 export default function ProjectPageClient({ project, nextProject, prevProject }: ProjectPageClientProps) {
   const router = useTransitionRouter();
   const plainRouter = useRouter();
-  const { isTransitioning, contentRevealed, inPlace, animateClone, startTransition, markTargetReady } = usePageTransition();
+  const { isTransitioning, contentRevealed, pageRevealed, inPlace, animateClone, startTransition, markTargetReady } =
+    usePageTransition();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const isDesktop = useIsDesktop();
   // Media trees mount only on the client so a phone never requests the
@@ -130,7 +131,8 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
   // It masks in once the clone is ~40 % of the way (contentRevealed), while
   // the media is still moving, so the sequence reads as one gesture. The key
   // is stable from "go" onwards so the end of the morph does not re-run it.
-  const skip = isTransitioning;
+  // The page under the clone shows a couple of frames before the clone goes.
+  const skip = isTransitioning && !pageRevealed;
   const textWaiting = isTransitioning && !contentRevealed;
   const textKey = textWaiting ? "wait" : "go";
 
@@ -191,7 +193,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
         projectTitle={project.title}
         galleryRef={galleryRef}
         firstImageRef={firstImageRef}
-        isTransitioning={isTransitioning}
+        hidden={skip}
         onFirstReady={onFirstReady}
         nextProject={nextProject}
         previewRef={previewRef}
