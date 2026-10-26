@@ -7,6 +7,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { usePageTransition } from "@/context/TransitionContext";
+import { rememberProject } from "@/lib/lastProject";
 import {
   useTitleAnimation,
   useBodyAnimation,
@@ -53,6 +54,10 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
   const previewRef = useRef<HTMLDivElement>(null);
 
   const nextSlug = nextProject?.slug?.current ?? undefined;
+
+  // Home opens on this project when the visitor goes back to it.
+  const slug = project.slug?.current;
+  useEffect(() => rememberProject(slug), [slug]);
 
   // Next project only, on arrival: its route and first media are ready long
   // before the reader reaches the end of the gallery. Previous gets nothing;

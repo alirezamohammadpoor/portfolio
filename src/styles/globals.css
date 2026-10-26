@@ -136,8 +136,15 @@
     font-size: 1.1em;
   }
 
+  /* Room for descenders inside a SplitText line mask (overflow: clip). The
+     mask gives the 2px back, so splitting never changes the block's height:
+     on the phone the cards sit right under the title block, and a taller
+     block after the split moved them 4px once the stage showed. */
   .line {
     padding-bottom: 2px;
+  }
+  .line-mask {
+    margin-bottom: -2px;
   }
 
 }
