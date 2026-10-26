@@ -21,12 +21,10 @@ interface Rect {
 interface UseGalleryScrollOptions {
   gallery: ProjectGalleryItems;
   nextProjectSlug: string | undefined;
-  prevProjectSlug: string | undefined;
   isTransitioning: boolean;
   animateClone: (rect: Rect) => void;
   /** Gallery item 1 has decoded: the clone may be removed once it lands. */
   markTargetReady: () => void;
-  routerPush: (url: string) => void;
   /** Threshold passed at the bottom: run the in-place next-project transition. */
   navigateNext: () => void;
 }
@@ -41,7 +39,6 @@ const UNLOCK_DELAY_MS = 1300;
 
 export const NEXT_THRESHOLD = THRESHOLD;
 const BOTTOM_EDGE_PX = 10;
-const TOP_EDGE_PX = 2;
 
 // Shared animation helpers
 function animateClipReveal(el: HTMLElement | null, progress: number) {
@@ -69,14 +66,15 @@ function toggleVisibility(
   }
 }
 
+// Only the next project has a wheel gesture. Previous keeps its explicit
+// link in the footer: there is no preview to morph from, and the old root
+// slide was the one transition left outside the clone vocabulary.
 export function useGalleryScroll({
   gallery,
   nextProjectSlug,
-  prevProjectSlug,
   isTransitioning,
   animateClone,
   markTargetReady,
-  routerPush,
   navigateNext,
 }: UseGalleryScrollOptions) {
   const scrollProgressElRef = useRef<HTMLElement>(null);
@@ -89,26 +87,18 @@ export function useGalleryScroll({
   const footerWipeRef = useRef<HTMLDivElement>(null);
 
   const bottomAcc = useRef(0);
-  const topAcc = useRef(0);
   const wasShowingBottom = useRef(false);
-  const wasShowingTop = useRef(false);
   const lenisRef = useRef<Lenis | null>(null);
-  const hasScrolledDown = useRef(false);
-  const hasScrolledBack = useRef(false);
   const isReady = useRef(false);
 
   // Read once at mount: whether this page is the landing side of the clone.
   const arrivedByCloneRef = useRef(isTransitioning);
 
-  const prevTextWrapperRef = useRef<HTMLDivElement>(null);
-  const prevTextRef = useRef<HTMLDivElement>(null);
   const [showMobileNav, setShowMobileNav] = useState(false);
   const showMobileNavRef = useRef(false);
 
   useLenis((lenis) => {
     lenisRef.current = lenis;
-    if (isReady.current && lenis.scroll > lenis.limit * 0.1) hasScrolledDown.current = true;
-    if (hasScrolledDown.current && lenis.scroll <= TOP_EDGE_PX) hasScrolledBack.current = true;
   });
 
   // Lock scroll on mount, reset to top, unlock after delay. Desktop only:
@@ -123,12 +113,11 @@ export function useGalleryScroll({
     }
     lockScroll();
 
-    // Next tick: reset scroll + force-hide hint wrappers
+    // Next tick: reset scroll + force-hide the hint wrapper
     setTimeout(() => {
       window.scrollTo(0, 0);
       lenisRef.current?.scrollTo(0, { immediate: true });
       if (nextTextWrapperRef.current) gsap.set(nextTextWrapperRef.current, { autoAlpha: 0 });
-      if (prevTextWrapperRef.current) gsap.set(prevTextWrapperRef.current, { autoAlpha: 0 });
     }, 0);
 
     const timer = setTimeout(() => {
@@ -219,8 +208,6 @@ export function useGalleryScroll({
           if (!isReady.current) return;
 
           if (val >= 90) toggleVisibility(nextTextWrapperRef.current, true, wasShowingBottom);
-          if (val <= 5 && hasScrolledBack.current) toggleVisibility(prevTextWrapperRef.current, true, wasShowingTop);
-          if (val > 20) toggleVisibility(prevTextWrapperRef.current, false, wasShowingTop);
 
           // Mobile nav row — only setState when value changes
           const shouldShow = val >= 95;
@@ -239,24 +226,13 @@ export function useGalleryScroll({
     return lenis ? lenis.scroll >= lenis.limit - BOTTOM_EDGE_PX : false;
   }, []);
 
-  const isAtTop = useCallback(() => {
-    const lenis = lenisRef.current;
-    if (!lenis || !hasScrolledBack.current) return false;
-    return lenis.scroll <= TOP_EDGE_PX;
-  }, []);
-
   const updateBottomVisuals = useCallback((progress: number) => {
     animateClipReveal(nextTextRef.current, progress);
     animateClipReveal(footerWipeRef.current, progress);
     toggleVisibility(nextTextWrapperRef.current, progress > 0, wasShowingBottom);
   }, []);
 
-  const updateTopVisuals = useCallback((progress: number) => {
-    animateClipReveal(prevTextRef.current, progress);
-    toggleVisibility(prevTextWrapperRef.current, progress > 0, wasShowingTop);
-  }, []);
-
-  // Wheel accumulation — desktop only
+  // Wheel accumulation at the bottom edge — desktop only
   useEffect(() => {
     if (isTransitioning) return;
     if (!window.matchMedia("(min-width: 75rem)").matches) return;
@@ -264,7 +240,7 @@ export function useGalleryScroll({
     const onWheel = (e: WheelEvent) => {
       if (!isReady.current || hasNavigated.current) return;
 
-      // Already accumulating bottom
+      // Already accumulating
       if (bottomAcc.current > 0) {
         e.preventDefault();
         bottomAcc.current = e.deltaY > 0
@@ -280,48 +256,23 @@ export function useGalleryScroll({
         return;
       }
 
-      // Already accumulating top
-      if (topAcc.current > 0) {
-        e.preventDefault();
-        topAcc.current = e.deltaY < 0
-          ? Math.min(topAcc.current + Math.abs(e.deltaY), THRESHOLD)
-          : Math.max(topAcc.current - e.deltaY, 0);
-        updateTopVisuals(topAcc.current / THRESHOLD);
-        if (topAcc.current >= THRESHOLD) {
-          hasNavigated.current = true;
-          lockScroll();
-          lenisRef.current?.stop();
-          routerPush(`/project/${prevProjectSlug}`);
-        }
-        return;
-      }
-
-      // Start accumulating at edges
+      // Start accumulating at the bottom edge
       if (e.deltaY > 0 && nextProjectSlug && isAtBottom()) {
         e.preventDefault();
         bottomAcc.current = e.deltaY;
         updateBottomVisuals(bottomAcc.current / THRESHOLD);
-        return;
-      }
-
-      if (e.deltaY < 0 && prevProjectSlug && hasScrolledBack.current && isAtTop()) {
-        e.preventDefault();
-        topAcc.current = Math.abs(e.deltaY);
-        updateTopVisuals(topAcc.current / THRESHOLD);
       }
     };
 
     window.addEventListener("wheel", onWheel, { passive: false });
     return () => window.removeEventListener("wheel", onWheel);
-  }, [isTransitioning, nextProjectSlug, prevProjectSlug, routerPush, navigateNext, isAtBottom, isAtTop, updateBottomVisuals, updateTopVisuals]);
+  }, [isTransitioning, nextProjectSlug, navigateNext, isAtBottom, updateBottomVisuals]);
 
   return {
     galleryRef,
     firstImageRef,
     nextTextWrapperRef,
     nextTextRef,
-    prevTextWrapperRef,
-    prevTextRef,
     gallery,
     scrollProgressElRef,
     mobileProgressElRef,

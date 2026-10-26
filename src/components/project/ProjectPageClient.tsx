@@ -85,8 +85,6 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
     firstImageRef,
     nextTextWrapperRef,
     nextTextRef,
-    prevTextWrapperRef,
-    prevTextRef,
     gallery,
     scrollProgressElRef,
     mobileProgressElRef,
@@ -95,12 +93,10 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
     onFirstReady,
   } = useGalleryScroll({
     gallery: project.gallery ?? [],
-    nextProjectSlug: nextProject?.slug?.current ?? undefined,
-    prevProjectSlug: prevProject?.slug?.current ?? undefined,
+    nextProjectSlug: nextSlug,
     isTransitioning,
     animateClone,
     markTargetReady,
-    routerPush: router.push,
     navigateNext,
   });
 
@@ -182,9 +178,6 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
           nextProjectSlug={nextProject?.slug?.current ?? undefined}
           nextTextWrapperRef={nextTextWrapperRef}
           nextTextRef={nextTextRef}
-          prevProjectSlug={prevProject?.slug?.current ?? undefined}
-          prevTextWrapperRef={prevTextWrapperRef}
-          prevTextRef={prevTextRef}
         />
       )}
 

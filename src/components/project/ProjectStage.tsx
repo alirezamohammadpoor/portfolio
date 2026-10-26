@@ -4,8 +4,9 @@
  * Mobile project page ("stage"). Title block on the 4-column grid (title on
  * columns 1–2, short description + stack on 3–4), a horizontal one-card-at-a-
  * time media strip centred in the viewport with the previous/next cards
- * stacked behind it, pills bottom-right (Case study + Visit; Next project on
- * the last card) and a 4 px progress line.
+ * stacked behind it, pills bottom-right (Case study + Visit; the next
+ * project's preview card ends the strip, so a Next project pill appears only
+ * when there is no preview media) and a 4 px progress line.
  *
  * Rules (see the action plan, phase 2): 1 item → no strip chrome; only the
  * current card and its two neighbours mount <video>; media fills a 4:3 frame
@@ -285,7 +286,7 @@ export default function ProjectStage({
 
       {/* Bottom row: pills */}
       <div className="absolute inset-x-0 bottom-0 z-30 flex items-center justify-end gap-2 px-margin pb-4">
-        {atEnd && !single && project.nextProject?.slug?.current ? (
+        {atEnd && !single && !hasPreview && project.nextProject?.slug?.current ? (
           <Link
             href={`/project/${project.nextProject.slug.current}`}
             className={pillWhite}
