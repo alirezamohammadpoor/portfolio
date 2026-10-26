@@ -22,6 +22,8 @@ interface UseGalleryScrollOptions {
   gallery: ProjectGalleryItems;
   nextProjectSlug: string | undefined;
   isTransitioning: boolean;
+  /** Arrived in place (project → project): the clone does not move. */
+  inPlace: boolean;
   animateClone: (rect: Rect) => void;
   /** Gallery item 1 has decoded: the clone may be removed once it lands. */
   markTargetReady: () => void;
@@ -35,6 +37,7 @@ const THRESHOLD = 2500;
 // clone morph (home → project) or, for now, the root view transition
 // (project → project).
 const UNLOCK_DELAY_CLONE_MS = 800;
+const UNLOCK_DELAY_IN_PLACE_MS = 250;
 const UNLOCK_DELAY_MS = 1300;
 
 export const NEXT_THRESHOLD = THRESHOLD;
@@ -73,6 +76,7 @@ export function useGalleryScroll({
   gallery,
   nextProjectSlug,
   isTransitioning,
+  inPlace,
   animateClone,
   markTargetReady,
   navigateNext,
@@ -93,6 +97,7 @@ export function useGalleryScroll({
 
   // Read once at mount: whether this page is the landing side of the clone.
   const arrivedByCloneRef = useRef(isTransitioning);
+  const arrivedInPlaceRef = useRef(isTransitioning && inPlace);
 
   const [showMobileNav, setShowMobileNav] = useState(false);
   const showMobileNavRef = useRef(false);
@@ -127,7 +132,7 @@ export function useGalleryScroll({
       lenisRef.current?.start();
       lenisRef.current?.scrollTo(0, { immediate: true });
       unlockScroll();
-    }, arrivedByCloneRef.current ? UNLOCK_DELAY_CLONE_MS : UNLOCK_DELAY_MS);
+    }, arrivedInPlaceRef.current ? UNLOCK_DELAY_IN_PLACE_MS : arrivedByCloneRef.current ? UNLOCK_DELAY_CLONE_MS : UNLOCK_DELAY_MS);
 
     return () => {
       clearTimeout(timer);
