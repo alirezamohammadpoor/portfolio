@@ -19,8 +19,10 @@ interface TransitionState {
    */
   contentRevealed: boolean;
   /**
-   * The landing media (gallery item 1) has decoded. The morph starts on
-   * layout alone; this only gates when the clone may be removed.
+   * The landing media (gallery item 1) has a frame to paint (image load /
+   * video `loadeddata`, not `loadedmetadata`, which fires while a <video>
+   * still paints black). The morph starts on layout alone; this only gates
+   * when the clone may be removed.
    */
   targetReady: boolean;
   /**
@@ -28,6 +30,13 @@ interface TransitionState {
    * the destination reveals at once and scroll unlocks early.
    */
   inPlace: boolean;
+  /**
+   * The clone has landed and the page under it may show. The clone itself
+   * stays for a couple of frames more, so a <video> that was sitting in an
+   * opacity-0 subtree gets composited before the cover goes (otherwise its
+   * first visible frame is black).
+   */
+  pageRevealed: boolean;
   mediaType: MediaType | null;
   imageUrl: string | null;
   videoSrc: string | null;
@@ -52,6 +61,7 @@ interface TransitionContextValue extends TransitionState {
   animateClone: (targetRect: Rect) => void;
   revealContent: () => void;
   markTargetReady: () => void;
+  revealPage: () => void;
   clearTransition: () => void;
 }
 
@@ -60,6 +70,7 @@ const initial: TransitionState = {
   contentRevealed: false,
   targetReady: false,
   inPlace: false,
+  pageRevealed: false,
   mediaType: null,
   imageUrl: null,
   videoSrc: null,
@@ -75,6 +86,7 @@ const TransitionContext = createContext<TransitionContextValue>({
   animateClone: () => {},
   revealContent: () => {},
   markTargetReady: () => {},
+  revealPage: () => {},
   clearTransition: () => {},
 });
 
@@ -90,6 +102,7 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
       contentRevealed: false,
       targetReady: false,
       inPlace: args.inPlace ?? false,
+      pageRevealed: false,
       mediaType: args.mediaType,
       imageUrl: args.imageUrl ?? null,
       videoSrc: args.videoSrc ?? null,
@@ -112,6 +125,10 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
     setState((prev) => (prev.targetReady || !prev.isTransitioning ? prev : { ...prev, targetReady: true }));
   }, []);
 
+  const revealPage = useCallback(() => {
+    setState((prev) => (prev.pageRevealed || !prev.isTransitioning ? prev : { ...prev, pageRevealed: true }));
+  }, []);
+
   const clearTransition = useCallback(() => {
     if (typeof document !== "undefined") {
       delete document.documentElement.dataset.customClone;
@@ -121,7 +138,7 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
 
   return (
     <TransitionContext
-      value={{ ...state, startTransition, animateClone, revealContent, markTargetReady, clearTransition }}
+      value={{ ...state, startTransition, animateClone, revealContent, markTargetReady, revealPage, clearTransition }}
     >
       {children}
     </TransitionContext>

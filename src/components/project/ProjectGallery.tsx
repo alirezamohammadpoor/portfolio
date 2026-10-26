@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -9,6 +9,9 @@ import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { ease, prefersReducedMotion } from "@/lib/motion";
 import NextProjectPreview, { type NextProject } from "@/components/project/NextProjectPreview";
+import { onFirstVideoFrame } from "@/lib/firstFrame";
+import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
+import { usePageTransition } from "@/context/TransitionContext";
 
 type ProjectGalleryItems = NonNullable<
   NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["gallery"]
@@ -19,7 +22,8 @@ interface ProjectGalleryProps {
   projectTitle: string | null;
   galleryRef: React.RefObject<HTMLDivElement | null>;
   firstImageRef: React.RefObject<HTMLDivElement | null>;
-  isTransitioning: boolean;
+  /** Under the clone: invisible, no scroll reveals, no playback retries. */
+  hidden: boolean;
   onFirstReady?: () => void;
   nextProject?: NextProject | null;
   previewRef?: React.RefObject<HTMLDivElement | null>;
@@ -31,7 +35,7 @@ export default function ProjectGallery({
   projectTitle,
   galleryRef,
   firstImageRef,
-  isTransitioning,
+  hidden,
   onFirstReady,
   nextProject,
   previewRef,
@@ -39,7 +43,25 @@ export default function ProjectGallery({
 }: ProjectGalleryProps) {
   const previewWrapRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
+  // Project → project: when the clone carries a live <video> of item 1's
+  // file, item 1 is that element. Decided once at mount (only the landing
+  // page sees one); it is moved in when the clone leaves, in the same commit.
   const videoRefs = useRef<(HTMLVideoElement | null)[]>([]);
+  const { isTransitioning, inPlace, sourceVideoElement } = usePageTransition();
+  const [adopted] = useState(() => {
+    const first = gallery[0];
+    const src = first?._type === "galleryVideo" && first.video?.asset?._ref ? fileUrl(first.video.asset._ref) : undefined;
+    return adoptableVideo(sourceVideoElement, inPlace, src);
+  });
+  const adoptHostRef = useRef<HTMLDivElement>(null);
+  const [adoptedMounted, setAdoptedMounted] = useState(false);
+  useLayoutEffect(() => {
+    const host = adoptHostRef.current;
+    if (!adopted || !host || isTransitioning || adopted.parentElement === host) return;
+    mountAdoptedVideo(host, adopted, `${projectTitle} — 1`);
+    videoRefs.current[0] = adopted;
+    setAdoptedMounted(true);
+  }, [adopted, isTransitioning, projectTitle]);
 
   // Track which videos the observer considers in-view across effects, so
   // the transition-end retry can target only the ones that should play.
@@ -100,7 +122,21 @@ export default function ProjectGallery({
         video.pause();
       });
     };
-  }, [gallery]);
+  }, [gallery, adoptedMounted]);
+
+  // A video first item reports ready on its first presented frame, so the
+  // clone covering it never leaves while it still paints black. An adopted
+  // item 1 is the frame the clone shows, so it is ready at once.
+  useEffect(() => {
+    if (!onFirstReady) return;
+    if (adopted) {
+      onFirstReady();
+      return;
+    }
+    const first = videoRefs.current[0];
+    if (!first) return;
+    return onFirstVideoFrame(first, onFirstReady);
+  }, [gallery, onFirstReady, adopted]);
 
   // Retry playback when the home→project clone transition ends. During the
   // transition the gallery container is opacity:0 (and was previously
@@ -114,7 +150,7 @@ export default function ProjectGallery({
   // page" rather than "gallery item 0" (broken when gallery[0] is an
   // image and the actual first video is at gallery[3]).
   useEffect(() => {
-    if (isTransitioning) return;
+    if (hidden) return;
     videoRefs.current.forEach((video, galleryIndex) => {
       if (!video) return;
       // First gallery item is always retried because the clone targets it
@@ -127,12 +163,12 @@ export default function ProjectGallery({
         playPromise.catch(() => {});
       }
     });
-  }, [isTransitioning]);
+  }, [hidden]);
 
   // Scroll-reveal + parallax (skip first item — clone transition targets it)
   useGSAP(
     () => {
-      if (!galleryRef.current || isTransitioning) return;
+      if (!galleryRef.current || hidden) return;
 
       const lift = prefersReducedMotion() ? 0 : 40;
       const targets: (HTMLDivElement | null)[] = [...itemRefs.current, previewWrapRef.current];
@@ -151,14 +187,14 @@ export default function ProjectGallery({
         });
       });
     },
-    { scope: galleryRef, dependencies: [isTransitioning, gallery] },
+    { scope: galleryRef, dependencies: [hidden, gallery] },
   );
 
   return (
     <div
       ref={galleryRef}
       data-project-gallery
-      className={`flex flex-col gap-2 px-4 pb-10 desktop:px-6 desktop:ml-[50%] desktop:w-1/2${isTransitioning ? " opacity-0 pointer-events-none" : ""}`}
+      className={`flex flex-col gap-2 px-4 pb-10 desktop:px-6 desktop:ml-[50%] desktop:w-1/2${hidden ? " opacity-0 pointer-events-none" : ""}`}
     >
       {gallery.map((item, i) => {
         const isImage = item._type === "galleryImage";
@@ -184,7 +220,8 @@ export default function ProjectGallery({
                 onLoad={i === 0 ? onFirstReady : undefined}
               />
             )}
-            {!isImage && item.video?.asset?._ref && (
+            {!isImage && i === 0 && adopted && <div ref={adoptHostRef} className="absolute inset-0" />}
+            {!isImage && item.video?.asset?._ref && !(i === 0 && adopted) && (
               <video
                 ref={(el) => {
                   videoRefs.current[i] = el;
@@ -197,7 +234,6 @@ export default function ProjectGallery({
                 loop
                 playsInline
                 preload="metadata"
-                onLoadedMetadata={i === 0 ? onFirstReady : undefined}
               />
             )}
           </div>
