@@ -39,15 +39,24 @@ function PreviewVideo({ src, hostRef }: { src: string; hostRef?: RefObject<HTMLD
     let video = host.querySelector("video");
     if (!video) {
       video = document.createElement("video");
-      video.src = src;
       video.className = "h-full w-full object-cover";
       video.setAttribute("aria-hidden", "true");
+      // Content attributes, not only IDL properties: Safari's autoplay policy
+      // and its "fetch on autoplay" behaviour read the markup state, and the
+      // `muted` property does not reflect to the attribute. This is the
+      // element React used to render, built by hand.
+      video.setAttribute("muted", "");
+      video.setAttribute("playsinline", "");
+      video.setAttribute("autoplay", "");
+      video.setAttribute("loop", "");
+      video.setAttribute("preload", "auto");
       video.muted = true;
-      video.loop = true;
-      video.playsInline = true;
-      video.preload = "auto";
+      video.src = src;
       host.appendChild(video);
     }
+    // iOS Safari treats preload as a hint and may not fetch until asked; a
+    // preview that is still black when tapped cannot be carried as the clone.
+    if (video.readyState < 2) video.load();
     const p = video.play();
     if (p && typeof p.catch === "function") p.catch(() => {});
     return () => {

@@ -6,7 +6,10 @@ import type { StartTransitionArgs } from "@/context/TransitionContext";
  * there is nothing the overlay could paint, so the caller falls back to a
  * plain route push.
  */
-export function cloneSourceFromElement(el: HTMLElement | null): StartTransitionArgs | null {
+export function cloneSourceFromElement(
+  el: HTMLElement | null,
+  { allowLoadingVideo = false }: { allowLoadingVideo?: boolean } = {},
+): StartTransitionArgs | null {
   if (!el) return null;
   const media = el.querySelector<HTMLImageElement | HTMLVideoElement>("img, video");
   const rectSource = media ?? el;
@@ -15,7 +18,11 @@ export function cloneSourceFromElement(el: HTMLElement | null): StartTransitionA
   const sourceRect = { top: r.top, left: r.left, width: r.width, height: r.height };
 
   if (media instanceof HTMLVideoElement) {
-    if (media.readyState < 2 || media.videoWidth === 0) return null;
+    // A video without a decoded frame cannot be snapshotted for a morph. In
+    // place (project → project) the element itself is carried over and keeps
+    // loading where it is, which beats a route push that swaps the page
+    // under a black box.
+    if (!allowLoadingVideo && (media.readyState < 2 || media.videoWidth === 0)) return null;
     return {
       mediaType: "video",
       videoSrc: media.currentSrc || media.src,
