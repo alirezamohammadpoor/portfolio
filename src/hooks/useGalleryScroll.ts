@@ -24,6 +24,8 @@ interface UseGalleryScrollOptions {
   prevProjectSlug: string | undefined;
   isTransitioning: boolean;
   animateClone: (rect: Rect) => void;
+  /** Gallery item 1 has decoded: the clone may be removed once it lands. */
+  markTargetReady: () => void;
   routerPush: (url: string) => void;
   /** Threshold passed at the bottom: run the in-place next-project transition. */
   navigateNext: () => void;
@@ -73,6 +75,7 @@ export function useGalleryScroll({
   prevProjectSlug,
   isTransitioning,
   animateClone,
+  markTargetReady,
   routerPush,
   navigateNext,
 }: UseGalleryScrollOptions) {
@@ -148,11 +151,11 @@ export function useGalleryScroll({
   }, []);
 
   // Animate clone to first image position (homepage → project transition).
-  // Wait for the destination first image to be ready (decoded) before morphing,
-  // so the clone doesn't land on a black box on slow mobile networks.
-  // Safety timeout fires the morph anyway after 600ms in case the load event
-  // never arrives (broken asset, decoder hang).
-  const firstReady = useRef(false);
+  // The morph starts as soon as the landing slot has a layout; it does not
+  // wait for the media to decode. Decoding only gates when the overlay may
+  // remove the clone (markTargetReady), so a slow network shows the clone
+  // resting on the slot instead of a black box, and a fast one never waits.
+  // Safety: if the slot never appears (empty gallery), collapse after 600 ms.
   const cloneFired = useRef(false);
 
   const fireAnimateClone = useCallback((force = false) => {
@@ -174,22 +177,29 @@ export function useGalleryScroll({
   }, [animateClone]);
 
   const onFirstReady = useCallback(() => {
-    firstReady.current = true;
     fireAnimateClone();
-  }, [fireAnimateClone]);
+    markTargetReady();
+  }, [fireAnimateClone, markTargetReady]);
 
   useEffect(() => {
     if (!isTransitioning) {
       cloneFired.current = false;
-      firstReady.current = false;
       return;
     }
-    if (firstReady.current) {
-      fireAnimateClone();
-      return;
-    }
-    const timeout = setTimeout(() => fireAnimateClone(true), 600);
-    return () => clearTimeout(timeout);
+    // Poll a few frames for the slot (the media tree mounts one effect tick
+    // after the page), then force-fire so the page can never stay hidden.
+    let raf = 0;
+    const started = performance.now();
+    const tryFire = () => {
+      if (cloneFired.current) return;
+      if (firstImageRef.current || performance.now() - started > 600) {
+        fireAnimateClone(true);
+        return;
+      }
+      raf = requestAnimationFrame(tryFire);
+    };
+    tryFire();
+    return () => cancelAnimationFrame(raf);
   }, [isTransitioning, fireAnimateClone]);
 
   // Gallery scroll progress (0-100%) + hint visibility

@@ -18,6 +18,11 @@ interface TransitionState {
    * text to start masking in underneath it. Resets with the transition.
    */
   contentRevealed: boolean;
+  /**
+   * The landing media (gallery item 1) has decoded. The morph starts on
+   * layout alone; this only gates when the clone may be removed.
+   */
+  targetReady: boolean;
   mediaType: MediaType | null;
   imageUrl: string | null;
   videoSrc: string | null;
@@ -40,12 +45,14 @@ interface TransitionContextValue extends TransitionState {
   startTransition: (args: StartTransitionArgs) => void;
   animateClone: (targetRect: Rect) => void;
   revealContent: () => void;
+  markTargetReady: () => void;
   clearTransition: () => void;
 }
 
 const initial: TransitionState = {
   isTransitioning: false,
   contentRevealed: false,
+  targetReady: false,
   mediaType: null,
   imageUrl: null,
   videoSrc: null,
@@ -60,6 +67,7 @@ const TransitionContext = createContext<TransitionContextValue>({
   startTransition: () => {},
   animateClone: () => {},
   revealContent: () => {},
+  markTargetReady: () => {},
   clearTransition: () => {},
 });
 
@@ -73,6 +81,7 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
     setState({
       isTransitioning: true,
       contentRevealed: false,
+      targetReady: false,
       mediaType: args.mediaType,
       imageUrl: args.imageUrl ?? null,
       videoSrc: args.videoSrc ?? null,
@@ -91,6 +100,10 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
     setState((prev) => (prev.contentRevealed ? prev : { ...prev, contentRevealed: true }));
   }, []);
 
+  const markTargetReady = useCallback(() => {
+    setState((prev) => (prev.targetReady || !prev.isTransitioning ? prev : { ...prev, targetReady: true }));
+  }, []);
+
   const clearTransition = useCallback(() => {
     if (typeof document !== "undefined") {
       delete document.documentElement.dataset.customClone;
@@ -100,7 +113,7 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
 
   return (
     <TransitionContext
-      value={{ ...state, startTransition, animateClone, revealContent, clearTransition }}
+      value={{ ...state, startTransition, animateClone, revealContent, markTargetReady, clearTransition }}
     >
       {children}
     </TransitionContext>
