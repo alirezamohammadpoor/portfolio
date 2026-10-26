@@ -34,7 +34,12 @@ async function getAccessToken(): Promise<string> {
       refresh_token: REFRESH_TOKEN,
     }),
   });
-  if (!res.ok) throw new Error(`Spotify token refresh failed: ${res.status}`);
+  if (!res.ok) {
+    // The body says why (e.g. "Refresh token revoked", which means a new
+    // token from scripts/spotify-refresh-token.mjs is needed).
+    const body = await res.text().catch(() => "");
+    throw new Error(`Spotify token refresh failed: ${res.status} ${body.slice(0, 200)}`);
+  }
   const { access_token, expires_in } = await res.json();
   if (typeof access_token !== "string") throw new Error("Spotify token refresh returned no token");
   tokenCache = { token: access_token, expiresAt: now + ((expires_in ?? 3600) - 60) * 1000 };
