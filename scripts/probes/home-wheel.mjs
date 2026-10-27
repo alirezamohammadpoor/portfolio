@@ -44,6 +44,43 @@ const trial = async (label) => {
 await page.goto(base + "/", { waitUntil: "networkidle" });
 await page.waitForTimeout(1500);
 await trial("fresh home");
+// Real-input shapes that magnitude heuristics got wrong: each is one gesture.
+const shapes = {
+  // A drag varies in speed but never stops; a drag that slows to a crawl and
+  // then surges is two pushes and is allowed to count twice.
+  "finger drag, uneven speed": Array.from({ length: 70 }, (_, i) => Math.round(30 + 15 * Math.sin(i / 3) + (i % 7 === 0 ? 12 : 0))),
+  "flick with a jittery tail": [4, 10, 30, 70, 100, 90, 75, 60, 70, 45, 38, 50, 28, 22, 30, 16, 12, 18, 8, 6, 9, 4, 3],
+  "slow start, then a hard push": [3, 3, 4, 4, 5, 5, 6, 8, 30, 60, 90, 80, 60, 40, 25, 15, 8, 4],
+  "two-stage ramp": [5, 12, 20, 18, 15, 40, 80, 110, 90, 60, 40, 25, 15, 8, 4],
+};
+for (const [label, deltas] of Object.entries(shapes)) {
+  await page.mouse.move(1100, 450);
+  const n = await page.evaluate(() => document.querySelectorAll("a[aria-label^='View ']").length);
+  const before = await active();
+  for (const d of deltas) { await page.mouse.wheel(0, d); await page.waitForTimeout(16); }
+  await page.waitForTimeout(1500);
+  const after = await active();
+  const ok = after === (before + 1) % n;
+  if (!ok) failed = true;
+  console.log(`${label}: ${before}->${after}${ok ? "" : " FAIL"}`);
+}
+// A decisive second flick late in the first one's tail still counts.
+{
+  await page.waitForTimeout(300);
+  const n = await page.evaluate(() => document.querySelectorAll("a[aria-label^='View ']").length);
+  const before = await active();
+  const t0 = Date.now(); let second = false; let dy = 100;
+  for (const d of [4, 8, 14, 24, 40, 60, 80, 100]) { await page.mouse.wheel(0, d); await page.waitForTimeout(16); }
+  while (dy > 3) {
+    await page.mouse.wheel(0, dy); dy *= 0.95; await page.waitForTimeout(16);
+    if (!second && Date.now() - t0 > 1000) { second = true; for (const d of [6, 12, 24, 48, 90, 120]) { await page.mouse.wheel(0, d); await page.waitForTimeout(16); } dy = 120; }
+  }
+  await page.waitForTimeout(1500);
+  const after = await active();
+  const ok = after === (before + 2) % n;
+  if (!ok) failed = true;
+  console.log(`second flick 1 s into the tail: ${before}->${after} (expect +2)${ok ? "" : " FAIL"}`);
+}
 await openActive();
 await page.click("header a[href='/']");
 await page.waitForURL(base + "/");
