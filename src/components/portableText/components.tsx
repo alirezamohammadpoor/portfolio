@@ -83,6 +83,7 @@ export const portableTextComponents = {
           src={value.videoUrl}
           poster={value.poster?.asset ? imageUrl(value.poster, 1200) : undefined}
           label={value.label}
+          aspect="16/9"
           hasAudio={value.hasAudio ?? undefined}
           trackId={value.label}
           className="my-8"

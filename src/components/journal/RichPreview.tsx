@@ -146,6 +146,8 @@ export default function RichPreview({
           <VideoPlayer
             src={videoUrl!}
             label={label}
+            aspect="16/9"
+            fit="cover"
             trackId={label}
             className="rounded-none"
           />
