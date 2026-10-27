@@ -150,38 +150,48 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       });
     }
 
-    // Capture wheel events — one GESTURE = one slide. A trackpad flick emits
-    // a stream of deltas for ~1 s: a short ramp up, then a long decaying
-    // inertia tail, longer than the slide animation plus its lock, so without
-    // gating one flick advanced two or three slides. A new gesture starts
-    // after a 150 ms silence, on a direction change, or when the delta jumps
-    // back up AFTER the stream has started to fall (a second flick
-    // mid-inertia). The ramp-up itself must not count: each of its events is
-    // larger than the last, and treating them as new gestures re-armed the
-    // trigger while the first slide was still animating, so the tail fired a
-    // second slide once the animation ended.
+    // Capture wheel events — one GESTURE = one slide. A trackpad gesture is a
+    // stream of deltas (a drag at uneven speed, or a flick: short ramp up, then
+    // a decaying inertia tail of ~1 s), longer than the slide animation plus
+    // its lock, so without gating one gesture advanced two or three slides.
+    // Magnitude heuristics ("a bigger delta is a new flick") kept failing on
+    // real input: a ramp-up, a jittery tail, a drag that speeds up. So the
+    // rule is time: a gesture ends only after 150 ms of silence or on a
+    // direction change, and one slide is all a gesture gets. The one
+    // exception is a decisive second flick late in the tail: the stream has
+    // been falling, the delta is a real push (≥ 40) at least 4x the lowest
+    // point the tail reached, and the last slide was more than REFLICK_MS
+    // ago. A drag that slows to a crawl and then surges reads the same way,
+    // and that is two pushes.
     let lastWheelAt = 0;
     let lastDelta = 0;
+    let lastSlideAt = -Infinity;
     let gestureConsumed = false;
     let decaying = false;
+    let trough = Infinity;
+    const SILENCE_MS = 150;
+    const REFLICK_MS = 900;
     function onWheel(e: WheelEvent) {
       e.preventDefault();
       const now = performance.now();
       const magnitude = Math.abs(e.deltaY);
+      const reflick =
+        decaying && magnitude >= 40 && magnitude > trough * 4 && now - lastSlideAt > REFLICK_MS;
       const newGesture =
-        now - lastWheelAt > 150 ||
-        Math.sign(e.deltaY) !== Math.sign(lastDelta) ||
-        (decaying && magnitude > lastDelta * 1.5);
+        now - lastWheelAt > SILENCE_MS || Math.sign(e.deltaY) !== Math.sign(lastDelta) || reflick;
       if (newGesture) {
         gestureConsumed = false;
         decaying = false;
+        trough = Infinity;
       } else if (magnitude < lastDelta) {
         decaying = true;
+        trough = Math.min(trough, magnitude);
       }
       lastWheelAt = now;
       lastDelta = magnitude;
       if (gestureConsumed || isAnimating || magnitude < 2) return;
       gestureConsumed = true;
+      lastSlideAt = now;
       if (e.deltaY > 0) goToSlide(1);
       else if (e.deltaY < 0) goToSlide(-1);
     }
