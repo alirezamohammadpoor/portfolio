@@ -316,6 +316,7 @@ export type JournalPost = {
           _type: "image";
         };
         label?: string;
+        url?: string;
         hasAudio?: boolean;
         _type: "videoBlock";
         _key: string;
@@ -1087,6 +1088,7 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
           _type: "image";
         };
         label?: string;
+        url?: string;
         hasAudio?: boolean;
         _type: "videoBlock";
         _key: string;
