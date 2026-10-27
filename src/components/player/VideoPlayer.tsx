@@ -228,10 +228,10 @@ export default function VideoPlayer({
       if (typeof anyV.mozHasAudio === "boolean") setAudioDetected(anyV.mozHasAudio);
       else if (anyV.audioTracks) setAudioDetected(anyV.audioTracks.length > 0);
       else if (typeof anyV.webkitAudioDecodedByteCount === "number") {
-        // Chromium: the counter is 0 until audio frames decode, so 0 only
-        // means "silent" once a second of playback has gone by.
+        // Chromium: the counter only moves once audio frames decode, and a
+        // muted element may never decode any, so 0 proves nothing. Only a
+        // positive count is a verdict; otherwise the control stays.
         if (anyV.webkitAudioDecodedByteCount > 0) setAudioDetected(true);
-        else if (v.currentTime > 1) setAudioDetected(false);
       }
     };
     const onMeta = () => {
@@ -431,21 +431,33 @@ export default function VideoPlayer({
       </button>
     );
 
+  // A silent file hides the control but keeps its slot: it is rendered
+  // before detection can finish, and removing it would shift the label.
+  const silent = audio === false;
+  const soundAttrs = {
+    type: "button" as const,
+    onClick: toggleSound,
+    "aria-pressed": !muted,
+    "aria-hidden": silent || undefined,
+    tabIndex: silent ? -1 : undefined,
+    disabled: silent,
+  };
+  const hide = silent ? " invisible" : "";
   const soundButton =
-    audio === false ? null : language === "pills" ? (
-      <button type="button" onClick={toggleSound} aria-label={soundLabel} aria-pressed={!muted} className={pill}>
+    language === "pills" ? (
+      <button {...soundAttrs} aria-label={soundLabel} className={pill + hide}>
         <SoundGlyph size={12} />
         <span>Sound</span>
       </button>
     ) : language === "text" ? (
-      <button type="button" onClick={toggleSound} aria-pressed={!muted} className={word}>{soundLabel}</button>
+      <button {...soundAttrs} className={word + hide}>{soundLabel}</button>
     ) : language === "iconword" ? (
-      <button type="button" onClick={toggleSound} aria-pressed={!muted} className={`flex items-center gap-1.5 ${word}`}>
+      <button {...soundAttrs} className={`flex items-center gap-1.5 ${word}${hide}`}>
         <SoundGlyph size={14} />
         <span>{soundLabel}</span>
       </button>
     ) : (
-      <button type="button" onClick={toggleSound} aria-label={soundLabel} aria-pressed={!muted} className={bare}>
+      <button {...soundAttrs} aria-label={soundLabel} className={bare + hide}>
         <SoundGlyph />
       </button>
     );
