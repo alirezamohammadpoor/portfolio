@@ -25,6 +25,7 @@ import ProjectStage from "@/components/project/ProjectStage";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import ScrollProgress from "@/components/project/ScrollProgress";
 import ProjectTextShell from "@/components/project/ProjectTextShell";
+import ProjectChapters from "@/components/project/ProjectChapters";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -41,6 +42,9 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
     usePageTransition();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const isDesktop = useIsDesktop();
+  // A project with chapters is a case study: one scrolling page on every
+  // breakpoint (brief-v2). Without them it keeps the gallery page.
+  const hasChapters = (project.chapters?.length ?? 0) > 0;
   // Media trees mount only on the client so a phone never requests the
   // desktop gallery's six videos from the server HTML (the server snapshot
   // of useIsDesktop is "desktop"). The text is still in the server HTML: see
@@ -94,7 +98,8 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
     };
 
     const gallery = preview?.closest<HTMLElement>("[data-project-gallery]") ?? null;
-    const slot = gallery?.firstElementChild ?? null;
+    // The gallery page's first item, or the chapter page's hero landing box.
+    const slot = gallery?.querySelector<HTMLElement>("[data-landing-slot]") ?? gallery?.firstElementChild ?? null;
     if (!gallery || !slot || !preview || prefersReducedMotion()) {
       swap();
       return;
@@ -157,10 +162,10 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
   useGSAP(
     () => {
       if (textWaiting || !linksRef.current) return;
-      const pill = linksRef.current.querySelector("[data-pill]");
-      if (!pill) return;
+      const pills = linksRef.current.querySelectorAll("[data-pill]");
+      if (!pills.length) return;
       gsap.fromTo(
-        pill,
+        pills,
         { yPercent: 40, autoAlpha: 0 },
         { yPercent: 0, autoAlpha: 1, duration: dur.text, ease: ease.out, delay: 3 * stagger },
       );
@@ -177,6 +182,38 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
   // an empty main. It is invisible: the real tree replaces it on mount and
   // masks the text in, as on any arrival.
   if (!mounted) return <ProjectTextShell project={project} />;
+
+  if (hasChapters) {
+    return (
+      <>
+        <ProjectChapters
+          project={project}
+          hidden={skip}
+          textHidden={textWaiting}
+          panelRef={panelRef}
+          titleRef={titleRef}
+          descRef={descRef}
+          techRef={techRef}
+          linksRef={linksRef}
+          galleryRef={galleryRef}
+          firstImageRef={firstImageRef}
+          onFirstReady={onFirstReady}
+          nextProject={nextProject}
+          previewRef={previewRef}
+          onNavigateNext={nextSlug ? navigateNext : undefined}
+        />
+        {!skip && (
+          <ScrollProgress
+            progressRef={scrollProgressElRef}
+            nextProjectSlug={nextSlug}
+            nextTextWrapperRef={nextTextWrapperRef}
+            nextTextRef={nextTextRef}
+            align="right"
+          />
+        )}
+      </>
+    );
+  }
 
   if (!isDesktop) {
     return (

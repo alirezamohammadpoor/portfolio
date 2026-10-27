@@ -17,6 +17,8 @@ export default function ProjectTextShell({ project }: { project: Project }) {
   const description = Array.isArray(project.fullDescription) && project.fullDescription.length > 0
     ? (project.fullDescription as PortableTextBlock[])
     : null;
+  const chapters = project.chapters ?? [];
+  const hasChapters = chapters.length > 0;
   const links = (
     <>
       {project.siteUrl && (
@@ -26,7 +28,7 @@ export default function ProjectTextShell({ project }: { project: Project }) {
       )}
       {project.caseStudy?.slug?.current && (
         <a href={`/journal/${project.caseStudy.slug.current}`} className="text-sub uppercase text-primary">
-          Case study
+          {hasChapters ? "Journal post" : "Case study"}
         </a>
       )}
     </>
@@ -60,6 +62,22 @@ export default function ProjectTextShell({ project }: { project: Project }) {
           <p className="mt-3 flex gap-4">{links}</p>
         </div>
       </div>
+      {/* Chapter page: the case study's text, so the page reads without JS */}
+      {chapters.length > 0 && (
+        <div className="px-margin">
+          {chapters.map((chapter) => (
+            <section key={chapter._key} className="mt-10">
+              {chapter.title && <h2 className="text-h2 text-primary">{chapter.title}</h2>}
+              {Array.isArray(chapter.text) && chapter.text.length > 0 && (
+                <div className="mt-4 text-body text-primary">
+                  <PortableText value={chapter.text as PortableTextBlock[]} components={portableTextComponents} />
+                </div>
+              )}
+              {chapter.caption && <p className="mt-3 text-sub text-secondary">{chapter.caption}</p>}
+            </section>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

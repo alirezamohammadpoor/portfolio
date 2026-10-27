@@ -19,6 +19,20 @@ const PROJECT_FIELDS = `
       image { ..., asset-> { ..., metadata { dimensions } } }
     }
   },
+  chapters[]{
+    _key,
+    title,
+    text,
+    caption,
+    layout,
+    side,
+    media {
+      type,
+      video,
+      poster,
+      image { ..., asset-> { ..., metadata { dimensions } } }
+    }
+  },
   order,
   seo { title, description, ogImage, noIndex }
 `;

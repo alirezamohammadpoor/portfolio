@@ -19,6 +19,8 @@ interface NextProjectPreviewProps {
   sizes?: string;
   className?: string;
   style?: React.CSSProperties;
+  /** The chapter page writes the next title beside the block itself. */
+  labelHidden?: boolean;
 }
 
 /**
@@ -93,6 +95,7 @@ export default function NextProjectPreview({
   sizes = "(min-width: 75rem) 50vw, 100vw",
   className = "",
   style,
+  labelHidden = false,
 }: NextProjectPreviewProps) {
   const slug = nextProject.slug?.current;
   const media = nextProject.firstMedia;
@@ -134,7 +137,7 @@ export default function NextProjectPreview({
           )}
         </div>
       )}
-      <p className="mt-2 text-sub uppercase text-primary">{label}</p>
+      {!labelHidden && <p className="mt-2 text-sub uppercase text-primary">{label}</p>}
     </a>
   );
 }
