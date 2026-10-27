@@ -65,11 +65,11 @@ export default function RichPreview({
     });
 
   // Keep the card in the DOM through the fade-out, then drop the player.
+  // Mounting happens in `show` (same commit as `visible`), so the anchoring
+  // hook can measure the card in its layout effect; an effect here would
+  // mount it one commit too late and leave the card unpositioned.
   useEffect(() => {
-    if (visible) {
-      setMounted(true);
-      return;
-    }
+    if (visible) return;
     const t = setTimeout(() => setMounted(false), FADE_MS);
     return () => clearTimeout(t);
   }, [visible]);
@@ -114,6 +114,7 @@ export default function RichPreview({
 
   const show = () => {
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    setMounted(true);
     setVisible(true);
   };
 
