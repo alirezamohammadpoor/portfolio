@@ -52,6 +52,8 @@ export interface VideoPlayerProps {
   autoplay?: boolean;
   /** Width in CSS px for fixed layouts; omit for fill. */
   width?: number;
+  /** How the frame fills a fixed box: letterbox (default) or crop. */
+  fit?: "contain" | "cover";
   className?: string;
   /** Analytics name, e.g. the clip slug. */
   trackId?: string;
@@ -104,6 +106,7 @@ export default function VideoPlayer({
   hasAudio,
   autoplay = true,
   width,
+  fit = "contain",
   className = "",
   trackId,
 }: VideoPlayerProps) {
@@ -502,7 +505,7 @@ export default function VideoPlayer({
         loop={loop}
         playsInline
         preload="metadata"
-        className="absolute inset-0 size-full object-contain"
+        className={`absolute inset-0 size-full ${fit === "cover" ? "object-cover" : "object-contain"}`}
         aria-label={label}
       />
       {blocked && (
