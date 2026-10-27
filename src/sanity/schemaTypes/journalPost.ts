@@ -129,6 +129,12 @@ export const journalPost = defineType({
               description: "Short uppercase caption in the control strip.",
             }),
             defineField({
+              name: "url",
+              title: "Link URL",
+              type: "url",
+              description: "Optional. Shown as 'See more →' right of the label.",
+            }),
+            defineField({
               name: "hasAudio",
               title: "Has sound",
               type: "boolean",

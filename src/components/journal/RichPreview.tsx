@@ -146,6 +146,7 @@ export default function RichPreview({
           <VideoPlayer
             src={videoUrl!}
             label={label}
+            linkUrl={url}
             aspect="16/9"
             fit="cover"
             trackId={label}
@@ -166,7 +167,7 @@ export default function RichPreview({
             )}
           </>
         ) : null}
-        {url && (
+        {url && !hasVideo && (
           <a
             href={url}
             target="_blank"
