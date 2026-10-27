@@ -28,14 +28,23 @@ interface UseAnchoredMobileOverlayOptions {
   onClose: () => void;
   anchorPoint?: { x: number; y: number } | null;
   forceAbove?: boolean;
+  /** Anchor on every breakpoint, not only mobile (for portaled popups). */
+  anchorOnDesktop?: boolean;
 }
 
 export function useAnchoredMobileOverlay(
   triggerRef: RefObject<HTMLElement | null>,
   popupRef: RefObject<HTMLElement | null>,
-  { visible, onClose, anchorPoint = null, forceAbove = false }: UseAnchoredMobileOverlayOptions,
+  {
+    visible,
+    onClose,
+    anchorPoint = null,
+    forceAbove = false,
+    anchorOnDesktop = false,
+  }: UseAnchoredMobileOverlayOptions,
 ) {
   const isMobile = useIsMobile();
+  const active = isMobile || anchorOnDesktop;
   const [position, setPosition] = useState<OverlayPosition | null>(null);
   const [ready, setReady] = useState(false);
   const onCloseRef = useRef(onClose);
@@ -117,7 +126,7 @@ export function useAnchoredMobileOverlay(
   }, [anchorPoint, forceAbove, popupRef, triggerRef]);
 
   useLayoutEffect(() => {
-    if (!visible || !isMobile) {
+    if (!visible || !active) {
       setPosition(null);
       setReady(false);
       return;
@@ -129,10 +138,10 @@ export function useAnchoredMobileOverlay(
       setPosition(nextPosition);
       setReady(true);
     }
-  }, [visible, isMobile, measurePosition]);
+  }, [visible, active, measurePosition]);
 
   useEffect(() => {
-    if (!visible || !isMobile) return;
+    if (!visible || !active) return;
 
     const handleOutsideTap = (e: Event) => {
       const trigger = triggerRef.current;
@@ -163,8 +172,18 @@ export function useAnchoredMobileOverlay(
     window.addEventListener("orientationchange", handleReposition);
     window.visualViewport?.addEventListener("resize", handleReposition);
 
+    // The popup can change height after it opens (a video reports its real
+    // aspect ratio once metadata arrives); keep it anchored to the phrase.
+    const popup = popupRef.current;
+    const ro =
+      popup && typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(handleReposition)
+        : null;
+    if (popup && ro) ro.observe(popup);
+
     return () => {
       clearTimeout(timer);
+      ro?.disconnect();
       document.removeEventListener("touchstart", handleOutsideTap);
       document.removeEventListener("mousedown", handleOutsideTap);
       window.removeEventListener("scroll", handleDismiss, { capture: true } as EventListenerOptions);
@@ -172,7 +191,7 @@ export function useAnchoredMobileOverlay(
       window.removeEventListener("orientationchange", handleReposition);
       window.visualViewport?.removeEventListener("resize", handleReposition);
     };
-  }, [visible, isMobile, measurePosition, popupRef, triggerRef]);
+  }, [visible, active, measurePosition, popupRef, triggerRef]);
 
   return {
     isMobile,

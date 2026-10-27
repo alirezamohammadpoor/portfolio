@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { useAnchoredMobileOverlay } from "@/hooks/useAnchoredMobileOverlay";
+import VideoPlayer from "@/components/player/VideoPlayer";
 
 interface RichPreviewProps {
   videoUrl?: string;
@@ -16,6 +17,17 @@ interface RichPreviewProps {
   children: React.ReactNode;
 }
 
+// How long the fade-out runs before the player is unmounted.
+const FADE_MS = 300;
+// Grace period when the pointer travels from the phrase to the popup.
+const LEAVE_MS = 150;
+
+/**
+ * Pop-up preview on a phrase in a journal post. The card is portaled to
+ * <body>: the mark sits inside a <p>, and the shared VideoPlayer renders
+ * block elements, which a <p> cannot contain. The player only mounts while
+ * the card is open, so hidden previews never fetch or autoplay.
+ */
 export default function RichPreview({
   videoUrl,
   imageUrl,
@@ -27,21 +39,21 @@ export default function RichPreview({
   const hasVideo = Boolean(videoUrl);
   const hasImage = !hasVideo && Boolean(imageUrl);
   const [visible, setVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [anchorPoint, setAnchorPoint] = useState<{
     x: number;
     y: number;
   } | null>(null);
-  const [muted, setMuted] = useState(true);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const progressRef = useRef<HTMLSpanElement>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
-  const rafRef = useRef<number>(0);
+  const leaveTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  // Last measured position, kept through the fade-out (the hook clears it
+  // the moment `visible` drops).
+  const lastPosition = useRef<{ top: number; left: number } | null>(null);
   const triggerRef = useRef<HTMLSpanElement>(null);
-  const popupRef = useRef<HTMLSpanElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   const close = useCallback(() => {
     setVisible(false);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (leaveTimer.current) clearTimeout(leaveTimer.current);
   }, []);
 
   const { isMobile, position, placement, caretLeft, ready } =
@@ -49,7 +61,18 @@ export default function RichPreview({
       visible,
       onClose: close,
       anchorPoint,
+      anchorOnDesktop: true,
     });
+
+  // Keep the card in the DOM through the fade-out, then drop the player.
+  useEffect(() => {
+    if (visible) {
+      setMounted(true);
+      return;
+    }
+    const t = setTimeout(() => setMounted(false), FADE_MS);
+    return () => clearTimeout(t);
+  }, [visible]);
 
   useGSAP(
     () => {
@@ -89,251 +112,121 @@ export default function RichPreview({
     { scope: triggerRef, dependencies: [isMobile, videoUrl, imageUrl, label] },
   );
 
-  const startRAF = useCallback(() => {
-    const tick = () => {
-      if (videoRef.current && videoRef.current.duration && progressRef.current) {
-        const pct = videoRef.current.currentTime / videoRef.current.duration;
-        progressRef.current.style.transform = `scaleX(${pct})`;
-      }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    cancelAnimationFrame(rafRef.current);
-    rafRef.current = requestAnimationFrame(tick);
-  }, []);
-
-  const stopRAF = useCallback(() => {
-    cancelAnimationFrame(rafRef.current);
-  }, []);
-
-  const playVideo = useCallback(() => {
-    const video = videoRef.current;
-    if (!video) return;
-
-    const playPromise = video.play();
-    if (playPromise && typeof playPromise.catch === "function") {
-      playPromise.catch(() => {});
-    }
-  }, []);
-
   const show = () => {
+    if (leaveTimer.current) clearTimeout(leaveTimer.current);
     setVisible(true);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
   };
 
-  const hide = () => {
-    setVisible(false);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+  const hideSoon = () => {
+    if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    leaveTimer.current = setTimeout(() => setVisible(false), LEAVE_MS);
   };
 
   const handleClick = (event: MouseEvent<HTMLSpanElement>) => {
     setAnchorPoint({ x: event.clientX, y: event.clientY });
-
     if (visible) {
-      hide();
+      close();
       return;
     }
     show();
   };
 
-  useEffect(() => {
-    if (!hasVideo) return;
-    if (visible) {
-      if (videoRef.current) videoRef.current.volume = 0.15;
-      playVideo();
-      startRAF();
-    } else {
-      videoRef.current?.pause();
-      stopRAF();
-    }
+  useEffect(
+    () => () => {
+      if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    },
+    [],
+  );
 
-    const handleVisibility = () => {
-      if (
-        document.visibilityState === "visible" &&
-        visible &&
-        videoRef.current?.paused
-      ) {
-        playVideo();
-        startRAF();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibility);
-
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibility);
-      stopRAF();
-    };
-  }, [visible, playVideo, hasVideo, startRAF, stopRAF]);
-
-  const videoCard = (width: string | number, mobile = false) => (
-    <span className="relative flex flex-col" style={{ width }}>
-      <span className="flex flex-col overflow-hidden rounded-2xl bg-lightpistachio">
-        <span className="relative">
-          {hasVideo ? (
-            <>
-              <video
-                ref={videoRef}
-                src={videoUrl}
-                muted={muted}
-                loop
-                playsInline
-                preload="metadata"
-                className="aspect-video w-full object-cover"
-              />
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setMuted((prev) => !prev);
-                }}
-                aria-label={muted ? "Unmute video" : "Mute video"}
-                className="absolute bottom-2 right-2 flex size-7 items-center justify-center rounded-full bg-black/40 text-white transition-opacity hover:bg-black/60"
-              >
-                {muted ? (
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                    <line x1="23" y1="9" x2="17" y2="15" />
-                    <line x1="17" y1="9" x2="23" y2="15" />
-                  </svg>
-                ) : (
-                  <svg
-                    width="14"
-                    height="14"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                  </svg>
-                )}
-              </button>
-            </>
-          ) : hasImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
+  const card = (width: string | number) => (
+    <div className="relative flex flex-col" style={{ width }}>
+      <div className="flex flex-col overflow-hidden rounded-2xl bg-lightpistachio">
+        {hasVideo && mounted ? (
+          <VideoPlayer
+            src={videoUrl!}
+            label={label}
+            trackId={label}
+            className="rounded-none"
+          />
+        ) : hasImage ? (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={imageUrl}
               alt={imageAlt ?? ""}
               className="aspect-video w-full object-contain"
             />
-          ) : null}
-        </span>
-        <span className="relative flex flex-col gap-1 overflow-hidden px-3 py-2">
-          {hasVideo && (
-            <span
-              ref={progressRef}
-              className="absolute inset-0 origin-left bg-pistachio transition-none"
-              style={{ transform: "scaleX(0)" }}
-            />
-          )}
-          {label && (
-            <span className="relative text-sub font-medium uppercase text-primary">
-              {label}
-            </span>
-          )}
-          {url && (
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label={label ? `See more about ${label}` : "See more"}
-              onClick={(e) => {
-                e.stopPropagation();
-                videoRef.current?.pause();
-              }}
-              className="relative self-start border-b border-primary text-sub text-primary"
-            >
-              See more →
-            </a>
-          )}
-        </span>
-      </span>
+            {label && (
+              <span className="px-3 pt-2 text-sub font-medium uppercase tracking-[0.02em] text-primary">
+                {label}
+              </span>
+            )}
+          </>
+        ) : null}
+        {url && (
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={label ? `See more about ${label}` : "See more"}
+            onClick={(e) => e.stopPropagation()}
+            className="mx-3 mb-2 mt-1 self-start border-b border-primary text-sub text-primary"
+          >
+            See more →
+          </a>
+        )}
+      </div>
 
-      {mobile && caretLeft !== null && placement === "above" && (
+      {caretLeft !== null && placement === "above" && (
         <span
           className="absolute top-full size-0 -translate-x-1/2 border-x-[6px] border-x-transparent border-t-[6px] border-t-lightpistachio"
           style={{ left: caretLeft }}
         />
       )}
-      {mobile && caretLeft !== null && placement === "below" && (
+      {caretLeft !== null && placement === "below" && (
         <span
           className="absolute bottom-full size-0 -translate-x-1/2 border-x-[6px] border-x-transparent border-b-[6px] border-b-lightpistachio"
           style={{ left: caretLeft }}
         />
       )}
-    </span>
+    </div>
   );
 
-  if (isMobile) {
-    const showPopup = visible && ready;
-
-    return (
-      <span className="relative inline">
-        {typeof document !== "undefined" &&
-          createPortal(
-            <span
-              ref={popupRef}
-              className={`fixed z-50 transition-opacity duration-300 ${
-                showPopup ? "opacity-100" : "pointer-events-none opacity-0"
-              }`}
-              style={
-                showPopup && position
-                  ? { top: position.top, left: position.left }
-                  : { top: 0, left: 0, visibility: "hidden" as const }
-              }
-            >
-              {videoCard("min(420px, calc(100vw - 32px))", showPopup)}
-            </span>,
-            document.body,
-          )}
-
-        <span
-          ref={triggerRef}
-          role="button"
-          tabIndex={0}
-          aria-label={label ? `Preview: ${label}` : "Show preview"}
-          aria-expanded={visible}
-          onClick={handleClick}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(e as unknown as MouseEvent<HTMLSpanElement>); } }}
-          className="cursor-pointer"
-        >
-          {children}
-        </span>
-      </span>
-    );
-  }
+  if (position) lastPosition.current = { top: position.top, left: position.left };
+  const place = position ?? lastPosition.current;
+  const showPopup = visible && ready;
+  const width = isMobile ? "min(420px, calc(100vw - 32px))" : 600;
 
   return (
     <span
       className="relative inline"
-      onMouseEnter={show}
-      onMouseLeave={hide}
-      onFocus={show}
-      onBlur={hide}
+      onMouseEnter={isMobile ? undefined : show}
+      onMouseLeave={isMobile ? undefined : hideSoon}
+      onFocus={isMobile ? undefined : show}
+      onBlur={isMobile ? undefined : hideSoon}
     >
-      <span
-        ref={popupRef}
-        className={`fixed top-1/2 left-1/2 z-50 mb-0 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] desktop:absolute desktop:bottom-full desktop:top-auto desktop:-translate-x-1/2 desktop:translate-y-0 ${
-          visible
-            ? "pointer-events-auto opacity-100"
-            : "pointer-events-none opacity-0 desktop:translate-y-1"
-        }`}
-      >
-        {videoCard(600)}
-        <span className="hidden size-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-lightpistachio desktop:block" />
-      </span>
+      {mounted &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div
+            ref={popupRef}
+            onMouseEnter={isMobile ? undefined : show}
+            onMouseLeave={isMobile ? undefined : hideSoon}
+            className={`fixed z-50 transition-[opacity,transform] duration-300 ease-[var(--ease-out)] ${
+              showPopup
+                ? "pointer-events-auto translate-y-0 opacity-100"
+                : "pointer-events-none translate-y-1 opacity-0"
+            }`}
+            style={
+              place
+                ? { top: place.top, left: place.left }
+                : { top: 0, left: 0, visibility: "hidden" as const }
+            }
+          >
+            {card(width)}
+          </div>,
+          document.body,
+        )}
 
       <span
         ref={triggerRef}
@@ -342,7 +235,12 @@ export default function RichPreview({
         aria-label={label ? `Preview: ${label}` : "Show preview"}
         aria-expanded={visible}
         onClick={handleClick}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(e as unknown as MouseEvent<HTMLSpanElement>); } }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleClick(e as unknown as MouseEvent<HTMLSpanElement>);
+          }
+        }}
         className="cursor-pointer"
       >
         {children}
