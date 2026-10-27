@@ -1,0 +1,298 @@
+{
+  "mutations": [
+    {
+      "createOrReplace": {
+        "_id": "drafts.project-stronger",
+        "_type": "project",
+        "coverMedia": {
+          "type": "video",
+          "video": {
+            "_type": "file",
+            "asset": {
+              "_ref": "file-b29c3079d0fb6a5790c487cd52e161ee53ca4a45-mp4",
+              "_type": "reference"
+            }
+          }
+        },
+        "fullDescription": [
+          {
+            "_key": "7c9f97392d6a",
+            "_type": "block",
+            "children": [
+              {
+                "_key": "df5b6a9fad48",
+                "_type": "span",
+                "marks": [],
+                "text": "Stronger is a Swedish activewear brand on a Next.js storefront with Storyblok for content and Centra for commerce. The engagement focused on content and quality: repeatable Storyblok audits across four languages covering dead links, broken banners, redirects, SEO fields and translation gaps, triaged into fixes with the client."
+              }
+            ],
+            "markDefs": [],
+            "style": "normal"
+          },
+          {
+            "_key": "105d7b331d9b",
+            "_type": "block",
+            "children": [
+              {
+                "_key": "f4eef001a4fe",
+                "_type": "span",
+                "marks": [],
+                "text": "Alongside the audits, accessibility work on the storefront — keyboard reach of the header and cart, focus handling in the cart drawer, and the gaps that still remain, documented so they can be closed."
+              }
+            ],
+            "markDefs": [],
+            "style": "normal"
+          }
+        ],
+        "gallery": [
+          {
+            "_key": "5f201124e3c6",
+            "_type": "galleryVideo",
+            "video": {
+              "_type": "file",
+              "asset": {
+                "_ref": "file-0d922cdaef50e276d4a4c091d964ce898c1c343c-mp4",
+                "_type": "reference"
+              }
+            }
+          },
+          {
+            "_key": "18dd698f70e7",
+            "_type": "galleryVideo",
+            "video": {
+              "_type": "file",
+              "asset": {
+                "_ref": "file-b1cce321a03219fd27d991e5084ab8211d70595f-mp4",
+                "_type": "reference"
+              }
+            }
+          },
+          {
+            "_key": "a144ed86ddc6",
+            "_type": "galleryVideo",
+            "video": {
+              "_type": "file",
+              "asset": {
+                "_ref": "file-5d8a0223c690269db59bcbae2f9c1f21cd5f8c76-mp4",
+                "_type": "reference"
+              }
+            }
+          },
+          {
+            "_key": "ec7e34c7abd0",
+            "_type": "galleryVideo",
+            "video": {
+              "_type": "file",
+              "asset": {
+                "_ref": "file-9806ff88936aea23432de866d64521fa0d21be41-mp4",
+                "_type": "reference"
+              }
+            }
+          },
+          {
+            "_key": "903aa373848d",
+            "_type": "galleryVideo",
+            "video": {
+              "_type": "file",
+              "asset": {
+                "_ref": "file-cda04703fbe80afe20474fc85bdeaa7f0a060ba6-mp4",
+                "_type": "reference"
+              }
+            }
+          },
+          {
+            "_key": "915621277ce3",
+            "_type": "galleryVideo",
+            "video": {
+              "_type": "file",
+              "asset": {
+                "_ref": "file-d08dc71e4a59949ada53f8bfdaa833c863f782c3-mp4",
+                "_type": "reference"
+              }
+            }
+          }
+        ],
+        "order": 6,
+        "shortDescription": "Swedish activewear brand Stronger — Storyblok content audits across four languages, redirect and link hygiene, and accessibility fixes on the Next.js storefront.",
+        "siteUrl": "https://www.strongerlabel.com",
+        "slug": {
+          "_type": "slug",
+          "current": "stronger"
+        },
+        "techStack": [
+          "Next.js",
+          "Storyblok",
+          "Centra",
+          "TypeScript"
+        ],
+        "title": "Stronger",
+        "chapters": [
+          {
+            "_type": "chapter",
+            "_key": "ch1",
+            "title": "A view counter nobody could measure",
+            "text": [
+              {
+                "_type": "block",
+                "_key": "ch1t0",
+                "style": "normal",
+                "markDefs": [],
+                "children": [
+                  {
+                    "_type": "span",
+                    "_key": "ch1t0s",
+                    "text": "A Swedish fashion brand on a shared headless storefront asked for one thing in September: a product-page urgency element, a view counter. Lab mobile scores sat in the 30s, which became a second track.",
+                    "marks": []
+                  }
+                ]
+              }
+            ],
+            "caption": "The product list in September. Zero products carried the bestseller badge because of a data bug.",
+            "layout": "half",
+            "side": "right",
+            "media": {
+              "type": "video",
+              "video": {
+                "_type": "file",
+                "asset": {
+                  "_type": "reference",
+                  "_ref": "file-5d8a0223c690269db59bcbae2f9c1f21cd5f8c76-mp4"
+                }
+              }
+            }
+          },
+          {
+            "_type": "chapter",
+            "_key": "ch2",
+            "title": "Every test had been off since 1 July",
+            "text": [
+              {
+                "_type": "block",
+                "_key": "ch2t0",
+                "style": "normal",
+                "markDefs": [],
+                "children": [
+                  {
+                    "_type": "span",
+                    "_key": "ch2t0s",
+                    "text": "A view counter is a number on a page. Nobody had asked whether a number would move anything, or whether the site could tell. The audit answered the second question first: a consent listener registered with once:true meant a user who declined cookies and then accepted never fired an exposure event.",
+                    "marks": []
+                  }
+                ]
+              }
+            ],
+            "caption": "The product page on a phone, where the view counter was meant to go. Nine earlier tests had run on a broken instrument.",
+            "layout": "wide",
+            "side": "left",
+            "media": {
+              "type": "video",
+              "video": {
+                "_type": "file",
+                "asset": {
+                  "_type": "reference",
+                  "_ref": "file-cda04703fbe80afe20474fc85bdeaa7f0a060ba6-mp4"
+                }
+              }
+            }
+          },
+          {
+            "_type": "chapter",
+            "_key": "ch3",
+            "title": "Five tests, one priority ladder",
+            "text": [
+              {
+                "_type": "block",
+                "_key": "ch3t0",
+                "style": "normal",
+                "markDefs": [],
+                "children": [
+                  {
+                    "_type": "span",
+                    "_key": "ch3t0s",
+                    "text": "I reframed the ask from one widget to a programme: a research brief, two product-page audits, a decisions log and five candidate tests. A priority ladder decides which one a product shows, so two numbers never compete on one page.",
+                    "marks": []
+                  }
+                ]
+              },
+              {
+                "_type": "block",
+                "_key": "ch3t1",
+                "style": "normal",
+                "markDefs": [],
+                "children": [
+                  {
+                    "_type": "span",
+                    "_key": "ch3t1s",
+                    "text": "Each test was specced in Figma and prototyped in a product-page lab where stakeholders could flip arms before anything was coded. The client picked the bestseller badge and the countdown.",
+                    "marks": []
+                  }
+                ]
+              }
+            ],
+            "caption": "The bestseller badge on the product list, the first of the five to ship. Control and variant from production, same session.",
+            "layout": "full",
+            "side": "right",
+            "media": {
+              "type": "video",
+              "video": {
+                "_type": "file",
+                "asset": {
+                  "_type": "reference",
+                  "_ref": "file-1460e68fea5dd4d54cc2be90fc556b0c6b487cec-mp4"
+                }
+              }
+            }
+          },
+          {
+            "_type": "chapter",
+            "_key": "ch4",
+            "title": "Lighthouse 34 to 87, and 31 badged products",
+            "text": [
+              {
+                "_type": "block",
+                "_key": "ch4t0",
+                "style": "normal",
+                "markDefs": [],
+                "children": [
+                  {
+                    "_type": "span",
+                    "_key": "ch4t0s",
+                    "text": "The bestseller badge shipped on 20 October as the first live test; badged products went from 0 to 31. The performance rebuild raised Lighthouse mobile from 34, 35 and 33 to 87, 83 and 82 on home, listing and product pages, with 133 of 151 parity checks passing and 0 failing.",
+                    "marks": []
+                  }
+                ]
+              },
+              {
+                "_type": "block",
+                "_key": "ch4t1",
+                "style": "normal",
+                "markDefs": [],
+                "children": [
+                  {
+                    "_type": "span",
+                    "_key": "ch4t1s",
+                    "text": "The rebuilds are open draft merge requests, not adopted. The A/B readout is pending.",
+                    "marks": []
+                  }
+                ]
+              }
+            ],
+            "caption": "Mobile product list with the badge live. Lighthouse figures are 3-run medians, same batch as production.",
+            "layout": "narrow",
+            "side": "right",
+            "media": {
+              "type": "video",
+              "video": {
+                "_type": "file",
+                "asset": {
+                  "_type": "reference",
+                  "_ref": "file-e162307064adb6857a29f7d6f998373272ce6e4c-mp4"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
