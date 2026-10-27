@@ -105,6 +105,46 @@ export const journalPost = defineType({
         { type: "image", options: { hotspot: true } },
         {
           type: "object",
+          name: "videoBlock",
+          title: "Video",
+          icon: () => "🎥",
+          fields: [
+            defineField({
+              name: "videoUrl",
+              title: "Video URL",
+              type: "url",
+              description: "Direct URL to the video file (mp4/webm).",
+              validation: (rule) => rule.required(),
+            }),
+            defineField({
+              name: "poster",
+              title: "Poster",
+              type: "image",
+              description: "First frame, shown until the video loads.",
+            }),
+            defineField({
+              name: "label",
+              title: "Label",
+              type: "string",
+              description: "Short uppercase caption in the control strip.",
+            }),
+            defineField({
+              name: "hasAudio",
+              title: "Has sound",
+              type: "boolean",
+              description:
+                "Shows the sound button. Leave unset to detect from the file.",
+            }),
+          ],
+          preview: {
+            select: { title: "label", subtitle: "videoUrl" },
+            prepare({ title, subtitle }) {
+              return { title: title || "Video", subtitle };
+            },
+          },
+        },
+        {
+          type: "object",
           name: "quote",
           title: "Quote",
           icon: () => "❝",

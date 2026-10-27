@@ -307,6 +307,20 @@ export type JournalPost = {
         _key: string;
       }
     | {
+        videoUrl?: string;
+        poster?: {
+          asset?: SanityImageAssetReference;
+          media?: unknown;
+          hotspot?: SanityImageHotspot;
+          crop?: SanityImageCrop;
+          _type: "image";
+        };
+        label?: string;
+        hasAudio?: boolean;
+        _type: "videoBlock";
+        _key: string;
+      }
+    | {
         text?: Array<{
           children?: Array<{
             marks?: Array<string>;
@@ -1061,6 +1075,20 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
           _key: string;
         }>;
         _type: "quote";
+        _key: string;
+      }
+    | {
+        videoUrl?: string;
+        poster?: {
+          asset?: SanityImageAssetReference;
+          media?: unknown;
+          hotspot?: SanityImageHotspot;
+          crop?: SanityImageCrop;
+          _type: "image";
+        };
+        label?: string;
+        hasAudio?: boolean;
+        _type: "videoBlock";
         _key: string;
       }
   > | null;
