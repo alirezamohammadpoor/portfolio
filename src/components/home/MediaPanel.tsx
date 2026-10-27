@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import Image from "next/image";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
+import { restoreVideoPosition, saveVideoPosition } from "@/lib/videoPosition";
 
 interface MediaPanelProps {
   coverMedia: PROJECTS_QUERY_RESULT[number]["coverMedia"];
@@ -57,8 +58,12 @@ export default function MediaPanel({
     // Next keeps the page mounted but hidden after a navigation away (its
     // effects are torn down and run again on return), so this pauses the
     // cover while another page is up and resumes it, from the same frame,
-    // when home shows again.
-    return () => video.pause();
+    // when home shows again. The position is also saved because a slide
+    // that scrolls far enough away loses its <video> element entirely.
+    return () => {
+      saveVideoPosition(video, video.getAttribute("src") ?? "");
+      video.pause();
+    };
   }, [isActive]);
 
   if (coverMedia?.type === "video" && coverMedia.video?.asset?._ref) {
@@ -82,6 +87,7 @@ export default function MediaPanel({
           loop
           playsInline
           preload="auto"
+          onLoadedMetadata={(e) => restoreVideoPosition(e.currentTarget, e.currentTarget.getAttribute("src") ?? "")}
         />
         )}
       </div>

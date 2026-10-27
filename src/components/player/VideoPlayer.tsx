@@ -30,6 +30,7 @@ import {
 } from "react";
 import { track } from "@vercel/analytics";
 import { prefersReducedMotion } from "@/lib/motion";
+import { restoreVideoPosition, saveVideoPosition } from "@/lib/videoPosition";
 
 export type ControlLanguage = "icons" | "pills" | "text" | "iconword";
 export type Tracker = "line" | "ring" | "counter";
@@ -220,6 +221,7 @@ export default function VideoPlayer({
       setPlaying(false);
       stopLoop();
       paint();
+      saveVideoPosition(v, src);
     };
     const onEnded = () => {
       setEnded(true);
@@ -248,6 +250,9 @@ export default function VideoPlayer({
     const onMeta = () => {
       if (aspect === "auto" && v.videoWidth && v.videoHeight)
         setRatio(`${v.videoWidth} / ${v.videoHeight}`);
+      // A popup that closed and reopened, or a page that came back, picks
+      // up where it left off instead of restarting.
+      restoreVideoPosition(v, src);
       lastSecRef.current = -1; // duration text must repaint
       paint();
       detect();
@@ -276,6 +281,7 @@ export default function VideoPlayer({
         v.removeEventListener("loadedmetadata", onMeta);
       v.removeEventListener("timeupdate", onTime);
       stopLoop();
+      saveVideoPosition(v, src);
     };
   }, [aspect, hasAudio, loop60, paint, setAudioDetected, src, stopLoop, trackId]);
 
