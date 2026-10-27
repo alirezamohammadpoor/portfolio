@@ -5,6 +5,8 @@ interface ScrollProgressProps {
   nextProjectSlug: string | undefined;
   nextTextWrapperRef: RefObject<HTMLDivElement | null>;
   nextTextRef: RefObject<HTMLDivElement | null>;
+  /** Gallery page: under the fixed panel (left half). Chapter page: bottom right. */
+  align?: "center" | "right";
 }
 
 export default function ScrollProgress({
@@ -12,9 +14,11 @@ export default function ScrollProgress({
   nextProjectSlug,
   nextTextWrapperRef,
   nextTextRef,
+  align = "center",
 }: ScrollProgressProps) {
+  const position = align === "right" ? "right-0 w-auto px-margin" : "left-0 w-1/2 px-6";
   return (
-    <div className="fixed bottom-0 left-0 hidden w-1/2 px-6 pb-6 text-right desktop:block">
+    <div className={`fixed bottom-0 hidden pb-6 text-right desktop:block ${position}`}>
       <p ref={progressRef as RefObject<HTMLParagraphElement | null>} className="text-h1 text-primary tabular-nums">0</p>
 
       {/* Next project hint */}
