@@ -74,6 +74,7 @@ export const portableTextComponents = {
         videoUrl?: string;
         poster?: { asset?: { _ref: string } };
         label?: string;
+        url?: string;
         hasAudio?: boolean;
       };
     }) => {
@@ -83,6 +84,7 @@ export const portableTextComponents = {
           src={value.videoUrl}
           poster={value.poster?.asset ? imageUrl(value.poster, 1200) : undefined}
           label={value.label}
+          linkUrl={value.url}
           aspect="16/9"
           hasAudio={value.hasAudio ?? undefined}
           trackId={value.label}
