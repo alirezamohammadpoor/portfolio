@@ -4,6 +4,7 @@ import { PortableText } from "next-sanity";
 import { imageUrl } from "@/sanity/lib/image";
 import GlossaryTerm from "@/components/journal/GlossaryTerm";
 import RichPreview from "@/components/journal/RichPreview";
+import VideoPlayer from "@/components/player/VideoPlayer";
 
 export const portableTextComponents = {
   marks: {
@@ -66,6 +67,28 @@ export const portableTextComponents = {
     },
   },
   types: {
+    videoBlock: ({
+      value,
+    }: {
+      value: {
+        videoUrl?: string;
+        poster?: { asset?: { _ref: string } };
+        label?: string;
+        hasAudio?: boolean;
+      };
+    }) => {
+      if (!value?.videoUrl) return null;
+      return (
+        <VideoPlayer
+          src={value.videoUrl}
+          poster={value.poster?.asset ? imageUrl(value.poster, 1200) : undefined}
+          label={value.label}
+          hasAudio={value.hasAudio ?? undefined}
+          trackId={value.label}
+          className="my-8"
+        />
+      );
+    },
     image: ({
       value,
     }: {
