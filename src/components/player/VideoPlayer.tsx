@@ -1,9 +1,13 @@
 "use client";
 
 /**
- * Shared video player for the journal (strip layout: controls + label under
- * the video) and project pages (overlay layout: controls inside the media box,
- * caption drawn by the block). One state machine, one set of tokens.
+ * Shared video player for the journal (strip layout: caption row + control
+ * bar under the video) and project pages (overlay layout: controls inside the
+ * media box, caption drawn by the block). One state machine, one set of tokens.
+ *
+ * Strip (v2, 27 Oct): 16:9 media with a 4px edge-line tracker, caption row
+ * (label left, optional link right), control bar with two matching pills
+ * (Play/Pause, Sound) and the remaining time on the right.
  *
  * Behaviour (see docs in /video-player/audit.md):
  * - Autoplays muted when ≥50% in view, pauses out of view. Reduced motion:
@@ -39,8 +43,11 @@ export interface VideoPlayerProps {
    * metadata arrives; the encode step should emit one (not done here).
    */
   poster?: string;
-  /** Uppercase label in the strip; ignored in overlay layout. */
+  /** Uppercase label in the strip's caption row; ignored in overlay layout. */
   label?: string;
+  /** Optional link shown right of the label ("See more →"). Strip only. */
+  linkUrl?: string;
+  linkLabel?: string;
   aspect?: Aspect;
   layout?: Layout;
   language?: ControlLanguage;
@@ -99,9 +106,11 @@ export default function VideoPlayer({
   poster,
   label,
   aspect = "auto",
+  linkUrl,
+  linkLabel = "See more →",
   layout = "strip",
   language = "pills",
-  tracker = "ring",
+  tracker = "line",
   loop = true,
   hasAudio,
   autoplay = true,
@@ -120,6 +129,7 @@ export default function VideoPlayer({
   const sliderRef = useRef<HTMLDivElement>(null);
   const curRef = useRef<HTMLSpanElement>(null);
   const durRef = useRef<HTMLSpanElement>(null);
+  const remRef = useRef<HTMLSpanElement>(null);
   const rafRef = useRef(0);
   const userPausedRef = useRef(false);
   const inViewRef = useRef(false);
@@ -170,6 +180,7 @@ export default function VideoPlayer({
     }
     if (curRef.current) curRef.current.textContent = fmt(v.currentTime);
     if (durRef.current) durRef.current.textContent = fmt(d);
+    if (remRef.current) remRef.current.textContent = `−${fmt(Math.max(0, d - v.currentTime))}`;
   }, []);
 
   const loop60 = useCallback(() => {
@@ -377,13 +388,15 @@ export default function VideoPlayer({
   const showPlayIcon = !playing || ended || blocked;
 
   // 36px pill, 44px hit area: ::before is positioned from the padding box, so 5px past it = 4px past the border.
-  const pill =
-    "relative inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sub uppercase font-medium text-primary transition-[transform,background-color] duration-[var(--dur-fast)] ease-[var(--ease-out)] active:scale-[0.97] " +
-    "bg-white border border-tertiary before:absolute before:inset-x-0 before:-inset-y-[5px] before:content-['']";
+  const pillBase =
+    "relative inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sub uppercase font-medium tracking-[0.02em] text-primary transition-[transform,background-color,border-color] duration-[var(--dur-fast)] ease-[var(--ease-out)] active:scale-[0.97] " +
+    "before:absolute before:inset-x-0 before:-inset-y-[5px] before:content-['']";
+  const pill = `${pillBase} bg-white border-tertiary`;
+  const pillOn = `${pillBase} bg-pistachio border-pistachio`;
   const word = `text-sub uppercase font-medium tracking-[0.02em] ${ink} link-underline`;
   const bare = `flex size-11 -m-3 items-center justify-center ${ink} transition-opacity duration-[var(--dur-fast)] hover:opacity-70`;
 
-  const playLabel = showPlayIcon ? "Play" : "Pause";
+  const playLabel = ended && !playing ? "Replay" : showPlayIcon ? "Play" : "Pause";
   const soundLabel = muted ? "Sound on" : "Sound off";
 
   const PlayGlyph = showPlayIcon ? IconPlay : IconPause;
@@ -445,7 +458,7 @@ export default function VideoPlayer({
   const hide = silent ? " invisible" : "";
   const soundButton =
     language === "pills" ? (
-      <button {...soundAttrs} aria-label={soundLabel} className={pill + hide}>
+      <button {...soundAttrs} aria-label={soundLabel} className={(muted ? pill : pillOn) + hide}>
         <SoundGlyph size={12} />
         <span>Sound</span>
       </button>
@@ -466,6 +479,10 @@ export default function VideoPlayer({
     <span className={`text-sub tabular-nums ${ink} ${overlay ? "" : ""}`} aria-hidden="true">
       <span ref={curRef}>0:00</span> / <span ref={durRef}>0:00</span>
     </span>
+  );
+
+  const remaining = (
+    <span ref={remRef} className={`ml-auto text-sub tabular-nums leading-4 ${ink}`} aria-hidden="true">−0:00</span>
   );
 
   const counter = (
@@ -491,7 +508,7 @@ export default function VideoPlayer({
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
       onKeyDown={onKey}
-      className={`group absolute inset-x-0 z-10 h-6 cursor-pointer touch-none outline-none ${overlay ? "bottom-0" : "-top-6"}`}
+      className="group absolute inset-x-0 bottom-0 z-10 h-6 cursor-pointer touch-none outline-none"
     >
       <div className={`absolute inset-x-0 bottom-0 h-1 ${overlay ? "bg-white/30" : "bg-tertiary"}`}>
         <div ref={lineRef} className="h-full w-full origin-left bg-pistachio" style={{ transform: "scaleX(0)" }} />
@@ -533,8 +550,8 @@ export default function VideoPlayer({
           {tracker === "counter" ? counter : timecodeSmall}
         </div>
       )}
-      {/* after the controls in DOM so Tab goes Play → Sound → Seek */}
-      {overlay && tracker === "line" && edgeLine}
+      {/* overlay: after the controls so Tab goes Play → Sound → Seek; strip: seek sits above the bar, so DOM order matches visual order */}
+      {tracker === "line" && edgeLine}
     </div>
   );
 
@@ -549,11 +566,28 @@ export default function VideoPlayer({
   return (
     <div ref={rootRef} className={`flex flex-col overflow-hidden rounded-2xl bg-lightpistachio ${className}`} style={style} data-player data-layout="strip" data-language={language} data-tracker={tracker} data-state={playing ? "playing" : ended ? "ended" : "paused"}>
       {media}
-      <div className={`relative flex items-center gap-3 px-3 ${tracker === "counter" ? "py-2.5" : "py-2"}`}>
+      {(label || linkUrl) && tracker !== "counter" && (
+        <div className="flex items-start gap-4 px-3 pt-3">
+          <span className="min-w-0 flex-1 text-left text-sub font-medium uppercase leading-4 tracking-[0.02em] text-primary">{label}</span>
+          {linkUrl && (
+            <a
+              href={linkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={label ? `${linkLabel.replace(/\s*→$/, "")} about ${label}` : linkLabel}
+              onClick={(e) => e.stopPropagation()}
+              className="shrink-0 whitespace-nowrap border-b border-primary text-sub leading-4 text-primary"
+            >
+              {linkLabel}
+            </a>
+          )}
+        </div>
+      )}
+      <div className="relative flex items-center gap-2 px-3 pb-3 pt-2">
         {tracker === "counter" && (
           <div ref={fillRef} className="absolute inset-0 origin-left bg-pistachio" style={{ transform: "scaleX(0)" }} aria-hidden="true" />
         )}
-        <div className="relative flex items-center gap-3">
+        <div className="relative flex items-center gap-2">
           {playButton}
           {soundButton}
         </div>
@@ -563,14 +597,8 @@ export default function VideoPlayer({
             {counter}
           </div>
         ) : (
-          <>
-            {label && <span className="relative min-w-0 flex-1 line-clamp-2 text-left text-sub font-medium uppercase leading-4 tracking-[0.02em] text-primary">{label}</span>}
-            {!label && <span className="flex-1" />}
-            {timecodeSmall}
-          </>
+          remaining
         )}
-        {/* overlaps the media's bottom edge; after the buttons so Tab goes Play → Sound → Seek */}
-        {tracker === "line" && edgeLine}
       </div>
     </div>
   );
