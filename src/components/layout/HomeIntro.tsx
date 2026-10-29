@@ -174,6 +174,8 @@ function englishInOut(tl: gsap.core.Timeline, name: HTMLSpanElement) {
 interface Canvas {
   svg: SVGSVGElement;
   maskPath: SVGPathElement;
+  /** The painted text, for per-glyph extents. */
+  text: SVGTextElement;
   /** Width and height of the painted text box inside the svg. */
   w: number;
   h: number;
@@ -223,7 +225,7 @@ function makeCanvas(name: HTMLSpanElement, outline: boolean): Canvas {
   maskPath.setAttribute("stroke", "#fff");
   maskPath.setAttribute("stroke-linecap", "round");
   maskPath.setAttribute("stroke-linejoin", "round");
-  maskPath.setAttribute("stroke-width", `${r.height * 0.7}`);
+  maskPath.setAttribute("stroke-width", `${r.height * 0.5}`);
   mask.appendChild(maskPath);
   defs.appendChild(mask);
   svg.appendChild(defs);
@@ -257,6 +259,7 @@ function makeCanvas(name: HTMLSpanElement, outline: boolean): Canvas {
   return {
     svg,
     maskPath,
+    text: painted,
     w: r.width,
     h: r.height,
     ox,
@@ -265,36 +268,46 @@ function makeCanvas(name: HTMLSpanElement, outline: boolean): Canvas {
   };
 }
 
-/** A back-and-forth brush path across the text box, right to left first. */
-function brushPathD(c: Canvas) {
-  const { w, h, ox, oy } = c;
-  const x0 = ox + w + h * 0.3;
-  const x1 = ox - h * 0.3;
-  const yA = oy + h * 0.3;
-  const yB = oy + h * 0.72;
-  const wob = h * 0.06;
-  const mid = (x0 + x1) / 2;
-  return [
-    `M ${x0} ${yA}`,
-    `Q ${mid} ${yA - wob} ${x1} ${yA + wob * 0.5}`,
-    `Q ${x1 - h * 0.1} ${(yA + yB) / 2} ${x1} ${yB}`,
-    `Q ${mid} ${yB + wob} ${x0} ${yB - wob * 0.5}`,
-  ].join(" ");
+/**
+ * A pen path in writing order: one tight scribble per letter, right to left
+ * (the logical order of the RTL text is the writing order), so the name
+ * appears letter by letter. Glyph cells come from the SVG text itself. One
+ * continuous subpath on purpose: the dash pattern that draws it on restarts
+ * at every `M`, which would paint all letters at once, so the pen travels
+ * across the word space instead of lifting (nothing there to reveal).
+ */
+function letterPathD(c: Canvas) {
+  const n = c.text.getNumberOfChars();
+  const parts: string[] = [];
+  for (let i = 0; i < n; i++) {
+    if (PERSIAN_NAME[i] === " ") continue;
+    const e = c.text.getExtentOfChar(i);
+    const x0 = e.x + e.width;
+    const x1 = e.x;
+    const top = c.oy + c.h * 0.28;
+    const bot = c.oy + c.h * 0.74;
+    const mid = (top + bot) / 2;
+    // Down-left, back, down-left: a short zigzag covering the cell.
+    parts.push(
+      `${parts.length ? "L" : "M"} ${x0} ${top} L ${x1} ${mid} L ${x0} ${mid + (bot - mid) * 0.35} L ${x1} ${bot}`,
+    );
+  }
+  return parts.join(" ");
 }
 
 /** Paint the whole name on with the brush path; resolves when dry. */
 function paintOn(c: Canvas, duration: number, onDone: () => void) {
-  c.maskPath.setAttribute("d", brushPathD(c));
+  c.maskPath.setAttribute("d", letterPathD(c));
   const len = c.maskPath.getTotalLength();
   c.maskPath.style.strokeDasharray = `${len}`;
   gsap.fromTo(
     c.maskPath,
     { strokeDashoffset: len },
-    { strokeDashoffset: 0, duration, ease: "power1.inOut", onComplete: onDone },
+    { strokeDashoffset: 0, duration, ease: "none", onComplete: onDone },
   );
 }
 
-const BRUSH = 1.5;
+const BRUSH = 2.0;
 
 const brush: Variant = (tl, name, ctx) => {
   englishInOut(tl, name);
