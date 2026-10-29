@@ -42,6 +42,10 @@ const PROJECT_FIELDS = `
         title,
         status,
         text,
+        hypothesis,
+        metric,
+        result,
+        decision,
         caption,
         media {
           type,
