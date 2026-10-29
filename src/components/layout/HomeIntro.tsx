@@ -269,59 +269,121 @@ function makeCanvas(name: HTMLSpanElement, outline: boolean): Canvas {
 }
 
 /**
- * A pen path in writing order: one tight scribble per letter, right to left
- * (the logical order of the RTL text is the writing order), so the name
- * appears letter by letter. Glyph cells come from the SVG text itself. One
- * continuous subpath on purpose: the dash pattern that draws it on restarts
- * at every `M`, which would paint all letters at once, so the pen travels
- * across the word space instead of lifting (nothing there to reveal).
+ * علیرضا written by hand (spec: /mnt/project-files/home-intro/
+ * alireza-handwriting-spec.md, Ali's calls 10-29: everyday handwriting,
+ * visible pen lifts, dots after each connected piece, even brush). Four
+ * pen-downs: علیر, the two dots under ی, ضا, the dot over ض. Each pen-down is
+ * its own mask path with its own draw-on tween, so the dash reveal never
+ * restarts early. The surname fades up in the mask as the pen lifts.
+ * Glyph cells come from the SVG text; x runs 0 (right edge) → 1 (left edge)
+ * in writing direction, vertical marks are fractions of the text box.
  */
-function letterPathD(c: Canvas) {
-  const n = c.text.getNumberOfChars();
-  const parts: string[] = [];
-  for (let i = 0; i < n; i++) {
-    if (PERSIAN_NAME[i] === " ") continue;
+function handwrite(c: Canvas, onDone: () => void) {
+  const { oy, h } = c;
+  const A = oy + 0.14 * h;
+  const X = oy + 0.42 * h;
+  const B = oy + 0.68 * h;
+  const D = oy + 0.92 * h;
+  const cell = (i: number) => {
     const e = c.text.getExtentOfChar(i);
-    const x0 = e.x + e.width;
-    const x1 = e.x;
-    const top = c.oy + c.h * 0.28;
-    const bot = c.oy + c.h * 0.74;
-    const mid = (top + bot) / 2;
-    // Down-left, back, down-left: a short zigzag covering the cell.
-    parts.push(
-      `${parts.length ? "L" : "M"} ${x0} ${top} L ${x1} ${mid} L ${x0} ${mid + (bot - mid) * 0.35} L ${x1} ${bot}`,
-    );
+    const right = e.x + e.width;
+    return (u: number, y: number) => `${(right - u * e.width).toFixed(1)} ${y.toFixed(1)}`;
+  };
+  const [ain, lam, ye, re, zad, alef] = [0, 1, 2, 3, 4, 5].map(cell);
+  const mask = c.maskPath.parentElement as Element;
+  const width = `${(0.38 * h).toFixed(1)}`;
+
+  function strokePath(d: string) {
+    const el = document.createElementNS(SVG_NS, "path");
+    el.setAttribute("d", d);
+    el.setAttribute("fill", "none");
+    el.setAttribute("stroke", "#fff");
+    el.setAttribute("stroke-linecap", "round");
+    el.setAttribute("stroke-linejoin", "round");
+    el.setAttribute("stroke-width", width);
+    mask.appendChild(el);
+    const len = el.getTotalLength();
+    el.style.strokeDasharray = `${len}`;
+    el.style.strokeDashoffset = `${len}`;
+    return el;
   }
-  return parts.join(" ");
-}
+  function dot(at: string) {
+    const [cx, cy] = at.split(" ");
+    const el = document.createElementNS(SVG_NS, "circle");
+    el.setAttribute("cx", cx);
+    el.setAttribute("cy", cy);
+    el.setAttribute("r", "0");
+    el.setAttribute("fill", "#fff");
+    mask.appendChild(el);
+    return el;
+  }
 
-/** Paint the whole name on with the brush path; resolves when dry. */
-function paintOn(c: Canvas, duration: number, onDone: () => void) {
-  c.maskPath.setAttribute("d", letterPathD(c));
-  const len = c.maskPath.getTotalLength();
-  c.maskPath.style.strokeDasharray = `${len}`;
-  gsap.fromTo(
-    c.maskPath,
-    { strokeDashoffset: len },
-    { strokeDashoffset: 0, duration, ease: "none", onComplete: onDone },
+  // Stroke 1: علیر in one pull.
+  const s1 = strokePath(
+    [
+      `M ${ain(0.1, X)}`,
+      `C ${ain(0.45, X - 0.02 * h)} ${ain(0.7, X + 0.1 * h)} ${ain(0.4, B - 0.04 * h)}`,
+      `L ${ain(0.9, B)}`,
+      `L ${lam(0.15, B)} L ${lam(0.15, A)} L ${lam(0.18, B)} L ${lam(0.95, B)}`,
+      `L ${ye(0.3, X + 0.1 * h)} L ${ye(0.6, B)} L ${ye(1, B)}`,
+      `L ${re(0.15, B)} C ${re(0.35, B + 0.12 * h)} ${re(0.6, D)} ${re(0.95, D - 0.06 * h)}`,
+    ].join(" "),
   );
+  // Stroke 2: two dots under ی, right one first.
+  const d1 = dot(ye(0.35, D - 0.02 * h));
+  const d2 = dot(ye(0.65, D - 0.02 * h));
+  // Stroke 3: ضا, the alef pulled upward.
+  const s3 = strokePath(
+    [
+      `M ${zad(0.05, B)}`,
+      `C ${zad(0.3, B - 0.3 * h)} ${zad(0.65, B - 0.3 * h)} ${zad(0.68, B - 0.02 * h)}`,
+      `L ${zad(0.1, B)}`,
+      `L ${zad(0.72, B)} L ${zad(0.82, X + 0.12 * h)} L ${zad(0.95, B)}`,
+      `L ${alef(0.45, B)} L ${alef(0.45, A)}`,
+    ].join(" "),
+  );
+  // Stroke 4: the dot over ض.
+  const d3 = dot(zad(0.4, B - 0.4 * h));
+  // The surname: a plain window in the mask that fades up as the pen lifts.
+  const first = c.text.getExtentOfChar(7);
+  const last = c.text.getExtentOfChar(c.text.getNumberOfChars() - 1);
+  const surname = document.createElementNS(SVG_NS, "rect");
+  surname.setAttribute("x", `${last.x - 0.2 * h}`);
+  surname.setAttribute("y", "0");
+  surname.setAttribute("width", `${first.x + first.width - last.x + 0.4 * h}`);
+  surname.setAttribute("height", `${oy * 2 + h}`);
+  surname.setAttribute("fill", "#fff");
+  surname.setAttribute("opacity", "0");
+  mask.appendChild(surname);
+
+  const r = (0.19 * h).toFixed(1);
+  const tap = { duration: 0.05, ease: "back.out(2)" };
+  const tl = gsap.timeline({ onComplete: onDone });
+  tl.to(s1, { strokeDashoffset: 0, duration: 0.7, ease: "power1.inOut" }, 0);
+  tl.to(d1, { attr: { r }, ...tap }, 0.82);
+  tl.to(d2, { attr: { r }, ...tap }, 0.92);
+  tl.to(s3, { strokeDashoffset: 0, duration: 0.48, ease: "power1.inOut" }, 1.09);
+  tl.to(d3, { attr: { r }, ...tap }, 1.67);
+  tl.to(surname, { attr: { opacity: 1 }, duration: 0.45, ease: ease.out }, 1.73);
+  return tl;
 }
 
-const BRUSH = 2.0;
 
 const brush: Variant = (tl, name, ctx) => {
   englishInOut(tl, name);
   let canvas: Canvas | null = null;
   ctx.onCleanup(() => canvas?.remove());
   tl.add(() => {
-    canvas = makeCanvas(name, false);
-    paintOn(canvas, BRUSH, () => {});
+    tl.pause();
+    const c = makeCanvas(name, false);
+    canvas = c;
+    handwrite(c, () => {
+      c.remove();
+      canvas = null;
+      gsap.set(name, { autoAlpha: 1 });
+      tl.play();
+    });
   });
-  tl.add(() => {
-    canvas?.remove();
-    canvas = null;
-    gsap.set(name, { autoAlpha: 1 });
-  }, `+=${BRUSH + 0.05}`);
   tl.add(() => {}, `+=${HOLD}`);
 };
 
@@ -360,9 +422,8 @@ const hand: Variant = (tl, name, ctx) => {
       if (finished) return;
       finished = true;
       teardown?.();
-      // Finish the stroke for them, shorter the more they already painted.
-      const left = 1 - bins.size / BINS;
-      paintOn(c, Math.max(0.5, BRUSH * left), () => {
+      // The pen finishes the name for them.
+      handwrite(c, () => {
         c.remove();
         canvas = null;
         gsap.set(name, { autoAlpha: 1 });
