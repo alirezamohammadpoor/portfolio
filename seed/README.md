@@ -7,3 +7,12 @@ Run from the Mac, where .env.local holds the write-scoped Sanity token:
       --data-binary @seed/stronger-chapters.mutation.json
 
 It writes drafts.project-stronger only; publish from the Studio after reading.
+
+## v2 (2026-10-29): process arc, eight chapters
+
+    cd ~/Developer/portfolio && python3 seed/seed-stronger-v2.py
+
+Uploads the Figma exports in seed/stronger-figma/ as image assets (idempotent, matched by sha1),
+reads the published Stronger document and writes drafts.project-stronger with the eight chapters
+from seed/stronger-chapters-v2.json. `--dry-run` prints the document without a token.
+Then read the draft in the Studio and Publish.
