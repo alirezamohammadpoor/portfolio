@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProject } from "@/sanity/lib/data";
-import ProjectPageClient from "@/components/project/ProjectPageClient";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import type { Chapter, TestSwitcher } from "@/components/project/ProjectChapters";
+import ChaptersLabClient from "./ChaptersLabClient";
 
 // Prototype route for the chapter project page (brief-v2, Figma frame E):
 // the Stronger project with fixture chapters cut from its own gallery and a
@@ -109,5 +109,6 @@ export default async function ChaptersLabPage() {
   };
 
   const fixture: Project = { ...project, chapters: [...chapters, switcher] };
-  return <ProjectPageClient key="lab-chapters" project={fixture} nextProject={project.nextProject} prevProject={project.prevProject} />;
+  // Phone layout exploration: /lab/chapters#offset or #stack (2026-10-29).
+  return <ChaptersLabClient project={fixture} nextProject={project.nextProject} prevProject={project.prevProject} />;
 }

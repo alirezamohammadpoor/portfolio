@@ -58,7 +58,7 @@ export default function InlineClip({
       playsInline
       preload="metadata"
       aria-label={label}
-      className={`block w-full h-auto ${className}`}
+      className={`block w-full h-auto bg-tertiary/40 ${className}`}
     />
   );
 }
