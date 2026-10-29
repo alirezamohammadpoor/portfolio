@@ -8,7 +8,7 @@ Run from the Mac, where .env.local holds the write-scoped Sanity token:
 
 It writes drafts.project-stronger only; publish from the Studio after reading.
 
-## v2 (2026-10-29): process arc, eight chapters
+## v3 (2026-10-29): lanes, five chapters + test switcher
 
     cd ~/Developer/portfolio && python3 seed/seed-stronger-v2.py
 

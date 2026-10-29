@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Seed the Stronger chapters v2 into Sanity (drafts.project-stronger).
+"""Seed the Stronger chapters (v3 lanes) into Sanity (drafts.project-stronger).
 
 Run from the repo root on a machine whose .env.local holds a write-scoped token:
 
@@ -105,28 +105,51 @@ def main():
         spec = json.load(fh)
 
     print("Uploading images")
-    chapters = []
-    for ch in spec["chapters"]:
-        media = ch["media"]
+
+    def media_doc(media):
         if media["type"] == "image":
             ref = media["image"]
             if ref.startswith("file:"):
                 ref = "image-DRYRUN-png" if dry else upload_image(ref[len("file:"):])
-            media_doc = {"type": "image", "image": {"_type": "image", "asset": {"_type": "reference", "_ref": ref}}}
-        else:
-            media_doc = {"type": "video", "video": {"_type": "file", "asset": {"_type": "reference", "_ref": media["video"]}}}
-        chapters.append(
-            {
-                "_type": "chapter",
-                "_key": ch["_key"],
-                "title": ch["title"],
-                "text": blocks(ch["text"], ch["_key"]),
-                "caption": ch.get("caption"),
-                "layout": ch["layout"],
-                "side": ch["side"],
-                "media": media_doc,
-            }
-        )
+            return {"type": "image", "image": {"_type": "image", "asset": {"_type": "reference", "_ref": ref}}}
+        return {"type": "video", "video": {"_type": "file", "asset": {"_type": "reference", "_ref": media["video"]}}}
+
+    chapters = []
+    for ch in spec["chapters"]:
+        if ch.get("_type") == "testSwitcher":
+            chapters.append(
+                {
+                    "_type": "testSwitcher",
+                    "_key": ch["_key"],
+                    "title": ch.get("title"),
+                    "tests": [
+                        {
+                            "_type": "abTest",
+                            "_key": t["_key"],
+                            "label": t["label"],
+                            "title": t["title"],
+                            "status": t.get("status"),
+                            "text": blocks(t["text"], t["_key"]),
+                            "caption": t.get("caption"),
+                            "media": media_doc(t["media"]),
+                        }
+                        for t in ch["tests"]
+                    ],
+                }
+            )
+            continue
+        doc = {
+            "_type": "chapter",
+            "_key": ch["_key"],
+            "title": ch["title"],
+            "text": blocks(ch["text"], ch["_key"]),
+            "caption": ch.get("caption"),
+            "layout": ch["layout"],
+            "media": media_doc(ch["media"]),
+        }
+        if ch.get("side"):
+            doc["side"] = ch["side"]
+        chapters.append(doc)
 
     print("Reading published project-stronger")
     doc = query('*[_id=="project-stronger"][0]')

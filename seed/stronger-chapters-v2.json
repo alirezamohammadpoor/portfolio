@@ -1,12 +1,11 @@
 {
-  "_comment": "Stronger chapters v2 (2026-10-29 13:40 order: client, ask, badge focus, badge live, a11y, then the four remaining tests). media.image values that start with 'file:' are replaced by seed-stronger-v2.py with the uploaded Sanity image asset ref.",
+  "_comment": "Stronger chapters v3 lanes (2026-10-29 14:30): client, ask, badge focus (beside), badge live (full), a11y, then the five tests in a testSwitcher. media.image values that start with 'file:' are replaced by seed-stronger-v2.py with the uploaded Sanity image asset ref.",
   "chapters": [
     {
       "_type": "chapter",
       "_key": "v2-client",
       "title": "A Swedish activewear brand on a headless storefront",
-      "layout": "half",
-      "side": "right",
+      "layout": "wide-left",
       "caption": "strongerlabel.com in September, before the first test went live.",
       "text": [
         "Stronger sells activewear from Stockholm on a Centra and React Router storefront, with content in Storyblok. I joined through TRY in September as the frontend between the brand's e-commerce team and the dev agency that runs the storefront."
@@ -20,8 +19,7 @@
       "_type": "chapter",
       "_key": "v2-ask",
       "title": "The ask was a view counter",
-      "layout": "wide",
-      "side": "left",
+      "layout": "wide-right",
       "caption": "The product page already carried four earlier test winners; the view counter would have been the fifth element competing for the same screen.",
       "text": [
         "The brief that reached me was small: improve the \"people browsing\" pill on the product page, a widget that had won an earlier test. The test history said why not. Ten experiments, nine of them on the product page, four winners stacked on the same screen. The product list, the size picker and the mini-cart had never been tested.",
@@ -36,7 +34,7 @@
       "_type": "chapter",
       "_key": "v2-test-badge",
       "title": "The bestseller badge, first out",
-      "layout": "half",
+      "layout": "beside",
       "side": "right",
       "caption": "Figma, ships state. The badge takes the Archive badge's slot in the card's top corner, so the grid never shifts. Goal: add to cart, target +5 %.",
       "text": [
@@ -52,8 +50,7 @@
       "_type": "chapter",
       "_key": "v2-live",
       "title": "The badge went live on 20 October",
-      "layout": "wide",
-      "side": "left",
+      "layout": "full",
       "caption": "Control and variant from production, same session. Badge style GT America 500 12/15 on #18181b.",
       "text": [
         "\"Bästsäljare\" on the product-list cards, 50/50 on a user cookie, GA4 in BigQuery, Bayesian with CUPED and a product-list view as activation metric. Five days in, about 18,000 users per arm: bestseller card clicks +4.4 % (99 % chance to beat control), other cards +2.2 %, add to cart +1.1 % with a wide interval.",
@@ -68,8 +65,7 @@
       "_type": "chapter",
       "_key": "v2-a11y",
       "title": "Accessibility fixes along the way",
-      "layout": "half",
-      "side": "right",
+      "layout": "wide-left",
       "caption": "Header and cart drawer by keyboard: focus goes in, stays in, and comes back out.",
       "text": [
         "Between tests, the storefront got the accessibility work it had been missing: keyboard reach of the header and the cart, focus handling in the cart drawer, and the gaps that still remain, documented so they can be closed.",
@@ -81,65 +77,81 @@
       }
     },
     {
-      "_type": "chapter",
-      "_key": "v2-test-countdown",
-      "title": "One delivery promise, four states",
-      "layout": "narrow",
-      "side": "left",
-      "caption": "Figma, ships state. \"Beställ före 13:50 så skickas din order idag\" under the buy button; after cut-off, weekend and holiday copy as component variants. Cut-off time lives in Storyblok.",
-      "text": [
-        "The badge was the first of five tests designed in Figma before a line was written. Each page reads Live, Ships, Later states, Component; rejected options go to an archive, and stakeholders picked from finished-looking mocks.",
-        "Nothing under the buy button said when an order would ship. One line answers it, and because every state was a component variant, the weekend, holiday and after-cut-off copy surfaced in review before anyone built it. Ready, waiting on ops to confirm the cut-off."
-      ],
-      "media": {
-        "type": "image",
-        "image": "file:02-countdown-mobile@3x.png"
-      }
-    },
-    {
-      "_type": "chapter",
-      "_key": "v2-test-soldout",
-      "title": "A row instead of a dead end",
-      "layout": "narrow",
-      "side": "right",
-      "caption": "Figma, ships state. \"S är slut i Magenta · finns i\" plus the sibling colours that have the size in stock. The notify-me drawer stays exactly as today.",
-      "text": [
-        "A sold-out size was a dead end: a notify-me drawer and nothing else, even when the same tights existed in three other colours in that size. The first design redesigned the drawer. In review it shrank to one quiet row under the sizes, shown only when a sold-out size is tapped, which is also the exposure point."
-      ],
-      "media": {
-        "type": "image",
-        "image": "file:03-soldout-row-mobile@3x.png"
-      }
-    },
-    {
-      "_type": "chapter",
-      "_key": "v2-test-similar",
-      "title": "One similar product, in your size",
-      "layout": "narrow",
-      "side": "left",
-      "caption": "Figma, ships state. One size-matched card with \"Lägg till S\", reusing the card that won the bundle test. Hand-picked map before any recommendation engine.",
-      "text": [
-        "The same dead end, second answer: when the size is gone in every colour, show one product that has it. Three cards became one. The card is the one that already won a bundle test, and the mapping is hand-picked, so the test measures the idea and not a recommendation engine."
-      ],
-      "media": {
-        "type": "image",
-        "image": "file:04-similar-product@3x.png"
-      }
-    },
-    {
-      "_type": "chapter",
-      "_key": "v2-test-kit",
-      "title": "Upgrade to the kit, in the cart",
-      "layout": "narrow",
-      "side": "right",
-      "caption": "Figma, variant with sizes picked. The missing pieces under the cart line with one swap button; six changes came out of an adversarial review. Primary metric: revenue per exposed user.",
-      "text": [
-        "Forty-seven discounted kits, and the saving only showed on the kit's own page. A shopper with one kit piece in the cart never learned that two more pieces made a kit and saved 248 SEK. The block sits under the matching line, the button is disabled until every size is picked, and one tap swaps the line for the kit."
-      ],
-      "media": {
-        "type": "image",
-        "image": "file:05-kit-upgrade-variant@3x.png"
-      }
+      "_type": "testSwitcher",
+      "_key": "v2-switcher",
+      "title": "The five tests, designed before a line was written",
+      "tests": [
+        {
+          "_key": "t-badge",
+          "label": "Bestseller badge",
+          "title": "Bestseller badge on the product list",
+          "status": "Live since 20 Oct · final read 3 Nov",
+          "text": [
+            "The product list had no signal for what sells. The badge reuses the slot the Archive badge already had in the card's top corner, so the grid never shifts, and follows the colour variant rather than the product family. Goal add to cart, target +5 %."
+          ],
+          "caption": "Figma, ships state: mobile card, laptop card, 2-col grid.",
+          "media": {
+            "type": "image",
+            "image": "file:01-badge-mobile-grid@3x.png"
+          }
+        },
+        {
+          "_key": "t-countdown",
+          "label": "Delivery promise",
+          "title": "One delivery promise, four states",
+          "status": "Ready · waiting on ops for the cut-off",
+          "text": [
+            "Nothing under the buy button said when an order would ship. One line answers it, and because every state was a component variant, the weekend, holiday and after-cut-off copy surfaced in review before anyone built it. Ready, waiting on ops to confirm the cut-off."
+          ],
+          "caption": "Figma, ships state. \"Beställ före 13:50 så skickas din order idag\" under the buy button; after cut-off, weekend and holiday copy as component variants. Cut-off time lives in Storyblok.",
+          "media": {
+            "type": "image",
+            "image": "file:02-countdown-mobile@3x.png"
+          }
+        },
+        {
+          "_key": "t-soldout",
+          "label": "Sold-out row",
+          "title": "A row instead of a dead end",
+          "status": "Designed · exposes on a sold-out tap",
+          "text": [
+            "A sold-out size was a dead end: a notify-me drawer and nothing else, even when the same tights existed in three other colours in that size. The first design redesigned the drawer. In review it shrank to one quiet row under the sizes, shown only when a sold-out size is tapped, which is also the exposure point."
+          ],
+          "caption": "Figma, ships state. \"S är slut i Magenta · finns i\" plus the sibling colours that have the size in stock. The notify-me drawer stays exactly as today.",
+          "media": {
+            "type": "image",
+            "image": "file:03-soldout-row-mobile@3x.png"
+          }
+        },
+        {
+          "_key": "t-similar",
+          "label": "Similar product",
+          "title": "One similar product, in your size",
+          "status": "Designed · hand-picked map",
+          "text": [
+            "The same dead end, second answer: when the size is gone in every colour, show one product that has it. Three cards became one. The card is the one that already won a bundle test, and the mapping is hand-picked, so the test measures the idea and not a recommendation engine."
+          ],
+          "caption": "Figma, ships state. One size-matched card with \"Lägg till S\", reusing the card that won the bundle test. Hand-picked map before any recommendation engine.",
+          "media": {
+            "type": "image",
+            "image": "file:04-similar-product@3x.png"
+          }
+        },
+        {
+          "_key": "t-kit",
+          "label": "Kit upgrade",
+          "title": "Upgrade to the kit, in the cart",
+          "status": "Designed · revenue per exposed user",
+          "text": [
+            "Forty-seven discounted kits, and the saving only showed on the kit's own page. A shopper with one kit piece in the cart never learned that two more pieces made a kit and saved 248 SEK. The block sits under the matching line, the button is disabled until every size is picked, and one tap swaps the line for the kit."
+          ],
+          "caption": "Figma, variant with sizes picked. The missing pieces under the cart line with one swap button; six changes came out of an adversarial review. Primary metric: revenue per exposed user.",
+          "media": {
+            "type": "image",
+            "image": "file:05-kit-upgrade-variant@3x.png"
+          }
+        }
+      ]
     }
   ]
 }
