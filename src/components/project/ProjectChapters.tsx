@@ -143,7 +143,7 @@ function ChapterSection({ chapter, index, hidden }: { chapter: Chapter; index: n
 
   if (chapter.layout === "full") {
     return (
-      <section className="grid-site px-margin py-10 desktop:py-20" aria-label={title}>
+      <section className="grid-site px-margin py-6 desktop:py-12" aria-label={title}>
         {/* Phone: media, caption, title, text. Laptop: display title, media, text + caption. */}
         <h2 className="order-3 desktop:order-none col-span-4 desktop:col-start-1 desktop:col-end-10 text-h3 desktop:text-display text-primary mt-4 desktop:mt-0 desktop:mb-10">
           {title}
@@ -164,7 +164,7 @@ function ChapterSection({ chapter, index, hidden }: { chapter: Chapter; index: n
   const place = placement(chapter);
   return (
     <section
-      className="grid-site px-margin items-center py-10 desktop:min-h-[min(860px,100dvh)] desktop:py-20"
+      className="grid-site px-margin items-center py-6 desktop:min-h-[min(680px,100dvh)] desktop:py-12"
       aria-label={title}
     >
       <div className={`col-span-4 ${place.media}`}>
@@ -205,7 +205,7 @@ export default function ProjectChapters({
   return (
     <div ref={galleryRef} data-project-gallery className="pb-10">
       {/* Hero */}
-      <section className="grid-site px-margin pt-2 desktop:pt-6 desktop:min-h-[calc(100dvh-var(--header-height))]">
+      <section className="grid-site px-margin pt-2 pb-6 desktop:pt-6 desktop:pb-12">
         <div
           data-landing-slot
           className={`col-span-4 self-start desktop:col-start-7 desktop:col-end-13 desktop:row-start-1${mediaGate}`}
@@ -273,7 +273,7 @@ export default function ProjectChapters({
         {/* Next project */}
         {nextProject && onNavigateNext && nextProject.slug?.current && (
           <section
-            className="grid-site px-margin pt-10 pb-24 desktop:min-h-[calc(100dvh-var(--header-height))] desktop:pt-6"
+            className="grid-site px-margin pt-6 pb-24 desktop:min-h-[calc(100dvh-var(--header-height))] desktop:pt-12"
             aria-label="Next project"
           >
             <div className="col-span-4 desktop:col-start-1 desktop:col-end-6 desktop:row-start-1 desktop:pt-14">
