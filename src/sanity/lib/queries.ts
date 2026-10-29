@@ -12,6 +12,7 @@ const PROJECT_FIELDS = `
   sitePassword,
   caseStudy->{ _id, slug },
   coverMedia,
+  heroLayout,
   gallery[]{
     ...,
     _type == "galleryImage" => {
@@ -104,6 +105,8 @@ export const PROJECTS_QUERY = defineQuery(`
     slug,
     shortDescription,
     coverMedia,
+    homeLayout,
+    homeTextAlign,
     ${NEXT_PROJECT_MEDIA}
   }
 `);
@@ -115,8 +118,8 @@ export const PROJECT_BY_SLUG_QUERY = defineQuery(`
   *[_type == "project" && slug.current == $slug][0] {
     ${PROJECT_FIELDS},
     "nextProject": coalesce(
-      *[_type == "project" && _id != ^._id && order > ^.order] | order(order asc) [0] { title, slug, ${NEXT_PROJECT_MEDIA} },
-      *[_type == "project" && _id != ^._id] | order(order asc) [0] { title, slug, ${NEXT_PROJECT_MEDIA} }
+      *[_type == "project" && _id != ^._id && order > ^.order] | order(order asc) [0] { title, slug, heroLayout, ${NEXT_PROJECT_MEDIA} },
+      *[_type == "project" && _id != ^._id] | order(order asc) [0] { title, slug, heroLayout, ${NEXT_PROJECT_MEDIA} }
     ),
     "prevProject": coalesce(
       *[_type == "project" && _id != ^._id && order < ^.order] | order(order desc) [0] { title, slug },
