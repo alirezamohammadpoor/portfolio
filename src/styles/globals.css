@@ -160,6 +160,22 @@
   html[data-intro="playing"] .intro-nav {
     opacity: 0;
   }
+  /* Belt and braces: if the intro never reports "done" (a script error, a
+     killed tween), the page shows itself after 5 s anyway. */
+  @keyframes intro-fallback {
+    to {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+  html[data-intro="pending"] main,
+  html[data-intro="playing"] main,
+  html[data-intro="pending"] .intro-nav,
+  html[data-intro="playing"] .intro-nav,
+  html[data-intro="pending"] .intro-name-slot,
+  html[data-intro="playing"] .intro-name-slot {
+    animation: intro-fallback 0s 5s forwards;
+  }
 
   .parastoo-font {
     font-family: var(--font-parastoo), serif;

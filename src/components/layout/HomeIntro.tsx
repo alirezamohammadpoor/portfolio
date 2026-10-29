@@ -9,6 +9,7 @@ import { ENGLISH_NAME, PERSIAN_CHARS, PERSIAN_NAME } from "@/lib/name";
 
 const SCRAMBLE = 0.6;
 const HOLD = 0.3;
+const BASE_CLASS = "intro-name invisible text-primary will-change-transform";
 
 interface HomeIntroProps {
   /** The header's name span: the intro name shrinks onto its rect. */
@@ -24,10 +25,20 @@ interface HomeIntroProps {
 export default function HomeIntro({ targetRef }: HomeIntroProps) {
   const nameRef = useRef<HTMLSpanElement>(null);
 
+  // Resumable: React strict mode (dev) runs the effect, cleans up, runs it
+  // again. The cleanup kills the move tween, the context reverts the
+  // timeline, and the state goes back to "pending" so the second run plays
+  // the intro from the start instead of finding it "playing" and bailing,
+  // which left the page blank.
   useGSAP(() => {
     const name = nameRef.current;
-    if (!name || getIntroState() !== "pending") return;
+    if (!name || getIntroState() === "done") return;
     setIntroState("playing");
+    name.className = BASE_CLASS;
+    name.removeAttribute("dir");
+    name.removeAttribute("lang");
+    name.textContent = ENGLISH_NAME;
+    let move: gsap.core.Tween | null = null;
 
     const tl = gsap.timeline();
     tl.fromTo(
@@ -61,7 +72,7 @@ export default function HomeIntro({ targetRef }: HomeIntroProps) {
       }
       const from = name.getBoundingClientRect();
       const to = target.getBoundingClientRect();
-      gsap.to(name, {
+      move = gsap.to(name, {
         x: to.left - from.left,
         y: to.top - from.top,
         scale: to.width / from.width,
@@ -71,6 +82,11 @@ export default function HomeIntro({ targetRef }: HomeIntroProps) {
         onComplete: () => setIntroState("done"),
       });
     }, `+=${HOLD}`);
+
+    return () => {
+      move?.kill();
+      if (getIntroState() === "playing") setIntroState("pending");
+    };
   }, { scope: nameRef });
 
   return (
@@ -80,7 +96,7 @@ export default function HomeIntro({ targetRef }: HomeIntroProps) {
     >
       <span
         ref={nameRef}
-        className="intro-name invisible text-primary will-change-transform"
+        className={BASE_CLASS}
         style={{ fontSize: "clamp(1.5rem, 7.5vw, var(--text-display))" }}
       >
         {ENGLISH_NAME}
