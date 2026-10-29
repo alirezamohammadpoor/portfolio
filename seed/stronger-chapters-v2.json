@@ -89,10 +89,11 @@
           "text": [
             "The product list had no signal for what sells. The badge reuses the slot the Archive badge already had in the card's top corner, so the grid never shifts, and follows the colour variant rather than the product family."
           ],
-          "caption": "Figma, ships state: mobile card, laptop card, 2-col grid.",
+          "caption": "Production, same session: the list as shipped, then the variant with \"Bästsäljare\" on the cards. Under reduced motion the first frame stays.",
           "media": {
-            "type": "image",
-            "image": "file:01-badge-mobile-grid@3x.png"
+            "type": "video",
+            "video": "file:10-mobile-plp-badge-390.mp4",
+            "poster": "file:10-mobile-plp-badge-390-poster.jpg"
           },
           "hypothesis": "A bestseller badge is proof of trust, especially for someone buying their first tights. More clicks on the badged cards would lead to more adds to cart and a higher conversion, at the cost of stealing clicks from the other cards. A trade-off I was prepared to pay.",
           "metric": "Add to cart rate, target +5 % relative. PLP → PDP click-through as the leading indicator; purchase and revenue guarded.",

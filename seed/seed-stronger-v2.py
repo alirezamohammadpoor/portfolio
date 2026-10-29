@@ -64,24 +64,36 @@ def query(groq, params=None):
     return call("GET", f"{API}/data/query/{DATASET}?{q}")["result"]
 
 
-def upload_image(filename):
-    path = os.path.join(IMG_DIR, filename)
+MEDIA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stronger-media")
+CONTENT_TYPES = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".mp4": "video/mp4"}
+
+
+def upload_asset(filename, kind="image"):
+    """Upload seed/stronger-figma/<png> or seed/stronger-media/<file>, reusing an existing asset by sha1."""
+    folder = IMG_DIR if kind == "image" and os.path.exists(os.path.join(IMG_DIR, filename)) else MEDIA_DIR
+    path = os.path.join(folder, filename)
     with open(path, "rb") as fh:
         blob = fh.read()
     sha1 = hashlib.sha1(blob).hexdigest()
-    existing = query('*[_type=="sanity.imageAsset" && sha1hash==$sha][0]._id', {"sha": sha1})
+    doc_type = "sanity.imageAsset" if kind == "image" else "sanity.fileAsset"
+    existing = query(f'*[_type=="{doc_type}" && sha1hash==$sha][0]._id', {"sha": sha1})
     if existing:
         print(f"  {filename}: already uploaded as {existing}")
         return existing
+    endpoint = "images" if kind == "image" else "files"
     res = call(
         "POST",
-        f"{API}/assets/images/{DATASET}?filename={urllib.parse.quote(filename)}",
+        f"{API}/assets/{endpoint}/{DATASET}?filename={urllib.parse.quote(filename)}",
         blob,
-        content_type="image/png",
+        content_type=CONTENT_TYPES.get(os.path.splitext(filename)[1].lower(), "application/octet-stream"),
     )
     asset_id = res["document"]["_id"]
     print(f"  {filename}: uploaded as {asset_id}")
     return asset_id
+
+
+def upload_image(filename):
+    return upload_asset(filename, "image")
 
 
 def blocks(paragraphs, key):
@@ -112,7 +124,16 @@ def main():
             if ref.startswith("file:"):
                 ref = "image-DRYRUN-png" if dry else upload_image(ref[len("file:"):])
             return {"type": "image", "image": {"_type": "image", "asset": {"_type": "reference", "_ref": ref}}}
-        return {"type": "video", "video": {"_type": "file", "asset": {"_type": "reference", "_ref": media["video"]}}}
+        ref = media["video"]
+        if ref.startswith("file:"):
+            ref = "file-DRYRUN-mp4" if dry else upload_asset(ref[len("file:"):], "file")
+        doc = {"type": "video", "video": {"_type": "file", "asset": {"_type": "reference", "_ref": ref}}}
+        poster = media.get("poster")
+        if poster:
+            if poster.startswith("file:"):
+                poster = "image-DRYRUN-jpg" if dry else upload_asset(poster[len("file:"):], "image")
+            doc["poster"] = {"_type": "image", "asset": {"_type": "reference", "_ref": poster}}
+        return doc
 
     chapters = []
     for ch in spec["chapters"]:
