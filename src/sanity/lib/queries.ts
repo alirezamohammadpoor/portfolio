@@ -107,6 +107,7 @@ export const PROJECTS_QUERY = defineQuery(`
     coverMedia,
     homeLayout,
     homeTextAlign,
+    homeBackdrop,
     ${NEXT_PROJECT_MEDIA}
   }
 `);

@@ -39,21 +39,25 @@ interface Preset {
 }
 
 type TextAlign = "top" | "middle" | "bottom";
-type LayoutName = "wide-left" | "wide-right" | "centre" | "full" | "tall-left" | "small-right";
+type LayoutName = "wide-left" | "wide-right" | "centre" | "full" | "narrow-left" | "small-right";
 
-// Covers are flush exports: laptop recordings at 16:10, phone recordings at
-// 4:5 (the tall preset). Both cells are pinned to row 1 of their grid: with auto placement a label
-// whose columns start before the media's would drop to a second row.
+// Covers are flush 16:10 exports and every box keeps that ratio (Ali, 10-29:
+// "original size, fit to the columns"); only the column span changes. Both
+// cells are pinned to row 1 of their grid: with auto placement a label whose
+// columns start before the media's would drop to a second row. "full" is the
+// image-behind row from the Figma backdrop study: the cover sits smaller on
+// a campaign still that spans the whole row.
+const RATIO = "aspect-[16/10]";
 const PRESETS: Record<LayoutName, Preset> = {
-  "wide-left": { media: "desktop:col-start-1 desktop:col-end-9", label: "desktop:col-start-10 desktop:col-end-13", aspect: "aspect-[16/10]", align: "bottom" },
-  "wide-right": { media: "desktop:col-start-6 desktop:col-end-13", label: "desktop:col-start-1 desktop:col-end-5", aspect: "aspect-[16/10]", align: "top" },
-  centre: { media: "desktop:col-start-3 desktop:col-end-9", label: "desktop:col-start-10 desktop:col-end-13", aspect: "aspect-[16/10]", align: "bottom" },
-  full: { media: "desktop:col-start-1 desktop:col-end-13", label: "", aspect: "aspect-[16/10]", align: "bottom", under: true },
-  "tall-left": { media: "desktop:col-start-1 desktop:col-end-5", label: "desktop:col-start-6 desktop:col-end-10", aspect: "aspect-[16/10] desktop:aspect-[4/5]", align: "middle" },
-  "small-right": { media: "desktop:col-start-8 desktop:col-end-13", label: "desktop:col-start-1 desktop:col-end-4", aspect: "aspect-[16/10]", align: "bottom" },
+  "wide-left": { media: "desktop:col-start-1 desktop:col-end-9", label: "desktop:col-start-10 desktop:col-end-13", aspect: RATIO, align: "bottom" },
+  "wide-right": { media: "desktop:col-start-6 desktop:col-end-13", label: "desktop:col-start-1 desktop:col-end-5", aspect: RATIO, align: "top" },
+  centre: { media: "desktop:col-start-3 desktop:col-end-9", label: "desktop:col-start-10 desktop:col-end-13", aspect: RATIO, align: "bottom" },
+  full: { media: "desktop:col-start-1 desktop:col-end-13", label: "", aspect: RATIO, align: "bottom", under: true },
+  "narrow-left": { media: "desktop:col-start-1 desktop:col-end-6", label: "desktop:col-start-7 desktop:col-end-11", aspect: RATIO, align: "middle" },
+  "small-right": { media: "desktop:col-start-8 desktop:col-end-13", label: "desktop:col-start-1 desktop:col-end-4", aspect: RATIO, align: "bottom" },
 };
 // Rows without a layout in Sanity take the next shape in this cycle.
-const CYCLE: LayoutName[] = ["wide-left", "wide-right", "centre", "full", "tall-left", "small-right"];
+const CYCLE: LayoutName[] = ["wide-left", "wide-right", "centre", "full", "narrow-left", "small-right"];
 const ALIGN: Record<TextAlign, string> = {
   top: "desktop:self-start",
   middle: "desktop:self-center",
@@ -149,6 +153,7 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
           const preset = PRESETS[layout];
           const align = isAlign(project.homeTextAlign) ? project.homeTextAlign : preset.align;
           const href = `/project/${project.slug?.current}`;
+          const backdrop = project.homeBackdrop?.asset ? project.homeBackdrop : null;
           const label = (
             <div
               data-reveal
@@ -162,15 +167,28 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
           );
           return (
             <article key={project._id} data-row className="desktop:grid desktop:grid-cols-12 desktop:gap-4">
-              <Link
-                href={href}
-                aria-label={`View ${project.title ?? "project"}`}
-                onClick={(e) => handleClick(e, project)}
-                data-reveal
-                className={`block desktop:row-start-1 ${preset.media}`}
-              >
-                <CoverMedia project={project} aspect={preset.aspect} priority={index === 0} />
-              </Link>
+              {backdrop ? (
+                <Backdrop backdrop={backdrop} className={`desktop:row-start-1 ${preset.media}`} wide={preset.under}>
+                  <Link
+                    href={href}
+                    aria-label={`View ${project.title ?? "project"}`}
+                    onClick={(e) => handleClick(e, project)}
+                    className={`block ${preset.under ? "w-[88%] desktop:w-[66%]" : "w-[84%]"}`}
+                  >
+                    <CoverMedia project={project} aspect={preset.aspect} priority={index === 0} />
+                  </Link>
+                </Backdrop>
+              ) : (
+                <Link
+                  href={href}
+                  aria-label={`View ${project.title ?? "project"}`}
+                  onClick={(e) => handleClick(e, project)}
+                  data-reveal
+                  className={`block desktop:row-start-1 ${preset.under ? "desktop:col-start-2 desktop:col-end-12" : preset.media}`}
+                >
+                  <CoverMedia project={project} aspect={preset.aspect} priority={index === 0} />
+                </Link>
+              )}
               {label}
               {preset.under && (
                 <p data-reveal className="mt-2 text-body text-primary desktop:col-start-5 desktop:col-end-10 desktop:row-start-2 desktop:mt-6 desktop:text-lead">
@@ -205,6 +223,34 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
           <li className="border-t border-tertiary" />
         </ul>
       </section>
+    </div>
+  );
+}
+
+/**
+ * Image behind (Figma backdrop study): a campaign still from Sanity spans
+ * the media cell at reduced opacity and the cover sits centred on it, a bit
+ * smaller. The backdrop lives on the page, never inside the recording. Full
+ * width rows give the still the whole row and the cover two thirds of it.
+ */
+function Backdrop({
+  backdrop,
+  className,
+  wide,
+  children,
+}: {
+  backdrop: NonNullable<Project["homeBackdrop"]>;
+  className: string;
+  wide?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      data-reveal
+      className={`relative flex items-center justify-center overflow-hidden ${wide ? "py-8 desktop:py-20" : "py-6 desktop:py-10"} ${className}`}
+    >
+      <Image src={imageUrl(backdrop, 2000)} alt="" fill className="object-cover opacity-60" sizes={wide ? "100vw" : "(min-width: 75rem) 66vw, 100vw"} />
+      <div className="relative flex w-full justify-center">{children}</div>
     </div>
   );
 }
