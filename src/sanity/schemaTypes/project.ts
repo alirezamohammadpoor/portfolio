@@ -214,7 +214,7 @@ export const project = defineType({
     defineField({
       name: "coverMedia",
       title: "Cover Media",
-      description: "Hero image or video shown on the homepage card",
+      description: "Cover on the home and the first frame of the morph. Export flush: laptop recordings 16:10 (1920×1200), phone recordings 4:5 (1080×1350), no bars.",
       type: "object",
       fields: [
         defineField({
@@ -254,7 +254,7 @@ export const project = defineType({
           { title: "Wide media right, text on the left", value: "wide-right" },
           { title: "Media centred, text on the right", value: "centre" },
           { title: "Full bleed media, text under it", value: "full" },
-          { title: "Tall media left, text beside it", value: "tall-left" },
+          { title: "Tall media left, text beside it (phone recordings, 4:5)", value: "tall-left" },
           { title: "Small media right, text on the left", value: "small-right" },
         ],
       },

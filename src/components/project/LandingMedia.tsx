@@ -22,8 +22,8 @@ interface LandingMediaProps {
 
 /**
  * The hero's landing media on the chapter page: the project's first gallery
- * item in a 4:3 box, the same box the gallery page renders as item 1, so the
- * clone morph from the home card (and the in-place hand-off from the previous
+ * item in a 16:10 box, the ratio of the flush laptop covers on the home, so
+ * the clone morph from the home card (and the in-place hand-off from the previous
  * project's preview, which carries its live <video> over, see adoptVideo.ts)
  * lands here unchanged.
  */
@@ -75,7 +75,7 @@ export default function LandingMedia({ item, title, slotRef, onReady, sizes = "(
   const isImage = item?._type === "galleryImage";
 
   return (
-    <div ref={slotRef} className="relative w-full overflow-hidden bg-black" style={{ aspectRatio: 4 / 3 }}>
+    <div ref={slotRef} className="relative w-full overflow-hidden bg-tertiary" style={{ aspectRatio: 16 / 10 }}>
       {isImage && item.image?.asset && (
         <Image
           src={imageUrl(item.image, 1200)}

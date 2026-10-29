@@ -41,13 +41,14 @@ interface Preset {
 type TextAlign = "top" | "middle" | "bottom";
 type LayoutName = "wide-left" | "wide-right" | "centre" | "full" | "tall-left" | "small-right";
 
-// Both cells are pinned to row 1 of their grid: with auto placement a label
+// Covers are flush exports: laptop recordings at 16:10, phone recordings at
+// 4:5 (the tall preset). Both cells are pinned to row 1 of their grid: with auto placement a label
 // whose columns start before the media's would drop to a second row.
 const PRESETS: Record<LayoutName, Preset> = {
   "wide-left": { media: "desktop:col-start-1 desktop:col-end-9", label: "desktop:col-start-10 desktop:col-end-13", aspect: "aspect-[16/10]", align: "bottom" },
   "wide-right": { media: "desktop:col-start-6 desktop:col-end-13", label: "desktop:col-start-1 desktop:col-end-5", aspect: "aspect-[16/10]", align: "top" },
-  centre: { media: "desktop:col-start-3 desktop:col-end-9", label: "desktop:col-start-10 desktop:col-end-13", aspect: "aspect-[4/3]", align: "bottom" },
-  full: { media: "desktop:col-start-1 desktop:col-end-13", label: "", aspect: "aspect-[16/10] desktop:aspect-[2/1]", align: "bottom", under: true },
+  centre: { media: "desktop:col-start-3 desktop:col-end-9", label: "desktop:col-start-10 desktop:col-end-13", aspect: "aspect-[16/10]", align: "bottom" },
+  full: { media: "desktop:col-start-1 desktop:col-end-13", label: "", aspect: "aspect-[16/10]", align: "bottom", under: true },
   "tall-left": { media: "desktop:col-start-1 desktop:col-end-5", label: "desktop:col-start-6 desktop:col-end-10", aspect: "aspect-[16/10] desktop:aspect-[4/5]", align: "middle" },
   "small-right": { media: "desktop:col-start-8 desktop:col-end-13", label: "desktop:col-start-1 desktop:col-end-4", aspect: "aspect-[16/10]", align: "bottom" },
 };
