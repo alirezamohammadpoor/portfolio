@@ -36,6 +36,37 @@ const chapterTextField = defineField({
   ],
 });
 
+const phoneSlotFields = [
+  defineField({
+    name: "type",
+    title: "Type",
+    type: "string",
+    options: { list: ["image", "video"], layout: "radio", direction: "horizontal" },
+    initialValue: "video",
+    validation: (rule) => rule.required(),
+  }),
+  defineField({
+    name: "image",
+    title: "Still",
+    type: "image",
+    options: { hotspot: true },
+    hidden: ({ parent }) => parent?.type !== "image",
+  }),
+  defineField({
+    name: "video",
+    title: "Clip",
+    type: "file",
+    options: { accept: "video/*" },
+    hidden: ({ parent }) => parent?.type !== "video",
+  }),
+  defineField({
+    name: "poster",
+    title: "Poster",
+    type: "image",
+    hidden: ({ parent }) => parent?.type !== "video",
+  }),
+];
+
 const chapterMediaField = defineField({
   name: "media",
   title: "Media",
@@ -45,9 +76,48 @@ const chapterMediaField = defineField({
       name: "type",
       title: "Type",
       type: "string",
-      options: { list: ["image", "video"], layout: "radio" },
+      options: {
+        list: [
+          { title: "Image", value: "image" },
+          { title: "Video", value: "video" },
+          { title: "Phones on a panel (one to three screens)", value: "phones" },
+        ],
+        layout: "radio",
+      },
       initialValue: "video",
       validation: (rule) => rule.required(),
+    }),
+    defineField({
+      name: "phones",
+      title: "Screens",
+      description: "One to three phone screens side by side, each a still or a clip. Record at the phone's own ratio (390×844 or 1080×2340), flush, no device frame.",
+      type: "array",
+      of: [{ type: "object", name: "phoneSlot", fields: phoneSlotFields, preview: { select: { type: "type" }, prepare: ({ type }) => ({ title: type === "image" ? "Still" : "Clip" }) } }],
+      validation: (rule) => rule.max(3),
+      hidden: ({ parent }) => parent?.type !== "phones",
+    }),
+    defineField({
+      name: "panel",
+      title: "Panel",
+      type: "string",
+      options: {
+        list: [
+          { title: "Black", value: "black" },
+          { title: "Image behind", value: "image" },
+        ],
+        layout: "radio",
+        direction: "horizontal",
+      },
+      initialValue: "black",
+      hidden: ({ parent }) => parent?.type !== "phones",
+    }),
+    defineField({
+      name: "panelImage",
+      title: "Panel image",
+      description: "Shown at reduced opacity behind the screens.",
+      type: "image",
+      options: { hotspot: true },
+      hidden: ({ parent }) => parent?.type !== "phones" || parent?.panel !== "image",
     }),
     defineField({
       name: "image",
