@@ -16,3 +16,9 @@ Uploads the Figma exports in seed/stronger-figma/ as image assets (idempotent, m
 reads the published Stronger document and writes drafts.project-stronger with the eight chapters
 from seed/stronger-chapters-v2.json. `--dry-run` prints the document without a token.
 Then read the draft in the Studio and Publish.
+
+## v4 (29 Oct, feat/test-story)
+
+- `abTest` gained `hypothesis`, `metric`, `result`, `decision`; the badge test carries the 29 Oct GrowthBook snapshot (64,222 users).
+- `media.video` and `media.poster` accept `file:<name>` and upload from `seed/stronger-media/` (mp4, jpg) the same way images upload from `seed/stronger-figma/`.
+- `stronger-media/10-mobile-plp-badge-390.mp4` is the production badge capture cropped to the phone (780x1634, 0.6 MB, crop=778:1630:890:174 of the 2560x1920 master) with its first frame as poster.
