@@ -1,5 +1,5 @@
 import { draftMode } from "next/headers";
-import HomeGallery from "@/components/home/HomeGallery";
+import ScatterHome from "@/components/home/ScatterHome";
 import { getProjects, getProjectsDraft } from "@/sanity/lib/data";
 
 export default async function HomePage() {
@@ -11,7 +11,7 @@ export default async function HomePage() {
       <h1 className="sr-only">
         Ali Reza Mohammad Poor — Full-stack developer and creative technologist
       </h1>
-      <HomeGallery projects={projects} />
+      <ScatterHome projects={projects} />
     </>
   );
 }
