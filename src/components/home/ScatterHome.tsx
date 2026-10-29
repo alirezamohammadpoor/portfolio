@@ -106,7 +106,7 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
   );
 
   return (
-    <div ref={rootRef} className="px-4 pb-24 desktop:px-6 desktop:pb-40">
+    <div ref={rootRef} className="px-margin pb-24 desktop:pb-40">
       {/* Opening statement, cols 1-7 on the laptop. */}
       <section className="pt-16 desktop:grid desktop:grid-cols-12 desktop:gap-4 desktop:pt-32">
         <h2 className="text-h2 desktop:col-start-1 desktop:col-end-8 desktop:text-h1">
