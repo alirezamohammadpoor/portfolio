@@ -78,6 +78,15 @@ export default async function SiteLayout({
           <link rel="preconnect" href="https://cdn.sanity.io" />
           <link rel="dns-prefetch" href="https://i.scdn.co" />
           <JsonLd data={[personLd, websiteLd]} />
+          {/* Home intro gate, before hydration: a fresh load of the home
+              keeps the page content hidden until the name has landed in the
+              header (src/lib/intro.ts). Reduced motion skips the intro. */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html:
+                '(function(){try{if(location.pathname==="/"&&!matchMedia("(prefers-reduced-motion: reduce)").matches){document.documentElement.dataset.intro="pending"}}catch(e){}})()',
+            }}
+          />
         </head>
         <body className="font-sans">
           <GsapProvider>

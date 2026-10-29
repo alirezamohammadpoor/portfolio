@@ -135,6 +135,32 @@
     animation: gsap-fallback 0s 3s forwards;
   }
 
+  /* The name, in the header and in the home intro: a block with no line
+     box slack so the intro's FLIP onto the header slot scales exactly. */
+  .intro-name {
+    display: inline-block;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  /* While the intro plays the overlay name stands in for the header's and
+     the page content waits (opacity, so a child's visibility can't leak). */
+  html[data-intro="pending"] main,
+  html[data-intro="playing"] main {
+    opacity: 0;
+  }
+  html[data-intro="pending"] .intro-name-slot,
+  html[data-intro="playing"] .intro-name-slot {
+    visibility: hidden;
+  }
+  /* The nav arrives with the content, not under the overlay. */
+  .intro-nav {
+    transition: opacity var(--dur-ui) var(--ease-out);
+  }
+  html[data-intro="pending"] .intro-nav,
+  html[data-intro="playing"] .intro-nav {
+    opacity: 0;
+  }
+
   .parastoo-font {
     font-family: var(--font-parastoo), serif;
     font-size: 1.1em;
