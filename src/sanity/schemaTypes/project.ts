@@ -253,11 +253,19 @@ export const project = defineType({
           { title: "Wide media left, text on the right", value: "wide-left" },
           { title: "Wide media right, text on the left", value: "wide-right" },
           { title: "Media centred, text on the right", value: "centre" },
-          { title: "Full bleed media, text under it", value: "full" },
-          { title: "Tall media left, text beside it (phone recordings, 4:5)", value: "tall-left" },
+          { title: "Full width with the backdrop image behind, text under it", value: "full" },
+          { title: "Narrow media left, text beside it", value: "narrow-left" },
           { title: "Small media right, text on the left", value: "small-right" },
         ],
       },
+    }),
+    defineField({
+      name: "homeBackdrop",
+      title: "Home backdrop image",
+      description:
+        "Optional campaign still shown on the page behind the cover, at reduced opacity, with the cover set smaller on it (Figma backdrop study, image behind). Keep recordings clean; the backdrop lives here, not in the video.",
+      type: "image",
+      options: { hotspot: true },
     }),
     defineField({
       name: "homeTextAlign",
