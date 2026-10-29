@@ -73,7 +73,7 @@ export default async function SiteLayout({
 
   return (
     <ViewTransitions>
-      <html lang="en" className={`${parastoo.variable}`}>
+      <html lang="en" className={`${parastoo.variable}`} suppressHydrationWarning>
         <head>
           <link rel="preconnect" href="https://cdn.sanity.io" />
           <link rel="dns-prefetch" href="https://i.scdn.co" />
