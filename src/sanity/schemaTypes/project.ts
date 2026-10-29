@@ -242,6 +242,54 @@ export const project = defineType({
       ],
     }),
     defineField({
+      name: "homeLayout",
+      title: "Home layout",
+      description:
+        "Where this project's cover and text sit on the home canvas (laptop; phones stack everything full width). Leave empty to let the row take the next shape in the cycle.",
+      type: "string",
+      options: {
+        layout: "radio",
+        list: [
+          { title: "Wide media left, text on the right", value: "wide-left" },
+          { title: "Wide media right, text on the left", value: "wide-right" },
+          { title: "Media centred, text on the right", value: "centre" },
+          { title: "Full bleed media, text under it", value: "full" },
+          { title: "Tall media left, text beside it", value: "tall-left" },
+          { title: "Small media right, text on the left", value: "small-right" },
+        ],
+      },
+    }),
+    defineField({
+      name: "homeTextAlign",
+      title: "Home text position",
+      description: "Where the text hangs on the media's edge: top, middle or bottom. Not used by the full bleed layout.",
+      type: "string",
+      options: {
+        layout: "radio",
+        direction: "horizontal",
+        list: [
+          { title: "Top", value: "top" },
+          { title: "Middle", value: "middle" },
+          { title: "Bottom", value: "bottom" },
+        ],
+      },
+      hidden: ({ parent }) => parent?.homeLayout === "full",
+    }),
+    defineField({
+      name: "heroLayout",
+      title: "Project page opener",
+      description: "Which side the landing media takes on the project page. Leave empty to alternate per project.",
+      type: "string",
+      options: {
+        layout: "radio",
+        direction: "horizontal",
+        list: [
+          { title: "Media right, text left", value: "media-right" },
+          { title: "Media left, text right", value: "media-left" },
+        ],
+      },
+    }),
+    defineField({
       name: "gallery",
       title: "Gallery",
       description: "Mixed images and videos shown in the project page gallery. Drag to reorder.",

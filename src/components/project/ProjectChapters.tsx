@@ -76,7 +76,9 @@ const HERO_VARIANTS = {
   "media-right": { media: "desktop:col-start-5 desktop:col-end-13", text: "desktop:col-start-1 desktop:col-end-5" },
   "media-left": { media: "desktop:col-start-1 desktop:col-end-9", text: "desktop:col-start-9 desktop:col-end-13" },
 } as const;
-function heroVariant(slug: string): keyof typeof HERO_VARIANTS {
+type HeroVariant = keyof typeof HERO_VARIANTS;
+function heroVariant(slug: string, chosen?: string | null): HeroVariant {
+  if (chosen === "media-right" || chosen === "media-left") return chosen;
   let hash = 0;
   for (let i = 0; i < slug.length; i++) hash = (hash * 31 + slug.charCodeAt(i)) >>> 0;
   return hash % 2 === 0 ? "media-right" : "media-left";
@@ -320,7 +322,10 @@ export default function ProjectChapters({
   const mediaGate = hidden ? " opacity-0 pointer-events-none" : "";
   const journalSlug = project.caseStudy?.slug?.current;
 
-  const hero = HERO_VARIANTS[heroVariant(project.slug?.current ?? "")];
+  const hero = HERO_VARIANTS[heroVariant(project.slug?.current ?? "", project.heroLayout)];
+  // The next-project block takes the shape of the next page's hero, so the
+  // preview carried into the landing slot already sits where it will render.
+  const nextHero = HERO_VARIANTS[heroVariant(nextProject?.slug?.current ?? "", nextProject?.heroLayout)];
 
   return (
     <div ref={galleryRef} data-project-gallery className="pb-10">
@@ -409,9 +414,8 @@ export default function ProjectChapters({
             className="grid-site px-margin pt-6 pb-24 desktop:min-h-[calc(100dvh-var(--header-height))] desktop:pt-12"
             aria-label="Next project"
           >
-            <div className="col-span-4 desktop:col-start-1 desktop:col-end-6 desktop:row-start-1 desktop:pt-14">
-              <p className="text-sub text-secondary">Next project</p>
-              <h2 className="mt-2 text-h2 desktop:text-h1 text-primary">
+            <div className={`col-span-4 desktop:row-start-1 desktop:self-end ${nextHero.text}`}>
+              <h2 className="text-h2 desktop:text-h1 text-primary">
                 <a
                   href={`/project/${nextProject.slug.current}`}
                   className="link-underline"
@@ -425,12 +429,12 @@ export default function ProjectChapters({
                 </a>
               </h2>
             </div>
-            <div className="col-span-4 mt-4 desktop:mt-0 desktop:col-start-7 desktop:col-end-13 desktop:row-start-1">
+            <div className={`col-span-4 mt-4 desktop:mt-0 desktop:row-start-1 ${nextHero.media}`}>
               <NextProjectPreview
                 nextProject={nextProject}
                 previewRef={previewRef}
                 onNavigate={onNavigateNext}
-                sizes="(min-width: 75rem) 50vw, 100vw"
+                sizes="(min-width: 75rem) 66vw, 100vw"
                 labelHidden
               />
             </div>

@@ -206,6 +206,15 @@ export type Project = {
       _type: "file";
     };
   };
+  homeLayout?:
+    | "wide-left"
+    | "wide-right"
+    | "centre"
+    | "full"
+    | "tall-left"
+    | "small-right";
+  homeTextAlign?: "top" | "middle" | "bottom";
+  heroLayout?: "media-right" | "media-left";
   gallery?: Array<
     | {
         image?: {
@@ -680,7 +689,7 @@ export type ABOUT_QUERY_RESULT = {
 
 // Source: src/sanity/lib/queries.ts
 // Variable: PROJECTS_QUERY
-// Query: *[_type == "project"] | order(order asc) {    _id,    title,    slug,    shortDescription,    coverMedia,      "firstMedia": gallery[0]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  }  }
+// Query: *[_type == "project"] | order(order asc) {    _id,    title,    slug,    shortDescription,    coverMedia,    homeLayout,    homeTextAlign,      "firstMedia": gallery[0]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  }  }
 export type PROJECTS_QUERY_RESULT = Array<{
   _id: string;
   title: string | null;
@@ -701,6 +710,15 @@ export type PROJECTS_QUERY_RESULT = Array<{
       _type: "file";
     };
   } | null;
+  homeLayout:
+    | "centre"
+    | "full"
+    | "small-right"
+    | "tall-left"
+    | "wide-left"
+    | "wide-right"
+    | null;
+  homeTextAlign: "bottom" | "middle" | "top" | null;
   firstMedia:
     | {
         image: {
@@ -750,7 +768,7 @@ export type PROJECTS_QUERY_RESULT = Array<{
 
 // Source: src/sanity/lib/queries.ts
 // Variable: PROJECT_BY_SLUG_QUERY
-// Query: *[_type == "project" && slug.current == $slug][0] {      _id,  _updatedAt,  title,  slug,  shortDescription,  fullDescription,  techStack,  siteUrl,  sitePassword,  caseStudy->{ _id, slug },  coverMedia,  gallery[]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  },  chapters[]{    _key,    _type,    title,    _type == "chapter" => {      text,      caption,      layout,      side,      media {        type,        video,        poster,        image { ..., asset-> { ..., metadata { dimensions } } }      }    },    _type == "testSwitcher" => {      tests[]{        _key,        label,        title,        status,        text,        caption,        media {          type,          video,          poster,          image { ..., asset-> { ..., metadata { dimensions } } }        }      }    }  },  order,  seo { title, description, ogImage, noIndex },    "nextProject": coalesce(      *[_type == "project" && _id != ^._id && order > ^.order] | order(order asc) [0] { title, slug,   "firstMedia": gallery[0]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  } },      *[_type == "project" && _id != ^._id] | order(order asc) [0] { title, slug,   "firstMedia": gallery[0]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  } }    ),    "prevProject": coalesce(      *[_type == "project" && _id != ^._id && order < ^.order] | order(order desc) [0] { title, slug },      *[_type == "project" && _id != ^._id] | order(order desc) [0] { title, slug }    )  }
+// Query: *[_type == "project" && slug.current == $slug][0] {      _id,  _updatedAt,  title,  slug,  shortDescription,  fullDescription,  techStack,  siteUrl,  sitePassword,  caseStudy->{ _id, slug },  coverMedia,  heroLayout,  gallery[]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  },  chapters[]{    _key,    _type,    title,    _type == "chapter" => {      text,      caption,      layout,      side,      media {        type,        video,        poster,        image { ..., asset-> { ..., metadata { dimensions } } }      }    },    _type == "testSwitcher" => {      tests[]{        _key,        label,        title,        status,        text,        caption,        media {          type,          video,          poster,          image { ..., asset-> { ..., metadata { dimensions } } }        }      }    }  },  order,  seo { title, description, ogImage, noIndex },    "nextProject": coalesce(      *[_type == "project" && _id != ^._id && order > ^.order] | order(order asc) [0] { title, slug, heroLayout,   "firstMedia": gallery[0]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  } },      *[_type == "project" && _id != ^._id] | order(order asc) [0] { title, slug, heroLayout,   "firstMedia": gallery[0]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  } }    ),    "prevProject": coalesce(      *[_type == "project" && _id != ^._id && order < ^.order] | order(order desc) [0] { title, slug },      *[_type == "project" && _id != ^._id] | order(order desc) [0] { title, slug }    )  }
 export type PROJECT_BY_SLUG_QUERY_RESULT = {
   _id: string;
   _updatedAt: string;
@@ -836,6 +854,7 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
       _type: "file";
     };
   } | null;
+  heroLayout: "media-left" | "media-right" | null;
   gallery: Array<
     | {
         image: {
@@ -1045,6 +1064,7 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
   nextProject: {
     title: string | null;
     slug: Slug | null;
+    heroLayout: "media-left" | "media-right" | null;
     firstMedia:
       | {
           image: {
@@ -1398,8 +1418,8 @@ import "@sanity/client";
 declare module "@sanity/client" {
   interface SanityQueries {
     '\n  *[_type == "about"][0] {\n    heading,\n    bio,\n    portrait,\n    email,\n    linkedinUrl,\n    githubUrl\n  }\n': ABOUT_QUERY_RESULT;
-    '\n  *[_type == "project"] | order(order asc) {\n    _id,\n    title,\n    slug,\n    shortDescription,\n    coverMedia,\n    \n  "firstMedia": gallery[0]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  }\n\n  }\n': PROJECTS_QUERY_RESULT;
-    '\n  *[_type == "project" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  sitePassword,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  gallery[]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  },\n  chapters[]{\n    _key,\n    _type,\n    title,\n    _type == "chapter" => {\n      text,\n      caption,\n      layout,\n      side,\n      media {\n        type,\n        video,\n        poster,\n        image { ..., asset-> { ..., metadata { dimensions } } }\n      }\n    },\n    _type == "testSwitcher" => {\n      tests[]{\n        _key,\n        label,\n        title,\n        status,\n        text,\n        caption,\n        media {\n          type,\n          video,\n          poster,\n          image { ..., asset-> { ..., metadata { dimensions } } }\n        }\n      }\n    }\n  },\n  order,\n  seo { title, description, ogImage, noIndex }\n,\n    "nextProject": coalesce(\n      *[_type == "project" && _id != ^._id && order > ^.order] | order(order asc) [0] { title, slug, \n  "firstMedia": gallery[0]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  }\n },\n      *[_type == "project" && _id != ^._id] | order(order asc) [0] { title, slug, \n  "firstMedia": gallery[0]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  }\n }\n    ),\n    "prevProject": coalesce(\n      *[_type == "project" && _id != ^._id && order < ^.order] | order(order desc) [0] { title, slug },\n      *[_type == "project" && _id != ^._id] | order(order desc) [0] { title, slug }\n    )\n  }\n': PROJECT_BY_SLUG_QUERY_RESULT;
+    '\n  *[_type == "project"] | order(order asc) {\n    _id,\n    title,\n    slug,\n    shortDescription,\n    coverMedia,\n    homeLayout,\n    homeTextAlign,\n    \n  "firstMedia": gallery[0]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  }\n\n  }\n': PROJECTS_QUERY_RESULT;
+    '\n  *[_type == "project" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  sitePassword,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  heroLayout,\n  gallery[]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  },\n  chapters[]{\n    _key,\n    _type,\n    title,\n    _type == "chapter" => {\n      text,\n      caption,\n      layout,\n      side,\n      media {\n        type,\n        video,\n        poster,\n        image { ..., asset-> { ..., metadata { dimensions } } }\n      }\n    },\n    _type == "testSwitcher" => {\n      tests[]{\n        _key,\n        label,\n        title,\n        status,\n        text,\n        caption,\n        media {\n          type,\n          video,\n          poster,\n          image { ..., asset-> { ..., metadata { dimensions } } }\n        }\n      }\n    }\n  },\n  order,\n  seo { title, description, ogImage, noIndex }\n,\n    "nextProject": coalesce(\n      *[_type == "project" && _id != ^._id && order > ^.order] | order(order asc) [0] { title, slug, heroLayout, \n  "firstMedia": gallery[0]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  }\n },\n      *[_type == "project" && _id != ^._id] | order(order asc) [0] { title, slug, heroLayout, \n  "firstMedia": gallery[0]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  }\n }\n    ),\n    "prevProject": coalesce(\n      *[_type == "project" && _id != ^._id && order < ^.order] | order(order desc) [0] { title, slug },\n      *[_type == "project" && _id != ^._id] | order(order desc) [0] { title, slug }\n    )\n  }\n': PROJECT_BY_SLUG_QUERY_RESULT;
     '\n  *[_type == "journalPage"][0] { description }\n': JOURNAL_PAGE_QUERY_RESULT;
     '\n  *[_type == "journalPost"] | order(publishedAt desc) { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n }\n': JOURNAL_POSTS_QUERY_RESULT;
     '\n  *[_type == "journalPost" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n,\n    body,\n    "relatedPosts": *[_type == "journalPost" && _id != ^._id] | order(publishedAt desc) [0...3] { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n }\n  }\n': JOURNAL_POST_BY_SLUG_QUERY_RESULT;

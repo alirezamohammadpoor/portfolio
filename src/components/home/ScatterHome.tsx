@@ -21,28 +21,50 @@ type Project = PROJECTS_QUERY_RESULT[number];
  * Laptop: a 12-column grid, 16px gutters, 24px margins; every project is a
  * media block at its own width and column offset with its title hung on one
  * edge of the media. Phone: the same rows as a full-width stack, text under
- * the media. Six presets cycle; the morph to the project page starts from
- * whichever block was clicked.
+ * the media. The shape of a row comes from Sanity (homeLayout, homeTextAlign)
+ * and otherwise cycles through six presets; the morph to the project page
+ * starts from whichever block was clicked.
  */
 interface Preset {
   /** Tailwind classes for the media cell on the laptop grid. */
   media: string;
-  /** Tailwind classes for the label cell: columns and vertical anchor. */
+  /** Tailwind classes for the label cell's columns. */
   label: string;
   /** Aspect ratio of the media box. */
   aspect: string;
+  /** Where the text hangs on the media's edge unless Sanity says otherwise. */
+  align: TextAlign;
   /** Full-bleed rows put the label under the media instead of beside it. */
   under?: boolean;
 }
 
-const PRESETS: Preset[] = [
-  { media: "desktop:col-start-1 desktop:col-end-9", label: "desktop:col-start-10 desktop:col-end-13 desktop:self-end", aspect: "aspect-[16/10]" },
-  { media: "desktop:col-start-6 desktop:col-end-13", label: "desktop:col-start-1 desktop:col-end-5 desktop:self-start", aspect: "aspect-[16/10]" },
-  { media: "desktop:col-start-3 desktop:col-end-9", label: "desktop:col-start-10 desktop:col-end-13 desktop:self-start desktop:pt-16", aspect: "aspect-[4/3]" },
-  { media: "desktop:col-start-1 desktop:col-end-13", label: "", aspect: "aspect-[16/10] desktop:aspect-[2/1]", under: true },
-  { media: "desktop:col-start-1 desktop:col-end-5", label: "desktop:col-start-6 desktop:col-end-10 desktop:self-center", aspect: "aspect-[16/10] desktop:aspect-[4/5]" },
-  { media: "desktop:col-start-8 desktop:col-end-13", label: "desktop:col-start-1 desktop:col-end-4 desktop:self-end", aspect: "aspect-[16/10]" },
-];
+type TextAlign = "top" | "middle" | "bottom";
+type LayoutName = "wide-left" | "wide-right" | "centre" | "full" | "tall-left" | "small-right";
+
+// Both cells are pinned to row 1 of their grid: with auto placement a label
+// whose columns start before the media's would drop to a second row.
+const PRESETS: Record<LayoutName, Preset> = {
+  "wide-left": { media: "desktop:col-start-1 desktop:col-end-9", label: "desktop:col-start-10 desktop:col-end-13", aspect: "aspect-[16/10]", align: "bottom" },
+  "wide-right": { media: "desktop:col-start-6 desktop:col-end-13", label: "desktop:col-start-1 desktop:col-end-5", aspect: "aspect-[16/10]", align: "top" },
+  centre: { media: "desktop:col-start-3 desktop:col-end-9", label: "desktop:col-start-10 desktop:col-end-13", aspect: "aspect-[4/3]", align: "bottom" },
+  full: { media: "desktop:col-start-1 desktop:col-end-13", label: "", aspect: "aspect-[16/10] desktop:aspect-[2/1]", align: "bottom", under: true },
+  "tall-left": { media: "desktop:col-start-1 desktop:col-end-5", label: "desktop:col-start-6 desktop:col-end-10", aspect: "aspect-[16/10] desktop:aspect-[4/5]", align: "middle" },
+  "small-right": { media: "desktop:col-start-8 desktop:col-end-13", label: "desktop:col-start-1 desktop:col-end-4", aspect: "aspect-[16/10]", align: "bottom" },
+};
+// Rows without a layout in Sanity take the next shape in this cycle.
+const CYCLE: LayoutName[] = ["wide-left", "wide-right", "centre", "full", "tall-left", "small-right"];
+const ALIGN: Record<TextAlign, string> = {
+  top: "desktop:self-start",
+  middle: "desktop:self-center",
+  bottom: "desktop:self-end",
+};
+
+function isLayout(value: string | null | undefined): value is LayoutName {
+  return typeof value === "string" && value in PRESETS;
+}
+function isAlign(value: string | null | undefined): value is TextAlign {
+  return value === "top" || value === "middle" || value === "bottom";
+}
 
 interface ScatterHomeProps {
   projects: PROJECTS_QUERY_RESULT;
@@ -53,10 +75,15 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
   const router = useRouter();
   const { startTransition } = usePageTransition();
 
-  // Rows reveal once as they scroll in: media and label rise together.
+  // Rows reveal once as they scroll in: media and label rise together. Once
+  // only per visit: the home stays mounted behind a project page and its
+  // effects run again when it is shown (Activity), which must not hide the
+  // rows a second time with their scroll positions measured while hidden.
+  const playedRef = useRef(false);
   useGSAP(
     () => {
-      if (prefersReducedMotion()) return;
+      if (prefersReducedMotion() || playedRef.current) return;
+      playedRef.current = true;
       const rows = gsap.utils.toArray<HTMLElement>("[data-row]");
       rows.forEach((row) => {
         gsap.from(row.querySelectorAll("[data-reveal]"), {
@@ -108,27 +135,27 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
   return (
     <div ref={rootRef} className="px-margin pb-24 desktop:pb-40">
       {/* Opening statement, cols 1-7 on the laptop. */}
-      <section className="pt-16 desktop:grid desktop:grid-cols-12 desktop:gap-4 desktop:pt-32">
+      <section className="pt-8 desktop:grid desktop:grid-cols-12 desktop:gap-4 desktop:pt-12">
         <h2 className="text-h2 desktop:col-start-1 desktop:col-end-8 desktop:text-h1">
           Frontend developer at the intersection of product and design. Currently at TRY, Stockholm.
         </h2>
       </section>
 
       {/* The canvas: one row per project. */}
-      <div className="mt-16 flex flex-col gap-16 desktop:mt-40 desktop:gap-40">
+      <div className="mt-10 flex flex-col gap-16 desktop:mt-16 desktop:gap-40">
         {projects.map((project, index) => {
-          const preset = PRESETS[index % PRESETS.length];
+          const layout = isLayout(project.homeLayout) ? project.homeLayout : CYCLE[index % CYCLE.length];
+          const preset = PRESETS[layout];
+          const align = isAlign(project.homeTextAlign) ? project.homeTextAlign : preset.align;
           const href = `/project/${project.slug?.current}`;
           const label = (
             <div
               data-reveal
-              className={`mt-4 desktop:mt-0 ${preset.under ? "desktop:col-start-1 desktop:col-end-4 desktop:mt-6" : preset.label}`}
+              className={`mt-4 desktop:mt-0 ${preset.under ? "desktop:col-start-1 desktop:col-end-4 desktop:row-start-2 desktop:mt-6" : `desktop:row-start-1 ${preset.label} ${ALIGN[align]}`}`}
             >
               <Link href={href} onClick={(e) => handleClick(e, project)} className="block">
                 <h3 className="text-h3">{project.title}</h3>
-                {!preset.under && (
-                  <p className="mt-2 text-body text-secondary">{project.shortDescription}</p>
-                )}
+                {!preset.under && <p className="mt-2 text-body text-primary">{project.shortDescription}</p>}
               </Link>
             </div>
           );
@@ -139,13 +166,13 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
                 aria-label={`View ${project.title ?? "project"}`}
                 onClick={(e) => handleClick(e, project)}
                 data-reveal
-                className={`block ${preset.media}`}
+                className={`block desktop:row-start-1 ${preset.media}`}
               >
                 <CoverMedia project={project} aspect={preset.aspect} priority={index === 0} />
               </Link>
               {label}
               {preset.under && (
-                <p data-reveal className="mt-2 text-body text-secondary desktop:col-start-5 desktop:col-end-10 desktop:mt-6 desktop:text-lead">
+                <p data-reveal className="mt-2 text-body text-primary desktop:col-start-5 desktop:col-end-10 desktop:row-start-2 desktop:mt-6 desktop:text-lead">
                   {project.shortDescription}
                 </p>
               )}
@@ -165,7 +192,7 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
                 className="flex items-baseline justify-between py-4 desktop:grid desktop:grid-cols-12 desktop:gap-4"
               >
                 <span className="text-body desktop:col-start-1 desktop:col-end-5 desktop:text-h3">{project.title}</span>
-                <span className="hidden text-body text-secondary desktop:col-start-6 desktop:col-end-11 desktop:block">
+                <span className="hidden text-body text-primary desktop:col-start-6 desktop:col-end-11 desktop:block">
                   {project.shortDescription}
                 </span>
                 <span className="text-sub text-secondary desktop:col-start-12 desktop:col-end-13 desktop:text-right desktop:text-body">

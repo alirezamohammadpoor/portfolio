@@ -139,13 +139,14 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
     navigateNext,
   });
 
-  // Chrome (counter, footer) waits for the whole morph; the text does not.
-  // It masks in once the clone is ~40 % of the way (contentRevealed), while
-  // the media is still moving, so the sequence reads as one gesture. The key
-  // is stable from "go" onwards so the end of the morph does not re-run it.
-  // The page under the clone shows a couple of frames before the clone goes.
+  // Chrome (counter, footer) waits for the whole morph. So does the text on
+  // a home → project arrival (Ali, 10-29: the media lands first, then the
+  // text comes in); project → project keeps masking it in once the clone is
+  // ~40 % of the way (contentRevealed), since that hand-off barely moves. The
+  // key is stable from "go" onwards so the end of the morph does not re-run
+  // it. The page under the clone shows a couple of frames before the clone goes.
   const skip = isTransitioning && !pageRevealed;
-  const textWaiting = isTransitioning && !contentRevealed;
+  const textWaiting = isTransitioning && !(inPlace ? contentRevealed : pageRevealed);
   const textKey = textWaiting ? "wait" : "go";
 
   // `mounted` is a dependency because the panel renders one tick after this
