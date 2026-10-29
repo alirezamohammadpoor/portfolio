@@ -22,14 +22,15 @@
  * caption; switcher pills wrap above the text. Media autoplays muted in view
  * as silent clips (InlineClip, no player chrome); the text is static.
  *
- * Next project: the preview block at the hero's 16:10 (the morph
- * source for project → project) with the next title beside it.
+ * Next project: the preview block in the next page's landing shape (the
+ * morph source for project → project, see lib/landing.ts) with the next
+ * title beside it.
  */
 
 import { useState, type RefObject } from "react";
 import NextLink from "next/link";
 import Image from "next/image";
-import { Link } from "next-view-transitions";
+import { Link } from "@/lib/viewTransitions";
 import type { PortableTextBlock } from "next-sanity";
 import { PortableText } from "next-sanity";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
@@ -40,6 +41,7 @@ import NextProjectPreview, { type NextProject } from "@/components/project/NextP
 import InlineClip from "@/components/project/InlineClip";
 import LandingMedia from "@/components/project/LandingMedia";
 import { isPlainLeftClick } from "@/lib/clicks";
+import { HERO_VARIANTS, LANDING_ASPECT, heroVariant, landingKind } from "@/lib/landing";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 export type ChapterBlock = NonNullable<Project["chapters"]>[number];
@@ -67,21 +69,6 @@ interface ProjectChaptersProps {
   nextProject?: NextProject | null;
   previewRef?: RefObject<HTMLDivElement | null>;
   onNavigateNext?: () => void;
-}
-
-// Hero variants (laptop, 12 columns): the landing media takes eight columns,
-// the text block the four beside it, hung on the media's bottom edge. Which
-// side alternates per project, fixed by its slug so a page never changes.
-const HERO_VARIANTS = {
-  "media-right": { media: "desktop:col-start-5 desktop:col-end-13", text: "desktop:col-start-1 desktop:col-end-5" },
-  "media-left": { media: "desktop:col-start-1 desktop:col-end-9", text: "desktop:col-start-9 desktop:col-end-13" },
-} as const;
-type HeroVariant = keyof typeof HERO_VARIANTS;
-function heroVariant(slug: string, chosen?: string | null): HeroVariant {
-  if (chosen === "media-right" || chosen === "media-left") return chosen;
-  let hash = 0;
-  for (let i = 0; i < slug.length; i++) hash = (hash * 31 + slug.charCodeAt(i)) >>> 0;
-  return hash % 2 === 0 ? "media-right" : "media-left";
 }
 
 // Lanes (laptop, 12 columns): the title lane is cols 1-3, the reading lane
@@ -372,8 +359,7 @@ export default function ProjectChapters({
   const journalSlug = project.caseStudy?.slug?.current;
 
   const hero = HERO_VARIANTS[heroVariant(project.slug?.current ?? "", project.heroLayout)];
-  // The next-project block takes the shape of the next page's hero, so the
-  // preview carried into the landing slot already sits where it will render.
+  // A chapter page follows: the next-project block takes its hero's shape.
   const nextHero = HERO_VARIANTS[heroVariant(nextProject?.slug?.current ?? "", nextProject?.heroLayout)];
 
   return (
@@ -457,39 +443,60 @@ export default function ProjectChapters({
           ),
         )}
 
-        {/* Next project */}
-        {nextProject && onNavigateNext && nextProject.slug?.current && (
-          <section
-            className="grid-site px-margin content-start pt-6 pb-24 desktop:min-h-[calc(100dvh-var(--header-height))] desktop:pt-12"
-            aria-label="Next project"
-          >
-            <div className={`col-span-4 desktop:row-start-1 desktop:self-end ${nextHero.text}`}>
-              <h2 className="text-h2 desktop:text-h1 text-primary">
-                <a
-                  href={`/project/${nextProject.slug.current}`}
-                  className="link-underline"
-                  onClick={(e) => {
-                    if (!isPlainLeftClick(e)) return;
-                    e.preventDefault();
-                    onNavigateNext();
-                  }}
-                >
-                  {nextProject.title}
-                </a>
-              </h2>
-            </div>
-            <div className={`col-span-4 mt-4 desktop:mt-0 desktop:row-start-1 ${nextHero.media}`}>
-              <NextProjectPreview
-                nextProject={nextProject}
-                previewRef={previewRef}
-                onNavigate={onNavigateNext}
-                sizes="(min-width: 75rem) 66vw, 100vw"
-                aspect={16 / 10}
-                labelHidden
-              />
-            </div>
-          </section>
-        )}
+        {/* Next project: the preview block takes the next page's landing
+            shape (lib/landing.ts), so the slide puts it exactly where that
+            page's first media renders: a 16:10 box in the next hero's
+            columns for a chapter page; for a gallery page the 4:3 first item
+            of its right-hand column (the stage's full-width 4:3 card on a
+            phone), with the title in the other half. */}
+        {nextProject && onNavigateNext && nextProject.slug?.current && (() => {
+          const title = (
+            <h2 className="text-h2 desktop:text-h1 text-primary">
+              <a
+                href={`/project/${nextProject.slug.current}`}
+                className="link-underline"
+                onClick={(e) => {
+                  if (!isPlainLeftClick(e)) return;
+                  e.preventDefault();
+                  onNavigateNext();
+                }}
+              >
+                {nextProject.title}
+              </a>
+            </h2>
+          );
+          const preview = (kind: "chapters" | "gallery", sizes: string) => (
+            <NextProjectPreview
+              nextProject={nextProject}
+              previewRef={previewRef}
+              onNavigate={onNavigateNext}
+              sizes={sizes}
+              aspect={LANDING_ASPECT[kind]}
+              labelHidden
+            />
+          );
+          return nextProject.hasChapters ? (
+            <section
+              className="grid-site px-margin content-start pt-6 pb-24 desktop:min-h-[calc(100dvh-var(--header-height))] desktop:pt-12"
+              aria-label="Next project"
+            >
+              <div className={`col-span-4 desktop:row-start-1 desktop:self-end ${nextHero.text}`}>{title}</div>
+              <div className={`col-span-4 mt-4 desktop:mt-0 desktop:row-start-1 ${nextHero.media}`}>
+                {preview("chapters", "(min-width: 75rem) 66vw, 100vw")}
+              </div>
+            </section>
+          ) : (
+            <section
+              className="pt-6 pb-24 desktop:flex desktop:min-h-[calc(100dvh-var(--header-height))] desktop:items-end desktop:pt-12"
+              aria-label="Next project"
+            >
+              <div className="px-margin desktop:w-1/2">{title}</div>
+              <div className="mt-4 px-margin desktop:mt-0 desktop:w-1/2">
+                {preview("gallery", "(min-width: 75rem) 50vw, 100vw")}
+              </div>
+            </section>
+          );
+        })()}
       </div>
     </div>
   );

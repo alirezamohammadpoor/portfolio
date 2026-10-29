@@ -125,8 +125,8 @@ export const PROJECT_BY_SLUG_QUERY = defineQuery(`
   *[_type == "project" && slug.current == $slug][0] {
     ${PROJECT_FIELDS},
     "nextProject": coalesce(
-      *[_type == "project" && _id != ^._id && order > ^.order] | order(order asc) [0] { title, slug, heroLayout, ${NEXT_PROJECT_MEDIA} },
-      *[_type == "project" && _id != ^._id] | order(order asc) [0] { title, slug, heroLayout, ${NEXT_PROJECT_MEDIA} }
+      *[_type == "project" && _id != ^._id && order > ^.order] | order(order asc) [0] { title, slug, heroLayout, "hasChapters": count(chapters) > 0, ${NEXT_PROJECT_MEDIA} },
+      *[_type == "project" && _id != ^._id] | order(order asc) [0] { title, slug, heroLayout, "hasChapters": count(chapters) > 0, ${NEXT_PROJECT_MEDIA} }
     ),
     "prevProject": coalesce(
       *[_type == "project" && _id != ^._id && order < ^.order] | order(order desc) [0] { title, slug },

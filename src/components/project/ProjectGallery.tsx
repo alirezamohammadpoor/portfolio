@@ -8,6 +8,7 @@ import { useGSAP } from "@gsap/react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { ease, prefersReducedMotion } from "@/lib/motion";
+import { HERO_VARIANTS, LANDING_ASPECT, heroVariant } from "@/lib/landing";
 import NextProjectPreview, { type NextProject } from "@/components/project/NextProjectPreview";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
@@ -243,13 +244,38 @@ export default function ProjectGallery({
         );
       })}
       {nextProject && onNavigateNext && (
-        <div ref={previewWrapRef} className="pt-6">
-          <NextProjectPreview
-            nextProject={nextProject}
-            previewRef={previewRef}
-            onNavigate={onNavigateNext}
-          />
-        </div>
+        // The preview takes the next page's landing shape (lib/landing.ts).
+        // Another gallery page: one more 4:3 item in this column. A chapter
+        // page: its 16:10 hero box in the hero's columns, so the wrapper
+        // breaks out of the column to the page grid (the column is the right
+        // half with the grid margin as padding, hence 200 % + two margins).
+        nextProject.hasChapters ? (
+          <div
+            ref={previewWrapRef}
+            className="pt-6 desktop:w-[calc(200%+2*var(--grid-margin))] desktop:-ml-[calc(100%+2*var(--grid-margin))]"
+          >
+            <div className="grid-site">
+              <div className={`col-span-4 ${HERO_VARIANTS[heroVariant(nextProject.slug?.current ?? "", nextProject.heroLayout)].media}`}>
+                <NextProjectPreview
+                  nextProject={nextProject}
+                  previewRef={previewRef}
+                  onNavigate={onNavigateNext}
+                  sizes="(min-width: 75rem) 66vw, 100vw"
+                  aspect={LANDING_ASPECT.chapters}
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div ref={previewWrapRef} className="pt-6">
+            <NextProjectPreview
+              nextProject={nextProject}
+              previewRef={previewRef}
+              onNavigate={onNavigateNext}
+              aspect={LANDING_ASPECT.gallery}
+            />
+          </div>
+        )
       )}
     </div>
   );

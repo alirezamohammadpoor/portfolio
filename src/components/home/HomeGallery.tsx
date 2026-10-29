@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Link } from "next-view-transitions";
+import { Link } from "@/lib/viewTransitions";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";

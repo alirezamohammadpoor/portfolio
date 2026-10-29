@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import { ViewTransitions } from "next-view-transitions";
+import { ViewTransitions } from "@/lib/viewTransitions";
 import { Analytics } from "@vercel/analytics/next";
 import { parastoo } from "@/lib/fonts";
 import Header from "@/components/layout/Header";
