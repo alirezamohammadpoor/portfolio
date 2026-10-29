@@ -7,8 +7,13 @@ import { dur, ease } from "@/lib/motion";
 import { getIntroState, setIntroState } from "@/lib/intro";
 import { ENGLISH_NAME, PERSIAN_CHARS, PERSIAN_NAME } from "@/lib/name";
 
-const SCRAMBLE = 0.6;
-const HOLD = 0.3;
+/** Seconds. Centre sequence: scramble in to the full English name, hold,
+ *  scramble to the full Persian name, hold, then the move. About 3.5 s
+ *  before the name travels (Ali: slower, 3–4 s). */
+const SCRAMBLE_IN = 0.9;
+const HOLD_ENGLISH = 0.6;
+const SCRAMBLE = 0.9;
+const HOLD = 0.5;
 const BASE_CLASS = "intro-name invisible text-primary will-change-transform";
 
 interface HomeIntroProps {
@@ -41,21 +46,43 @@ export default function HomeIntro({ targetRef }: HomeIntroProps) {
     let move: gsap.core.Tween | null = null;
 
     const tl = gsap.timeline();
+    // Scramble in from Latin noise to the full English name.
+    name.textContent = "";
     tl.fromTo(
       name,
       { autoAlpha: 0, y: 8 },
       { autoAlpha: 1, y: 0, duration: dur.ui, ease: ease.out },
     );
+    tl.to(
+      name,
+      {
+        duration: SCRAMBLE_IN,
+        scrambleText: {
+          text: ENGLISH_NAME,
+          // Lower case noise stays narrower than the name on a phone.
+          chars: "lowerCase",
+          speed: 0.6,
+          revealDelay: 0.2,
+          tweenLength: false,
+        },
+      },
+      "<",
+    );
+    tl.add(() => {
+      name.textContent = ENGLISH_NAME;
+    });
+    // Hold the English, then scramble through to the full Persian name.
     tl.add(() => {
       name.setAttribute("dir", "rtl");
       name.setAttribute("lang", "fa");
-    }, "+=0.1");
+    }, `+=${HOLD_ENGLISH}`);
     tl.to(name, {
       duration: SCRAMBLE,
       scrambleText: {
         text: PERSIAN_NAME,
         chars: PERSIAN_CHARS,
-        speed: 1,
+        speed: 0.6,
+        revealDelay: 0.15,
         tweenLength: false,
         newClass: "parastoo-font",
       },
