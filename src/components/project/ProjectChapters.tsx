@@ -132,6 +132,9 @@ function ChapterMedia({
   sizes?: string;
 }) {
   if (!media) return null;
+  if (media.type === "phones") {
+    return <PhonesPanel media={media} title={title} hidden={hidden} />;
+  }
   if (media.type === "video" && media.video?.asset?._ref) {
     return (
       <InlineClip
@@ -166,6 +169,52 @@ function ChapterMedia({
     );
   }
   return null;
+}
+
+/**
+ * Phones on a panel (Ali, 10-29, alternative E): one to three phone screens
+ * side by side on a 16:10 panel, each a still or a silent clip at the
+ * phone's own ratio with rounded corners, no device frame. The panel is
+ * black or carries an image at reduced opacity.
+ */
+const PHONE_WIDTH = ["w-[52%] desktop:w-[30%]", "w-[38%] desktop:w-[24%]", "w-[28%] desktop:w-[20%]"];
+
+function PhonesPanel({ media, title, hidden }: { media: NonNullable<ChapterMediaValue>; title: string; hidden: boolean }) {
+  const slots = (media.phones ?? []).slice(0, 3);
+  if (slots.length === 0) return null;
+  const width = PHONE_WIDTH[slots.length - 1];
+  const panelImage = media.panel === "image" && media.panelImage?.asset ? media.panelImage : null;
+  return (
+    <div className="relative flex aspect-[16/10] w-full items-center justify-center gap-4 overflow-hidden bg-primary desktop:gap-10">
+      {panelImage && (
+        <Image src={imageUrl(panelImage, 2000)} alt="" fill className="object-cover opacity-55" sizes="100vw" />
+      )}
+      {slots.map((slot, i) => (
+        <div
+          key={slot._key ?? i}
+          className={`relative aspect-[390/844] flex-none overflow-hidden rounded-[18px] bg-white desktop:rounded-[28px] ${width}`}
+        >
+          {slot.type === "video" && slot.video?.asset?._ref ? (
+            <InlineClip
+              src={fileUrl(slot.video.asset._ref)}
+              poster={slot.poster?.asset ? imageUrl(slot.poster, 800) : undefined}
+              label={`${title}, screen ${i + 1}`}
+              active={!hidden}
+              className="absolute inset-0 h-full w-full object-cover object-top"
+            />
+          ) : slot.type === "image" && slot.image?.asset ? (
+            <Image
+              src={imageUrl(slot.image, 800)}
+              alt={`${title}, screen ${i + 1}`}
+              fill
+              className="object-cover object-top"
+              sizes="(min-width: 75rem) 30vw, 52vw"
+            />
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function Caption({ text }: { text: string | null | undefined }) {

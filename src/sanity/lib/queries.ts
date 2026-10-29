@@ -33,7 +33,10 @@ const PROJECT_FIELDS = `
         type,
         video,
         poster,
-        image { ..., asset-> { ..., metadata { dimensions } } }
+        image { ..., asset-> { ..., metadata { dimensions } } },
+        phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },
+        panel,
+        panelImage
       }
     },
     _type == "testSwitcher" => {
@@ -48,7 +51,10 @@ const PROJECT_FIELDS = `
           type,
           video,
           poster,
-          image { ..., asset-> { ..., metadata { dimensions } } }
+          image { ..., asset-> { ..., metadata { dimensions } } },
+          phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },
+          panel,
+          panelImage
         }
       }
     }
