@@ -17,7 +17,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import NextLink from "next/link";
 import Image from "next/image";
-import { Link } from "next-view-transitions";
+import { Link } from "@/lib/viewTransitions";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import gsap from "gsap";
@@ -29,6 +29,7 @@ import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
 import { isPlainLeftClick } from "@/lib/clicks";
+import { LANDING_ASPECT, landingKind } from "@/lib/landing";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -344,6 +345,7 @@ export default function ProjectStage({
                 onNavigate={onNavigateNext!}
                 imageWidth={900}
                 sizes="100vw"
+                aspect={LANDING_ASPECT[landingKind(nextProject.hasChapters, false)]}
               />
             </div>
           )}

@@ -1,4 +1,4 @@
-import { Link } from "next-view-transitions";
+import { Link } from "@/lib/viewTransitions";
 import Image from "next/image";
 import type { JOURNAL_POSTS_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl } from "@/sanity/lib/image";

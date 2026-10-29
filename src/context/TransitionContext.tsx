@@ -14,6 +14,12 @@ type MediaType = "image" | "video";
 interface TransitionState {
   isTransitioning: boolean;
   /**
+   * Counts transitions. A page that mounted while one was running records
+   * its id and is that transition's landing page; the page being left sees
+   * the same flags flip and must not hide itself (see ProjectPageClient).
+   */
+  id: number;
+  /**
    * True once the clone morph is far enough along (≈40 %) for the destination
    * text to start masking in underneath it. Resets with the transition.
    */
@@ -67,6 +73,7 @@ interface TransitionContextValue extends TransitionState {
 
 const initial: TransitionState = {
   isTransitioning: false,
+  id: 0,
   contentRevealed: false,
   targetReady: false,
   inPlace: false,
@@ -97,8 +104,9 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
     if (typeof document !== "undefined") {
       document.documentElement.dataset.customClone = "true";
     }
-    setState({
+    setState((prev) => ({
       isTransitioning: true,
+      id: prev.id + 1,
       contentRevealed: false,
       targetReady: false,
       inPlace: args.inPlace ?? false,
@@ -110,7 +118,7 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
       sourceVideoElement: args.sourceVideoElement ?? null,
       sourceRect: args.sourceRect,
       targetRect: null,
-    });
+    }));
   }, []);
 
   const animateClone = useCallback((targetRect: Rect) => {
@@ -133,7 +141,7 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
     if (typeof document !== "undefined") {
       delete document.documentElement.dataset.customClone;
     }
-    setState(initial);
+    setState((prev) => ({ ...initial, id: prev.id }));
   }, []);
 
   return (

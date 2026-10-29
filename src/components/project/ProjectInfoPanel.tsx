@@ -1,6 +1,6 @@
 import type { RefObject } from "react";
 import NextLink from "next/link";
-import { Link } from "next-view-transitions";
+import { Link } from "@/lib/viewTransitions";
 import type { PortableTextBlock } from "next-sanity";
 import { PortableText } from "next-sanity";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";

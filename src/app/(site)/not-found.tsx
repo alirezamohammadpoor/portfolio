@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Link } from "next-view-transitions";
+import { Link } from "@/lib/viewTransitions";
 import { useTitleAnimation, useBodyAnimation } from "@/hooks/useTextAnimation";
 
 export default function NotFound() {

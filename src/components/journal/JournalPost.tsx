@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import Image from "next/image";
-import { Link } from "next-view-transitions";
+import { Link } from "@/lib/viewTransitions";
 import type { PortableTextBlock } from "next-sanity";
 import { PortableText } from "next-sanity";
 import gsap from "gsap";

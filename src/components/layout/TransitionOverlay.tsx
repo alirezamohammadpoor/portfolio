@@ -124,10 +124,14 @@ export default function TransitionOverlay() {
         setLanded(true);
         return;
       }
-      // In place but not pixel-exact (the stage's title block differs in
-      // height, or the preview card was tapped before it centred): a short
-      // settle, not the page-level morph, and the text does not wait for it.
+      // In place but not pixel-exact: a short settle when the preview sits a
+      // few pixels off (the stage's title block differs in height, or the
+      // card was tapped before it centred); the page-level morph when the
+      // landing is somewhere else (a phone chapter page handing off to a
+      // stage, whose card sits mid-screen). The text does not wait for it.
       if (inPlace) revealContent();
+      const far = Math.hypot(dx, dy) > 64 || Math.abs(sx - 1) > 0.1 || Math.abs(sy - 1) > 0.1;
+      const settle = inPlace && !far;
 
       // Plain style writes: GSAP's quickSetter("transform") does not take a
       // raw transform string, and a silent no-op here means no morph at all.
@@ -142,8 +146,8 @@ export default function TransitionOverlay() {
 
       gsap.to(proxy, {
         p: 1,
-        duration: inPlace ? dur.ui : dur.page,
-        ease: inPlace ? ease.out : ease.inOut,
+        duration: settle ? dur.ui : dur.page,
+        ease: settle ? ease.out : ease.inOut,
         onUpdate: () => {
           const p = proxy.p;
           const wx = 1 + (sx - 1) * p;
