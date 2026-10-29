@@ -1,0 +1,152 @@
+<title>Stronger test switcher</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: today's hero, client + ask chapters, ONE test view where pills swap the Figma frame and the text in place, the badge-live chapter, next project. Portfolio tokens (12-col laptop, 4-col phone). */
+:root{--bg:#f7f7f7;--fg:#1a1a1a;--muted:#8f8f8f;--rule:#e2e2e2;--pill:#bedcaa;--media:#ebebeb;--frame:#f0f0f0;--font:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#111;--fg:#f2f2f2;--muted:#8a8a8a;--rule:#2a2a2a;--pill:#4f6b3d;--media:#1e1e1e;--frame:#1a1a1a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111;--fg:#f2f2f2;--muted:#8a8a8a;--rule:#2a2a2a;--pill:#4f6b3d;--media:#1e1e1e;--frame:#1a1a1a;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:16px;line-height:24px;margin:0}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 96px}
+.g{display:grid;grid-template-columns:repeat(12,1fr);column-gap:16px}
+header.top{height:40px;display:flex;align-items:center;justify-content:space-between;font-size:12px;line-height:16px}
+header.top span+span{color:var(--muted)}
+.sub{font-size:12px;line-height:16px;color:var(--muted)}
+h1{font-size:40px;line-height:48px;font-weight:400;margin:0;letter-spacing:-.02em}
+h2{font-size:32px;line-height:40px;font-weight:400;margin:0;letter-spacing:-.02em;text-wrap:balance}
+h3{font-size:24px;line-height:32px;font-weight:400;margin:0;letter-spacing:-.015em;text-wrap:balance}
+p{margin:0}.stack>p+p{margin-top:12px}
+.media{background:var(--media);border-radius:4px;position:relative;overflow:hidden;max-width:100%}
+.media::after{content:attr(data-label);position:absolute;left:12px;bottom:10px;font-size:12px;line-height:16px;color:var(--muted)}
+.r43{aspect-ratio:4/3}
+.cap{font-size:12px;line-height:16px;color:var(--muted);margin-top:8px}
+.pill{border:1px solid var(--fg);border-radius:999px;padding:7px 16px;font:inherit;font-size:12px;line-height:16px;text-transform:uppercase;letter-spacing:.04em;color:var(--fg);background:transparent;cursor:pointer;text-decoration:none}
+.pill.fill{background:var(--pill);border-color:var(--pill);color:#1a1a1a}
+.pill.tab{border-color:var(--rule);color:var(--muted)}
+.pill.tab[aria-selected="true"]{background:var(--pill);border-color:var(--pill);color:#1a1a1a}
+.pill:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.hero{padding-block:24px 48px}
+.hero .l{grid-column:1/6;align-self:center}
+.hero .r{grid-column:7/13}
+.hero .l .sub{margin-top:32px}.hero .l .row{display:flex;gap:12px;margin-top:32px;flex-wrap:wrap}
+.chap{padding-block:48px;align-items:center;min-height:min(680px,100dvh)}
+.chap .t{grid-column:1/6}.chap .m{grid-column:7/13}
+.chap.wide .m{grid-column:1/8}.chap.wide .t{grid-column:9/13}
+.tests{padding-block:48px}
+.tests .head{grid-column:1/8}
+.tests .tabs{grid-column:1/13;display:flex;gap:8px;flex-wrap:wrap;margin-top:32px}
+.tests .stage{grid-column:1/13;margin-top:32px;display:grid;grid-template-columns:repeat(12,1fr);column-gap:16px;align-items:center}
+.tests .frame{grid-column:1/7;background:var(--frame);border-radius:4px;padding:32px;display:flex;justify-content:center;min-height:560px}
+.tests .frame img{max-height:720px;width:auto;max-width:100%;border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.tests .frame.wide img{max-height:none;width:100%}
+.tests .txt{grid-column:8/13}
+.tests .txt h3{margin-top:8px;margin-bottom:16px}
+.tests .txt .cap{margin-top:16px}
+.tests .count{font-variant-numeric:tabular-nums}
+.next{padding-block:48px 0;align-items:start}
+.next .t{grid-column:1/6;padding-top:56px}.next .m{grid-column:7/13}
+.note{background:var(--media);border-radius:4px;padding:8px 12px;font-size:12px;line-height:16px;margin-top:48px}
+.fade{transition:opacity .18s ease}
+@media (prefers-reduced-motion:reduce){.fade{transition:none}}
+@media (max-width:900px){
+ .g,.tests .stage{grid-template-columns:repeat(4,1fr);column-gap:12px}
+ .hero .l,.hero .r,.chap .t,.chap .m,.chap.wide .m,.chap.wide .t,.tests .head,.tests .tabs,.tests .stage,.tests .frame,.tests .txt,.next .t,.next .m{grid-column:1/5}
+ .hero .r{order:-1;margin-bottom:24px}.chap .m{order:-1;margin-bottom:24px}
+ .chap{min-height:0;padding-block:24px}.hero{padding-block:8px 24px}.tests{padding-block:24px}
+ .tests .frame{min-height:0;padding:16px}.tests .frame img{max-height:560px}
+ .tests .txt{margin-top:24px}
+ h1{font-size:32px;line-height:40px}h2{font-size:24px;line-height:32px}
+}
+</style>
+<div class="wrap">
+<header class="top"><span>Alireza Mohammadpoor</span><span>Journal &nbsp;&nbsp; About</span></header>
+
+<section class="hero g">
+  <div class="l">
+    <h1>Stronger</h1>
+    <p style="margin-top:8px">Swedish activewear brand Stronger. A view-counter brief became five A/B tests designed in Figma, the first one live on the product list.</p>
+    <p class="sub">Tech stack</p>
+    <p>React Router 7, Centra, Storyblok, GrowthBook, GA4, Figma</p>
+    <div class="row"><a class="pill fill" href="#">Visit website</a><a class="pill" href="#">Journal post</a></div>
+  </div>
+  <div class="r"><div class="media r43" data-label="Landing media · 4:3 · morph target"></div></div>
+</section>
+
+<section class="chap g">
+  <div class="t stack">
+    <h2 style="margin-bottom:24px">A Swedish activewear brand on a headless storefront</h2>
+    <p>Stronger sells activewear from Stockholm on a Centra and React Router storefront, with content in Storyblok. I joined through TRY in September as the frontend between the brand's e-commerce team and the dev agency that runs the storefront.</p>
+  </div>
+  <div class="m"><div class="media r43" data-label="Homepage tour · film · 4:3"></div><p class="cap">strongerlabel.com in September, before the first test went live.</p></div>
+</section>
+
+<section class="chap wide g">
+  <div class="m"><div class="media r43" data-label="Phone product page · film"></div><p class="cap">The product page already carried four earlier test winners; the view counter would have been the fifth element competing for the same screen.</p></div>
+  <div class="t stack">
+    <h2 style="margin-bottom:24px">The ask was a view counter</h2>
+    <p>The brief that reached me was small: improve the "people browsing" pill on the product page. The test history said why not. Ten experiments, nine of them on the product page, four winners stacked on the same screen. The product list, the size picker and the mini-cart had never been tested.</p>
+    <p>Walking the store as a shopper next to Gymshark, AYBL and Aim'n gave four gaps, and each gap became a test with one hypothesis, one primary metric and an exposure point.</p>
+  </div>
+</section>
+
+<section class="chap g">
+  <div class="t stack">
+    <h2 style="margin-bottom:24px">The bestseller badge, first out</h2>
+    <p>The product list had no signal for what sells. Shoppers chose between forty near-identical tights with nothing but price to go on. The badge reuses the slot the Archive badge already had in the card's top corner, so the grid never shifts, and it follows the colour variant rather than the product family.</p>
+    <p>It looked like a one-day job until I traced where the flag lived: the product page reads a Centra attribute, the list cards read Voyado Elevate, so a feed mapping came first. Goal add to cart, target +5 %.</p>
+  </div>
+  <div class="m"><img src="img/01-badge-mobile-grid@3x.png" alt="Figma: bestseller badge on the mobile card, laptop card and 2-col grid" style="width:100%;border-radius:4px;display:block"><p class="cap">Figma, ships state: mobile card, laptop card, 2-col grid.</p></div>
+</section>
+
+<section class="chap wide g">
+  <div class="m"><div class="media r43" data-label="Desktop badge film · control → variant"></div><p class="cap">Control and variant from production, same session. Badge style GT America 500 12/15 on #18181b.</p></div>
+  <div class="t stack">
+    <h2 style="margin-bottom:24px">The badge went live on 20 October</h2>
+    <p>"Bästsäljare" on the product-list cards, 50/50 on a user cookie, GA4 in BigQuery, Bayesian with CUPED. Five days in, about 18,000 users per arm: bestseller card clicks +4.4 %, other cards +2.2 %, add to cart +1.1 % with a wide interval.</p>
+    <p>The click lift looked like a win by day two; the goal is still flat, so it runs the full two weeks. Final read 3 November.</p>
+  </div>
+</section>
+
+<section class="chap g">
+  <div class="t stack">
+    <h2 style="margin-bottom:24px">Accessibility fixes along the way</h2>
+    <p>Between tests, the storefront got the accessibility work it had been missing: keyboard reach of the header and the cart, focus handling in the cart drawer, and the gaps that still remain, documented so they can be closed.</p>
+    <p class="sub">Ali: add the specifics you want public here (what was fixed, what the audit found, what is still open).</p>
+  </div>
+  <div class="m"><div class="media r43" data-label="Cart drawer, keyboard walkthrough · film"></div><p class="cap">Header and cart drawer by keyboard: focus goes in, stays in, and comes back out.</p></div>
+</section>
+
+<section class="tests g">
+  <div class="head"><h2>The five tests, designed before a line was written</h2><p class="sub" style="margin-top:8px">One view. The pills swap the Figma frame and the text in place. The badge shipped first; the other four are ready.</p></div>
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div class="stage">
+    <div class="frame fade" id="tframe"><img id="timg" src="" alt=""></div>
+    <div class="txt fade" id="ttxt"><p class="sub"><span class="count" id="tcount"></span> · <span id="tstatus"></span></p><h3 id="ttitle"></h3><div class="stack" id="tbody"></div><p class="cap" id="tcap"></p></div>
+  </div>
+</section>
+
+<section class="next g">
+  <div class="t"><p class="sub">Next project</p><h1>Nelson Garden</h1></div>
+  <div class="m"><div class="media r43" data-label="Next project media · 4:3 · morph source"></div></div>
+</section>
+<p class="note">Alternative to the chapter page: bestseller badge as the focus up front, accessibility, then the five tests in one view with pills. Grey boxes are film slots; the Figma frames are the real exports.</p>
+</div>
+<script>
+(function(){
+var T=[
+ {tab:'Bestseller badge',title:'Bestseller badge on the product list',status:'Live since 20 Oct · final read 3 Nov',img:'img/01-badge-mobile-grid@3x.png',wide:true,text:['The product list had no signal for what sells. The badge reuses the slot the Archive badge already had in the card’s top corner, so the grid never shifts, and follows the colour variant rather than the product family.','Goal add to cart, target +5 %. One feed mapping before the list cards could read the flag.'],cap:'Figma, ships state: mobile card, laptop card, 2-col grid.'},
+ {tab:'Delivery promise',title:'One delivery promise, four states',status:'Ready · waiting on ops for the cut-off',img:'img/02-countdown-mobile@3x.png',text:['Nothing under the buy button said when an order would ship. One line answers it, and because every state was a component variant, the weekend, holiday and after-cut-off copy surfaced in review before anyone built it.','Cut-off time lives in Storyblok.'],cap:'Figma, ships state: "Beställ före 13:50 så skickas din order idag" under the buy button.'},
+ {tab:'Sold-out row',title:'A row instead of a dead end',status:'Designed · exposes on a sold-out tap',img:'img/03-soldout-row-mobile@3x.png',text:['A sold-out size was a notify-me drawer and nothing else, even when the same tights existed in three other colours in that size. The first design redesigned the drawer. In review it shrank to one quiet row under the sizes.'],cap:'Figma, ships state: "S är slut i Magenta · finns i" plus the sibling colours that have the size.'},
+ {tab:'Similar product',title:'One similar product, in your size',status:'Designed · hand-picked map',img:'img/04-similar-product@3x.png',text:['When the size is gone in every colour, show one product that has it. Three cards became one. The card is the one that already won a bundle test, so the test measures the idea and not a recommendation engine.'],cap:'Figma, ships state: one size-matched card with "Lägg till S".'},
+ {tab:'Kit upgrade',title:'Upgrade to the kit, in the cart',status:'Designed · revenue per exposed user',img:'img/05-kit-upgrade-variant@3x.png',text:['Forty-seven discounted kits, and the saving only showed on the kit’s own page. The block sits under the matching cart line, the button is disabled until every size is picked, and one tap swaps the line for the kit.','Six changes came out of an adversarial review.'],cap:'Figma, variant with sizes picked.'}
+];
+var tabs=document.getElementById('tabs'),frame=document.getElementById('tframe'),txt=document.getElementById('ttxt');
+function render(i){var t=T[i];[].forEach.call(tabs.children,function(b,j){b.setAttribute('aria-selected',j===i?'true':'false')});
+ var img=document.getElementById('timg');img.src=t.img;img.alt=t.title;frame.classList.toggle('wide',!!t.wide);
+ document.getElementById('tcount').textContent='Test '+(i+1)+' of '+T.length;document.getElementById('tstatus').textContent=t.status;document.getElementById('ttitle').textContent=t.title;document.getElementById('tcap').textContent=t.cap;
+ var b=document.getElementById('tbody');b.innerHTML='';t.text.forEach(function(p){var e=document.createElement('p');e.textContent=p;b.appendChild(e)});}
+function show(i){frame.style.opacity=0;txt.style.opacity=0;setTimeout(function(){render(i);frame.style.opacity=1;txt.style.opacity=1},180)}
+T.forEach(function(t,i){var b=document.createElement('button');b.className='pill tab';b.type='button';b.id='tab-'+i;b.setAttribute('role','tab');b.textContent=t.tab;b.addEventListener('click',function(){show(i)});tabs.appendChild(b)});
+render(0);
+})();
+</script>
