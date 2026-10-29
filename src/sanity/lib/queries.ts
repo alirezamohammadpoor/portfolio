@@ -21,16 +21,35 @@ const PROJECT_FIELDS = `
   },
   chapters[]{
     _key,
+    _type,
     title,
-    text,
-    caption,
-    layout,
-    side,
-    media {
-      type,
-      video,
-      poster,
-      image { ..., asset-> { ..., metadata { dimensions } } }
+    _type == "chapter" => {
+      text,
+      caption,
+      layout,
+      side,
+      media {
+        type,
+        video,
+        poster,
+        image { ..., asset-> { ..., metadata { dimensions } } }
+      }
+    },
+    _type == "testSwitcher" => {
+      tests[]{
+        _key,
+        label,
+        title,
+        status,
+        text,
+        caption,
+        media {
+          type,
+          video,
+          poster,
+          image { ..., asset-> { ..., metadata { dimensions } } }
+        }
+      }
     }
   },
   order,

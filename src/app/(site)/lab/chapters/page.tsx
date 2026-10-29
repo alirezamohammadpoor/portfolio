@@ -3,17 +3,17 @@ import { notFound } from "next/navigation";
 import { getProject } from "@/sanity/lib/data";
 import ProjectPageClient from "@/components/project/ProjectPageClient";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
+import type { Chapter, TestSwitcher } from "@/components/project/ProjectChapters";
 
 // Prototype route for the chapter project page (brief-v2, Figma frame E):
-// the Stronger project with four fixture chapters cut from its own gallery,
-// until the real chapters exist in Sanity. Not linked, not indexed.
+// the Stronger project with fixture chapters cut from its own gallery and a
+// test switcher, until the real chapters exist in Sanity. Not linked, not indexed.
 export const metadata: Metadata = {
   title: "Lab — Chapters",
   robots: { index: false, follow: false },
 };
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
-type Chapter = NonNullable<Project["chapters"]>[number];
 
 const block = (text: string, key: string) => ({
   _type: "block" as const,
@@ -30,7 +30,7 @@ const COPY: Array<Pick<Chapter, "title" | "caption" | "layout" | "side"> & { tex
       "A Swedish fashion brand on a shared headless storefront asked for one thing in September: a product-page urgency element, a view counter. Lab mobile scores sat in the 30s, which became a second track.",
     ],
     caption: "The product listing in September. Zero products carried the bestseller badge because of a data bug.",
-    layout: "half",
+    layout: "beside",
     side: "right",
   },
   {
@@ -39,7 +39,7 @@ const COPY: Array<Pick<Chapter, "title" | "caption" | "layout" | "side"> & { tex
       "A view counter is a number on a page. Nobody had asked whether a number would move anything, or whether the site could tell. The audit answered the second question first: a consent listener registered with once:true meant a user who declined cookies and then accepted never fired an exposure event.",
     ],
     caption: "The once:true listener, before and after. Nine earlier tests had run on a broken instrument.",
-    layout: "wide",
+    layout: "wide-left",
     side: "left",
   },
   {
@@ -59,9 +59,17 @@ const COPY: Array<Pick<Chapter, "title" | "caption" | "layout" | "side"> & { tex
       "The rebuilds are open draft merge requests, not adopted. The A/B readout is pending.",
     ],
     caption: "Mobile product page with the badge, 3-run Lighthouse medians in the same batch as production.",
-    layout: "narrow",
+    layout: "wide-right",
     side: "right",
   },
+];
+
+const TESTS = [
+  { label: "Bestseller badge", title: "Bestseller badge on the product list", status: "Live since 20 Oct · final read 3 Nov", text: "The product list had no signal for what sells. The badge reuses the slot the Archive badge already had, so the grid never shifts.", caption: "Figma, ships state: mobile card, laptop card, 2-col grid." },
+  { label: "Delivery promise", title: "One delivery promise, four states", status: "Ready · waiting on ops", text: "One line under the buy button; weekend, holiday and after-cut-off copy as component variants.", caption: "Figma, ships state." },
+  { label: "Sold-out row", title: "A row instead of a dead end", status: "Designed", text: "One quiet row under the sizes with the sibling colours that have the size, shown on a sold-out tap.", caption: "Figma, ships state." },
+  { label: "Similar product", title: "One similar product, in your size", status: "Designed", text: "When the size is gone in every colour, one size-matched card that has it.", caption: "Figma, ships state." },
+  { label: "Kit upgrade", title: "Upgrade to the kit, in the cart", status: "Designed", text: "The missing kit pieces under the cart line with one swap button.", caption: "Figma, variant with sizes picked." },
 ];
 
 export default async function ChaptersLabPage() {
@@ -73,6 +81,7 @@ export default async function ChaptersLabPage() {
     const item = videos[(i + 1) % Math.max(1, videos.length)];
     return {
       _key: `fixture-${i}`,
+      _type: "chapter",
       title: c.title,
       caption: c.caption,
       layout: c.layout,
@@ -81,7 +90,24 @@ export default async function ChaptersLabPage() {
       media: item && item._type === "galleryVideo" ? { type: "video", video: item.video ?? null, image: null, poster: null } : null,
     };
   });
+  const switcher: TestSwitcher = {
+    _key: "fixture-switcher",
+    _type: "testSwitcher",
+    title: "The five tests, designed before a line was written",
+    tests: TESTS.map((t, i) => {
+      const item = videos[i % Math.max(1, videos.length)];
+      return {
+        _key: `fixture-test-${i}`,
+        label: t.label,
+        title: t.title,
+        status: t.status,
+        caption: t.caption,
+        text: [block(t.text, `fixture-test-${i}-0`)],
+        media: item && item._type === "galleryVideo" ? { type: "video", video: item.video ?? null, image: null, poster: null } : null,
+      };
+    }),
+  };
 
-  const fixture: Project = { ...project, chapters };
+  const fixture: Project = { ...project, chapters: [...chapters, switcher] };
   return <ProjectPageClient key="lab-chapters" project={fixture} nextProject={project.nextProject} prevProject={project.prevProject} />;
 }
