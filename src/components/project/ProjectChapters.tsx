@@ -460,7 +460,7 @@ export default function ProjectChapters({
         {/* Next project */}
         {nextProject && onNavigateNext && nextProject.slug?.current && (
           <section
-            className="grid-site px-margin pt-6 pb-24 desktop:min-h-[calc(100dvh-var(--header-height))] desktop:pt-12"
+            className="grid-site px-margin content-start pt-6 pb-24 desktop:min-h-[calc(100dvh-var(--header-height))] desktop:pt-12"
             aria-label="Next project"
           >
             <div className={`col-span-4 desktop:row-start-1 desktop:self-end ${nextHero.text}`}>
