@@ -1,5 +1,86 @@
 import { defineType, defineField } from "sanity";
 
+
+// Shared by chapters and the tests inside a test switcher.
+const chapterTextField = defineField({
+  name: "text",
+  title: "Text",
+  type: "array",
+  of: [
+    {
+      type: "block",
+      styles: [{ title: "Normal", value: "normal" }],
+      lists: [],
+      marks: {
+        decorators: [
+          { title: "Strong", value: "strong" },
+          { title: "Emphasis", value: "em" },
+        ],
+        annotations: [
+          {
+            name: "link",
+            title: "Link",
+            type: "object",
+            fields: [
+              defineField({
+                name: "href",
+                title: "URL",
+                type: "url",
+                validation: (rule) => rule.uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
+              }),
+            ],
+          },
+        ],
+      },
+    },
+  ],
+});
+
+const chapterMediaField = defineField({
+  name: "media",
+  title: "Media",
+  type: "object",
+  fields: [
+    defineField({
+      name: "type",
+      title: "Type",
+      type: "string",
+      options: { list: ["image", "video"], layout: "radio" },
+      initialValue: "video",
+      validation: (rule) => rule.required(),
+    }),
+    defineField({
+      name: "image",
+      title: "Image",
+      type: "image",
+      options: { hotspot: true },
+      hidden: ({ parent }) => parent?.type !== "image",
+    }),
+    defineField({
+      name: "video",
+      title: "Video",
+      type: "file",
+      options: { accept: "video/*" },
+      hidden: ({ parent }) => parent?.type !== "video",
+    }),
+    defineField({
+      name: "poster",
+      title: "Poster",
+      type: "image",
+      description: "First frame of the video, shown until it loads.",
+      hidden: ({ parent }) => parent?.type !== "video",
+    }),
+  ],
+});
+
+const chapterCaptionField = defineField({
+  name: "caption",
+  title: "Caption",
+  type: "text",
+  rows: 2,
+  description: "One line under the media. Numbers are welcome here.",
+});
+
 export const project = defineType({
   name: "project",
   title: "Project",
@@ -207,7 +288,7 @@ export const project = defineType({
       name: "chapters",
       title: "Chapters",
       description:
-        "The case study. One chapter = one media with its own title, text and caption. A project with chapters gets the chapter page (hero + chapters + next project); without them it keeps the gallery page. The first gallery item is still the hero's landing media.",
+        "The case study. One chapter = a title lane, a reading lane and a media row with its caption. A project with chapters gets the chapter page (hero + chapters + next project); without them it keeps the gallery page. The first gallery item is still the hero's landing media.",
       type: "array",
       of: [
         {
@@ -222,107 +303,33 @@ export const project = defineType({
               description: "A written title, e.g. \"Every test had been off since 1 July\". Numbers go inside the sentence.",
               validation: (rule) => rule.required(),
             }),
-            defineField({
-              name: "text",
-              title: "Text",
-              type: "array",
-              of: [
-                {
-                  type: "block",
-                  styles: [{ title: "Normal", value: "normal" }],
-                  lists: [],
-                  marks: {
-                    decorators: [
-                      { title: "Strong", value: "strong" },
-                      { title: "Emphasis", value: "em" },
-                    ],
-                    annotations: [
-                      {
-                        name: "link",
-                        title: "Link",
-                        type: "object",
-                        fields: [
-                          defineField({
-                            name: "href",
-                            title: "URL",
-                            type: "url",
-                            validation: (rule) =>
-                              rule.uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
-                          }),
-                        ],
-                      },
-                    ],
-                  },
-                },
-              ],
-            }),
-            defineField({
-              name: "media",
-              title: "Media",
-              type: "object",
-              fields: [
-                defineField({
-                  name: "type",
-                  title: "Type",
-                  type: "string",
-                  options: { list: ["image", "video"], layout: "radio" },
-                  initialValue: "video",
-                  validation: (rule) => rule.required(),
-                }),
-                defineField({
-                  name: "image",
-                  title: "Image",
-                  type: "image",
-                  options: { hotspot: true },
-                  hidden: ({ parent }) => parent?.type !== "image",
-                }),
-                defineField({
-                  name: "video",
-                  title: "Video",
-                  type: "file",
-                  options: { accept: "video/*" },
-                  hidden: ({ parent }) => parent?.type !== "video",
-                }),
-                defineField({
-                  name: "poster",
-                  title: "Poster",
-                  type: "image",
-                  description: "First frame of the video, shown until it loads.",
-                  hidden: ({ parent }) => parent?.type !== "video",
-                }),
-              ],
-            }),
-            defineField({
-              name: "caption",
-              title: "Caption",
-              type: "text",
-              rows: 2,
-              description: "One line under the media. Numbers are welcome here.",
-            }),
+            chapterTextField,
+            chapterMediaField,
+            chapterCaptionField,
             defineField({
               name: "layout",
               title: "Layout",
               type: "string",
               description:
-                "Laptop only (mobile is one column, media first). Half: media on 6 columns, text on 5 beside it. Wide: media on 7 columns, text on 4. Full: media across all 12 with a display-size title, text and caption below. Narrow: media on 4 columns, text on 5.",
+                "Laptop only (mobile is one column: title, text, media, caption). Full: media across all 12 columns under the text. Wide left / wide right: media on 7 columns under the text, left or right. Beside: text on the left and media on the right (or mirrored), on one row.",
               options: {
                 list: [
-                  { title: "Half (6 cols)", value: "half" },
-                  { title: "Wide (7 cols)", value: "wide" },
                   { title: "Full (12 cols)", value: "full" },
-                  { title: "Narrow (4 cols)", value: "narrow" },
+                  { title: "Wide left (1-7)", value: "wide-left" },
+                  { title: "Wide right (6-12)", value: "wide-right" },
+                  { title: "Beside (text + media on one row)", value: "beside" },
                 ],
                 layout: "radio",
                 direction: "horizontal",
               },
-              initialValue: "half",
+              initialValue: "full",
               validation: (rule) => rule.required(),
             }),
             defineField({
               name: "side",
               title: "Media side",
               type: "string",
-              description: "Which side the media sits on (laptop). Ignored for the full layout.",
+              description: "Beside only: which side the media sits on (laptop).",
               options: {
                 list: [
                   { title: "Left", value: "left" },
@@ -332,14 +339,76 @@ export const project = defineType({
                 direction: "horizontal",
               },
               initialValue: "right",
-              hidden: ({ parent }) => parent?.layout === "full",
+              hidden: ({ parent }) => parent?.layout !== "beside",
             }),
           ],
           preview: {
             select: { title: "title", layout: "layout", side: "side", media: "media.image" },
             prepare({ title, layout, side, media }) {
-              const place = layout === "full" ? "full" : `${layout ?? "half"} · ${side ?? "right"}`;
+              const place = layout === "beside" ? `beside · ${side ?? "right"}` : (layout ?? "full");
               return { title: title || "Chapter", subtitle: place, media };
+            },
+          },
+        },
+        {
+          type: "object",
+          name: "testSwitcher",
+          title: "Test switcher",
+          description:
+            "One view for several A/B tests: the tests stack as pills in the title lane, the selected test's text sits in the reading lane and its media below.",
+          fields: [
+            defineField({
+              name: "title",
+              title: "Section title",
+              type: "string",
+              description: "Optional heading above the switcher.",
+            }),
+            defineField({
+              name: "tests",
+              title: "Tests",
+              type: "array",
+              validation: (rule) => rule.min(2),
+              of: [
+                {
+                  type: "object",
+                  name: "abTest",
+                  title: "Test",
+                  fields: [
+                    defineField({
+                      name: "label",
+                      title: "Pill label",
+                      type: "string",
+                      description: "Short, e.g. \"Bestseller badge\".",
+                      validation: (rule) => rule.required(),
+                    }),
+                    defineField({
+                      name: "title",
+                      title: "Title",
+                      type: "string",
+                      validation: (rule) => rule.required(),
+                    }),
+                    defineField({
+                      name: "status",
+                      title: "Status",
+                      type: "string",
+                      description: "One line, e.g. \"Live since 20 Oct · final read 3 Nov\".",
+                    }),
+                    chapterTextField,
+                    chapterMediaField,
+                    chapterCaptionField,
+                  ],
+                  preview: {
+                    select: { title: "label", subtitle: "status", media: "media.image" },
+                  },
+                },
+              ],
+            }),
+          ],
+          preview: {
+            select: { title: "title", tests: "tests" },
+            prepare({ title, tests }) {
+              const n = Array.isArray(tests) ? tests.length : 0;
+              return { title: title || "Test switcher", subtitle: `${n} tests` };
             },
           },
         },
