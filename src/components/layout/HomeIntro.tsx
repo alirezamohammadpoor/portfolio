@@ -272,9 +272,10 @@ function makeCanvas(name: HTMLSpanElement, outline: boolean): Canvas {
  * علیرضا written by hand (spec: /mnt/project-files/home-intro/
  * alireza-handwriting-spec.md, Ali's calls 10-29: everyday handwriting,
  * visible pen lifts, dots after each connected piece, even brush). Four
- * pen-downs: علیر, the two dots under ی, ضا, the dot over ض. Each pen-down is
+ * pen-downs for علیرضا: علیر, the two dots under ی, ضا, the dot over ض; each is
  * its own mask path with its own draw-on tween, so the dash reveal never
- * restarts early. The surname fades up in the mask as the pen lifts.
+ * restarts early. Eight pen-downs in all: the surname follows after the
+ * long lift across the word space (محمد, پو, ر, then پ's three dots).
  * Glyph cells come from the SVG text; x runs 0 (right edge) → 1 (left edge)
  * in writing direction, vertical marks are fractions of the text box.
  */
@@ -344,27 +345,51 @@ function handwrite(c: Canvas, onDone: () => void) {
   );
   // Stroke 4: the dot over ض.
   const d3 = dot(zad(0.4, B - 0.4 * h));
-  // The surname: a plain window in the mask that fades up as the pen lifts.
-  const first = c.text.getExtentOfChar(7);
-  const last = c.text.getExtentOfChar(c.text.getNumberOfChars() - 1);
-  const surname = document.createElementNS(SVG_NS, "rect");
-  surname.setAttribute("x", `${last.x - 0.2 * h}`);
-  surname.setAttribute("y", "0");
-  surname.setAttribute("width", `${first.x + first.width - last.x + 0.4 * h}`);
-  surname.setAttribute("height", `${oy * 2 + h}`);
-  surname.setAttribute("fill", "#fff");
-  surname.setAttribute("opacity", "0");
-  mask.appendChild(surname);
+  // Surname. Stroke 5: محمد in one pull.
+  const [mim1, he, mim2, dal, pe, vav, re2] = [7, 8, 9, 10, 11, 12, 13].map(cell);
+  const s5 = strokePath(
+    [
+      `M ${mim1(0.25, B - 0.18 * h)}`,
+      `C ${mim1(0.05, B - 0.18 * h)} ${mim1(0.05, B)} ${mim1(0.35, B)} L ${mim1(0.95, B)}`,
+      `L ${he(0.15, B)} L ${he(0.75, X + 0.02 * h)} L ${he(0.35, B - 0.02 * h)} L ${he(1, B)}`,
+      `L ${mim2(0.2, B - 0.16 * h)} C ${mim2(0.02, B - 0.16 * h)} ${mim2(0.02, B)} ${mim2(0.35, B)} L ${mim2(0.95, B)}`,
+      `L ${dal(0.2, B - 0.3 * h)} C ${dal(0.55, B - 0.28 * h)} ${dal(0.7, B - 0.06 * h)} ${dal(0.95, B)}`,
+    ].join(" "),
+  );
+  // Stroke 6: پو.
+  const s6 = strokePath(
+    [
+      `M ${pe(0.1, B)} L ${pe(0.45, X + 0.12 * h)} L ${pe(0.8, B)} L ${pe(1, B)}`,
+      `L ${vav(0.25, B - 0.16 * h)} C ${vav(0.05, B - 0.16 * h)} ${vav(0.05, B + 0.02 * h)} ${vav(0.35, B)}`,
+      `C ${vav(0.4, B + 0.14 * h)} ${vav(0.65, D)} ${vav(0.95, D - 0.04 * h)}`,
+    ].join(" "),
+  );
+  // Stroke 7: the final ر.
+  const s7 = strokePath(
+    `M ${re2(0.15, B - 0.04 * h)} C ${re2(0.35, B + 0.12 * h)} ${re2(0.6, D)} ${re2(0.95, D - 0.06 * h)}`,
+  );
+  // Stroke 8: the three dots under پ, a triangle pointing down.
+  const p1 = dot(pe(0.3, D - 0.04 * h));
+  const p2 = dot(pe(0.6, D - 0.04 * h));
+  const p3 = dot(pe(0.45, D + 0.06 * h));
 
   const r = (0.19 * h).toFixed(1);
   const tap = { duration: 0.05, ease: "back.out(2)" };
-  const tl = gsap.timeline({ onComplete: onDone });
+  const quick = { duration: 0.04, ease: "back.out(2)" };
+  // Natural hand speed is ≈3.4 s; Ali picked "fluent, about 2.6 s", so the
+  // whole thing runs at timeScale 1.3. The ratios carry the feel.
+  const tl = gsap.timeline({ onComplete: onDone }).timeScale(1.3);
   tl.to(s1, { strokeDashoffset: 0, duration: 0.7, ease: "power1.inOut" }, 0);
   tl.to(d1, { attr: { r }, ...tap }, 0.82);
   tl.to(d2, { attr: { r }, ...tap }, 0.92);
   tl.to(s3, { strokeDashoffset: 0, duration: 0.48, ease: "power1.inOut" }, 1.09);
   tl.to(d3, { attr: { r }, ...tap }, 1.67);
-  tl.to(surname, { attr: { opacity: 1 }, duration: 0.45, ease: ease.out }, 1.73);
+  tl.to(s5, { strokeDashoffset: 0, duration: 0.55, ease: "power1.inOut" }, 1.93);
+  tl.to(s6, { strokeDashoffset: 0, duration: 0.25, ease: "power1.inOut" }, 2.6);
+  tl.to(s7, { strokeDashoffset: 0, duration: 0.14, ease: "power1.out" }, 2.95);
+  tl.to(p1, { attr: { r }, ...quick }, 3.19);
+  tl.to(p2, { attr: { r }, ...quick }, 3.26);
+  tl.to(p3, { attr: { r }, ...quick }, 3.33);
   return tl;
 }
 
