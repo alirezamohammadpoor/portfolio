@@ -53,7 +53,7 @@
       "layout": "full",
       "caption": "Control and variant from production, same session. Badge style GT America 500 12/15 on #18181b.",
       "text": [
-        "\"Bästsäljare\" on the product-list cards, 50/50 on a user cookie, GA4 in BigQuery, Bayesian with CUPED and a product-list view as activation metric. Five days in, about 18,000 users per arm: bestseller card clicks +4.4 % (99 % chance to beat control), other cards +2.2 %, add to cart +1.1 % with a wide interval.",
+        "\"Bästsäljare\" on the product-list cards, 50/50 on a user cookie, GA4 in BigQuery, Bayesian with CUPED and a product-list view as activation metric. Nine days in, 64,222 users: bestseller card clicks 22.5 % → 23.1 % (+2.7 %, 96 % chance to beat control), PLP → PDP click 48.7 % → 49.4 % (+1.2 %), the other cards +1.0 %. Add to cart 14.7 % → 14.6 %, purchase 3.91 % → 3.86 %, both flat.",
         "The click lift looked like a win by day two; the goal is still flat, so it runs the full two weeks. Final read 3 November."
       ],
       "media": {
@@ -87,13 +87,17 @@
           "title": "Bestseller badge on the product list",
           "status": "Live since 20 Oct · final read 3 Nov",
           "text": [
-            "The product list had no signal for what sells. The badge reuses the slot the Archive badge already had in the card's top corner, so the grid never shifts, and follows the colour variant rather than the product family. Goal add to cart, target +5 %."
+            "The product list had no signal for what sells. The badge reuses the slot the Archive badge already had in the card's top corner, so the grid never shifts, and follows the colour variant rather than the product family."
           ],
           "caption": "Figma, ships state: mobile card, laptop card, 2-col grid.",
           "media": {
             "type": "image",
             "image": "file:01-badge-mobile-grid@3x.png"
-          }
+          },
+          "hypothesis": "A bestseller badge is proof of trust, especially for someone buying their first tights. More clicks on the badged cards would lead to more adds to cart and a higher conversion, at the cost of stealing clicks from the other cards. A trade-off I was prepared to pay.",
+          "metric": "Add to cart rate, target +5 % relative. PLP → PDP click-through as the leading indicator; purchase and revenue guarded.",
+          "result": "9 days in, 64,222 users. Bestseller card click 22.5 % → 23.1 % (+2.7 %, 96 % chance to beat control). PLP → PDP click 48.7 % → 49.4 % (+1.2 %). The other cards gained clicks too (+1.0 %), so the badge did not cannibalise. Add to cart 14.7 % → 14.6 % (−1.1 %, 29 %). Purchase 3.91 % → 3.86 %, flat.",
+          "decision": "Still running. Final read 3 Nov: the leading signal is there, the add-to-cart lift is not yet."
         },
         {
           "_key": "t-countdown",
