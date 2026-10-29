@@ -28,6 +28,10 @@
   --text-body: 1rem;
   --text-body--line-height: 1.5rem;
 
+  /* Reading lane on the chapter page (laptop). */
+  --text-lead: 1.125rem;
+  --text-lead--line-height: 1.75rem;
+
   --text-sub: 0.75rem;
   --text-sub--line-height: 1rem;
 

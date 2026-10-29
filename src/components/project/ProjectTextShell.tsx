@@ -65,17 +65,35 @@ export default function ProjectTextShell({ project }: { project: Project }) {
       {/* Chapter page: the case study's text, so the page reads without JS */}
       {chapters.length > 0 && (
         <div className="px-margin">
-          {chapters.map((chapter) => (
-            <section key={chapter._key} className="mt-10">
-              {chapter.title && <h2 className="text-h2 text-primary">{chapter.title}</h2>}
-              {Array.isArray(chapter.text) && chapter.text.length > 0 && (
-                <div className="mt-4 text-body text-primary">
-                  <PortableText value={chapter.text as PortableTextBlock[]} components={portableTextComponents} />
-                </div>
-              )}
-              {chapter.caption && <p className="mt-3 text-sub text-secondary">{chapter.caption}</p>}
-            </section>
-          ))}
+          {chapters.map((block) =>
+            block._type === "testSwitcher" ? (
+              <section key={block._key} className="mt-10">
+                {block.title && <h2 className="text-h2 text-primary">{block.title}</h2>}
+                {(block.tests ?? []).map((test) => (
+                  <section key={test._key} className="mt-6">
+                    {test.title && <h3 className="text-h3 text-primary">{test.title}</h3>}
+                    {test.status && <p className="text-sub text-secondary">{test.status}</p>}
+                    {Array.isArray(test.text) && test.text.length > 0 && (
+                      <div className="mt-4 text-body text-primary">
+                        <PortableText value={test.text as PortableTextBlock[]} components={portableTextComponents} />
+                      </div>
+                    )}
+                    {test.caption && <p className="mt-3 text-sub text-secondary">{test.caption}</p>}
+                  </section>
+                ))}
+              </section>
+            ) : (
+              <section key={block._key} className="mt-10">
+                {block.title && <h2 className="text-h2 text-primary">{block.title}</h2>}
+                {Array.isArray(block.text) && block.text.length > 0 && (
+                  <div className="mt-4 text-body text-primary">
+                    <PortableText value={block.text as PortableTextBlock[]} components={portableTextComponents} />
+                  </div>
+                )}
+                {block.caption && <p className="mt-3 text-sub text-secondary">{block.caption}</p>}
+              </section>
+            ),
+          )}
         </div>
       )}
     </div>

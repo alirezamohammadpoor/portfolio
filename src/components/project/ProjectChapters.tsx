@@ -1,25 +1,28 @@
 "use client";
 
 /**
- * The chapter project page (brief-v2, Figma frame E): hero + chapters + next
- * project on one scrolling page, for projects that carry `chapters[]`.
+ * The chapter project page (brief-v3 "lanes"): hero + chapters + next project
+ * on one scrolling page, for projects that carry `chapters[]`.
  *
  * Hero: today's split, minus the drawer. Title, description, tech stack and
  * the pills on the left (cols 1-5); the first gallery item as the 4:3 landing
  * media on the right (cols 7-12), which is where the home → project clone
  * lands. On a phone the landing media sits on top and the text follows.
  *
- * Chapters: one media + its own title, text and caption. Laptop layouts per
- * chapter (half / wide / full / narrow, left or right); each gets about a
- * screen of air with the text block centred on the media. Phone: one column,
- * media first, then caption, title and text. Media autoplays muted in view
+ * Chapters (laptop): a text row with the title in the title lane (cols 1-3)
+ * and the reading lane (cols 5-9), then a media row below it whose width and
+ * side vary per chapter (full 1-12, wide-left 1-7, wide-right 6-12), caption
+ * under the media. "Beside" keeps text and media on one row for contrast.
+ * The test switcher stacks pills in the title lane; the selected test's text
+ * sits in the reading lane and its media below. Phone: title, text, media,
+ * caption; switcher pills wrap above the text. Media autoplays muted in view
  * through the shared VideoPlayer; the text is static.
  *
  * Next project: the same 4:3 preview block as the gallery page (the morph
  * source for project → project) with the next title beside it.
  */
 
-import type { RefObject } from "react";
+import { useState, type RefObject } from "react";
 import NextLink from "next/link";
 import Image from "next/image";
 import { Link } from "next-view-transitions";
@@ -36,7 +39,11 @@ import LandingMedia from "@/components/project/LandingMedia";
 import { isPlainLeftClick } from "@/lib/clicks";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
-export type Chapter = NonNullable<Project["chapters"]>[number];
+export type ChapterBlock = NonNullable<Project["chapters"]>[number];
+export type Chapter = Extract<ChapterBlock, { _type: "chapter" }>;
+export type TestSwitcher = Extract<ChapterBlock, { _type: "testSwitcher" }>;
+export type AbTest = NonNullable<TestSwitcher["tests"]>[number];
+type ChapterMediaValue = Chapter["media"];
 
 interface ProjectChaptersProps {
   project: Project;
@@ -59,32 +66,53 @@ interface ProjectChaptersProps {
   onNavigateNext?: () => void;
 }
 
-// 12-column placements (laptop). `text` is centred on the media's row.
-const LAYOUTS = {
-  half: {
-    right: { media: "desktop:col-start-7 desktop:col-end-13", text: "desktop:col-start-1 desktop:col-end-6" },
-    left: { media: "desktop:col-start-1 desktop:col-end-7", text: "desktop:col-start-8 desktop:col-end-13" },
-  },
-  wide: {
-    left: { media: "desktop:col-start-1 desktop:col-end-8", text: "desktop:col-start-9 desktop:col-end-13" },
-    right: { media: "desktop:col-start-6 desktop:col-end-13", text: "desktop:col-start-1 desktop:col-end-5" },
-  },
-  narrow: {
-    right: { media: "desktop:col-start-8 desktop:col-end-12", text: "desktop:col-start-1 desktop:col-end-6" },
-    left: { media: "desktop:col-start-2 desktop:col-end-6", text: "desktop:col-start-8 desktop:col-end-13" },
-  },
+// Lanes (laptop, 12 columns): the title lane is cols 1-3, the reading lane
+// cols 5-9. Media rows sit below the text row at one of three widths.
+const TITLE_LANE = "col-span-4 desktop:col-start-1 desktop:col-end-4";
+const READING_LANE = "col-span-4 mt-3 desktop:mt-0 desktop:col-start-5 desktop:col-end-10";
+const MEDIA_ROWS = {
+  full: "desktop:col-start-1 desktop:col-end-13",
+  "wide-left": "desktop:col-start-1 desktop:col-end-8",
+  "wide-right": "desktop:col-start-6 desktop:col-end-13",
 } as const;
+type MediaWidth = keyof typeof MEDIA_ROWS;
+type Layout = MediaWidth | "beside";
 
-type Side = "left" | "right";
-
-function placement(chapter: Chapter) {
-  const layout = chapter.layout === "wide" || chapter.layout === "narrow" ? chapter.layout : "half";
-  const side: Side = chapter.side === "left" ? "left" : "right";
-  return LAYOUTS[layout][side];
+// Legacy values (half / wide / narrow) from the first draft map onto the lanes.
+function layoutOf(chapter: Chapter): Layout {
+  const layout = chapter.layout as string | null;
+  switch (layout) {
+    case "full":
+    case "wide-left":
+    case "wide-right":
+    case "beside":
+      return layout;
+    case "half":
+    case "narrow":
+      return "beside";
+    case "wide":
+      return chapter.side === "right" ? "wide-right" : "wide-left";
+    default:
+      return "full";
+  }
 }
 
-function ChapterMedia({ chapter, title, hidden }: { chapter: Chapter; title: string; hidden: boolean }) {
-  const media = chapter.media;
+const readingText = "text-body desktop:text-lead text-primary [&>p]:my-0 [&>p+p]:mt-3";
+
+function ChapterMedia({
+  media,
+  title,
+  hidden,
+  fit = "row",
+  sizes = "(min-width: 75rem) 60vw, 100vw",
+}: {
+  media: ChapterMediaValue;
+  title: string;
+  hidden: boolean;
+  /** row: fill the media row at the image's ratio. frame: natural width, height capped (phone frames). */
+  fit?: "row" | "frame";
+  sizes?: string;
+}) {
   if (!media) return null;
   if (media.type === "video" && media.video?.asset?._ref) {
     return (
@@ -103,76 +131,126 @@ function ChapterMedia({ chapter, title, hidden }: { chapter: Chapter; title: str
   }
   if (media.type === "image" && media.image?.asset) {
     const dims = media.image.asset.metadata?.dimensions;
-    const ratio = dims?.width && dims?.height ? `${dims.width} / ${dims.height}` : "4 / 3";
-    return (
-      <div className="relative w-full overflow-hidden bg-black" style={{ aspectRatio: ratio }}>
+    const width = dims?.width ?? 1600;
+    const height = dims?.height ?? 1200;
+    if (fit === "frame") {
+      return (
         <Image
           src={imageUrl(media.image, 1600)}
           alt={title}
-          fill
-          className="object-cover"
-          sizes="(min-width: 75rem) 60vw, 100vw"
+          width={width}
+          height={height}
+          className="h-auto w-auto max-w-full max-h-[min(720px,80dvh)]"
+          sizes={sizes}
         />
+      );
+    }
+    return (
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio: `${width} / ${height}` }}>
+        <Image src={imageUrl(media.image, 1600)} alt={title} fill className="object-cover" sizes={sizes} />
       </div>
     );
   }
   return null;
 }
 
-function ChapterText({ chapter, display = false }: { chapter: Chapter; display?: boolean }) {
-  const text = Array.isArray(chapter.text) && chapter.text.length > 0 ? (chapter.text as PortableTextBlock[]) : null;
-  return (
-    <>
-      {!display && chapter.title && (
-        <h2 className="text-h3 desktop:text-h2 text-primary">{chapter.title}</h2>
-      )}
-      {text && (
-        <div className="mt-4 desktop:mt-6 text-body text-primary [&>p]:my-0 [&>p+p]:mt-3">
-          <PortableText value={text} components={portableTextComponents} />
-        </div>
-      )}
-    </>
-  );
+function Caption({ text }: { text: string | null | undefined }) {
+  return text ? <p className="mt-2 text-sub text-secondary">{text}</p> : null;
 }
 
 function ChapterSection({ chapter, index, hidden }: { chapter: Chapter; index: number; hidden: boolean }) {
   const title = chapter.title ?? `Chapter ${index + 1}`;
-  const caption = chapter.caption ? (
-    <p className="mt-3 text-sub text-secondary">{chapter.caption}</p>
+  const text = Array.isArray(chapter.text) && chapter.text.length > 0 ? (chapter.text as PortableTextBlock[]) : null;
+  const body = text ? (
+    <div className={readingText}>
+      <PortableText value={text} components={portableTextComponents} />
+    </div>
   ) : null;
+  const layout = layoutOf(chapter);
 
-  if (chapter.layout === "full") {
+  if (layout === "beside") {
+    const left = chapter.side === "left";
     return (
-      <section className="grid-site px-margin py-6 desktop:py-12" aria-label={title}>
-        {/* Phone: media, caption, title, text. Laptop: display title, media, text + caption. */}
-        <h2 className="order-3 desktop:order-none col-span-4 desktop:col-start-1 desktop:col-end-10 text-h3 desktop:text-display text-primary mt-4 desktop:mt-0 desktop:mb-10">
-          {title}
-        </h2>
-        <div className="order-1 desktop:order-none col-span-4 desktop:col-span-12">
-          <ChapterMedia chapter={chapter} title={title} hidden={hidden} />
+      <section className="grid-site px-margin py-6 desktop:items-center desktop:py-12" aria-label={title}>
+        <div
+          className={`col-span-4 ${left ? "desktop:col-start-8 desktop:col-end-13" : "desktop:col-start-1 desktop:col-end-6"} desktop:row-start-1`}
+        >
+          <h2 className="text-h3 text-primary">{title}</h2>
+          <div className="mt-3 desktop:mt-6">{body}</div>
         </div>
-        <div className="order-2 desktop:order-none col-span-4 desktop:col-start-7 desktop:col-end-13 desktop:mt-3">
-          {caption}
-        </div>
-        <div className="order-4 desktop:order-none col-span-4 desktop:col-start-1 desktop:col-end-6 desktop:-mt-7 desktop:pt-3">
-          <ChapterText chapter={chapter} display />
+        <div
+          className={`col-span-4 mt-4 desktop:mt-0 ${left ? "desktop:col-start-1 desktop:col-end-7" : "desktop:col-start-7 desktop:col-end-13"} desktop:row-start-1`}
+        >
+          <ChapterMedia media={chapter.media} title={title} hidden={hidden} sizes="(min-width: 75rem) 50vw, 100vw" />
+          <Caption text={chapter.caption} />
         </div>
       </section>
     );
   }
 
-  const place = placement(chapter);
+  const sizes = layout === "full" ? "(min-width: 75rem) 100vw, 100vw" : "(min-width: 75rem) 60vw, 100vw";
   return (
-    <section
-      className="grid-site px-margin items-center py-6 desktop:min-h-[min(680px,100dvh)] desktop:py-12"
-      aria-label={title}
-    >
-      <div className={`col-span-4 ${place.media}`}>
-        <ChapterMedia chapter={chapter} title={title} hidden={hidden} />
-        {caption}
+    <section className="grid-site px-margin py-6 desktop:py-12" aria-label={title}>
+      <h2 className={`${TITLE_LANE} text-h3 text-primary`}>{title}</h2>
+      <div className={READING_LANE}>{body}</div>
+      <div className={`col-span-4 mt-4 desktop:mt-8 ${MEDIA_ROWS[layout]}`}>
+        <ChapterMedia media={chapter.media} title={title} hidden={hidden} sizes={sizes} />
+        <Caption text={chapter.caption} />
       </div>
-      <div className={`col-span-4 mt-4 desktop:mt-0 desktop:self-center ${place.text}`}>
-        <ChapterText chapter={chapter} />
+    </section>
+  );
+}
+
+function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: boolean }) {
+  const tests = (block.tests ?? []).filter((t) => t.label || t.title);
+  const [active, setActive] = useState(0);
+  const test = tests[Math.min(active, tests.length - 1)];
+  if (!test) return null;
+  const title = test.title ?? test.label ?? "Test";
+  const text = Array.isArray(test.text) && test.text.length > 0 ? (test.text as PortableTextBlock[]) : null;
+  const sectionTitle = block.title ?? "Tests";
+  const pill = "inline-flex h-8 items-center rounded-full px-4 text-sub uppercase transition-colors duration-200";
+
+  return (
+    <section className="grid-site px-margin py-6 desktop:py-12" aria-label={sectionTitle}>
+      {block.title && (
+        <h2 className="col-span-4 desktop:col-start-1 desktop:col-end-10 text-h3 text-primary mb-6 desktop:mb-8">
+          {block.title}
+        </h2>
+      )}
+      <div className={`${TITLE_LANE} flex flex-wrap gap-2 desktop:flex-col desktop:items-start`} role="tablist">
+        {tests.map((t, i) => {
+          const selected = i === active;
+          return (
+            <button
+              key={t._key}
+              type="button"
+              role="tab"
+              aria-selected={selected}
+              id={`${block._key}-tab-${i}`}
+              onClick={() => setActive(i)}
+              className={`${pill} ${selected ? "bg-pistachio text-primary" : "border border-tertiary text-secondary hover:bg-lightpistachio hover:text-primary"}`}
+            >
+              {t.label ?? t.title}
+            </button>
+          );
+        })}
+      </div>
+      <div className={READING_LANE} role="tabpanel" aria-labelledby={`${block._key}-tab-${active}`}>
+        <p className="text-sub text-secondary tabular-nums">
+          Test {active + 1} of {tests.length}
+          {test.status ? ` · ${test.status}` : ""}
+        </p>
+        <h3 className="mt-2 text-h3 text-primary">{title}</h3>
+        {text && (
+          <div className={`mt-4 ${readingText}`}>
+            <PortableText value={text} components={portableTextComponents} />
+          </div>
+        )}
+      </div>
+      <div key={test._key} className={`col-span-4 mt-4 desktop:mt-8 ${MEDIA_ROWS["wide-left"]}`}>
+        <ChapterMedia media={test.media} title={title} hidden={hidden} fit="frame" sizes="(min-width: 75rem) 40vw, 100vw" />
+        <Caption text={test.caption} />
       </div>
     </section>
   );
@@ -266,9 +344,13 @@ export default function ProjectChapters({
 
       {/* Chapters */}
       <div className={mediaGate}>
-        {chapters.map((chapter, i) => (
-          <ChapterSection key={chapter._key} chapter={chapter} index={i} hidden={hidden} />
-        ))}
+        {chapters.map((block, i) =>
+          block._type === "testSwitcher" ? (
+            <TestSwitcherSection key={block._key} block={block} hidden={hidden} />
+          ) : (
+            <ChapterSection key={block._key} chapter={block} index={i} hidden={hidden} />
+          ),
+        )}
 
         {/* Next project */}
         {nextProject && onNavigateNext && nextProject.slug?.current && (
