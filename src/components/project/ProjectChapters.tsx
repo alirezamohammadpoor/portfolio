@@ -16,7 +16,7 @@
  * The test switcher stacks pills in the title lane; the selected test's text
  * sits in the reading lane and its media below. Phone: title, text, media,
  * caption; switcher pills wrap above the text. Media autoplays muted in view
- * through the shared VideoPlayer; the text is static.
+ * as silent clips (InlineClip, no player chrome); the text is static.
  *
  * Next project: the same 4:3 preview block as the gallery page (the morph
  * source for project → project) with the next title beside it.
@@ -34,7 +34,7 @@ import TechStack from "@/components/project/TechStack";
 import CopyButton from "@/components/CopyButton";
 import { portableTextComponents } from "@/components/portableText/components";
 import NextProjectPreview, { type NextProject } from "@/components/project/NextProjectPreview";
-import VideoPlayer from "@/components/player/VideoPlayer";
+import InlineClip from "@/components/project/InlineClip";
 import LandingMedia from "@/components/project/LandingMedia";
 import { isPlainLeftClick } from "@/lib/clicks";
 
@@ -109,23 +109,19 @@ function ChapterMedia({
   media: ChapterMediaValue;
   title: string;
   hidden: boolean;
-  /** row: fill the media row at the image's ratio. frame: natural width, height capped (phone frames). */
+  /** row: fill the media row at the image's ratio. frame: fill the parent's fixed height at natural ratio (switcher). */
   fit?: "row" | "frame";
   sizes?: string;
 }) {
   if (!media) return null;
   if (media.type === "video" && media.video?.asset?._ref) {
     return (
-      <VideoPlayer
+      <InlineClip
         src={fileUrl(media.video.asset._ref)}
         poster={media.poster?.asset ? imageUrl(media.poster, 1600) : undefined}
         label={title}
-        layout="overlay"
-        language="icons"
-        aspect="auto"
-        hasAudio={false}
-        autoplay={!hidden}
-        trackId={`${title}`}
+        active={!hidden}
+        className={fit === "frame" ? "h-full w-full object-contain object-left-top" : ""}
       />
     );
   }
@@ -140,7 +136,7 @@ function ChapterMedia({
           alt={title}
           width={width}
           height={height}
-          className="h-auto w-auto max-w-full max-h-[min(720px,80dvh)]"
+          className="h-full w-full object-contain object-left-top"
           sizes={sizes}
         />
       );
@@ -204,12 +200,14 @@ function ChapterSection({ chapter, index, hidden }: { chapter: Chapter; index: n
 function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: boolean }) {
   const tests = (block.tests ?? []).filter((t) => t.label || t.title);
   const [active, setActive] = useState(0);
-  const test = tests[Math.min(active, tests.length - 1)];
-  if (!test) return null;
-  const title = test.title ?? test.label ?? "Test";
-  const text = Array.isArray(test.text) && test.text.length > 0 ? (test.text as PortableTextBlock[]) : null;
+  const current = Math.min(active, tests.length - 1);
+  if (!tests.length) return null;
   const sectionTitle = block.title ?? "Tests";
   const pill = "inline-flex h-8 items-center rounded-full px-4 text-sub uppercase transition-colors duration-200";
+  // Every panel is rendered in the same grid cell; the inactive ones stay
+  // invisible so the cell keeps the tallest panel's height (no layout shift).
+  const stacked = "col-start-1 row-start-1";
+  const gate = (i: number) => (i === current ? "" : " invisible");
 
   return (
     <section className="grid-site px-margin py-6 desktop:py-12" aria-label={sectionTitle}>
@@ -220,13 +218,14 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
       )}
       <div className={`${TITLE_LANE} flex flex-wrap gap-2 desktop:flex-col desktop:items-start`} role="tablist">
         {tests.map((t, i) => {
-          const selected = i === active;
+          const selected = i === current;
           return (
             <button
               key={t._key}
               type="button"
               role="tab"
               aria-selected={selected}
+              aria-controls={`${block._key}-panel-${i}`}
               id={`${block._key}-tab-${i}`}
               onClick={() => setActive(i)}
               className={`${pill} ${selected ? "bg-pistachio text-primary" : "border border-tertiary text-secondary hover:bg-lightpistachio hover:text-primary"}`}
@@ -236,21 +235,49 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
           );
         })}
       </div>
-      <div className={READING_LANE} role="tabpanel" aria-labelledby={`${block._key}-tab-${active}`}>
-        <p className="text-sub text-secondary tabular-nums">
-          Test {active + 1} of {tests.length}
-          {test.status ? ` · ${test.status}` : ""}
-        </p>
-        <h3 className="mt-2 text-h3 text-primary">{title}</h3>
-        {text && (
-          <div className={`mt-4 ${readingText}`}>
-            <PortableText value={text} components={portableTextComponents} />
-          </div>
-        )}
+      <div className={`${READING_LANE} grid`}>
+        {tests.map((t, i) => {
+          const title = t.title ?? t.label ?? "Test";
+          const text = Array.isArray(t.text) && t.text.length > 0 ? (t.text as PortableTextBlock[]) : null;
+          return (
+            <div
+              key={t._key}
+              id={`${block._key}-panel-${i}`}
+              role="tabpanel"
+              aria-labelledby={`${block._key}-tab-${i}`}
+              aria-hidden={i !== current}
+              className={`${stacked}${gate(i)}`}
+            >
+              <p className="text-sub text-secondary tabular-nums">
+                Test {i + 1} of {tests.length}
+                {t.status ? ` · ${t.status}` : ""}
+              </p>
+              <h3 className="mt-2 text-h3 text-primary">{title}</h3>
+              {text && (
+                <div className={`mt-4 ${readingText}`}>
+                  <PortableText value={text} components={portableTextComponents} />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
-      <div key={test._key} className={`col-span-4 mt-4 desktop:mt-8 ${MEDIA_ROWS["wide-left"]}`}>
-        <ChapterMedia media={test.media} title={title} hidden={hidden} fit="frame" sizes="(min-width: 75rem) 40vw, 100vw" />
-        <Caption text={test.caption} />
+      {/* Media row: one phone-shaped box (390:844) shared by every test, so the swap never shifts the page. */}
+      <div className={`col-span-4 mt-4 desktop:mt-8 ${MEDIA_ROWS["wide-left"]} grid`}>
+        {tests.map((t, i) => (
+          <div key={t._key} className={`${stacked}${gate(i)}`} aria-hidden={i !== current}>
+            <div className="aspect-[390/844] h-[70dvh] desktop:h-[min(720px,80dvh)]">
+              <ChapterMedia
+                media={t.media}
+                title={t.title ?? t.label ?? "Test"}
+                hidden={hidden || i !== current}
+                fit="frame"
+                sizes="(min-width: 75rem) 40vw, 100vw"
+              />
+            </div>
+            <Caption text={t.caption} />
+          </div>
+        ))}
       </div>
     </section>
   );
