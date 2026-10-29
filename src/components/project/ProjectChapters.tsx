@@ -22,7 +22,7 @@
  * caption; switcher pills wrap above the text. Media autoplays muted in view
  * as silent clips (InlineClip, no player chrome); the text is static.
  *
- * Next project: the same 4:3 preview block as the gallery page (the morph
+ * Next project: the preview block at the hero's 16:10 (the morph
  * source for project → project) with the next title beside it.
  */
 
@@ -435,6 +435,7 @@ export default function ProjectChapters({
                 previewRef={previewRef}
                 onNavigate={onNavigateNext}
                 sizes="(min-width: 75rem) 66vw, 100vw"
+                aspect={16 / 10}
                 labelHidden
               />
             </div>
