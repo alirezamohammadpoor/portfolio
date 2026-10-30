@@ -64,8 +64,17 @@ const COPY: Array<Pick<Chapter, "title" | "caption" | "layout" | "side"> & { tex
   },
 ];
 
-const TESTS = [
-  { label: "Bestseller badge", title: "Bestseller badge on the product list", status: "Live since 20 Oct · final read 3 Nov", text: "The product list had no signal for what sells. The badge reuses the slot the Archive badge already had, so the grid never shifts.", caption: "Figma, ships state: mobile card, laptop card, 2-col grid." },
+const BADGE = {
+  hypothesis:
+    "A bestseller badge is proof of trust, especially for someone buying their first tights. More clicks on the badged cards would lead to more adds to cart and a higher conversion, at the cost of stealing clicks from the other cards. A trade-off I was prepared to pay.",
+  metric: "Add to cart rate, target +5 % relative. PLP → PDP click-through as the leading indicator; purchase and revenue guarded.",
+  result:
+    "9 days in, 64,222 users. Bestseller card click 22.5 % → 23.1 % (+2.7 %, 96 % chance to beat control). PLP → PDP click 48.7 % → 49.4 % (+1.2 %). The other cards gained clicks too (+1.0 %), so the badge did not cannibalise. Add to cart 14.7 % → 14.6 % (−1.1 %, 29 %). Purchase 3.91 % → 3.86 %, flat.",
+  decision: "Still running. Final read 3 Nov: the leading signal is there, the add-to-cart lift is not yet.",
+};
+
+const TESTS: { label: string; title: string; status: string; text: string; caption: string; hypothesis?: string; metric?: string; result?: string; decision?: string }[] = [
+  { label: "Bestseller badge", title: "Bestseller badge on the product list", status: "Live since 20 Oct · final read 3 Nov", text: "The product list had no signal for what sells. The badge reuses the slot the Archive badge already had, so the grid never shifts.", caption: "Figma, ships state: mobile card, laptop card, 2-col grid.", hypothesis: BADGE.hypothesis, metric: BADGE.metric, result: BADGE.result, decision: BADGE.decision },
   { label: "Delivery promise", title: "One delivery promise, four states", status: "Ready · waiting on ops", text: "One line under the buy button; weekend, holiday and after-cut-off copy as component variants.", caption: "Figma, ships state." },
   { label: "Sold-out row", title: "A row instead of a dead end", status: "Designed", text: "One quiet row under the sizes with the sibling colours that have the size, shown on a sold-out tap.", caption: "Figma, ships state." },
   { label: "Similar product", title: "One similar product, in your size", status: "Designed", text: "When the size is gone in every colour, one size-matched card that has it.", caption: "Figma, ships state." },
@@ -101,6 +110,10 @@ export default async function ChaptersLabPage() {
         label: t.label,
         title: t.title,
         status: t.status,
+        hypothesis: t.hypothesis ?? null,
+        metric: t.metric ?? null,
+        result: t.result ?? null,
+        decision: t.decision ?? null,
         caption: t.caption,
         text: [block(t.text, `fixture-test-${i}-0`)],
         media: item && item._type === "galleryVideo" ? { type: "video", video: item.video ?? null, image: null, poster: null } : null,
