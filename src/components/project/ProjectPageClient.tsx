@@ -25,7 +25,7 @@ import ProjectStage from "@/components/project/ProjectStage";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import ScrollProgress from "@/components/project/ScrollProgress";
 import ProjectTextShell from "@/components/project/ProjectTextShell";
-import ProjectChapters from "@/components/project/ProjectChapters";
+import ProjectChapters, { type MobileVariant } from "@/components/project/ProjectChapters";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -33,9 +33,11 @@ interface ProjectPageClientProps {
   project: Project;
   nextProject?: Project["nextProject"];
   prevProject?: Project["prevProject"];
+  /** Lab only: phone layout exploration for the chapter page. */
+  mobileVariant?: MobileVariant;
 }
 
-export default function ProjectPageClient({ project, nextProject, prevProject }: ProjectPageClientProps) {
+export default function ProjectPageClient({ project, nextProject, prevProject, mobileVariant }: ProjectPageClientProps) {
   const router = useTransitionRouter();
   const plainRouter = useRouter();
   const { isTransitioning, contentRevealed, pageRevealed, inPlace, animateClone, startTransition, markTargetReady } =
@@ -201,6 +203,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject }:
           nextProject={nextProject}
           previewRef={previewRef}
           onNavigateNext={nextSlug ? navigateNext : undefined}
+          mobileVariant={mobileVariant}
         />
         {!skip && (
           <ScrollProgress
