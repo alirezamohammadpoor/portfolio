@@ -19,6 +19,9 @@ interface ScrollProgressProps {
  * next project darkens the bar from the bottom (--pull). The number sits at
  * the bar's foot and, from 90 % down, the next project's title above it.
  * The number and both fills are driven by useGalleryScroll.
+ *
+ * Both fills are full-height layers revealed by clip-path / scaleY, so a
+ * scroll frame repaints the bar without laying out the page.
  */
 /** Bar width: the grid gutter (--grid-gutter is 16px on a laptop). */
 const BAR = "var(--grid-gutter)";
@@ -44,23 +47,28 @@ export default function ScrollProgress({
       >
         <div
           ref={fillRef}
-          className="absolute inset-x-0 top-0 overflow-hidden bg-pistachio"
-          style={{ height: "calc(var(--p, 0) * 100%)" }}
+          className="absolute inset-0 bg-pistachio"
+          style={{ clipPath: "inset(0 0 calc((1 - var(--p, 0)) * 100%) 0)" }}
         >
           {/* The hint rides on the fill's end and emerges as the bar grows. */}
           {nextProjectSlug && (
             <p
-              className="absolute right-0 bottom-3 text-center text-sub font-medium uppercase text-primary"
-              style={{ width: BAR, lineHeight: BAR, writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+              className="absolute top-0 right-0"
+              style={{ transform: "translateY(calc(var(--p, 0) * 100vh - 100% - 0.75rem))" }}
             >
-              Scroll down to see next project
+              <span
+                className="block text-center text-sub font-medium uppercase text-primary"
+                style={{ width: BAR, lineHeight: BAR, writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+              >
+                Scroll down to see next project
+              </span>
             </p>
           )}
         </div>
         <div
           ref={pullFillRef}
-          className="absolute inset-x-0 bottom-0 bg-primary"
-          style={{ height: "calc(var(--pull, 0) * 100%)" }}
+          className="absolute inset-0 origin-bottom bg-primary"
+          style={{ transform: "scaleY(var(--pull, 0))" }}
         />
       </div>
       <div className="pointer-events-none fixed right-[var(--grid-margin)] bottom-6 z-10 hidden text-right desktop:block">
