@@ -24,6 +24,8 @@ export type Layer = {
   /** Where the slice sits on the stage at time 0. */
   x: number;
   y: number;
+  /** Display scale of the slice (source points to stage points). */
+  scale?: number;
   /** A reveal layer starts clipped shut and its content hidden. */
   reveal?: "down" | "right";
   /** Starts invisible (for crossfades). */
@@ -53,7 +55,7 @@ export type Scene = {
   layers: Layer[];
   steps: Step[];
   /** The final stills, shown on their own under reduced motion. */
-  poster: { still: Still; x: number; y: number; from?: [number, number] }[];
+  poster: { still: Still; x: number; y: number; from?: [number, number]; scale?: number }[];
 };
 
 const S = (name: string, w: number, h: number): Still => ({ src: `/lab/morph/${name}.webp`, w, h });
@@ -62,7 +64,8 @@ const t1Today = S("t1-today", 390, 844);
 const t1Design = S("t1-design", 390, 844);
 const t2Today = S("t2-today", 374, 508);
 const t2Design = S("t2-design", 374, 548);
-const t3Design = S("t3-design", 374, 604);
+/** C2b (Ali 30 Oct): the colour row as 2.5 similar-product cards, Figma 226:232. */
+const t3Design = S("t3-design", 374, 792);
 const t4Today = S("t4-today", 374, 508);
 const t4Design = S("t4-design", 374, 683);
 const t5Today = S("t5-today", 390, 844);
@@ -72,19 +75,36 @@ const t5Upgraded = S("t5-upgraded", 390, 844);
 /** Live PDP gallery (Signature One Tights Black, 30 Oct), carousel with the next image peeking. */
 const gallery = S("pdp-gallery", 390, 487);
 
-/** PDP frames are 374 wide: centre them. The design state ends at the
+/** PDP frames are Figma's 374-wide phone: scale them to the 390 stage so
+ * they run edge to edge, as on a real phone. The design state ends at the
  * bottom of the phone; the live gallery photo fills the space above it, as on
  * prod (gallery, then breadcrumbs and the buy box). Today is shorter, so the
- * morph pushes the page down into the open space. */
-const PX = 8;
-const top = (designH: number) => 844 - designH;
-const photo = (designH: number): Layer => ({
-  id: "photo",
-  still: gallery,
-  from: [gallery.h - (844 - designH), gallery.h],
-  x: 0,
-  y: 0,
-});
+ * morph pushes the page down into the open space. A sliver under 60 pt is not
+ * worth a photo: the frame then sits at the top. */
+const K = 390 / 374;
+function pdp(designH: number) {
+  const space = 844 - designH * K;
+  const withPhoto = space >= 60;
+  const y0 = withPhoto ? space : 0;
+  const Y = (frameY: number) => y0 + frameY * K;
+  const slice = (id: string, still: Still, from: [number, number], frameY: number, extra: Partial<Layer> = {}): Layer => ({
+    id,
+    still,
+    from,
+    x: 0,
+    y: Y(frameY),
+    scale: K,
+    ...extra,
+  });
+  const photo: Layer[] = withPhoto
+    ? [{ id: "photo", still: gallery, from: [gallery.h - space, gallery.h], x: 0, y: 0 }]
+    : [];
+  const poster = (still: Still) => [
+    ...photo.map((l) => ({ still: l.still, x: 0, y: 0, from: l.from })),
+    { still, x: 0, y: y0, scale: K },
+  ];
+  return { Y, slice, photo, poster, dy: (d: number) => d * K, x: (x: number) => x * K };
+}
 
 /** Badge rects measured on the capture (getBoundingClientRect, 390 x 844). */
 const BADGES: [number, number][] = [
@@ -118,72 +138,72 @@ const badge: Scene = {
   poster: [{ still: t1Design, x: 0, y: 0 }],
 };
 
-const t2y = top(548);
+const t2 = pdp(548);
 const delivery: Scene = {
   key: "delivery",
   label: "Delivery promise",
   bg: "#ffffff",
   layers: [
-    photo(548),
-    { id: "top", still: t2Today, from: [0, 476], x: PX, y: t2y },
-    { id: "low", still: t2Today, from: [476, 508], x: PX, y: t2y + 476 },
-    { id: "band", still: t2Design, from: [476, 516], x: PX, y: t2y + 476, reveal: "down" },
+    ...t2.photo,
+    t2.slice("top", t2Today, [0, 476], 0),
+    t2.slice("low", t2Today, [476, 508], 476),
+    t2.slice("band", t2Design, [476, 516], 476, { reveal: "down" }),
   ],
   steps: [
     { kind: "hold", d: 0.8 },
-    { kind: "move", ids: ["low"], dy: 40, d: 0.6 },
+    { kind: "move", ids: ["low"], dy: t2.dy(40), d: 0.6 },
     { kind: "reveal", ids: ["band"], d: 0.6, at: "<0.1" },
     { kind: "hold", d: 0.2 },
   ],
-  poster: [{ still: gallery, x: 0, y: 0, from: [gallery.h - t2y, gallery.h] }, { still: t2Design, x: PX, y: t2y }],
+  poster: t2.poster(t2Design),
 };
 
 /** Figma has no separate today frame for the sold-out row: today is the
- * design with the row taken out (same components, the row is the only add). */
-const t3y = top(604);
+ * design with the card row taken out (same components, the row is the only add). */
+const t3 = pdp(792);
 const soldout: Scene = {
   key: "soldout",
   label: "Sold-out row",
   bg: "#ffffff",
   layers: [
-    photo(604),
-    { id: "top", still: t3Design, from: [0, 398], x: PX, y: t3y },
-    { id: "low", still: t3Design, from: [494, 604], x: PX, y: t3y + 398 },
-    { id: "band", still: t3Design, from: [398, 494], x: PX, y: t3y + 398, reveal: "down" },
+    ...t3.photo,
+    t3.slice("top", t3Design, [0, 398], 0),
+    t3.slice("low", t3Design, [682, 792], 398),
+    t3.slice("band", t3Design, [398, 682], 398, { reveal: "down" }),
   ],
   steps: [
     { kind: "hold", d: 0.6 },
-    { kind: "tap", x: PX + 138.4, y: t3y + 358 },
-    { kind: "move", ids: ["low"], dy: 96, d: 0.7 },
-    { kind: "reveal", ids: ["band"], d: 0.7, at: "<0.1" },
+    { kind: "tap", x: t3.x(138.4), y: t3.Y(358) },
+    { kind: "move", ids: ["low"], dy: t3.dy(284), d: 0.8 },
+    { kind: "reveal", ids: ["band"], d: 0.8, at: "<0.1" },
     { kind: "hold", d: 0.2 },
   ],
-  poster: [{ still: gallery, x: 0, y: 0, from: [gallery.h - t3y, gallery.h] }, { still: t3Design, x: PX, y: t3y }],
+  poster: t3.poster(t3Design),
 };
 
-const t4y = top(683);
+const t4 = pdp(683);
 const similar: Scene = {
   key: "similar",
   label: "Similar product",
   bg: "#ffffff",
   layers: [
-    photo(683),
-    { id: "top", still: t4Today, from: [0, 316], x: PX, y: t4y },
-    { id: "sizesToday", still: t4Today, from: [316, 394], x: PX, y: t4y + 316 },
-    { id: "sizesDesign", still: t4Design, from: [316, 394], x: PX, y: t4y + 316, hidden: true },
-    { id: "findSize", still: t4Today, from: [394, 422], x: PX, y: t4y + 394 },
-    { id: "low", still: t4Today, from: [422, 508], x: PX, y: t4y + 422 },
-    { id: "band", still: t4Design, from: [394, 597], x: PX, y: t4y + 394, reveal: "down" },
+    ...t4.photo,
+    t4.slice("top", t4Today, [0, 316], 0),
+    t4.slice("sizesToday", t4Today, [316, 394], 316),
+    t4.slice("sizesDesign", t4Design, [316, 394], 316, { hidden: true }),
+    t4.slice("findSize", t4Today, [394, 422], 394),
+    t4.slice("low", t4Today, [422, 508], 422),
+    t4.slice("band", t4Design, [394, 597], 394, { reveal: "down" }),
   ],
   steps: [
     { kind: "hold", d: 0.6 },
-    { kind: "tap", x: PX + 138.4, y: t4y + 358 },
-    { kind: "fade", out: ["sizesToday", "findSize"], in: ["sizesDesign"], dy: 8, d: 0.35 },
-    { kind: "move", ids: ["low"], dy: 175, d: 0.7, at: "-=0.1" },
+    { kind: "tap", x: t4.x(138.4), y: t4.Y(358) },
+    { kind: "fade", out: ["sizesToday", "findSize"], in: ["sizesDesign"], dy: t4.dy(8), d: 0.35 },
+    { kind: "move", ids: ["low"], dy: t4.dy(175), d: 0.7, at: "-=0.1" },
     { kind: "reveal", ids: ["band"], d: 0.7, at: "<0.1" },
     { kind: "hold", d: 0.2 },
   ],
-  poster: [{ still: gallery, x: 0, y: 0, from: [gallery.h - t4y, gallery.h] }, { still: t4Design, x: PX, y: t4y }],
+  poster: t4.poster(t4Design),
 };
 
 /** Mini-cart: the drawer scrolls the line card to the top (as the design note

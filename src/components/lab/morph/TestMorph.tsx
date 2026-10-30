@@ -33,6 +33,7 @@ type Props = {
 function LayerView({ layer }: { layer: Layer }) {
   const [y0, y1] = layer.from ?? [0, layer.still.h];
   const [x0, x1] = layer.cols ?? [0, layer.still.w];
+  const k = layer.scale ?? 1;
   return (
     <div
       data-layer={layer.id}
@@ -40,8 +41,8 @@ function LayerView({ layer }: { layer: Layer }) {
         position: "absolute",
         left: layer.x,
         top: layer.y,
-        width: x1 - x0,
-        height: y1 - y0,
+        width: (x1 - x0) * k,
+        height: (y1 - y0) * k,
         overflow: "hidden",
         visibility: layer.hidden ? "hidden" : "inherit",
         willChange: "transform",
@@ -55,10 +56,10 @@ function LayerView({ layer }: { layer: Layer }) {
         draggable={false}
         style={{
           position: "absolute",
-          left: -x0,
-          top: -y0,
-          width: layer.still.w,
-          height: layer.still.h,
+          left: -x0 * k,
+          top: -y0 * k,
+          width: layer.still.w * k,
+          height: layer.still.h * k,
           maxWidth: "none",
         }}
       />
