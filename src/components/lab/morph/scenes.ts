@@ -52,8 +52,8 @@ export type Scene = {
   chrome?: string[];
   layers: Layer[];
   steps: Step[];
-  /** The final still, shown on its own under reduced motion. */
-  poster: { still: Still; x: number; y: number };
+  /** The final stills, shown on their own under reduced motion. */
+  poster: { still: Still; x: number; y: number; from?: [number, number] }[];
 };
 
 const S = (name: string, w: number, h: number): Still => ({ src: `/lab/morph/${name}.webp`, w, h });
@@ -69,10 +69,22 @@ const t5Today = S("t5-today", 390, 844);
 const t5Design = S("t5-design", 390, 844);
 const t5Picked = S("t5-picked", 390, 844);
 const t5Upgraded = S("t5-upgraded", 390, 844);
+/** Live PDP gallery (Signature One Tights Black, 30 Oct), carousel with the next image peeking. */
+const gallery = S("pdp-gallery", 390, 487);
 
-/** PDP frames are 374 wide: centre them; vertically centre the design state. */
+/** PDP frames are 374 wide: centre them. The design state ends at the
+ * bottom of the phone; the live gallery photo fills the space above it, as on
+ * prod (gallery, then breadcrumbs and the buy box). Today is shorter, so the
+ * morph pushes the page down into the open space. */
 const PX = 8;
-const top = (designH: number) => Math.round((844 - designH) / 2);
+const top = (designH: number) => 844 - designH;
+const photo = (designH: number): Layer => ({
+  id: "photo",
+  still: gallery,
+  from: [gallery.h - (844 - designH), gallery.h],
+  x: 0,
+  y: 0,
+});
 
 /** Badge rects measured on the capture (getBoundingClientRect, 390 x 844). */
 const BADGES: [number, number][] = [
@@ -103,7 +115,7 @@ const badge: Scene = {
     { kind: "reveal", ids: ["b0", "b1", "b2", "b3"], d: 0.5, stagger: 0.07 },
     { kind: "hold", d: 0.2 },
   ],
-  poster: { still: t1Design, x: 0, y: 0 },
+  poster: [{ still: t1Design, x: 0, y: 0 }],
 };
 
 const t2y = top(548);
@@ -112,6 +124,7 @@ const delivery: Scene = {
   label: "Delivery promise",
   bg: "#ffffff",
   layers: [
+    photo(548),
     { id: "top", still: t2Today, from: [0, 476], x: PX, y: t2y },
     { id: "low", still: t2Today, from: [476, 508], x: PX, y: t2y + 476 },
     { id: "band", still: t2Design, from: [476, 516], x: PX, y: t2y + 476, reveal: "down" },
@@ -122,7 +135,7 @@ const delivery: Scene = {
     { kind: "reveal", ids: ["band"], d: 0.6, at: "<0.1" },
     { kind: "hold", d: 0.2 },
   ],
-  poster: { still: t2Design, x: PX, y: t2y },
+  poster: [{ still: gallery, x: 0, y: 0, from: [gallery.h - t2y, gallery.h] }, { still: t2Design, x: PX, y: t2y }],
 };
 
 /** Figma has no separate today frame for the sold-out row: today is the
@@ -133,6 +146,7 @@ const soldout: Scene = {
   label: "Sold-out row",
   bg: "#ffffff",
   layers: [
+    photo(604),
     { id: "top", still: t3Design, from: [0, 398], x: PX, y: t3y },
     { id: "low", still: t3Design, from: [494, 604], x: PX, y: t3y + 398 },
     { id: "band", still: t3Design, from: [398, 494], x: PX, y: t3y + 398, reveal: "down" },
@@ -144,7 +158,7 @@ const soldout: Scene = {
     { kind: "reveal", ids: ["band"], d: 0.7, at: "<0.1" },
     { kind: "hold", d: 0.2 },
   ],
-  poster: { still: t3Design, x: PX, y: t3y },
+  poster: [{ still: gallery, x: 0, y: 0, from: [gallery.h - t3y, gallery.h] }, { still: t3Design, x: PX, y: t3y }],
 };
 
 const t4y = top(683);
@@ -153,6 +167,7 @@ const similar: Scene = {
   label: "Similar product",
   bg: "#ffffff",
   layers: [
+    photo(683),
     { id: "top", still: t4Today, from: [0, 316], x: PX, y: t4y },
     { id: "sizesToday", still: t4Today, from: [316, 394], x: PX, y: t4y + 316 },
     { id: "sizesDesign", still: t4Design, from: [316, 394], x: PX, y: t4y + 316, hidden: true },
@@ -168,7 +183,7 @@ const similar: Scene = {
     { kind: "reveal", ids: ["band"], d: 0.7, at: "<0.1" },
     { kind: "hold", d: 0.2 },
   ],
-  poster: { still: t4Design, x: PX, y: t4y },
+  poster: [{ still: gallery, x: 0, y: 0, from: [gallery.h - t4y, gallery.h] }, { still: t4Design, x: PX, y: t4y }],
 };
 
 /** Mini-cart: the drawer scrolls the line card to the top (as the design note
@@ -200,7 +215,7 @@ const kitBlock: Scene = {
   chrome: ["chrome", "footer"],
   layers: kitLayers,
   steps: kitSteps,
-  poster: { still: t5Design, x: 0, y: 0 },
+  poster: [{ still: t5Design, x: 0, y: 0 }],
 };
 
 /** Whole flow: block, sizes picked, one tap swaps the line for the kit. */
@@ -232,7 +247,7 @@ const kitFull: Scene = {
     { kind: "fade", out: ["pickedC", "footer", "chrome"], in: ["upC", "upFooter", "upTop"], d: 0.45, at: "-=0.15" },
     { kind: "hold", d: 0.2 },
   ],
-  poster: { still: t5Upgraded, x: 0, y: 0 },
+  poster: [{ still: t5Upgraded, x: 0, y: 0 }],
 };
 
 /** Ali 10-30: the kit test plays the whole flow; the block-only cut is kept for reference. */

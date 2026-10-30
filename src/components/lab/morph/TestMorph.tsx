@@ -241,7 +241,7 @@ const TestMorph = forwardRef<TestMorphHandle, Props>(function TestMorph(
         }}
       >
         {reduced ? (
-          <LayerView layer={{ id: "poster", still: scene.poster.still, x: scene.poster.x, y: scene.poster.y }} />
+          scene.poster.map((p, i) => <LayerView key={i} layer={{ id: `poster${i}`, ...p }} />)
         ) : (
           <>
             {clip && (
