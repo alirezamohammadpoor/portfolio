@@ -109,10 +109,11 @@
           "text": [
             "Nothing under the buy button said when an order would ship. One line answers it, and because every state was a component variant, the weekend, holiday and after-cut-off copy surfaced in review before anyone built it. Ready, waiting on ops to confirm the cut-off."
           ],
-          "caption": "Figma, ships state. \"Beställ före 13:50 så skickas din order idag\" under the buy button; after cut-off, weekend and holiday copy as component variants. Cut-off time lives in Storyblok.",
+          "caption": "Today's page morphing into the Figma design.",
           "media": {
-            "type": "image",
-            "image": "file:02-countdown-mobile@3x.png"
+            "type": "video",
+            "video": "file:morph-2-delivery.mp4",
+            "poster": "file:morph-2-delivery-poster.jpg"
           },
           "hypothesis": "Showing shipping and returns facts under the add-to-cart button lowers hesitation, compared with today, where nothing is shown.",
           "metric": "Add to cart, purchase as guardrail. The primary metric is not locked with the client yet.",
@@ -127,10 +128,11 @@
           "text": [
             "A sold-out size was a dead end: a notify-me drawer and nothing else, even when the same tights existed in three other colours in that size. The first design redesigned the drawer. In review it shrank to one quiet row under the sizes, shown only when a sold-out size is tapped, which is also the exposure point."
           ],
-          "caption": "Figma, ships state. \"S är slut i Magenta · finns i\" plus the sibling colours that have the size in stock. The notify-me drawer stays exactly as today.",
+          "caption": "Today's page morphing into the Figma design.",
           "media": {
-            "type": "image",
-            "image": "file:03-soldout-row-mobile@3x.png"
+            "type": "video",
+            "video": "file:morph-3-soldout.mp4",
+            "poster": "file:morph-3-soldout-poster.jpg"
           },
           "hypothesis": "Sending sold-out-size intent to an in-stock colour recovers add to carts that today end in a notify-me form.",
           "metric": "Add to cart, purchase secondary. Exposure only on a sold-out tap where another colour has the size, in both arms.",
@@ -145,10 +147,11 @@
           "text": [
             "The same dead end, second answer: when the size is gone in every colour, show one product that has it. Three cards became one. The card is the one that already won a bundle test, and the mapping is hand-picked, so the test measures the idea and not a recommendation engine."
           ],
-          "caption": "Figma, ships state. One size-matched card with \"Lägg till S\", reusing the card that won the bundle test. Hand-picked map before any recommendation engine.",
+          "caption": "Today's page morphing into the Figma design.",
           "media": {
-            "type": "image",
-            "image": "file:04-similar-product@3x.png"
+            "type": "video",
+            "video": "file:morph-4-similar.mp4",
+            "poster": "file:morph-4-similar-poster.jpg"
           },
           "hypothesis": "A single, size-matched alternative at the moment of a sold-out tap recovers more add to carts than the notify-me form alone.",
           "metric": "Add to cart; purchase and revenue per user secondary. The flag is read in the component that mounts on the tap, so only shoppers who saw the card count.",
@@ -163,10 +166,11 @@
           "text": [
             "Forty-seven discounted kits, and the saving only showed on the kit's own page. A shopper with one kit piece in the cart never learned that two more pieces made a kit and saved 248 SEK. The block sits under the matching line, the button is disabled until every size is picked, and one tap swaps the line for the kit."
           ],
-          "caption": "Figma, variant with sizes picked. The missing pieces under the cart line with one swap button; six changes came out of an adversarial review. Primary metric: revenue per exposed user.",
+          "caption": "Today's page morphing into the Figma design.",
           "media": {
-            "type": "image",
-            "image": "file:05-kit-upgrade-variant@3x.png"
+            "type": "video",
+            "video": "file:morph-5-kit.mp4",
+            "poster": "file:morph-5-kit-poster.jpg"
           },
           "hypothesis": "A shopper who has one piece is more likely to buy the rest of the same kit than unrelated recommendations.",
           "metric": "Revenue per exposed user, purchase rate as guardrail. Changed from average order value in review: AOV only counts buyers, so a block that scares off 799 SEK buyers could raise it while losing money.",
