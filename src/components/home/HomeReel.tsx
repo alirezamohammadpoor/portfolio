@@ -30,7 +30,7 @@ interface HomeReelProps {
  * Entry reel: every project's cover passes full bleed, quicker and quicker,
  * then the view pulls back until the whole home fits on screen, the covers
  * sliding from their stacked slots into their places on the page, and dives
- * into the top. The last frame is the page itself, so the stage just goes.
+ * into the top. The last frame is the page itself, so the stage just fades.
  *
  * The stage is a fixed layer outside <main> (which is hidden until the name
  * lands) and only moves transforms and clip paths: nothing on the page lays
@@ -72,31 +72,20 @@ export default function HomeReel({ projects, pageRef }: HomeReelProps) {
       function finish() {
         if (getReelState() !== "playing" || finishing) return;
         finishing = true;
-        // The page's covers pick up where the reel's left off; the stage
-        // stays until the cover in view has seeked (at most a few frames),
-        // so the hand-over doesn't jump to another moment of the clip.
-        const seeks: Promise<void>[] = [];
-        heroes.forEach((hero, i) => {
-          const from = hero.querySelector("video");
-          const to = covers[i].querySelector("video");
-          if (!from || !to || from.currentSrc !== to.currentSrc || from.readyState < 1 || to.readyState < 2) return;
-          // Only seek into what the page's video already has: an unbuffered
-          // seek shows an empty box until the data arrives.
-          const t = from.currentTime;
-          const buffered = Array.from({ length: to.buffered.length }, (_, j) => [to.buffered.start(j), to.buffered.end(j)]);
-          if (!buffered.some(([start, end]) => t >= start && t <= end)) return;
-          from.pause();
-          seeks.push(new Promise((resolve) => to.addEventListener("seeked", () => resolve(), { once: true })));
-          to.currentTime = t;
-        });
-        const handOver = () => {
+        // The page is shown under the stage, then the stage fades: the
+        // covers are in the same boxes, only at another moment of their
+        // clips (seeking the page's videos to match stalls for up to a
+        // second on sparse keyframes), so a short crossfade bridges them.
+        releaseIntro();
+        // Lenis wakes after the fade: the wheel that skipped the reel must
+        // not also scroll the page off the top it lands on.
+        const done = () => {
           lenisRef.current?.start();
-          releaseIntro();
           setReelState("done");
           ScrollTrigger.refresh();
         };
-        if (cancelled || !seeks.length) return handOver();
-        Promise.race([Promise.all(seeks), new Promise((r) => window.setTimeout(r, 250))]).then(handOver);
+        if (cancelled || !stage) return done();
+        gsap.to(stage, { autoAlpha: 0, duration: BEAT.handOver, ease: ease.out, onComplete: done });
       }
 
       function onInput() {

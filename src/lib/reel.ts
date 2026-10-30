@@ -35,10 +35,12 @@ export const REEL_BEAT = {
   out: 0.9,
   /** Top-to-bottom offset between the heroes' slides. */
   stagger: 0.03,
-  /** The whole home, small and still. */
-  map: 0.5,
+  /** The whole home, small and still. Ali 10-30: slow the ending a bit. */
+  map: 0.8,
   /** Dive into the top of the page. */
-  dive: 0.8,
+  dive: 1.1,
+  /** Crossfade from the stage to the page's own covers. */
+  handOver: 0.3,
 };
 
 /** When the pull back starts: the name leaves for the header then. */
