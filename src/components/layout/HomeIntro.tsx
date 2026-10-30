@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { dur, ease } from "@/lib/motion";
 import { getIntroState, setIntroState } from "@/lib/intro";
+import { onReelSkip, useReelState } from "@/lib/reel";
 import { PERSIAN_NAME } from "@/lib/name";
 
 /** Seconds the finished name holds in the centre before it moves. */
@@ -14,6 +15,8 @@ const BASE_CLASS = "intro-name invisible text-primary will-change-transform";
 interface VariantCtx {
   /** Register teardown for things a variant adds outside the GSAP context. */
   onCleanup: (fn: () => void) => void;
+  /** Register a timeline a variant starts on its own, so a skip can hurry it. */
+  track: (tl: gsap.core.Timeline) => void;
 }
 type Variant = (tl: gsap.core.Timeline, name: HTMLSpanElement, ctx: VariantCtx) => void;
 
@@ -254,12 +257,13 @@ const brush: Variant = (tl, name, ctx) => {
     tl.pause();
     const c = makeCanvas(name, false);
     canvas = c;
-    handwrite(c, () => {
+    const writing = handwrite(c, () => {
       c.remove();
       canvas = null;
       gsap.set(name, { autoAlpha: 1 });
       tl.play();
     });
+    ctx.track(writing);
   });
   tl.add(() => {}, `+=${HOLD}`);
 };
@@ -277,6 +281,9 @@ interface HomeIntroProps {
  */
 export default function HomeIntro({ targetRef }: HomeIntroProps) {
   const nameRef = useRef<HTMLSpanElement>(null);
+  // With the entry reel on, the name waits until the reel knows whether it
+  // plays (its first cover has a frame) and is then written over it.
+  const reelDecided = useReelState() !== "waiting";
 
   // Resumable: React strict mode (dev) runs the effect, cleans up, runs it
   // again. The cleanup kills the move tween, the context reverts the
@@ -285,16 +292,34 @@ export default function HomeIntro({ targetRef }: HomeIntroProps) {
   // which left the page blank.
   useGSAP(() => {
     const name = nameRef.current;
-    if (!name || getIntroState() === "done") return;
+    if (!name || !reelDecided || getIntroState() === "done") return;
     setIntroState("playing");
     name.className = BASE_CLASS;
     name.textContent = PERSIAN_NAME;
     toPersianAttrs(name);
     let move: gsap.core.Tween | null = null;
     const cleanups: (() => void)[] = [];
-
+    const tracked: gsap.core.Timeline[] = [];
+    // A skip during the reel runs the rest of the name at 12x: it still
+    // finishes writing and lands in the header, in a fraction of a second.
+    let hurry = 1;
     const tl = gsap.timeline();
-    brush(tl, name, { onCleanup: (fn) => cleanups.push(fn) });
+    tracked.push(tl);
+    cleanups.push(
+      onReelSkip(() => {
+        if (hurry > 1) return;
+        hurry = 12;
+        tracked.forEach((t) => t.timeScale(t.timeScale() * hurry));
+        move?.timeScale(hurry);
+      }),
+    );
+    brush(tl, name, {
+      onCleanup: (fn) => cleanups.push(fn),
+      track: (t) => {
+        tracked.push(t);
+        t.timeScale(t.timeScale() * hurry);
+      },
+    });
     // Whatever the variant left behind, the move starts from the plain
     // Persian name in the Persian font.
     tl.add(() => {
@@ -321,7 +346,7 @@ export default function HomeIntro({ targetRef }: HomeIntroProps) {
         duration: dur.page,
         ease: ease.inOut,
         onComplete: () => setIntroState("done"),
-      });
+      }).timeScale(hurry);
     }, `+=${HOLD}`);
 
     return () => {
@@ -329,11 +354,11 @@ export default function HomeIntro({ targetRef }: HomeIntroProps) {
       move?.kill();
       if (getIntroState() === "playing") setIntroState("pending");
     };
-  }, { scope: nameRef });
+  }, { scope: nameRef, dependencies: [reelDecided] });
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-bg px-4"
+      className="intro-overlay fixed inset-0 z-[60] flex items-center justify-center bg-bg px-4"
       aria-hidden="true"
     >
       <span

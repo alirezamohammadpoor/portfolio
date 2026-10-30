@@ -14,6 +14,8 @@ import { dur, ease, prefersReducedMotion } from "@/lib/motion";
 import { isPlainLeftClick } from "@/lib/clicks";
 import { restoreVideoPosition, saveVideoPosition } from "@/lib/videoPosition";
 import { useIntroState } from "@/lib/intro";
+import { getReelState } from "@/lib/reel";
+import HomeReel from "./HomeReel";
 
 type Project = PROJECTS_QUERY_RESULT[number];
 
@@ -93,9 +95,16 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
     () => {
       if (!introDone || prefersReducedMotion() || playedRef.current) return;
       playedRef.current = true;
+      // After the entry reel the covers are already in place (the reel
+      // landed on them); only the text rises in.
+      const reelLanded = getReelState() === "done";
       const rows = gsap.utils.toArray<HTMLElement>("[data-row]");
       rows.forEach((row) => {
-        gsap.from(row.querySelectorAll("[data-reveal]"), {
+        const items = gsap.utils
+          .toArray<HTMLElement>(row.querySelectorAll("[data-reveal]"))
+          .filter((el) => !(reelLanded && el.querySelector("[data-cover]")));
+        if (!items.length) return;
+        gsap.from(items, {
           y: 24,
           autoAlpha: 0,
           duration: dur.ui,
@@ -143,6 +152,7 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
 
   return (
     <div ref={rootRef} className="px-margin pb-24 desktop:pb-40">
+      <HomeReel projects={projects} pageRef={rootRef} />
       {/* Opening statement, cols 1-7 on the laptop. */}
       <section className="pt-8 desktop:grid desktop:grid-cols-12 desktop:gap-4 desktop:pt-12">
         <h2 className="text-h2 desktop:col-start-1 desktop:col-end-8 desktop:text-h1">
@@ -299,7 +309,7 @@ function CoverMedia({ project, aspect, priority = false }: CoverMediaProps) {
 
   if (coverMedia?.type === "video" && coverMedia.video?.asset?._ref) {
     return (
-      <div className={`relative w-full overflow-hidden bg-tertiary ${aspect}`}>
+      <div data-cover className={`relative w-full overflow-hidden bg-tertiary ${aspect}`}>
         <video
           ref={videoRef}
           src={fileUrl(coverMedia.video.asset._ref)}
@@ -317,7 +327,7 @@ function CoverMedia({ project, aspect, priority = false }: CoverMediaProps) {
 
   if (coverMedia?.type === "image" && coverMedia.image?.asset) {
     return (
-      <div className={`relative w-full overflow-hidden bg-tertiary ${aspect}`}>
+      <div data-cover className={`relative w-full overflow-hidden bg-tertiary ${aspect}`}>
         <Image
           src={imageUrl(coverMedia.image, 1600)}
           alt={title}
@@ -331,7 +341,7 @@ function CoverMedia({ project, aspect, priority = false }: CoverMediaProps) {
   }
 
   return (
-    <div className={`relative flex w-full items-center justify-center bg-tertiary ${aspect}`}>
+    <div data-cover className={`relative flex w-full items-center justify-center bg-tertiary ${aspect}`}>
       <span className="text-sub text-secondary">{title}</span>
     </div>
   );

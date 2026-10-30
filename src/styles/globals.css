@@ -177,6 +177,26 @@
   html[data-intro="playing"] .intro-name-slot {
     animation: intro-fallback 0s 5s forwards;
   }
+  /* The entry reel (src/lib/reel.ts) runs about 5 s and may wait for its
+     first cover: the page's fallback waits longer. */
+  html[data-reel] main,
+  html[data-reel] .intro-nav,
+  html[data-reel] .intro-name-slot {
+    animation-delay: 9s;
+  }
+  /* Over the reel the overlay is see-through and the name is written in
+     white with difference blending, so it reads on light and dark covers
+     and lands near-black on the page background. Important: the overlay's
+     bg-bg and the name's text-primary are utilities, a later layer. */
+  html[data-reel="playing"] .intro-overlay,
+  html[data-reel="done"] .intro-overlay {
+    background: transparent !important;
+    mix-blend-mode: difference;
+  }
+  html[data-reel="playing"] .intro-overlay .intro-name,
+  html[data-reel="done"] .intro-overlay .intro-name {
+    color: #fff !important;
+  }
 
   .parastoo-font {
     font-family: var(--font-parastoo), serif;

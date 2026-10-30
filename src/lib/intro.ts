@@ -19,6 +19,11 @@ let state: IntroState =
 
 const listeners = new Set<() => void>();
 
+// The entry reel (src/lib/reel.ts) lands after the name: while it holds the
+// intro, "done" is kept back and applied on release.
+let held = false;
+let doneDeferred = false;
+
 export function getIntroState() {
   return state;
 }
@@ -27,9 +32,25 @@ export function getIntroState() {
  *  an entrance can set its start values before the content becomes visible. */
 export function setIntroState(next: IntroState) {
   if (state === next) return;
+  if (next === "done" && held) {
+    doneDeferred = true;
+    return;
+  }
   state = next;
   listeners.forEach((cb) => cb());
   if (typeof document !== "undefined") document.documentElement.dataset.intro = next;
+}
+
+export function holdIntro() {
+  held = true;
+}
+
+export function releaseIntro() {
+  held = false;
+  if (doneDeferred) {
+    doneDeferred = false;
+    setIntroState("done");
+  }
 }
 
 export function subscribeIntro(cb: () => void) {
