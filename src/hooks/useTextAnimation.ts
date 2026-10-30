@@ -4,7 +4,7 @@ import { type RefObject } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { SplitText } from "gsap/SplitText";
-import { prefersReducedMotion } from "@/lib/motion";
+import { ease, prefersReducedMotion } from "@/lib/motion";
 
 interface AnimationOptions {
   duration?: number;
@@ -38,7 +38,7 @@ export function useTitleAnimation(
           gsap.from(self.chars, {
             duration,
             yPercent: -120,
-            ease: "power4.out",
+            ease: ease.out,
             delay,
           }),
       });
@@ -72,7 +72,7 @@ export function useBodyAnimation(
           gsap.from(self.lines, {
             duration,
             yPercent: 105,
-            ease: "power4.out",
+            ease: ease.out,
             delay,
           }),
       });
@@ -109,7 +109,7 @@ export function useInlineAnimation(
             gsap.from(self.lines, {
               duration,
               yPercent: 105,
-                ease: "power4.out",
+                ease: ease.out,
               delay,
             }),
         });

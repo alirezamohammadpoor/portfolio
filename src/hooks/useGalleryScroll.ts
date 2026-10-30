@@ -109,6 +109,7 @@ export function useGalleryScroll({
   const nextTextWrapperRef = useRef<HTMLDivElement>(null);
   const nextTextRef = useRef<HTMLDivElement>(null);
   const progressFillRef = useRef<HTMLElement>(null);
+  const pullRef = useRef<HTMLElement>(null);
   const hasNavigated = useRef(false);
   const footerWipeRef = useRef<HTMLDivElement>(null);
 
@@ -300,6 +301,9 @@ export function useGalleryScroll({
 
   const updateBottomVisuals = useCallback((progress: number) => {
     animateClipReveal(nextTextRef.current, progress);
+    if (pullRef.current) {
+      gsap.to(pullRef.current, { "--pull": Math.min(1, Math.max(0, progress)), duration: 0.4, ease: "power2.out", overwrite: true });
+    }
     animateClipReveal(footerWipeRef.current, progress);
     toggleVisibility(nextTextWrapperRef.current, progress > 0, wasShowingBottom);
   }, []);
@@ -346,6 +350,7 @@ export function useGalleryScroll({
     nextTextWrapperRef,
     nextTextRef,
     progressFillRef,
+    pullRef,
     gallery,
     scrollProgressElRef,
     mobileProgressElRef,

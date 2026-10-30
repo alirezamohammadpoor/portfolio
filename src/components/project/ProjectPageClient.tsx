@@ -14,6 +14,7 @@ import {
 } from "@/hooks/useTextAnimation";
 import { useGalleryScroll } from "@/hooks/useGalleryScroll";
 import { dur, ease, maskOutText, prefersReducedMotion, stagger } from "@/lib/motion";
+import { hasTitleTravel, startTitleTravel, takeTitleTravel } from "@/lib/titleTravel";
 import { cloneSourceFromElement } from "@/lib/cloneSource";
 import { landingKind, landingTop } from "@/lib/landing";
 import { usePrefetchProject } from "@/hooks/usePrefetchProject";
@@ -23,7 +24,7 @@ import ProjectInfoPanel from "@/components/project/ProjectInfoPanel";
 import ProjectGallery from "@/components/project/ProjectGallery";
 import ProjectStage from "@/components/project/ProjectStage";
 import { DESKTOP_QUERY, useIsDesktop } from "@/hooks/useIsDesktop";
-import ScrollProgress, { useIndicatorVariant } from "@/components/project/ScrollProgress";
+import ScrollProgress from "@/components/project/ScrollProgress";
 import ProjectTextShell from "@/components/project/ProjectTextShell";
 import ProjectChapters, { type MobileVariant } from "@/components/project/ProjectChapters";
 
@@ -61,7 +62,6 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
   // A project with chapters is a case study: one scrolling page on every
   // breakpoint (brief-v2). Without them it keeps the gallery page.
   const hasChapters = (project.chapters?.length ?? 0) > 0;
-  const indicator = useIndicatorVariant();
   // Media trees mount only on the client so a phone never requests the
   // desktop gallery's six videos from the server HTML (the server snapshot
   // of useIsDesktop is "desktop"). The text is still in the server HTML: see
@@ -71,6 +71,12 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
 
   const panelRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
+  // The indicator's copy of the next title (laptop): it travels into the
+  // next page's h1 on the pull (lib/titleTravel.ts).
+  const nextTitleRef = useRef<HTMLSpanElement>(null);
+  // Did this page's title arrive by travel? Decided once, at mount, before
+  // the traveller is claimed below; the h1 then skips its split entrance.
+  const [arrivedByTravel] = useState(() => hasTitleTravel(project.title));
   const descRef = useRef<HTMLDivElement>(null);
   const techRef = useRef<HTMLDivElement>(null);
   const linksRef = useRef<HTMLDivElement>(null);
@@ -131,6 +137,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
       return;
     }
     const delta = preview.getBoundingClientRect().top - slotTop;
+    if (desktop) startTitleTravel(nextTitleRef.current);
     maskOutText(panelRef.current);
     gsap.to(gallery, {
       y: -delta,
@@ -147,6 +154,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
     nextTextWrapperRef,
     nextTextRef,
     progressFillRef,
+    pullRef,
     gallery,
     scrollProgressElRef,
     mobileProgressElRef,
@@ -188,10 +196,57 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
   // "waiting", project → project) runs the hooks once against empty refs and
   // the text simply appears.
   const textDeps = [textKey, mounted];
-  useTitleAnimation(titleRef, panelRef, { duration: 1, skip: textWaiting, dependencies: textDeps });
-  useBodyAnimation(descRef, panelRef, { duration: dur.text, delay: stagger, skip: textWaiting, dependencies: textDeps });
-  useBodyAnimation(techRef, panelRef, { duration: dur.text, delay: 2 * stagger, skip: textWaiting, dependencies: textDeps });
-  useInlineAnimation(linksRef, panelRef, "a:not([data-pill])", { duration: dur.text, delay: 3 * stagger, skip: textWaiting, dependencies: textDeps });
+  // Title → description → meta row (tech and links on one beat), the site's
+  // out curve, one stagger step apart. When the title travels in from the
+  // previous page's indicator, the rest waits for most of its move and the
+  // h1 itself only appears as the traveller lands.
+  const lead = arrivedByTravel ? dur.page - 0.2 : 0;
+  useTitleAnimation(titleRef, panelRef, { duration: dur.text, skip: textWaiting || arrivedByTravel, dependencies: textDeps });
+  useBodyAnimation(descRef, panelRef, { duration: dur.text, delay: lead + stagger, skip: textWaiting, dependencies: textDeps });
+  useBodyAnimation(techRef, panelRef, { duration: dur.text, delay: lead + 2 * stagger, skip: textWaiting, dependencies: textDeps });
+  useInlineAnimation(linksRef, panelRef, "a:not([data-pill])", { duration: dur.text, delay: lead + 2 * stagger, skip: textWaiting, dependencies: textDeps });
+
+  // The travelling title: claim it once the h1 has a rect, move it there
+  // (translate + scale, transform-origin top left, the in-out curve) and
+  // swap in the real h1 as it lands.
+  useGSAP(
+    () => {
+      const h1 = titleRef.current;
+      if (textWaiting || !mounted || !h1) return;
+      const traveller = takeTitleTravel(project.title);
+      if (!traveller) {
+        if (arrivedByTravel) gsap.set(h1, { autoAlpha: 1 });
+        return;
+      }
+      const { el, from } = traveller;
+      gsap.set(h1, { autoAlpha: 0 });
+      const to = h1.getBoundingClientRect();
+      const scale = from.width ? to.width / from.width : 1;
+      const land = () => {
+        gsap.set(h1, { autoAlpha: 1 });
+        el.remove();
+      };
+      if (prefersReducedMotion()) {
+        land();
+        return;
+      }
+      const move = gsap.to(el, {
+        x: to.left - from.left,
+        y: to.top - from.top,
+        scale,
+        duration: dur.page,
+        ease: ease.inOut,
+        onComplete: land,
+      });
+      return () => {
+        if (move.progress() < 1) {
+          move.kill();
+          land();
+        }
+      };
+    },
+    { scope: panelRef, dependencies: textDeps },
+  );
 
   // Pill button animation (SplitText mask clips rounded corners)
   useGSAP(
@@ -202,7 +257,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
       gsap.fromTo(
         pills,
         { yPercent: 40, autoAlpha: 0 },
-        { yPercent: 0, autoAlpha: 1, duration: dur.text, ease: ease.out, delay: 3 * stagger },
+        { yPercent: 0, autoAlpha: 1, duration: dur.text, ease: ease.out, delay: lead + 2 * stagger },
       );
     },
     { scope: panelRef, dependencies: textDeps },
@@ -242,11 +297,11 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
           <ScrollProgress
             progressRef={scrollProgressElRef}
             progressFillRef={progressFillRef}
+            pullRef={pullRef}
             nextProjectSlug={nextSlug}
             nextProjectTitle={nextProject?.title}
             nextTextWrapperRef={nextTextWrapperRef}
-            nextTextRef={nextTextRef}
-            variant={indicator}
+            nextTitleRef={nextTitleRef}
           />
         )}
       </>
@@ -296,11 +351,11 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
         <ScrollProgress
           progressRef={scrollProgressElRef}
           progressFillRef={progressFillRef}
+          pullRef={pullRef}
           nextProjectSlug={nextProject?.slug?.current ?? undefined}
           nextProjectTitle={nextProject?.title}
           nextTextWrapperRef={nextTextWrapperRef}
-          nextTextRef={nextTextRef}
-          variant={indicator}
+          nextTitleRef={nextTitleRef}
         />
       )}
 
