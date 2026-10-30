@@ -9,19 +9,20 @@ interface ScrollProgressProps {
   nextProjectSlug: string | undefined;
   nextProjectTitle?: string | null;
   nextTextWrapperRef: RefObject<HTMLDivElement | null>;
-  /** The next title's text node: measured before it travels to the next page's h1. */
-  nextTitleRef?: RefObject<HTMLSpanElement | null>;
 }
 
 /**
- * Scroll indicator, desktop only (Ali, 30 Oct): the right page margin is a
- * pistachio bar that fills from the top with the scroll, like a scrollbar
- * track in the site's colour. At the foot of the page the pull towards the
+ * Scroll indicator, desktop only (Ali, 30 Oct): a pistachio bar the width of
+ * the grid gutter sits flush to the right edge, inside the page margin, and
+ * fills from the top with the scroll, like a scrollbar track in the site's
+ * colour. At the foot of the page the pull towards the
  * next project darkens the bar from the bottom (--pull). The number sits at
  * the bar's foot and, from 90 % down, the next project's title above it.
- * The number and both fills are driven by useGalleryScroll. On the pull the
- * title leaves for the next page's h1 (lib/titleTravel.ts).
+ * The number and both fills are driven by useGalleryScroll.
  */
+/** Bar width: the grid gutter (--grid-gutter is 16px on a laptop). */
+const BAR = "var(--grid-gutter)";
+
 export default function ScrollProgress({
   progressRef,
   progressFillRef,
@@ -29,7 +30,6 @@ export default function ScrollProgress({
   nextProjectSlug,
   nextProjectTitle,
   nextTextWrapperRef,
-  nextTitleRef,
 }: ScrollProgressProps) {
   const numberRef = progressRef as RefObject<HTMLParagraphElement | null>;
   const fillRef = progressFillRef as RefObject<HTMLDivElement | null>;
@@ -39,7 +39,8 @@ export default function ScrollProgress({
     <>
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-y-0 right-0 z-10 hidden w-[var(--grid-margin)] desktop:block"
+        className="pointer-events-none fixed inset-y-0 right-0 z-10 hidden desktop:block"
+        style={{ width: BAR }}
       >
         <div
           ref={fillRef}
@@ -49,8 +50,8 @@ export default function ScrollProgress({
           {/* The hint rides on the fill's end and emerges as the bar grows. */}
           {nextProjectSlug && (
             <p
-              className="absolute right-0 bottom-3 w-[var(--grid-margin)] text-center text-sub font-medium uppercase text-primary"
-              style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", lineHeight: "var(--grid-margin)" }}
+              className="absolute right-0 bottom-3 text-center text-sub font-medium uppercase text-primary"
+              style={{ width: BAR, lineHeight: BAR, writingMode: "vertical-rl", transform: "rotate(180deg)" }}
             >
               Scroll down to see next project
             </p>
@@ -62,11 +63,11 @@ export default function ScrollProgress({
           style={{ height: "calc(var(--pull, 0) * 100%)" }}
         />
       </div>
-      <div className="pointer-events-none fixed right-[calc(var(--grid-margin)+8px)] bottom-6 z-10 hidden text-right desktop:block">
+      <div className="pointer-events-none fixed right-[var(--grid-margin)] bottom-6 z-10 hidden text-right desktop:block">
         {nextProjectSlug && (
           <div ref={nextTextWrapperRef} className="invisible mb-1 whitespace-nowrap">
             <p className="text-body text-primary">
-              Next, <span ref={nextTitleRef}>{nextProjectTitle ?? "project"}</span>
+              Next, {nextProjectTitle ?? "project"}
             </p>
           </div>
         )}

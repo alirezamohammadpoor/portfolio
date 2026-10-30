@@ -14,7 +14,6 @@ import {
 } from "@/hooks/useTextAnimation";
 import { useGalleryScroll } from "@/hooks/useGalleryScroll";
 import { dur, ease, maskOutText, prefersReducedMotion, stagger } from "@/lib/motion";
-import { hasTitleTravel, startTitleTravel, takeTitleTravel } from "@/lib/titleTravel";
 import { cloneSourceFromElement } from "@/lib/cloneSource";
 import { landingKind, landingTop } from "@/lib/landing";
 import { usePrefetchProject } from "@/hooks/usePrefetchProject";
@@ -71,12 +70,6 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
 
   const panelRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
-  // The indicator's copy of the next title (laptop): it travels into the
-  // next page's h1 on the pull (lib/titleTravel.ts).
-  const nextTitleRef = useRef<HTMLSpanElement>(null);
-  // Did this page's title arrive by travel? Decided once, at mount, before
-  // the traveller is claimed below; the h1 then skips its split entrance.
-  const [arrivedByTravel] = useState(() => hasTitleTravel(project.title));
   const descRef = useRef<HTMLDivElement>(null);
   const techRef = useRef<HTMLDivElement>(null);
   const linksRef = useRef<HTMLDivElement>(null);
@@ -137,7 +130,6 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
       return;
     }
     const delta = preview.getBoundingClientRect().top - slotTop;
-    if (desktop) startTitleTravel(nextTitleRef.current);
     maskOutText(panelRef.current);
     gsap.to(gallery, {
       y: -delta,
@@ -197,56 +189,11 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
   // the text simply appears.
   const textDeps = [textKey, mounted];
   // Title → description → meta row (tech and links on one beat), the site's
-  // out curve, one stagger step apart. When the title travels in from the
-  // previous page's indicator, the rest waits for most of its move and the
-  // h1 itself only appears as the traveller lands.
-  const lead = arrivedByTravel ? dur.page - 0.2 : 0;
-  useTitleAnimation(titleRef, panelRef, { duration: dur.text, skip: textWaiting || arrivedByTravel, dependencies: textDeps });
-  useBodyAnimation(descRef, panelRef, { duration: dur.text, delay: lead + stagger, skip: textWaiting, dependencies: textDeps });
-  useBodyAnimation(techRef, panelRef, { duration: dur.text, delay: lead + 2 * stagger, skip: textWaiting, dependencies: textDeps });
-  useInlineAnimation(linksRef, panelRef, "a:not([data-pill])", { duration: dur.text, delay: lead + 2 * stagger, skip: textWaiting, dependencies: textDeps });
-
-  // The travelling title: claim it once the h1 has a rect, move it there
-  // (translate + scale, transform-origin top left, the in-out curve) and
-  // swap in the real h1 as it lands.
-  useGSAP(
-    () => {
-      const h1 = titleRef.current;
-      if (textWaiting || !mounted || !h1) return;
-      const traveller = takeTitleTravel(project.title);
-      if (!traveller) {
-        if (arrivedByTravel) gsap.set(h1, { autoAlpha: 1 });
-        return;
-      }
-      const { el, from } = traveller;
-      gsap.set(h1, { autoAlpha: 0 });
-      const to = h1.getBoundingClientRect();
-      const scale = from.width ? to.width / from.width : 1;
-      const land = () => {
-        gsap.set(h1, { autoAlpha: 1 });
-        el.remove();
-      };
-      if (prefersReducedMotion()) {
-        land();
-        return;
-      }
-      const move = gsap.to(el, {
-        x: to.left - from.left,
-        y: to.top - from.top,
-        scale,
-        duration: dur.page,
-        ease: ease.inOut,
-        onComplete: land,
-      });
-      return () => {
-        if (move.progress() < 1) {
-          move.kill();
-          land();
-        }
-      };
-    },
-    { scope: panelRef, dependencies: textDeps },
-  );
+  // out curve, one stagger step apart.
+  useTitleAnimation(titleRef, panelRef, { duration: dur.text, skip: textWaiting, dependencies: textDeps });
+  useBodyAnimation(descRef, panelRef, { duration: dur.text, delay: stagger, skip: textWaiting, dependencies: textDeps });
+  useBodyAnimation(techRef, panelRef, { duration: dur.text, delay: 2 * stagger, skip: textWaiting, dependencies: textDeps });
+  useInlineAnimation(linksRef, panelRef, "a:not([data-pill])", { duration: dur.text, delay: 2 * stagger, skip: textWaiting, dependencies: textDeps });
 
   // Pill button animation (SplitText mask clips rounded corners)
   useGSAP(
@@ -257,7 +204,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
       gsap.fromTo(
         pills,
         { yPercent: 40, autoAlpha: 0 },
-        { yPercent: 0, autoAlpha: 1, duration: dur.text, ease: ease.out, delay: lead + 2 * stagger },
+        { yPercent: 0, autoAlpha: 1, duration: dur.text, ease: ease.out, delay: 2 * stagger },
       );
     },
     { scope: panelRef, dependencies: textDeps },
@@ -301,7 +248,6 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
             nextProjectSlug={nextSlug}
             nextProjectTitle={nextProject?.title}
             nextTextWrapperRef={nextTextWrapperRef}
-            nextTitleRef={nextTitleRef}
           />
         )}
       </>
@@ -355,7 +301,6 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
           nextProjectSlug={nextProject?.slug?.current ?? undefined}
           nextProjectTitle={nextProject?.title}
           nextTextWrapperRef={nextTextWrapperRef}
-          nextTitleRef={nextTitleRef}
         />
       )}
 
