@@ -9,7 +9,8 @@ import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { usePageTransition } from "@/context/TransitionContext";
 import { lockScroll, unlockScroll } from "@/hooks/useScrollLock";
-import { EXIT_LEAD_MS, dur, ease, maskOutText, prefersReducedMotion } from "@/lib/motion";
+import { EXIT_LEAD_MS, dur, ease, maskOutText, prefersReducedMotion, stagger } from "@/lib/motion";
+import { useIntroState } from "@/lib/intro";
 import { usePrefetchProject } from "@/hooks/usePrefetchProject";
 import { lastProjectSlug } from "@/lib/lastProject";
 import { isPlainLeftClick } from "@/lib/clicks";
@@ -38,6 +39,11 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
     activeIndexRef.current = activeIndex;
   }, [activeIndex]);
   const [visit, setVisit] = useState(0);
+  // On a fresh load the intro plays first (see src/lib/intro.ts): the card
+  // and media wait for the name to land, then enter in reading order.
+  const introState = useIntroState();
+  const introDone = introState === "done";
+  const sawIntro = useRef(introState !== "done");
   const shownOnce = useRef(false);
   useEffect(() => {
     if (!shownOnce.current) {
@@ -292,6 +298,17 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
       if (firstSlide) {
         gsap.set(firstSlide, { yPercent: 0, opacity: 1 });
       }
+      if (!introDone) return;
+
+      // After the intro the media lifts in behind the card text (which
+      // enters through its own masks, two stagger steps ahead).
+      if (sawIntro.current && wrapperRef.current && !prefersReducedMotion()) {
+        gsap.fromTo(
+          wrapperRef.current,
+          { autoAlpha: 0, y: 12 },
+          { autoAlpha: 1, y: 0, duration: 0.6, ease: ease.out, delay: stagger * 2 },
+        );
+      }
 
       // Mobile scroll hint entrance
       if (scrollHintRef.current) {
@@ -317,7 +334,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
         );
       }
     },
-    { scope: contentRef },
+    { scope: contentRef, dependencies: [introDone] },
   );
 
   const activeProject = projects[activeIndex] ?? projects[0];
@@ -431,7 +448,7 @@ export default function HomeGallery({ projects }: HomeGalleryProps) {
           className="block w-full px-4 py-2 desktop:px-6 desktop:py-0"
           onClick={(e) => handleProjectClick(e, activeProject)}
         >
-          <ProjectCard key={`${activeProject._id}-${visit}`} project={activeProject} />
+          <ProjectCard key={`${activeProject._id}-${visit}`} project={activeProject} skip={!introDone} />
         </Link>
       </div>
 
