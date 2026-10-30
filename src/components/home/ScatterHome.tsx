@@ -13,6 +13,7 @@ import { usePageTransition } from "@/context/TransitionContext";
 import { dur, ease, prefersReducedMotion } from "@/lib/motion";
 import { isPlainLeftClick } from "@/lib/clicks";
 import { restoreVideoPosition, saveVideoPosition } from "@/lib/videoPosition";
+import { useIntroState } from "@/lib/intro";
 
 type Project = PROJECTS_QUERY_RESULT[number];
 
@@ -84,10 +85,13 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
   // only per visit: the home stays mounted behind a project page and its
   // effects run again when it is shown (Activity), which must not hide the
   // rows a second time with their scroll positions measured while hidden.
+  // On a fresh load the intro plays first (src/lib/intro.ts) and <main> stays
+  // hidden until the name has landed, so the entrance waits for "done".
+  const introDone = useIntroState() === "done";
   const playedRef = useRef(false);
   useGSAP(
     () => {
-      if (prefersReducedMotion() || playedRef.current) return;
+      if (!introDone || prefersReducedMotion() || playedRef.current) return;
       playedRef.current = true;
       const rows = gsap.utils.toArray<HTMLElement>("[data-row]");
       rows.forEach((row) => {
@@ -102,7 +106,7 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
       });
       ScrollTrigger.refresh();
     },
-    { scope: rootRef },
+    { scope: rootRef, dependencies: [introDone] },
   );
 
   const handleClick = useCallback(
