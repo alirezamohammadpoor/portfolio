@@ -49,10 +49,11 @@
   --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
 }
 
-/* Layout grid: margin = gutter (12 mobile / 16 desktop, after the studio
-   research), 4 columns on mobile, 12 on desktop. One place to retune. */
+/* Layout grid (layout redesign 10-29): 16px margin / 12px gutter and 4
+   columns on a phone; 24px margin / 16px gutter and 12 columns on a laptop.
+   The margin matches the header's padding. One place to retune. */
 :root {
-  --grid-margin: 12px;
+  --grid-margin: 16px;
   --grid-gutter: 12px;
   --grid-columns: 4;
   --grid-col: calc(
@@ -62,7 +63,7 @@
 }
 @media (min-width: 75rem) {
   :root {
-    --grid-margin: 16px;
+    --grid-margin: 24px;
     --grid-gutter: 16px;
     --grid-columns: 12;
   }

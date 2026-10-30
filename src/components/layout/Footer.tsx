@@ -3,7 +3,7 @@
 import type { RefObject } from "react";
 import { useRef } from "react";
 import NextLink from "next/link";
-import { Link } from "next-view-transitions";
+import { Link } from "@/lib/viewTransitions";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import CopyButton from "@/components/CopyButton";

@@ -1,8 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useTransitionRouter } from "next-view-transitions";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
@@ -16,13 +15,14 @@ import {
 import { useGalleryScroll } from "@/hooks/useGalleryScroll";
 import { dur, ease, maskOutText, prefersReducedMotion, stagger } from "@/lib/motion";
 import { cloneSourceFromElement } from "@/lib/cloneSource";
+import { landingKind, landingTop } from "@/lib/landing";
 import { usePrefetchProject } from "@/hooks/usePrefetchProject";
 import Footer from "@/components/layout/Footer";
 import DetailsDrawer from "@/components/project/DetailsDrawer";
 import ProjectInfoPanel from "@/components/project/ProjectInfoPanel";
 import ProjectGallery from "@/components/project/ProjectGallery";
 import ProjectStage from "@/components/project/ProjectStage";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { DESKTOP_QUERY, useIsDesktop } from "@/hooks/useIsDesktop";
 import ScrollProgress from "@/components/project/ScrollProgress";
 import ProjectTextShell from "@/components/project/ProjectTextShell";
 import ProjectChapters, { type MobileVariant } from "@/components/project/ProjectChapters";
@@ -38,10 +38,24 @@ interface ProjectPageClientProps {
 }
 
 export default function ProjectPageClient({ project, nextProject, prevProject, mobileVariant }: ProjectPageClientProps) {
-  const router = useTransitionRouter();
   const plainRouter = useRouter();
-  const { isTransitioning, contentRevealed, pageRevealed, inPlace, animateClone, startTransition, markTargetReady } =
-    usePageTransition();
+  const {
+    isTransitioning: transitionRunning,
+    id: transitionId,
+    contentRevealed,
+    pageRevealed,
+    inPlace,
+    animateClone,
+    startTransition,
+    markTargetReady,
+  } = usePageTransition();
+  // Only the page that mounted under a transition is its landing page. The
+  // page being left (project → project) sees the same flags flip when it
+  // starts the next one and must stay as it is until the route swaps:
+  // hiding it there shows a blank page under the clone for as long as the
+  // next route takes to arrive (noticeable on a dev server or a slow link).
+  const [landingId] = useState(() => (transitionRunning ? transitionId : -1));
+  const isTransitioning = transitionRunning && transitionId === landingId;
   const [detailsOpen, setDetailsOpen] = useState(false);
   const isDesktop = useIsDesktop();
   // A project with chapters is a case study: one scrolling page on every
@@ -80,19 +94,23 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
   // and the next page's text masks in at once. On the stage (mobile) the
   // preview card is already centred where the first card lands, so it swaps
   // straight away. Falls back to a plain push when there is nothing to clone.
+  // Always the plain router here, never the view-transition one: the root
+  // slide (globals.css) must not run under the clone, and without a clone a
+  // plain swap is still smoother than a slide that starts from a frozen
+  // snapshot of a page scrolled to its end.
+  const nextHasChapters = nextProject?.hasChapters ?? false;
   const navigateNext = useCallback(() => {
     if (!nextSlug) return;
     const href = `/project/${nextSlug}`;
     const preview = previewRef.current;
     if (!cloneSourceFromElement(preview, { allowLoadingVideo: true })) {
-      router.push(href);
+      plainRouter.push(href);
       return;
     }
-    // The plain router: the view-transition slide must not run under the clone.
     const swap = () => {
       const source = cloneSourceFromElement(preview, { allowLoadingVideo: true });
       if (!source) {
-        router.push(href);
+        plainRouter.push(href);
         return;
       }
       startTransition({ ...source, inPlace: true });
@@ -100,15 +118,17 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
     };
 
     const gallery = preview?.closest<HTMLElement>("[data-project-gallery]") ?? null;
-    // The gallery page's first item, or the chapter page's hero landing box.
-    const slot = gallery?.querySelector<HTMLElement>("[data-landing-slot]") ?? gallery?.firstElementChild ?? null;
-    if (!gallery || !slot || !preview || prefersReducedMotion()) {
+    // Where the next page's first media will sit once that page is scrolled
+    // to the top (lib/landing.ts): the preview block already has its shape,
+    // so after the slide the clone covers the swap without moving. Null for
+    // the stage, whose card is centred by its own layout: the clone settles
+    // onto it after the swap instead.
+    const desktop = window.matchMedia(DESKTOP_QUERY).matches;
+    const slotTop = landingTop(landingKind(nextHasChapters, desktop), desktop);
+    if (!gallery || slotTop === null || !preview || prefersReducedMotion()) {
       swap();
       return;
     }
-    // Where the first item sits with the page scrolled to the top (the
-    // document offset) is where the next page's first item will be.
-    const slotTop = slot.getBoundingClientRect().top + window.scrollY;
     const delta = preview.getBoundingClientRect().top - slotTop;
     maskOutText(panelRef.current);
     gsap.to(gallery, {
@@ -118,7 +138,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
       overwrite: true,
       onComplete: swap,
     });
-  }, [nextSlug, router, plainRouter, startTransition]);
+  }, [nextSlug, nextHasChapters, plainRouter, startTransition]);
 
   const {
     galleryRef,
@@ -141,13 +161,23 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
     navigateNext,
   });
 
-  // Chrome (counter, footer) waits for the whole morph; the text does not.
-  // It masks in once the clone is ~40 % of the way (contentRevealed), while
-  // the media is still moving, so the sequence reads as one gesture. The key
-  // is stable from "go" onwards so the end of the morph does not re-run it.
-  // The page under the clone shows a couple of frames before the clone goes.
+  // Shown again after leaving for the next project (browser back; Next keeps
+  // the page mounted hidden and runs the effects again): the column is still
+  // where the slide left it, so it goes back to rest before the first paint.
+  // The hero text re-enters on its own, its hooks run again as well.
+  useLayoutEffect(() => {
+    const column = galleryRef.current;
+    if (column) gsap.set(column, { clearProps: "transform" });
+  }, []);
+
+  // Chrome (counter, footer) waits for the whole morph. So does the text on
+  // a home → project arrival (Ali, 10-29: the media lands first, then the
+  // text comes in); project → project keeps masking it in once the clone is
+  // ~40 % of the way (contentRevealed), since that hand-off barely moves. The
+  // key is stable from "go" onwards so the end of the morph does not re-run
+  // it. The page under the clone shows a couple of frames before the clone goes.
   const skip = isTransitioning && !pageRevealed;
-  const textWaiting = isTransitioning && !contentRevealed;
+  const textWaiting = isTransitioning && !(inPlace ? contentRevealed : pageRevealed);
   const textKey = textWaiting ? "wait" : "go";
 
   // `mounted` is a dependency because the panel renders one tick after this

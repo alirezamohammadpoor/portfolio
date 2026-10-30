@@ -4,10 +4,14 @@
  * The chapter project page (brief-v3 "lanes"): hero + chapters + next project
  * on one scrolling page, for projects that carry `chapters[]`.
  *
- * Hero: today's split, minus the drawer. Title, description, tech stack and
- * the pills on the left (cols 1-5); the first gallery item as the 4:3 landing
- * media on the right (cols 7-12), which is where the home → project clone
- * lands. On a phone the landing media sits on top and the text follows.
+ * Hero (layout redesign 10-29, shared with the home canvas): the first
+ * gallery item as the 4:3 landing media over eight columns, which is where
+ * the home → project clone lands, with the title and description hung on the
+ * media's bottom edge in the four columns beside it. Two fixed variants
+ * alternate per project: media right (cols 5-12, text 1-4) and media left
+ * (cols 1-8, text 9-12). Under both, a meta row beneath a rule carries the
+ * plain values (stack, links), no labels. On a phone the media sits on top
+ * and the text and the meta row follow at full width.
  *
  * Chapters (laptop): a text row with the title in the title lane (cols 1-3)
  * and the reading lane (cols 5-9), then a media row below it whose width and
@@ -18,25 +22,26 @@
  * caption; switcher pills wrap above the text. Media autoplays muted in view
  * as silent clips (InlineClip, no player chrome); the text is static.
  *
- * Next project: the same 4:3 preview block as the gallery page (the morph
- * source for project → project) with the next title beside it.
+ * Next project: the preview block in the next page's landing shape (the
+ * morph source for project → project, see lib/landing.ts) with the next
+ * title beside it.
  */
 
 import { createContext, useContext, useState, type RefObject } from "react";
 import NextLink from "next/link";
 import Image from "next/image";
-import { Link } from "next-view-transitions";
+import { Link } from "@/lib/viewTransitions";
 import type { PortableTextBlock } from "next-sanity";
 import { PortableText } from "next-sanity";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
-import TechStack from "@/components/project/TechStack";
 import CopyButton from "@/components/CopyButton";
 import { portableTextComponents } from "@/components/portableText/components";
 import NextProjectPreview, { type NextProject } from "@/components/project/NextProjectPreview";
 import InlineClip from "@/components/project/InlineClip";
 import LandingMedia from "@/components/project/LandingMedia";
 import { isPlainLeftClick } from "@/lib/clicks";
+import { HERO_VARIANTS, LANDING_ASPECT, heroVariant, landingKind } from "@/lib/landing";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 export type ChapterBlock = NonNullable<Project["chapters"]>[number];
@@ -153,6 +158,9 @@ function ChapterMedia({
   sizes?: string;
 }) {
   if (!media) return null;
+  if (media.type === "phones") {
+    return <PhonesPanel media={media} title={title} hidden={hidden} />;
+  }
   if (media.type === "video" && media.video?.asset?._ref) {
     return (
       <InlineClip
@@ -187,6 +195,52 @@ function ChapterMedia({
     );
   }
   return null;
+}
+
+/**
+ * Phones on a panel (Ali, 10-29, alternative E): one to three phone screens
+ * side by side on a 16:10 panel, each a still or a silent clip at the
+ * phone's own ratio with rounded corners, no device frame. The panel is
+ * black or carries an image at reduced opacity.
+ */
+const PHONE_WIDTH = ["w-[52%] desktop:w-[30%]", "w-[38%] desktop:w-[24%]", "w-[28%] desktop:w-[20%]"];
+
+function PhonesPanel({ media, title, hidden }: { media: NonNullable<ChapterMediaValue>; title: string; hidden: boolean }) {
+  const slots = (media.phones ?? []).slice(0, 3);
+  if (slots.length === 0) return null;
+  const width = PHONE_WIDTH[slots.length - 1];
+  const panelImage = media.panel === "image" && media.panelImage?.asset ? media.panelImage : null;
+  return (
+    <div className="relative flex aspect-[16/10] w-full items-center justify-center gap-4 overflow-hidden bg-primary desktop:gap-10">
+      {panelImage && (
+        <Image src={imageUrl(panelImage, 2000)} alt="" fill className="object-cover opacity-55" sizes="100vw" />
+      )}
+      {slots.map((slot, i) => (
+        <div
+          key={slot._key ?? i}
+          className={`relative aspect-[390/844] flex-none overflow-hidden rounded-[18px] bg-white desktop:rounded-[28px] ${width}`}
+        >
+          {slot.type === "video" && slot.video?.asset?._ref ? (
+            <InlineClip
+              src={fileUrl(slot.video.asset._ref)}
+              poster={slot.poster?.asset ? imageUrl(slot.poster, 800) : undefined}
+              label={`${title}, screen ${i + 1}`}
+              active={!hidden}
+              className="absolute inset-0 h-full w-full object-cover object-top"
+            />
+          ) : slot.type === "image" && slot.image?.asset ? (
+            <Image
+              src={imageUrl(slot.image, 800)}
+              alt={`${title}, screen ${i + 1}`}
+              fill
+              className="object-cover object-top"
+              sizes="(min-width: 75rem) 30vw, 52vw"
+            />
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function Caption({ text }: { text: string | null | undefined }) {
@@ -369,8 +423,9 @@ export default function ProjectChapters({
   const mediaGate = hidden ? " opacity-0 pointer-events-none" : "";
   const journalSlug = project.caseStudy?.slug?.current;
 
-  const pill =
-    "inline-flex h-8 items-center rounded-full px-4 text-sub uppercase text-primary transition-colors duration-200";
+  const hero = HERO_VARIANTS[heroVariant(project.slug?.current ?? "", project.heroLayout)];
+  // A chapter page follows: the next-project block takes its hero's shape.
+  const nextHero = HERO_VARIANTS[heroVariant(nextProject?.slug?.current ?? "", nextProject?.heroLayout)];
 
   return (
     <MobileVariantContext.Provider value={mobileVariant}>
@@ -379,13 +434,19 @@ export default function ProjectChapters({
       <section className="grid-site px-margin pt-2 pb-6 desktop:pt-6 desktop:pb-12">
         <div
           data-landing-slot
-          className={`col-span-4 self-start desktop:col-start-7 desktop:col-end-13 desktop:row-start-1${mediaGate}`}
+          className={`col-span-4 self-start desktop:row-start-1 ${hero.media}${mediaGate}`}
         >
-          <LandingMedia item={landing} title={project.title} slotRef={firstImageRef} onReady={onFirstReady} />
+          <LandingMedia
+            item={landing}
+            title={project.title}
+            slotRef={firstImageRef}
+            onReady={onFirstReady}
+            sizes="(min-width: 75rem) 66vw, 100vw"
+          />
         </div>
         <div
           ref={panelRef}
-          className={`col-span-4 pt-6 desktop:col-start-1 desktop:col-end-6 desktop:row-start-1 desktop:pt-14${textHidden ? " invisible" : ""}`}
+          className={`col-span-4 pt-5 desktop:row-start-1 desktop:self-end desktop:pt-0 ${hero.text}${textHidden ? " invisible" : ""}`}
         >
           {project.title && (
             <h1 ref={titleRef} className="text-h2 desktop:text-h1 text-primary">
@@ -403,34 +464,37 @@ export default function ProjectChapters({
               />
             </div>
           )}
-          {project.techStack && project.techStack.length > 0 && (
-            <div ref={techRef} className="mt-6">
-              <p className="text-sub text-secondary">Tech stack</p>
-              <TechStack items={project.techStack} />
+          {/* Meta row: bare values under a rule, stack left and links right. */}
+          <div className="mt-6 grid grid-cols-4 gap-x-3 border-t border-tertiary pt-3 desktop:mt-8 desktop:gap-x-4">
+            {project.techStack && project.techStack.length > 0 && (
+              <div ref={techRef} className="col-span-4 desktop:col-span-2">
+                <p className="text-sub text-primary">{project.techStack.join(", ")}</p>
+              </div>
+            )}
+            <div
+              ref={linksRef}
+              className="col-span-4 mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sub desktop:col-span-2 desktop:mt-0"
+            >
+              {project.siteUrl && (
+                <NextLink
+                  href={project.siteUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  data-pill
+                  className="invisible link-underline text-primary"
+                >
+                  Visit website
+                </NextLink>
+              )}
+              {journalSlug && (
+                <Link href={`/journal/${journalSlug}`} data-pill className="invisible link-underline text-primary">
+                  Journal post
+                </Link>
+              )}
+              {project.sitePassword && (
+                <CopyButton value={project.sitePassword} label="Password" className="link-underline text-sub text-primary cursor-pointer" />
+              )}
             </div>
-          )}
-          <div ref={linksRef} className="mt-8 flex flex-wrap items-center gap-2">
-            {project.siteUrl && (
-              <NextLink
-                href={project.siteUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                data-pill
-                className={`invisible ${pill} bg-pistachio hover:bg-lightpistachio`}
-              >
-                Visit website
-              </NextLink>
-            )}
-            {journalSlug && (
-              <Link
-                href={`/journal/${journalSlug}`}
-                data-pill
-                className={`invisible ${pill} border border-tertiary bg-white hover:bg-lightpistachio`}
-              >
-                Journal post
-              </Link>
-            )}
-            {project.sitePassword && <CopyButton value={project.sitePassword} label="Password" />}
           </div>
         </div>
       </section>
@@ -445,39 +509,60 @@ export default function ProjectChapters({
           ),
         )}
 
-        {/* Next project */}
-        {nextProject && onNavigateNext && nextProject.slug?.current && (
-          <section
-            className="grid-site px-margin pt-6 pb-24 desktop:min-h-[calc(100dvh-var(--header-height))] desktop:pt-12"
-            aria-label="Next project"
-          >
-            <div className="col-span-4 desktop:col-start-1 desktop:col-end-6 desktop:row-start-1 desktop:pt-14">
-              <p className="text-sub text-secondary">Next project</p>
-              <h2 className="mt-2 text-h2 desktop:text-h1 text-primary">
-                <a
-                  href={`/project/${nextProject.slug.current}`}
-                  className="link-underline"
-                  onClick={(e) => {
-                    if (!isPlainLeftClick(e)) return;
-                    e.preventDefault();
-                    onNavigateNext();
-                  }}
-                >
-                  {nextProject.title}
-                </a>
-              </h2>
-            </div>
-            <div className="col-span-4 mt-4 desktop:mt-0 desktop:col-start-7 desktop:col-end-13 desktop:row-start-1">
-              <NextProjectPreview
-                nextProject={nextProject}
-                previewRef={previewRef}
-                onNavigate={onNavigateNext}
-                sizes="(min-width: 75rem) 50vw, 100vw"
-                labelHidden
-              />
-            </div>
-          </section>
-        )}
+        {/* Next project: the preview block takes the next page's landing
+            shape (lib/landing.ts), so the slide puts it exactly where that
+            page's first media renders: a 16:10 box in the next hero's
+            columns for a chapter page; for a gallery page the 4:3 first item
+            of its right-hand column (the stage's full-width 4:3 card on a
+            phone), with the title in the other half. */}
+        {nextProject && onNavigateNext && nextProject.slug?.current && (() => {
+          const title = (
+            <h2 className="text-h2 desktop:text-h1 text-primary">
+              <a
+                href={`/project/${nextProject.slug.current}`}
+                className="link-underline"
+                onClick={(e) => {
+                  if (!isPlainLeftClick(e)) return;
+                  e.preventDefault();
+                  onNavigateNext();
+                }}
+              >
+                {nextProject.title}
+              </a>
+            </h2>
+          );
+          const preview = (kind: "chapters" | "gallery", sizes: string) => (
+            <NextProjectPreview
+              nextProject={nextProject}
+              previewRef={previewRef}
+              onNavigate={onNavigateNext}
+              sizes={sizes}
+              aspect={LANDING_ASPECT[kind]}
+              labelHidden
+            />
+          );
+          return nextProject.hasChapters ? (
+            <section
+              className="grid-site px-margin content-start pt-6 pb-24 desktop:min-h-[calc(100dvh-var(--header-height))] desktop:pt-12"
+              aria-label="Next project"
+            >
+              <div className={`col-span-4 desktop:row-start-1 desktop:self-end ${nextHero.text}`}>{title}</div>
+              <div className={`col-span-4 mt-4 desktop:mt-0 desktop:row-start-1 ${nextHero.media}`}>
+                {preview("chapters", "(min-width: 75rem) 66vw, 100vw")}
+              </div>
+            </section>
+          ) : (
+            <section
+              className="pt-6 pb-24 desktop:flex desktop:min-h-[calc(100dvh-var(--header-height))] desktop:items-end desktop:pt-12"
+              aria-label="Next project"
+            >
+              <div className="px-margin desktop:w-1/2">{title}</div>
+              <div className="mt-4 px-margin desktop:mt-0 desktop:w-1/2">
+                {preview("gallery", "(min-width: 75rem) 50vw, 100vw")}
+              </div>
+            </section>
+          );
+        })()}
       </div>
     </div>
     </MobileVariantContext.Provider>

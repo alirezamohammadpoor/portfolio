@@ -21,6 +21,8 @@ interface NextProjectPreviewProps {
   style?: React.CSSProperties;
   /** The chapter page writes the next title beside the block itself. */
   labelHidden?: boolean;
+  /** The box ratio: 4:3 on the gallery page, 16:10 on the chapter page (flush covers). */
+  aspect?: number;
 }
 
 /**
@@ -33,7 +35,7 @@ interface NextProjectPreviewProps {
  * back the preview box would stay empty. Owning it here, each time the page
  * shows (effects run again on return) a missing element is simply re-created.
  */
-function PreviewVideo({ src, hostRef }: { src: string; hostRef?: RefObject<HTMLDivElement | null> }) {
+function PreviewVideo({ src, hostRef, aspect }: { src: string; hostRef?: RefObject<HTMLDivElement | null>; aspect: number }) {
   const localRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const host = localRef.current;
@@ -74,8 +76,8 @@ function PreviewVideo({ src, hostRef }: { src: string; hostRef?: RefObject<HTMLD
         if (hostRef) hostRef.current = el;
       }}
       data-next-project-preview
-      className="relative w-full overflow-hidden bg-black"
-      style={{ aspectRatio: 4 / 3 }}
+      className="relative w-full overflow-hidden bg-tertiary"
+      style={{ aspectRatio: aspect }}
     />
   );
 }
@@ -96,6 +98,7 @@ export default function NextProjectPreview({
   className = "",
   style,
   labelHidden = false,
+  aspect = 4 / 3,
 }: NextProjectPreviewProps) {
   const slug = nextProject.slug?.current;
   const media = nextProject.firstMedia;
@@ -118,13 +121,13 @@ export default function NextProjectPreview({
       }}
     >
       {videoSrc ? (
-        <PreviewVideo src={videoSrc} hostRef={previewRef} />
+        <PreviewVideo src={videoSrc} hostRef={previewRef} aspect={aspect} />
       ) : (
         <div
           ref={previewRef}
           data-next-project-preview
-          className="relative w-full overflow-hidden bg-black"
-          style={{ aspectRatio: 4 / 3 }}
+          className="relative w-full overflow-hidden bg-tertiary"
+          style={{ aspectRatio: aspect }}
         >
           {isImage && media.image?.asset && (
             <Image

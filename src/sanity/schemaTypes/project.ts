@@ -36,6 +36,37 @@ const chapterTextField = defineField({
   ],
 });
 
+const phoneSlotFields = [
+  defineField({
+    name: "type",
+    title: "Type",
+    type: "string",
+    options: { list: ["image", "video"], layout: "radio", direction: "horizontal" },
+    initialValue: "video",
+    validation: (rule) => rule.required(),
+  }),
+  defineField({
+    name: "image",
+    title: "Still",
+    type: "image",
+    options: { hotspot: true },
+    hidden: ({ parent }) => parent?.type !== "image",
+  }),
+  defineField({
+    name: "video",
+    title: "Clip",
+    type: "file",
+    options: { accept: "video/*" },
+    hidden: ({ parent }) => parent?.type !== "video",
+  }),
+  defineField({
+    name: "poster",
+    title: "Poster",
+    type: "image",
+    hidden: ({ parent }) => parent?.type !== "video",
+  }),
+];
+
 const chapterMediaField = defineField({
   name: "media",
   title: "Media",
@@ -45,9 +76,48 @@ const chapterMediaField = defineField({
       name: "type",
       title: "Type",
       type: "string",
-      options: { list: ["image", "video"], layout: "radio" },
+      options: {
+        list: [
+          { title: "Image", value: "image" },
+          { title: "Video", value: "video" },
+          { title: "Phones on a panel (one to three screens)", value: "phones" },
+        ],
+        layout: "radio",
+      },
       initialValue: "video",
       validation: (rule) => rule.required(),
+    }),
+    defineField({
+      name: "phones",
+      title: "Screens",
+      description: "One to three phone screens side by side, each a still or a clip. Record at the phone's own ratio (390×844 or 1080×2340), flush, no device frame.",
+      type: "array",
+      of: [{ type: "object", name: "phoneSlot", fields: phoneSlotFields, preview: { select: { type: "type" }, prepare: ({ type }) => ({ title: type === "image" ? "Still" : "Clip" }) } }],
+      validation: (rule) => rule.max(3),
+      hidden: ({ parent }) => parent?.type !== "phones",
+    }),
+    defineField({
+      name: "panel",
+      title: "Panel",
+      type: "string",
+      options: {
+        list: [
+          { title: "Black", value: "black" },
+          { title: "Image behind", value: "image" },
+        ],
+        layout: "radio",
+        direction: "horizontal",
+      },
+      initialValue: "black",
+      hidden: ({ parent }) => parent?.type !== "phones",
+    }),
+    defineField({
+      name: "panelImage",
+      title: "Panel image",
+      description: "Shown at reduced opacity behind the screens.",
+      type: "image",
+      options: { hotspot: true },
+      hidden: ({ parent }) => parent?.type !== "phones" || parent?.panel !== "image",
     }),
     defineField({
       name: "image",
@@ -214,7 +284,7 @@ export const project = defineType({
     defineField({
       name: "coverMedia",
       title: "Cover Media",
-      description: "Hero image or video shown on the homepage card",
+      description: "Cover on the home and the first frame of the morph. Export flush: laptop recordings 16:10 (1920×1200), phone recordings 4:5 (1080×1350), no bars.",
       type: "object",
       fields: [
         defineField({
@@ -240,6 +310,62 @@ export const project = defineType({
           hidden: ({ parent }) => parent?.type !== "video",
         }),
       ],
+    }),
+    defineField({
+      name: "homeLayout",
+      title: "Home layout",
+      description:
+        "Where this project's cover and text sit on the home canvas (laptop; phones stack everything full width). Leave empty to let the row take the next shape in the cycle.",
+      type: "string",
+      options: {
+        layout: "radio",
+        list: [
+          { title: "Wide media left, text on the right", value: "wide-left" },
+          { title: "Wide media right, text on the left", value: "wide-right" },
+          { title: "Media centred, text on the right", value: "centre" },
+          { title: "Full width with the backdrop image behind, text under it", value: "full" },
+          { title: "Narrow media left, text beside it", value: "narrow-left" },
+          { title: "Small media right, text on the left", value: "small-right" },
+        ],
+      },
+    }),
+    defineField({
+      name: "homeBackdrop",
+      title: "Home backdrop image",
+      description:
+        "Optional campaign still shown on the page behind the cover, at reduced opacity, with the cover set smaller on it (Figma backdrop study, image behind). Keep recordings clean; the backdrop lives here, not in the video.",
+      type: "image",
+      options: { hotspot: true },
+    }),
+    defineField({
+      name: "homeTextAlign",
+      title: "Home text position",
+      description: "Where the text hangs on the media's edge: top, middle or bottom. Not used by the full bleed layout.",
+      type: "string",
+      options: {
+        layout: "radio",
+        direction: "horizontal",
+        list: [
+          { title: "Top", value: "top" },
+          { title: "Middle", value: "middle" },
+          { title: "Bottom", value: "bottom" },
+        ],
+      },
+      hidden: ({ parent }) => parent?.homeLayout === "full",
+    }),
+    defineField({
+      name: "heroLayout",
+      title: "Project page opener",
+      description: "Which side the landing media takes on the project page. Leave empty to alternate per project.",
+      type: "string",
+      options: {
+        layout: "radio",
+        direction: "horizontal",
+        list: [
+          { title: "Media right, text left", value: "media-right" },
+          { title: "Media left, text right", value: "media-left" },
+        ],
+      },
     }),
     defineField({
       name: "gallery",

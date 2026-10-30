@@ -96,7 +96,7 @@ export default async function ChaptersLabPage() {
       layout: c.layout,
       side: c.side,
       text: c.text.map((t, j) => block(t, `fixture-${i}-${j}`)),
-      media: item && item._type === "galleryVideo" ? { type: "video", video: item.video ?? null, image: null, poster: null } : null,
+      media: item && item._type === "galleryVideo" ? { type: "video", video: item.video ?? null, image: null, poster: null, phones: null, panel: null, panelImage: null } : null,
     };
   });
   const switcher: TestSwitcher = {
@@ -116,7 +116,7 @@ export default async function ChaptersLabPage() {
         decision: t.decision ?? null,
         caption: t.caption,
         text: [block(t.text, `fixture-test-${i}-0`)],
-        media: item && item._type === "galleryVideo" ? { type: "video", video: item.video ?? null, image: null, poster: null } : null,
+        media: item && item._type === "galleryVideo" ? { type: "video", video: item.video ?? null, image: null, poster: null, phones: null, panel: null, panelImage: null } : null,
       };
     }),
   };
