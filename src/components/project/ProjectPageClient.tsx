@@ -143,12 +143,10 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
   const {
     galleryRef,
     firstImageRef,
-    nextTextWrapperRef,
     nextTextRef,
     progressFillRef,
     pullRef,
     gallery,
-    scrollProgressElRef,
     mobileProgressElRef,
     footerWipeRef,
     showMobileNav,
@@ -242,12 +240,10 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
         />
         {!skip && (
           <ScrollProgress
-            progressRef={scrollProgressElRef}
             progressFillRef={progressFillRef}
             pullRef={pullRef}
             nextProjectSlug={nextSlug}
             nextProjectTitle={nextProject?.title}
-            nextTextWrapperRef={nextTextWrapperRef}
           />
         )}
       </>
@@ -295,12 +291,10 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
 
       {!skip && (
         <ScrollProgress
-          progressRef={scrollProgressElRef}
           progressFillRef={progressFillRef}
           pullRef={pullRef}
           nextProjectSlug={nextProject?.slug?.current ?? undefined}
           nextProjectTitle={nextProject?.title}
-          nextTextWrapperRef={nextTextWrapperRef}
         />
       )}
 

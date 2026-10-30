@@ -38,6 +38,7 @@ import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import CopyButton from "@/components/CopyButton";
 import { portableTextComponents } from "@/components/portableText/components";
 import NextProjectPreview, { type NextProject } from "@/components/project/NextProjectPreview";
+import { useNextVariant } from "@/lib/nextVariant";
 import InlineClip from "@/components/project/InlineClip";
 import LandingMedia from "@/components/project/LandingMedia";
 import { isPlainLeftClick } from "@/lib/clicks";
@@ -424,6 +425,7 @@ export default function ProjectChapters({
   const journalSlug = project.caseStudy?.slug?.current;
 
   const hero = HERO_VARIANTS[heroVariant(project.slug?.current ?? "", project.heroLayout)];
+  const nextVariant = useNextVariant();
   // A chapter page follows: the next-project block takes its hero's shape.
   const nextHero = HERO_VARIANTS[heroVariant(nextProject?.slug?.current ?? "", nextProject?.heroLayout)];
 
@@ -516,8 +518,16 @@ export default function ProjectChapters({
             of its right-hand column (the stage's full-width 4:3 card on a
             phone), with the title in the other half. */}
         {nextProject && onNavigateNext && nextProject.slug?.current && (() => {
+          // Next-project test (lib/nextVariant): A writes the title at 88px,
+          // D keeps it at h1, B/C/E move it next to the bar instead.
+          const titleSize =
+            nextVariant === "a"
+              ? "desktop:text-[5.5rem] desktop:leading-none desktop:tracking-[-0.02em]"
+              : nextVariant === "d"
+                ? "desktop:text-h1"
+                : "desktop:hidden";
           const title = (
-            <h2 className="text-h2 desktop:text-h1 text-primary">
+            <h2 className={`text-h2 text-primary ${titleSize}`}>
               <a
                 href={`/project/${nextProject.slug.current}`}
                 className="link-underline"
