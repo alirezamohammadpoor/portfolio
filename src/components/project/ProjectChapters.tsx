@@ -28,7 +28,7 @@
  * title beside it.
  */
 
-import { createContext, useContext, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import NextLink from "next/link";
 import Image from "next/image";
 import { Link } from "@/lib/viewTransitions";
@@ -326,9 +326,11 @@ export const SwitcherMotionContext = createContext<SwitcherMotion>("bar");
  * Where the photo sits on a phone (lab, 10-30). flow = in the page, 560 px
  * tall, the text below it. sticky = pinned under the header at 45 % of the
  * screen while the text scrolls beneath, so phone, text and controls stay
- * on screen together.
+ * on screen together. follow = in the page, and once the photo's controls
+ * scroll away they float at the bottom of the screen while the text is in
+ * view (like Stronger's sticky add to cart).
  */
-export type SwitcherStage = "flow" | "sticky";
+export type SwitcherStage = "flow" | "sticky" | "follow";
 export const SwitcherStageContext = createContext<SwitcherStage>("flow");
 
 const FROST = "bg-white/80 backdrop-blur-md";
@@ -348,6 +350,179 @@ function Chevron({ back }: { back?: boolean }) {
 }
 
 /**
+ * The switcher's controls: the frosted segmented bar (laptop always, phone
+ * in M1), the name chip with dots (M2) or back/next around the chip (M3).
+ * Rendered on the photo, and again floating at the bottom of the screen in
+ * the follow stage, where `tabs` is off so only one tablist exists.
+ */
+function SwitcherControls({
+  tests,
+  current,
+  select,
+  motion,
+  id,
+  label,
+  pos,
+  tabs = false,
+  shadow = false,
+}: {
+  tests: AbTest[];
+  current: number;
+  select: (i: number) => void;
+  motion: SwitcherMotion;
+  id: string;
+  label: string;
+  /** Where each control row sits: absolute, along the bottom of its parent. */
+  pos: string;
+  tabs?: boolean;
+  shadow?: boolean;
+}) {
+  const barRef = useRef<HTMLDivElement>(null);
+  const [thumb, setThumb] = useState<{ left: number; width: number } | null>(null);
+  const nameOf = (t: AbTest) => t.label ?? t.title ?? "Test";
+  const swipe = motion === "swipe";
+  const arrows = motion === "arrows";
+  const lift = shadow ? " shadow-[0_8px_24px_-8px_rgba(0,0,0,0.3)]" : "";
+  const chip = `${FROST}${lift} pointer-events-auto flex h-10 items-center rounded-full px-4 text-body text-primary`;
+  const round = `${FROST}${lift} pointer-events-auto flex size-10 items-center justify-center rounded-full text-primary disabled:opacity-40`;
+
+  // The pistachio thumb slides to the open segment; on a phone the bar also
+  // scrolls so the open segment sits in the middle.
+  useLayoutEffect(() => {
+    const bar = barRef.current;
+    const seg = bar?.querySelectorAll<HTMLElement>("button")[current];
+    if (!bar || !seg) return;
+    const place = () => setThumb({ left: seg.offsetLeft, width: seg.offsetWidth });
+    place();
+    bar.scrollTo({ left: seg.offsetLeft - (bar.clientWidth - seg.offsetWidth) / 2, behavior: "smooth" });
+    const ro = new ResizeObserver(place);
+    ro.observe(bar);
+    return () => ro.disconnect();
+  }, [current]);
+
+  const onKey = (e: React.KeyboardEvent) => {
+    const keys: Record<string, number> = { ArrowRight: current + 1, ArrowLeft: current - 1, Home: 0, End: tests.length - 1 };
+    if (!(e.key in keys)) return;
+    e.preventDefault();
+    const next = (keys[e.key] + tests.length) % tests.length;
+    select(next);
+    barRef.current?.querySelectorAll<HTMLElement>("button")[next]?.focus();
+  };
+
+  return (
+    <>
+      <div className={`${pos} justify-center ${swipe || arrows ? "hidden desktop:flex" : "flex"}`}>
+        <div className={`${FROST}${lift} max-w-full rounded-full p-1`}>
+          <div
+            ref={barRef}
+            role={tabs ? "tablist" : "group"}
+            aria-label={label}
+            onKeyDown={onKey}
+            className="relative flex overflow-x-auto rounded-full [mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-12px),transparent)] desktop:[mask-image:none]"
+          >
+            {thumb && (
+              <span
+                aria-hidden
+                className={`absolute inset-y-0 rounded-full bg-pistachio transition-[left,width] ${EASE}`}
+                style={{ left: thumb.left, width: thumb.width }}
+              />
+            )}
+            {tests.map((t, i) => {
+              const selected = i === current;
+              const a11y = tabs
+                ? { role: "tab", "aria-selected": selected, "aria-controls": `${id}-panel-${i}`, id: `${id}-tab-${i}` }
+                : { "aria-pressed": selected };
+              return (
+                <button
+                  key={t._key}
+                  type="button"
+                  {...a11y}
+                  tabIndex={selected ? 0 : -1}
+                  onClick={() => select(i)}
+                  className={`relative h-10 flex-none whitespace-nowrap rounded-full px-[18px] text-body text-primary transition-colors ${
+                    selected ? `font-medium${thumb ? "" : " bg-pistachio"}` : "hover:bg-lightpistachio/70"
+                  }`}
+                >
+                  {nameOf(t)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {swipe && (
+        <div className={`pointer-events-none ${pos} flex justify-center desktop:hidden`}>
+          <div className={`${chip} gap-3`}>
+            <span aria-live="polite">{nameOf(tests[current])}</span>
+            <span className="flex items-center gap-1.5">
+              {tests.map((t, i) => (
+                <button
+                  key={t._key}
+                  type="button"
+                  aria-label={`Show ${nameOf(t)}`}
+                  aria-current={i === current}
+                  onClick={() => select(i)}
+                  className={`h-1.5 rounded-full transition-[width,background-color] ${EASE} ${
+                    i === current ? "w-4 bg-primary" : "w-1.5 bg-primary/30"
+                  }`}
+                />
+              ))}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {arrows && (
+        <div className={`pointer-events-none ${pos} flex items-center justify-center gap-2 desktop:hidden`}>
+          <button type="button" aria-label="Previous test" disabled={current === 0} onClick={() => select(current - 1)} className={round}>
+            <Chevron back />
+          </button>
+          <span className={chip} aria-live="polite">
+            {nameOf(tests[current])}
+          </span>
+          <button
+            type="button"
+            aria-label="Next test"
+            disabled={current === tests.length - 1}
+            onClick={() => select(current + 1)}
+            className={round}
+          >
+            <Chevron />
+          </button>
+        </div>
+      )}
+    </>
+  );
+}
+
+/**
+ * Follow stage: true while the photo's own controls are off screen and the
+ * test text is still on screen, like a sticky add to cart under a buy box.
+ */
+function useFloatingControls(on: boolean, stageRef: RefObject<HTMLElement | null>, textRef: RefObject<HTMLElement | null>) {
+  const [floating, setFloating] = useState(false);
+  useEffect(() => {
+    const stage = stageRef.current;
+    const text = textRef.current;
+    if (!on || !stage || !text) return;
+    let stageSeen = true;
+    let textSeen = false;
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.target === stage) stageSeen = e.isIntersecting;
+        else textSeen = e.isIntersecting;
+      }
+      setFloating(!stageSeen && textSeen);
+    }, { rootMargin: "-40px 0px 0px 0px" });
+    io.observe(stage);
+    io.observe(text);
+    return () => io.disconnect();
+  }, [on, stageRef, textRef]);
+  return on && floating;
+}
+
+/**
  * D2 (Figma pf 26:1098, Ali 10-30): the tests' phone sits in focus on a
  * full-width lifestyle photo, a frosted segmented bar along the photo's
  * bottom picks the test, and under the photo the title and text (cols 1-5)
@@ -360,26 +535,14 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
   const [active, setActive] = useState(0);
   const phone = PHONE[useContext(MobileVariantContext)];
   const motion = useContext(SwitcherMotionContext);
-  const sticky = useContext(SwitcherStageContext) === "sticky";
+  const stageMode = useContext(SwitcherStageContext);
+  const sticky = stageMode === "sticky";
+  const follow = stageMode === "follow";
   const textRef = useRef<HTMLDivElement>(null);
-  const tabsRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
-  const [thumb, setThumb] = useState<{ left: number; width: number } | null>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const current = Math.min(active, Math.max(0, tests.length - 1));
-
-  // The pistachio thumb slides to the open tab; on a phone the bar also
-  // scrolls so the open tab sits in the middle.
-  useLayoutEffect(() => {
-    const bar = tabsRef.current;
-    const tab = bar?.querySelectorAll<HTMLElement>("[role=tab]")[current];
-    if (!bar || !tab) return;
-    const place = () => setThumb({ left: tab.offsetLeft, width: tab.offsetWidth });
-    place();
-    bar.scrollTo({ left: tab.offsetLeft - (bar.clientWidth - tab.offsetWidth) / 2, behavior: "smooth" });
-    const ro = new ResizeObserver(place);
-    ro.observe(bar);
-    return () => ro.disconnect();
-  }, [current]);
+  const floating = useFloatingControls(follow, stageRef, textRef);
 
   if (!tests.length) return null;
   const stepOf = (track: HTMLElement) => ((track.firstElementChild as HTMLElement | null)?.offsetWidth ?? 231) + TRACK_GAP;
@@ -395,22 +558,14 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
     if (swipe && track && track.scrollWidth > track.clientWidth) {
       track.scrollTo({ left: next * stepOf(track), behavior: "smooth" });
     }
-    // Sticky stage: a new test starts reading from its first line.
+    // Sticky and follow: a new test starts reading from its first line, under
+    // the pinned stage or under the header.
     const text = textRef.current;
-    const stage = text?.previousElementSibling?.previousElementSibling;
-    if (sticky && text && stage && window.matchMedia("(max-width: 74.99rem)").matches) {
-      const under = stage.getBoundingClientRect().bottom;
+    if ((sticky || follow) && text && window.matchMedia("(max-width: 74.99rem)").matches) {
+      const under = sticky ? (stageRef.current?.getBoundingClientRect().bottom ?? 0) : (document.querySelector("header")?.getBoundingClientRect().bottom ?? 0);
       const top = text.getBoundingClientRect().top;
       if (top < under) window.scrollBy({ top: top - under - 16, behavior: "smooth" });
     }
-  };
-  const onTabKey = (e: React.KeyboardEvent) => {
-    const keys: Record<string, number> = { ArrowRight: current + 1, ArrowLeft: current - 1, Home: 0, End: tests.length - 1 };
-    if (!(e.key in keys)) return;
-    e.preventDefault();
-    const next = (keys[e.key] + tests.length) % tests.length;
-    select(next);
-    tabsRef.current?.querySelectorAll<HTMLElement>("[role=tab]")[next]?.focus();
   };
   // Swipe (M2): the phone nearest the middle of the track is the open test.
   const onTrackScroll = () => {
@@ -434,8 +589,6 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
     }
     return fade(i);
   };
-  const chip = `${FROST} pointer-events-auto flex h-10 items-center rounded-full px-4 text-body text-primary`;
-  const round = `${FROST} pointer-events-auto flex size-10 items-center justify-center rounded-full text-primary disabled:opacity-40`;
   const backdrop = block.backdrop?.asset ? block.backdrop : null;
   const hotspot = backdrop?.hotspot;
 
@@ -447,6 +600,7 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
 
       {/* The photo with the phone in focus. */}
       <div
+        ref={stageRef}
         className={`relative col-span-4 overflow-hidden bg-tertiary desktop:static desktop:col-span-12 desktop:h-[760px] ${
           sticky
             ? "sticky top-[var(--header-height)] z-10 h-[45dvh] [--phone-h:calc(45dvh-40px)] desktop:z-auto"
@@ -491,92 +645,16 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
           ))}
         </div>
 
-        {/* The bar: on a laptop always, on a phone in the bar motion (M1). */}
-        <div
-          className={`absolute inset-x-4 bottom-4 justify-center desktop:bottom-6 ${swipe || arrows ? "hidden desktop:flex" : "flex"}`}
-        >
-          <div className={`${FROST} max-w-full rounded-full p-1`}>
-            <div
-              ref={tabsRef}
-              role="tablist"
-              aria-label={sectionTitle}
-              onKeyDown={onTabKey}
-              className="relative flex overflow-x-auto rounded-full [mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-12px),transparent)] desktop:[mask-image:none]"
-            >
-              {thumb && (
-                <span
-                  aria-hidden
-                  className={`absolute inset-y-0 rounded-full bg-pistachio transition-[left,width] ${EASE}`}
-                  style={{ left: thumb.left, width: thumb.width }}
-                />
-              )}
-              {tests.map((t, i) => {
-                const selected = i === current;
-                return (
-                  <button
-                    key={t._key}
-                    type="button"
-                    role="tab"
-                    aria-selected={selected}
-                    aria-controls={`${block._key}-panel-${i}`}
-                    id={`${block._key}-tab-${i}`}
-                    tabIndex={selected ? 0 : -1}
-                    onClick={() => select(i)}
-                    className={`relative h-10 flex-none whitespace-nowrap rounded-full px-[18px] text-body text-primary transition-colors ${
-                      selected ? `font-medium${thumb ? "" : " bg-pistachio"}` : "hover:bg-lightpistachio/70"
-                    }`}
-                  >
-                    {nameOf(t)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        {/* Swipe (M2): name chip with dots. */}
-        {swipe && (
-          <div className="pointer-events-none absolute inset-x-4 bottom-4 flex justify-center desktop:hidden">
-            <div className={`${chip} gap-3`}>
-              <span aria-live="polite">{nameOf(tests[current])}</span>
-              <span className="flex items-center gap-1.5">
-                {tests.map((t, i) => (
-                  <button
-                    key={t._key}
-                    type="button"
-                    aria-label={`Show ${nameOf(t)}`}
-                    aria-current={i === current}
-                    onClick={() => select(i)}
-                    className={`h-1.5 rounded-full transition-[width,background-color] ${EASE} ${
-                      i === current ? "w-4 bg-primary" : "w-1.5 bg-primary/30"
-                    }`}
-                  />
-                ))}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Arrows (M3): back and next around the name chip. */}
-        {arrows && (
-          <div className="pointer-events-none absolute inset-x-4 bottom-4 flex items-center justify-center gap-2 desktop:hidden">
-            <button type="button" aria-label="Previous test" disabled={current === 0} onClick={() => select(current - 1)} className={round}>
-              <Chevron back />
-            </button>
-            <span className={chip} aria-live="polite">
-              {nameOf(tests[current])}
-            </span>
-            <button
-              type="button"
-              aria-label="Next test"
-              disabled={current === tests.length - 1}
-              onClick={() => select(current + 1)}
-              className={round}
-            >
-              <Chevron />
-            </button>
-          </div>
-        )}
+        <SwitcherControls
+          tests={tests}
+          current={current}
+          select={select}
+          motion={motion}
+          id={block._key}
+          label={sectionTitle}
+          pos="absolute inset-x-4 bottom-4 desktop:bottom-6"
+          tabs
+        />
       </div>
 
       <div className="col-span-4 grid desktop:col-span-12">
@@ -614,6 +692,27 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
           );
         })}
       </div>
+      {/* Follow: the controls float at the bottom of the screen, like a sticky add to cart. */}
+      {follow && (
+        <div
+          aria-hidden={!floating}
+          inert={!floating}
+          className={`fixed inset-x-0 bottom-4 z-40 h-12 transition-[opacity,translate] ${EASE} desktop:hidden ${
+            floating ? "opacity-100" : "pointer-events-none translate-y-6 opacity-0"
+          }`}
+        >
+          <SwitcherControls
+            tests={tests}
+            current={current}
+            select={select}
+            motion={motion}
+            id={block._key}
+            label={sectionTitle}
+            pos="absolute inset-x-4 bottom-0"
+            shadow
+          />
+        </div>
+      )}
     </section>
   );
 }

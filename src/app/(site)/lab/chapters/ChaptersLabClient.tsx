@@ -27,12 +27,13 @@ const MOTIONS: [SwitcherMotion, string][] = [
 const STAGES: [SwitcherStage, string][] = [
   ["flow", "In page"],
   ["sticky", "Sticky"],
+  ["follow", "Follow"],
 ];
 
 /**
  * Lab only: the phone layout variant comes from the URL hash (#offset,
- * #stack); the switcher's phone motion and stage from the toggle pinned to
- * the bottom.
+ * #stack); the switcher's phone motion and stage from the toggle pinned under
+ * the header.
  */
 export default function ChaptersLabClient({
   project,
@@ -62,7 +63,7 @@ export default function ChaptersLabClient({
         prevProject={prevProject}
         mobileVariant={variant}
       />
-      <div className="fixed inset-x-0 bottom-4 z-50 flex justify-center desktop:hidden">
+      <div className="fixed inset-x-0 top-[calc(var(--header-height)+8px)] z-50 flex justify-center desktop:hidden">
         <div className="flex rounded-full bg-primary p-1 text-sub text-bg shadow-lg">
           {MOTIONS.map(([key, label]) => (
             <button
@@ -70,7 +71,7 @@ export default function ChaptersLabClient({
               type="button"
               aria-pressed={motion === key}
               onClick={() => setMotion(key)}
-              className={`h-8 rounded-full px-3 ${motion === key ? "bg-pistachio text-primary" : ""}`}
+              className={`h-8 rounded-full px-2.5 ${motion === key ? "bg-pistachio text-primary" : ""}`}
             >
               {label}
             </button>
@@ -82,7 +83,7 @@ export default function ChaptersLabClient({
               type="button"
               aria-pressed={stage === key}
               onClick={() => setStage(key)}
-              className={`h-8 rounded-full px-3 ${stage === key ? "bg-pistachio text-primary" : ""}`}
+              className={`h-8 rounded-full px-2.5 ${stage === key ? "bg-pistachio text-primary" : ""}`}
             >
               {label}
             </button>
