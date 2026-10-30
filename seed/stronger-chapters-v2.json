@@ -112,7 +112,11 @@
           "media": {
             "type": "image",
             "image": "file:02-countdown-mobile@3x.png"
-          }
+          },
+          "hypothesis": "Showing shipping and returns facts under the add-to-cart button lowers hesitation, compared with today, where nothing is shown.",
+          "metric": "Add to cart, purchase as guardrail. The primary metric is not locked with the client yet.",
+          "result": "Not run yet.",
+          "decision": "Ready to build, waiting on ops to confirm the 13:50 cut-off. Runs alongside test 3, on a different part of the page."
         },
         {
           "_key": "t-soldout",
@@ -126,7 +130,11 @@
           "media": {
             "type": "image",
             "image": "file:03-soldout-row-mobile@3x.png"
-          }
+          },
+          "hypothesis": "Sending sold-out-size intent to an in-stock colour recovers add to carts that today end in a notify-me form.",
+          "metric": "Add to cart, purchase secondary. Exposure only on a sold-out tap where another colour has the size, in both arms.",
+          "result": "Not run yet. Found on the way: the notify-me form said \"Skickat!\" even when the sign-up failed and sent no events. Flagged as hygiene fixes before the test.",
+          "decision": "Mobile design and spec done, desktop row still to design. First in the queue after the badge."
         },
         {
           "_key": "t-similar",
@@ -140,7 +148,11 @@
           "media": {
             "type": "image",
             "image": "file:04-similar-product@3x.png"
-          }
+          },
+          "hypothesis": "A single, size-matched alternative at the moment of a sold-out tap recovers more add to carts than the notify-me form alone.",
+          "metric": "Add to cart; purchase and revenue per user secondary. The flag is read in the component that mounts on the tap, so only shoppers who saw the card count.",
+          "result": "Not run yet. Scoped as an MVP: a hand-picked map of 5 to 10 products, 2 to 3 dev days plus a day of QA.",
+          "decision": "Designed, specced and estimated. Runs after test 3, never at the same time, since both trigger on the same tap."
         },
         {
           "_key": "t-kit",
@@ -154,7 +166,11 @@
           "media": {
             "type": "image",
             "image": "file:05-kit-upgrade-variant@3x.png"
-          }
+          },
+          "hypothesis": "A shopper who has one piece is more likely to buy the rest of the same kit than unrelated recommendations.",
+          "metric": "Revenue per exposed user, purchase rate as guardrail. Changed from average order value in review: AOV only counts buyers, so a block that scares off 799 SEK buyers could raise it while losing money.",
+          "result": "Not run yet. An adversarial review changed six things, among them the metric, kits matched by collection, the price reframed as what you add, and eligibility checked before assignment.",
+          "decision": "Designed and reviewed. Comes once two kit bugs are fixed: sizes showing as Onesize after a reload, and the free-shipping widget asking for 1 SEK more at exactly 799 SEK."
         }
       ]
     }
