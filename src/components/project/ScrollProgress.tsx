@@ -4,7 +4,7 @@ interface ScrollProgressProps {
   progressRef: RefObject<HTMLElement | null>;
   /** Receives --p (0..1) from the scroll hook; the bar's fill reads it. */
   progressFillRef: RefObject<HTMLElement | null>;
-  /** Receives --pull (0..1) at the bottom edge; the bar darkens from its foot. */
+  /** Receives --pull (0..1) at the bottom edge; green wipes down over the bar. */
   pullRef: RefObject<HTMLElement | null>;
   nextProjectSlug: string | undefined;
   nextProjectTitle?: string | null;
@@ -12,12 +12,14 @@ interface ScrollProgressProps {
 }
 
 /**
- * Scroll indicator, desktop only (Ali, 30 Oct): a pistachio bar the width of
- * the grid gutter sits flush to the right edge, inside the page margin, and
- * fills from the top with the scroll, like a scrollbar track in the site's
- * colour. At the foot of the page the pull towards the
- * next project darkens the bar from the bottom (--pull). The number sits at
- * the bar's foot and, from 90 % down, the next project's title above it.
+ * Scroll indicator, desktop only (Ali, 30 Oct): a bar the width of the grid
+ * gutter sits flush to the right edge, inside the page margin, and fills
+ * black from the top with the scroll, like a scrollbar. Green is kept for
+ * the pull towards the next project at the foot of the page (--pull): it
+ * wipes over the black in the same direction, top-down, so committing to
+ * the next project reads as carrying on rather than rewinding. The number
+ * sits at the bar's foot and, from 90 % down, the next project's title
+ * above it.
  * The number and both fills are driven by useGalleryScroll.
  *
  * Both fills are full-height layers revealed by clip-path / scaleY, so a
@@ -47,7 +49,7 @@ export default function ScrollProgress({
       >
         <div
           ref={fillRef}
-          className="absolute inset-0 bg-pistachio"
+          className="absolute inset-0 bg-primary"
           style={{ clipPath: "inset(0 0 calc((1 - var(--p, 0)) * 100%) 0)" }}
         >
           {/* The hint rides on the fill's end and emerges as the bar grows. */}
@@ -57,7 +59,7 @@ export default function ScrollProgress({
               style={{ transform: "translateY(calc(var(--p, 0) * 100vh - 100% - 0.75rem))" }}
             >
               <span
-                className="block text-center text-sub font-medium uppercase text-primary"
+                className="block text-center text-sub font-medium uppercase text-bg"
                 style={{ width: BAR, lineHeight: BAR, writingMode: "vertical-rl", transform: "rotate(180deg)" }}
               >
                 Scroll down to see next project
@@ -67,7 +69,7 @@ export default function ScrollProgress({
         </div>
         <div
           ref={pullFillRef}
-          className="absolute inset-0 origin-bottom bg-primary"
+          className="absolute inset-0 origin-top bg-pistachio"
           style={{ transform: "scaleY(var(--pull, 0))" }}
         />
       </div>
