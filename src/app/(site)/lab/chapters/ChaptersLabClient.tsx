@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import ProjectPageClient from "@/components/project/ProjectPageClient";
-import { SwitcherMotionContext, type MobileVariant, type SwitcherMotion } from "@/components/project/ProjectChapters";
+import {
+  SwitcherMotionContext,
+  SwitcherStageContext,
+  type MobileVariant,
+  type SwitcherMotion,
+  type SwitcherStage,
+} from "@/components/project/ProjectChapters";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
@@ -14,14 +20,19 @@ function variantFromHash(): MobileVariant {
 
 // The three phone motions for the test switcher (Figma pf 27:1055-27:1136).
 const MOTIONS: [SwitcherMotion, string][] = [
-  ["bar", "M1 bar"],
-  ["swipe", "M2 swipe"],
-  ["arrows", "M3 arrows"],
+  ["bar", "M1"],
+  ["swipe", "M2"],
+  ["arrows", "M3"],
+];
+const STAGES: [SwitcherStage, string][] = [
+  ["flow", "In page"],
+  ["sticky", "Sticky"],
 ];
 
 /**
  * Lab only: the phone layout variant comes from the URL hash (#offset,
- * #stack); the switcher's phone motion from the toggle pinned to the bottom.
+ * #stack); the switcher's phone motion and stage from the toggle pinned to
+ * the bottom.
  */
 export default function ChaptersLabClient({
   project,
@@ -34,6 +45,7 @@ export default function ChaptersLabClient({
 }) {
   const [variant, setVariant] = useState<MobileVariant>("default");
   const [motion, setMotion] = useState<SwitcherMotion>("bar");
+  const [stage, setStage] = useState<SwitcherStage>("sticky");
   useEffect(() => {
     const read = () => setVariant(variantFromHash());
     read();
@@ -42,8 +54,9 @@ export default function ChaptersLabClient({
   }, []);
   return (
     <SwitcherMotionContext.Provider value={motion}>
+    <SwitcherStageContext.Provider value={stage}>
       <ProjectPageClient
-        key={`lab-chapters-${variant}-${motion}`}
+        key={`lab-chapters-${variant}-${motion}-${stage}`}
         project={project}
         nextProject={nextProject}
         prevProject={prevProject}
@@ -62,8 +75,21 @@ export default function ChaptersLabClient({
               {label}
             </button>
           ))}
+          <span className="mx-1 w-px self-stretch bg-bg/30" aria-hidden />
+          {STAGES.map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              aria-pressed={stage === key}
+              onClick={() => setStage(key)}
+              className={`h-8 rounded-full px-3 ${stage === key ? "bg-pistachio text-primary" : ""}`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
+    </SwitcherStageContext.Provider>
     </SwitcherMotionContext.Provider>
   );
 }

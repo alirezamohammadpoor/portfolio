@@ -322,13 +322,22 @@ function TestStory({ test, className = "" }: { test: AbTest; className?: string 
  */
 export type SwitcherMotion = "bar" | "swipe" | "arrows";
 export const SwitcherMotionContext = createContext<SwitcherMotion>("bar");
+/**
+ * Where the photo sits on a phone (lab, 10-30). flow = in the page, 560 px
+ * tall, the text below it. sticky = pinned under the header at 45 % of the
+ * screen while the text scrolls beneath, so phone, text and controls stay
+ * on screen together.
+ */
+export type SwitcherStage = "flow" | "sticky";
+export const SwitcherStageContext = createContext<SwitcherStage>("flow");
 
 const FROST = "bg-white/80 backdrop-blur-md";
 const EASE = "duration-[240ms] ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none";
 // The phone: 390:844, 500 px tall on a phone, 600 on a laptop.
+// The phone: 390:844, --phone-h tall (set on the stage per layout), 600 px on a laptop.
 const PHONE_BOX =
-  "relative aspect-[390/844] h-[500px] flex-none overflow-hidden rounded-[6%/2.8%] bg-white shadow-[0_24px_48px_-12px_rgba(0,0,0,0.35)] desktop:h-[600px]";
-const PHONE_STEP = 231 + 16; // phone width at 500 px tall + gap, for the swipe track
+  "relative aspect-[390/844] h-[var(--phone-h)] flex-none overflow-hidden rounded-[6%/2.8%] bg-white shadow-[0_24px_48px_-12px_rgba(0,0,0,0.35)] desktop:h-[600px]";
+const TRACK_GAP = 16;
 
 function Chevron({ back }: { back?: boolean }) {
   return (
@@ -351,6 +360,8 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
   const [active, setActive] = useState(0);
   const phone = PHONE[useContext(MobileVariantContext)];
   const motion = useContext(SwitcherMotionContext);
+  const sticky = useContext(SwitcherStageContext) === "sticky";
+  const textRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const [thumb, setThumb] = useState<{ left: number; width: number } | null>(null);
@@ -371,6 +382,7 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
   }, [current]);
 
   if (!tests.length) return null;
+  const stepOf = (track: HTMLElement) => ((track.firstElementChild as HTMLElement | null)?.offsetWidth ?? 231) + TRACK_GAP;
   const sectionTitle = block.title ?? "Tests";
   const nameOf = (t: AbTest) => t.label ?? t.title ?? "Test";
   const swipe = motion === "swipe";
@@ -381,7 +393,15 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
     setActive(next);
     const track = trackRef.current;
     if (swipe && track && track.scrollWidth > track.clientWidth) {
-      track.scrollTo({ left: next * PHONE_STEP, behavior: "smooth" });
+      track.scrollTo({ left: next * stepOf(track), behavior: "smooth" });
+    }
+    // Sticky stage: a new test starts reading from its first line.
+    const text = textRef.current;
+    const stage = text?.previousElementSibling?.previousElementSibling;
+    if (sticky && text && stage && window.matchMedia("(max-width: 74.99rem)").matches) {
+      const under = stage.getBoundingClientRect().bottom;
+      const top = text.getBoundingClientRect().top;
+      if (top < under) window.scrollBy({ top: top - under - 16, behavior: "smooth" });
     }
   };
   const onTabKey = (e: React.KeyboardEvent) => {
@@ -396,7 +416,7 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
   const onTrackScroll = () => {
     const track = trackRef.current;
     if (!track || track.scrollWidth <= track.clientWidth) return;
-    const i = Math.max(0, Math.min(tests.length - 1, Math.round(track.scrollLeft / PHONE_STEP)));
+    const i = Math.max(0, Math.min(tests.length - 1, Math.round(track.scrollLeft / stepOf(track))));
     if (i !== current) setActive(i);
   };
 
@@ -426,7 +446,13 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
       )}
 
       {/* The photo with the phone in focus. */}
-      <div className="relative col-span-4 h-[560px] overflow-hidden bg-tertiary desktop:col-span-12 desktop:h-[760px]">
+      <div
+        className={`relative col-span-4 overflow-hidden bg-tertiary desktop:static desktop:col-span-12 desktop:h-[760px] ${
+          sticky
+            ? "sticky top-[var(--header-height)] z-10 h-[45dvh] [--phone-h:calc(45dvh-40px)] desktop:z-auto"
+            : "h-[560px] [--phone-h:500px]"
+        }`}
+      >
         {backdrop && (
           <Image
             src={imageUrl(backdrop, 2400)}
@@ -442,9 +468,9 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
         <div
           ref={trackRef}
           onScroll={swipe ? onTrackScroll : undefined}
-          className={`absolute inset-x-0 top-6 desktop:top-8 ${
+          className={`absolute inset-x-0 desktop:top-8 ${sticky ? "top-3" : "top-6"} ${
             swipe
-              ? "flex snap-x snap-mandatory gap-4 overflow-x-auto px-[calc(50%-115.5px)] pb-16 desktop:grid desktop:justify-items-center desktop:overflow-visible desktop:px-0 desktop:pb-0"
+              ? "flex snap-x snap-mandatory gap-4 overflow-x-auto px-[calc(50%-var(--phone-h)*195/844)] pb-16 desktop:grid desktop:justify-items-center desktop:overflow-visible desktop:px-0 desktop:pb-0"
               : "grid justify-items-center"
           }`}
         >
@@ -562,7 +588,7 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
       </div>
 
       {/* Title and text (cols 1-5) facing the story (cols 7-12). */}
-      <div className="col-span-4 mt-6 grid desktop:col-span-12 desktop:mt-10">
+      <div ref={textRef} className="col-span-4 mt-6 grid desktop:col-span-12 desktop:mt-10">
         {tests.map((t, i) => {
           const title = t.title ?? nameOf(t);
           const text = Array.isArray(t.text) && t.text.length > 0 ? (t.text as PortableTextBlock[]) : null;
