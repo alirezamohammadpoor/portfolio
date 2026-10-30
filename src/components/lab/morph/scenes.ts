@@ -273,3 +273,12 @@ const kitFull: Scene = {
 /** Ali 10-30: the kit test plays the whole flow; the block-only cut is kept for reference. */
 export const SCENES: Scene[] = [badge, delivery, soldout, similar, kitFull];
 export const EXTRA_SCENES: Scene[] = [kitBlock];
+
+/** One scene per A/B test, for use on its own (e.g. the switcher's media slot). */
+export const SCENE_BY_KEY: Record<"badge" | "delivery" | "soldout" | "similar" | "kit", Scene> = {
+  badge,
+  delivery,
+  soldout,
+  similar,
+  kit: kitFull,
+};

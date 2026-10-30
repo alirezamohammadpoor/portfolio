@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import MorphLab from "@/components/lab/morph/MorphLab";
 
@@ -7,6 +8,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function MorphLabPage() {
-  return <MorphLab />;
+type SearchParams = Promise<{ solo?: string }>;
+
+async function Lab({ searchParams }: { searchParams: SearchParams }) {
+  const { solo } = await searchParams;
+  return <MorphLab solo={solo} />;
+}
+
+export default function MorphLabPage({ searchParams }: { searchParams: SearchParams }) {
+  return (
+    <Suspense fallback={null}>
+      <Lab searchParams={searchParams} />
+    </Suspense>
+  );
 }

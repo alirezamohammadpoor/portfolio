@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import TestMorph, { type TestMorphHandle } from "./TestMorph";
 import { SCENES } from "./scenes";
 
@@ -53,7 +53,23 @@ function Player({ index }: { index: number }) {
   );
 }
 
-export default function MorphLab() {
+/** `?solo=<key>`: one bare 390 x 844 stage with its timeline on
+ * `window.__morph`, for frame-by-frame renders of a single test. */
+function Solo({ sceneKey }: { sceneKey: string }) {
+  const ref = useRef<TestMorphHandle>(null);
+  const scene = SCENES.find((s) => s.key === sceneKey) ?? SCENES[0];
+  useEffect(() => {
+    (window as unknown as { __morph?: TestMorphHandle | null }).__morph = ref.current;
+  });
+  return (
+    <div data-solo style={{ position: "fixed", left: 0, top: 0, width: 390, zIndex: 100 }}>
+      <TestMorph ref={ref} scene={scene} />
+    </div>
+  );
+}
+
+export default function MorphLab({ solo }: { solo?: string }) {
+  if (solo) return <Solo sceneKey={solo} />;
   return (
     <main className="px-4 pb-24 pt-24 desktop:px-6">
       <h1 className="mb-8 text-[32px] leading-10">Stronger tests: today to design</h1>
