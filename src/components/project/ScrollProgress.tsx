@@ -124,7 +124,7 @@ export default function ScrollProgress({
   if (variant === "e") {
     return (
       <div className="pointer-events-none fixed inset-y-0 right-0 z-10 hidden desktop:block">
-        <div className="absolute top-16 right-[var(--grid-margin)] bottom-24 w-[2px] bg-tertiary">
+        <div className="absolute top-16 right-[calc(var(--grid-margin)/2-1px)] bottom-24 w-[2px] bg-tertiary">
           <div
             ref={fillRef}
             className="absolute inset-x-0 top-0 bg-primary"

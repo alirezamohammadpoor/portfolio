@@ -31,6 +31,12 @@ interface UseGalleryScrollOptions {
   markTargetReady: () => void;
   /** Threshold passed at the bottom: run the in-place next-project transition. */
   navigateNext: () => void;
+  /**
+   * The page tree is in the DOM (the client renders a text shell on the
+   * first pass). The progress trigger needs the gallery element, so it is
+   * created once this flips; on a direct load nothing else re-runs it.
+   */
+  mounted: boolean;
 }
 
 // Wheel deltaY units needed to trigger navigation (~20 mouse clicks or ~4 trackpad swipes)
@@ -94,6 +100,7 @@ export function useGalleryScroll({
   animateClone,
   markTargetReady,
   navigateNext,
+  mounted,
 }: UseGalleryScrollOptions) {
   const scrollProgressElRef = useRef<HTMLElement>(null);
   const mobileProgressElRef = useRef<HTMLElement>(null);
@@ -283,7 +290,7 @@ export function useGalleryScroll({
         },
       });
     },
-    { scope: galleryRef, dependencies: [isTransitioning] },
+    { scope: galleryRef, dependencies: [isTransitioning, mounted] },
   );
 
   const isAtBottom = useCallback(() => {

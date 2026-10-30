@@ -160,6 +160,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
     inPlace,
     animateClone,
     markTargetReady,
+    mounted,
     navigateNext,
   });
 
