@@ -8,7 +8,7 @@ import { useGSAP } from "@gsap/react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { ease, prefersReducedMotion } from "@/lib/motion";
-import { HERO_VARIANTS, LANDING_ASPECT, heroVariant } from "@/lib/landing";
+import { HERO_VARIANTS, LANDING_ASPECT, heroVariant, imageAspect, videoAspect } from "@/lib/landing";
 import NextProjectPreview, { type NextProject } from "@/components/project/NextProjectPreview";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
@@ -56,6 +56,17 @@ export default function ProjectGallery({
   });
   const adoptHostRef = useRef<HTMLDivElement>(null);
   const [adoptedMounted, setAdoptedMounted] = useState(false);
+  // Video ratios as they report metadata (by item key); images carry theirs.
+  // An adopted element already knows its size.
+  const [videoAspects, setVideoAspects] = useState<Record<string, number>>(() => {
+    const first = gallery[0];
+    const known = adopted && first?._type === "galleryVideo" ? videoAspect(adopted) : null;
+    return known && first?._key ? { [first._key]: known } : {};
+  });
+  const setVideoAspect = (key: string | undefined, aspect: number | null) => {
+    if (!key || !aspect) return;
+    setVideoAspects((prev) => (prev[key] === aspect ? prev : { ...prev, [key]: aspect }));
+  };
   useLayoutEffect(() => {
     const host = adoptHostRef.current;
     if (!adopted || !host || isTransitioning || adopted.parentElement === host) return;
@@ -199,6 +210,11 @@ export default function ProjectGallery({
     >
       {gallery.map((item, i) => {
         const isImage = item._type === "galleryImage";
+        // Each box takes its media's own ratio, fitted to the column: an
+        // image's from Sanity, a video's once it has metadata (16:10, the
+        // flush cover shape, until then).
+        const aspect =
+          (isImage ? imageAspect(item.image) : videoAspects[item._key]) ?? LANDING_ASPECT.gallery;
 
         return (
           <div
@@ -208,7 +224,7 @@ export default function ProjectGallery({
               if (i === 0) firstImageRef.current = el;
             }}
             className="relative w-full overflow-hidden bg-black"
-            style={{ aspectRatio: 4 / 3 }}
+            style={{ aspectRatio: aspect }}
           >
             {isImage && item.image?.asset && (
               <Image
@@ -238,6 +254,7 @@ export default function ProjectGallery({
                 loop
                 playsInline
                 preload="metadata"
+                onLoadedMetadata={(e) => setVideoAspect(item._key, videoAspect(e.currentTarget))}
               />
             )}
           </div>
