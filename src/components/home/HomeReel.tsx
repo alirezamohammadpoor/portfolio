@@ -8,29 +8,13 @@ import { useGSAP } from "@gsap/react";
 import { useLenis } from "lenis/react";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
-import { dur, ease } from "@/lib/motion";
+import { ease } from "@/lib/motion";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { holdIntro, releaseIntro } from "@/lib/intro";
-import { getReelState, reelScrubMode, setReelState, skipReel, useReelState } from "@/lib/reel";
+import { REEL_BEAT as BEAT, getReelState, reelScrubMode, setReelState, skipReel, useReelState } from "@/lib/reel";
 
 type Project = PROJECTS_QUERY_RESULT[number];
 
-/**
- * Beats, seconds (script: /mnt/project-files/home-reel/script.md). The name
- * starts writing at 0 and lands in the header at ≈3.8 on its own clock.
- */
-const BEAT = {
-  /** The first project holds full bleed while the name starts. */
-  hold: 0.9,
-  /** The other heroes pass upward, each quicker than the last. */
-  reel: 1.8,
-  /** Pull back to the whole home while the heroes slide into their slots. */
-  out: 0.8,
-  /** Top-to-bottom offset between the heroes' slides. */
-  stagger: 0.03,
-  /** The whole home, small and still. */
-  map: 0.4,
-};
 /** Longest wait for the first cover's frame before the reel gives up. */
 const READY_TIMEOUT = 1200;
 /** Breathing room around the home at the overview. */
@@ -95,10 +79,15 @@ export default function HomeReel({ projects, pageRef }: HomeReelProps) {
         heroes.forEach((hero, i) => {
           const from = hero.querySelector("video");
           const to = covers[i].querySelector("video");
-          if (!from || !to || from.currentSrc !== to.currentSrc || from.readyState < 1 || to.readyState < 1) return;
+          if (!from || !to || from.currentSrc !== to.currentSrc || from.readyState < 1 || to.readyState < 2) return;
+          // Only seek into what the page's video already has: an unbuffered
+          // seek shows an empty box until the data arrives.
+          const t = from.currentTime;
+          const buffered = Array.from({ length: to.buffered.length }, (_, j) => [to.buffered.start(j), to.buffered.end(j)]);
+          if (!buffered.some(([start, end]) => t >= start && t <= end)) return;
           from.pause();
           seeks.push(new Promise((resolve) => to.addEventListener("seeked", () => resolve(), { once: true })));
-          to.currentTime = from.currentTime;
+          to.currentTime = t;
         });
         const handOver = () => {
           lenisRef.current?.start();
@@ -187,7 +176,7 @@ export default function HomeReel({ projects, pageRef }: HomeReelProps) {
         setReelState("playing");
 
         tl = gsap.timeline({ paused: scrubbing, onComplete: scrubbing ? undefined : finish });
-        tl.to(world, { y: -(n - 1) * VH, duration: BEAT.reel, ease: "power2.in" }, BEAT.hold);
+        tl.to(world, { y: -(n - 1) * VH, duration: BEAT.reel, ease: BEAT.reelEase }, BEAT.hold);
         const outAt = BEAT.hold + BEAT.reel;
         tl.to(world, { x: (VW - VW * s) / 2, y: (VH - H * s) / 2, scale: s, duration: BEAT.out, ease: ease.out }, outAt);
         tl.to(
@@ -196,7 +185,7 @@ export default function HomeReel({ projects, pageRef }: HomeReelProps) {
           outAt,
         );
         const diveAt = outAt + BEAT.out + BEAT.stagger * (n - 1) + BEAT.map;
-        tl.to(world, { x: 0, y: 0, scale: 1, duration: dur.page, ease: ease.inOut }, diveAt);
+        tl.to(world, { x: 0, y: 0, scale: 1, duration: BEAT.dive, ease: ease.inOut }, diveAt);
         if (scrubbing) setScrub(tl);
       });
 

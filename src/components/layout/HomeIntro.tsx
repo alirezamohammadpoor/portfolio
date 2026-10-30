@@ -5,7 +5,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { dur, ease } from "@/lib/motion";
 import { getIntroState, setIntroState } from "@/lib/intro";
-import { onReelSkip, useReelState } from "@/lib/reel";
+import { REEL_NAME_MOVE_AT, getReelState, onReelSkip, useReelState } from "@/lib/reel";
 import { PERSIAN_NAME } from "@/lib/name";
 
 /** Seconds the finished name holds in the centre before it moves. */
@@ -303,6 +303,7 @@ export default function HomeIntro({ targetRef }: HomeIntroProps) {
     // A skip during the reel runs the rest of the name at 12x: it still
     // finishes writing and lands in the header, in a fraction of a second.
     let hurry = 1;
+    const startedAt = performance.now();
     const tl = gsap.timeline();
     tracked.push(tl);
     cleanups.push(
@@ -310,7 +311,7 @@ export default function HomeIntro({ targetRef }: HomeIntroProps) {
         if (hurry > 1) return;
         hurry = 12;
         tracked.forEach((t) => t.timeScale(t.timeScale() * hurry));
-        move?.timeScale(hurry);
+        move?.delay(0).timeScale(hurry);
       }),
     );
     brush(tl, name, {
@@ -338,7 +339,12 @@ export default function HomeIntro({ targetRef }: HomeIntroProps) {
       }
       const from = name.getBoundingClientRect();
       const to = target.getBoundingClientRect();
+      // Over the reel the written name waits on the passing covers and
+      // leaves as the view pulls back.
+      const elapsed = (performance.now() - startedAt) / 1000;
+      const wait = getReelState() === "playing" && hurry === 1 ? Math.max(0, REEL_NAME_MOVE_AT - elapsed) : 0;
       move = gsap.to(name, {
+        delay: wait,
         x: to.left - from.left,
         y: to.top - from.top,
         scale: to.width / from.width,

@@ -18,6 +18,32 @@ export type ReelState = "off" | "waiting" | "playing" | "done";
 
 const SESSION_KEY = "home-reel";
 
+/**
+ * Beats, seconds (script: /mnt/project-files/home-reel/script.md). The name
+ * starts writing at 0 and leaves for the header as the pull back starts.
+ * Ali 10-30: the first cut (hold 0.9, reel 1.8 on power2.in) went too fast.
+ */
+export const REEL_BEAT = {
+  /** The first project holds full bleed while the name starts. */
+  hold: 0.6,
+  /** The other heroes pass upward, each quicker than the last. With a
+   *  quadratic ease-in over 3.4 s each is on screen about 0.65, 0.5, 0.4,
+   *  0.36 s after the first one's 1.5 s. */
+  reel: 3.4,
+  reelEase: "power1.in",
+  /** Pull back to the whole home while the heroes slide into their slots. */
+  out: 0.9,
+  /** Top-to-bottom offset between the heroes' slides. */
+  stagger: 0.03,
+  /** The whole home, small and still. */
+  map: 0.5,
+  /** Dive into the top of the page. */
+  dive: 0.8,
+};
+
+/** When the pull back starts: the name leaves for the header then. */
+export const REEL_NAME_MOVE_AT = REEL_BEAT.hold + REEL_BEAT.reel;
+
 let state: ReelState =
   typeof document !== "undefined" && document.documentElement.dataset.reel === "pending"
     ? "waiting"
