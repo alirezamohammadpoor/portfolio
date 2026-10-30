@@ -380,8 +380,10 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
           );
         })}
       </div>
-      {/* Media row: one phone-shaped box (390:844) shared by every test, so the swap never shifts the page. */}
-      <div className={`${phone.frame} desktop:col-auto desktop:mt-8 desktop:block ${MEDIA_ROWS["wide-left"]} grid`}>
+      {/* Media: one phone-shaped box (390:844) shared by every test, so the swap never shifts the page.
+          On laptop it sits beside the reading lane (cols 10-12), so it is never pushed below the fold
+          by the tallest panel's reserved height. */}
+      <div className={`${phone.frame} desktop:mt-0 desktop:col-start-10 desktop:col-end-13 grid`}>
         {tests.map((t, i) => (
           <div key={t._key} className={`${stacked}${gate(i)}`} aria-hidden={i !== current}>
             <div className={`aspect-[390/844] ${phone.frameBox} desktop:h-[min(720px,80dvh)]`}>
@@ -390,7 +392,7 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
                 title={t.title ?? t.label ?? "Test"}
                 hidden={hidden || i !== current}
                 fit="frame"
-                sizes="(min-width: 75rem) 40vw, 100vw"
+                sizes="(min-width: 75rem) 25vw, 100vw"
               />
             </div>
             <Caption text={t.caption} />
