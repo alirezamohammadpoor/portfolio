@@ -101,6 +101,7 @@ export function useGalleryScroll({
   const firstImageRef = useRef<HTMLDivElement>(null);
   const nextTextWrapperRef = useRef<HTMLDivElement>(null);
   const nextTextRef = useRef<HTMLDivElement>(null);
+  const progressFillRef = useRef<HTMLElement>(null);
   const hasNavigated = useRef(false);
   const footerWipeRef = useRef<HTMLDivElement>(null);
 
@@ -267,6 +268,7 @@ export function useGalleryScroll({
           const val = Math.round(self.progress * 100);
           if (scrollProgressElRef.current) scrollProgressElRef.current.textContent = String(val);
           if (mobileProgressElRef.current) mobileProgressElRef.current.textContent = String(val);
+          if (progressFillRef.current) progressFillRef.current.style.setProperty("--p", self.progress.toFixed(4));
 
           if (!isReady.current) return;
 
@@ -336,6 +338,7 @@ export function useGalleryScroll({
     firstImageRef,
     nextTextWrapperRef,
     nextTextRef,
+    progressFillRef,
     gallery,
     scrollProgressElRef,
     mobileProgressElRef,

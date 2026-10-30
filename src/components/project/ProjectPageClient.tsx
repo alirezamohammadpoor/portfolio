@@ -23,7 +23,7 @@ import ProjectInfoPanel from "@/components/project/ProjectInfoPanel";
 import ProjectGallery from "@/components/project/ProjectGallery";
 import ProjectStage from "@/components/project/ProjectStage";
 import { DESKTOP_QUERY, useIsDesktop } from "@/hooks/useIsDesktop";
-import ScrollProgress from "@/components/project/ScrollProgress";
+import ScrollProgress, { useIndicatorVariant } from "@/components/project/ScrollProgress";
 import ProjectTextShell from "@/components/project/ProjectTextShell";
 import ProjectChapters, { type MobileVariant } from "@/components/project/ProjectChapters";
 
@@ -61,6 +61,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
   // A project with chapters is a case study: one scrolling page on every
   // breakpoint (brief-v2). Without them it keeps the gallery page.
   const hasChapters = (project.chapters?.length ?? 0) > 0;
+  const indicator = useIndicatorVariant();
   // Media trees mount only on the client so a phone never requests the
   // desktop gallery's six videos from the server HTML (the server snapshot
   // of useIsDesktop is "desktop"). The text is still in the server HTML: see
@@ -145,6 +146,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
     firstImageRef,
     nextTextWrapperRef,
     nextTextRef,
+    progressFillRef,
     gallery,
     scrollProgressElRef,
     mobileProgressElRef,
@@ -238,10 +240,12 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
         {!skip && (
           <ScrollProgress
             progressRef={scrollProgressElRef}
+            progressFillRef={progressFillRef}
             nextProjectSlug={nextSlug}
+            nextProjectTitle={nextProject?.title}
             nextTextWrapperRef={nextTextWrapperRef}
             nextTextRef={nextTextRef}
-            align="right"
+            variant={indicator}
           />
         )}
       </>
@@ -290,9 +294,12 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
       {!skip && (
         <ScrollProgress
           progressRef={scrollProgressElRef}
+          progressFillRef={progressFillRef}
           nextProjectSlug={nextProject?.slug?.current ?? undefined}
+          nextProjectTitle={nextProject?.title}
           nextTextWrapperRef={nextTextWrapperRef}
           nextTextRef={nextTextRef}
+          variant={indicator}
         />
       )}
 
