@@ -143,6 +143,11 @@ def main():
                     "_type": "testSwitcher",
                     "_key": ch["_key"],
                     "title": ch.get("title"),
+                    **(
+                        {"backdrop": {"_type": "image", "asset": {"_type": "reference", "_ref": "image-DRYRUN-jpg" if dry else upload_asset(ch["backdrop"][len("file:"):], "image")}}}
+                        if ch.get("backdrop")
+                        else {}
+                    ),
                     "tests": [
                         {
                             "_type": "abTest",

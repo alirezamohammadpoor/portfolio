@@ -79,6 +79,7 @@
     {
       "_type": "testSwitcher",
       "_key": "v2-switcher",
+      "backdrop": "file:switcher-backdrop.jpg",
       "title": "The five tests, designed before a line was written",
       "tests": [
         {
