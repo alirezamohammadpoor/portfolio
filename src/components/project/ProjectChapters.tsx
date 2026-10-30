@@ -197,6 +197,28 @@ function ChapterSection({ chapter, index, hidden }: { chapter: Chapter; index: n
   );
 }
 
+/** Hypothesis, metric, result, decision: the four lines an outsider should be able to repeat back. */
+function TestStory({ test }: { test: AbTest }) {
+  const rows: [string, string | null | undefined][] = [
+    ["Hypothesis", test.hypothesis],
+    ["Metric", test.metric],
+    ["Result", test.result],
+    ["Decision", test.decision],
+  ];
+  const filled = rows.filter(([, v]) => typeof v === "string" && v.trim().length > 0);
+  if (filled.length === 0) return null;
+  return (
+    <dl className="mt-6 border-t border-tertiary">
+      {filled.map(([k, v]) => (
+        <div key={k} className="grid grid-cols-[6rem_1fr] gap-x-4 border-b border-tertiary py-3">
+          <dt className="text-sub uppercase text-secondary">{k}</dt>
+          <dd className="text-body text-primary whitespace-pre-line">{v}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: boolean }) {
   const tests = (block.tests ?? []).filter((t) => t.label || t.title);
   const [active, setActive] = useState(0);
@@ -258,6 +280,7 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
                   <PortableText value={text} components={portableTextComponents} />
                 </div>
               )}
+              <TestStory test={t} />
             </div>
           );
         })}

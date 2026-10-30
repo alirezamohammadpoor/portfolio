@@ -78,6 +78,18 @@ export default function ProjectTextShell({ project }: { project: Project }) {
                         <PortableText value={test.text as PortableTextBlock[]} components={portableTextComponents} />
                       </div>
                     )}
+                    {[
+                      ["Hypothesis", test.hypothesis],
+                      ["Metric", test.metric],
+                      ["Result", test.result],
+                      ["Decision", test.decision],
+                    ].map(([k, v]) =>
+                      v ? (
+                        <p key={k} className="mt-2 text-body text-primary">
+                          <span className="text-sub uppercase text-secondary">{k}</span> {v}
+                        </p>
+                      ) : null,
+                    )}
                     {test.caption && <p className="mt-3 text-sub text-secondary">{test.caption}</p>}
                   </section>
                 ))}

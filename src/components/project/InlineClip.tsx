@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /**
  * A silent film for the chapter page: no chrome, no controls. Plays muted
@@ -22,11 +22,21 @@ export default function InlineClip({
   className?: string;
 }) {
   const ref = useRef<HTMLVideoElement | null>(null);
+  const [still, setStill] = useState(false);
+
+  // Reduced motion: show the poster (the "before" frame) instead of the loop.
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => setStill(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
 
   useEffect(() => {
     const video = ref.current;
     if (!video) return;
-    if (!active) {
+    if (!active || still) {
       video.pause();
       return;
     }
@@ -46,7 +56,12 @@ export default function InlineClip({
       observer.disconnect();
       video.pause();
     };
-  }, [active, src]);
+  }, [active, still, src]);
+
+  if (still && poster) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={poster} alt={label} className={`block w-full h-auto ${className}`} />;
+  }
 
   return (
     <video
@@ -56,7 +71,7 @@ export default function InlineClip({
       muted
       loop
       playsInline
-      preload="metadata"
+      preload={still ? "none" : "metadata"}
       aria-label={label}
       className={`block w-full h-auto ${className}`}
     />
