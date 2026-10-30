@@ -22,7 +22,7 @@ interface ScrollProgressProps {
  * above it.
  * The number and both fills are driven by useGalleryScroll.
  *
- * Both fills are full-height layers revealed by clip-path / scaleY, so a
+ * Both fills are full-height layers revealed by clip-path, so a
  * scroll frame repaints the bar without laying out the page.
  */
 /** Bar width: the grid gutter (--grid-gutter is 16px on a laptop). */
@@ -53,25 +53,18 @@ export default function ScrollProgress({
           style={{ clipPath: "inset(0 0 calc((1 - var(--p, 0)) * 100%) 0)" }}
         >
           {/* The hint rides on the fill's end and emerges as the bar grows. */}
-          {nextProjectSlug && (
-            <p
-              className="absolute top-0 right-0"
-              style={{ transform: "translateY(calc(var(--p, 0) * 100vh - 100% - 0.75rem))" }}
-            >
-              <span
-                className="block text-center text-sub font-medium uppercase text-bg"
-                style={{ width: BAR, lineHeight: BAR, writingMode: "vertical-rl", transform: "rotate(180deg)" }}
-              >
-                Scroll down to see next project
-              </span>
-            </p>
-          )}
+          {nextProjectSlug && <Hint className="text-bg" />}
+          {/* The pull is a second, green copy of the bar wiped down over the
+              black, hint included, so the text stays on top and turns dark
+              exactly where the green has reached it. */}
+          <div
+            ref={pullFillRef}
+            className="absolute inset-0 bg-pistachio"
+            style={{ clipPath: "inset(0 0 calc((1 - var(--pull, 0)) * 100%) 0)" }}
+          >
+            {nextProjectSlug && <Hint className="text-primary" />}
+          </div>
         </div>
-        <div
-          ref={pullFillRef}
-          className="absolute inset-0 origin-top bg-pistachio"
-          style={{ transform: "scaleY(var(--pull, 0))" }}
-        />
       </div>
       <div className="pointer-events-none fixed right-[var(--grid-margin)] bottom-6 z-10 hidden text-right desktop:block">
         {nextProjectSlug && (
@@ -86,5 +79,21 @@ export default function ScrollProgress({
         </p>
       </div>
     </>
+  );
+}
+
+function Hint({ className }: { className: string }) {
+  return (
+    <p
+      className="absolute top-0 right-0"
+      style={{ transform: "translateY(calc(var(--p, 0) * 100vh - 100% - 0.75rem))" }}
+    >
+      <span
+        className={`block text-center text-sub font-medium uppercase ${className}`}
+        style={{ width: BAR, lineHeight: BAR, writingMode: "vertical-rl", transform: "rotate(180deg)" }}
+      >
+        Scroll down to see next project
+      </span>
+    </p>
   );
 }
