@@ -103,6 +103,8 @@ export default async function ChaptersLabPage() {
     _key: "fixture-switcher",
     _type: "testSwitcher",
     title: "The five tests, designed before a line was written",
+    // The published switcher's photo, once the seed has uploaded it.
+    backdrop: (project.chapters ?? []).find((c): c is TestSwitcher => c._type === "testSwitcher")?.backdrop ?? null,
     tests: TESTS.map((t, i) => {
       const item = videos[i % Math.max(1, videos.length)];
       return {

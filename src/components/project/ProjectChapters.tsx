@@ -17,9 +17,10 @@
  * and the reading lane (cols 5-9), then a media row below it whose width and
  * side vary per chapter (full 1-12, wide-left 1-7, wide-right 6-12), caption
  * under the media. "Beside" keeps text and media on one row for contrast.
- * The test switcher stacks pills in the title lane; the selected test's text
- * sits in the reading lane and its media below. Phone: title, text, media,
- * caption; switcher pills wrap above the text. Media autoplays muted in view
+ * The test switcher puts the open test's phone in focus on a full-width
+ * photo with a frosted segmented bar along its bottom; the title and text
+ * (cols 1-5) and the story rows (cols 7-12) sit under the photo. Phone:
+ * title, text, media, caption; the switcher's motion is SwitcherMotion. Media autoplays muted in view
  * as silent clips (InlineClip, no player chrome); the text is static.
  *
  * Next project: the preview block in the next page's landing shape (the
@@ -27,7 +28,7 @@
  * title beside it.
  */
 
-import { createContext, useContext, useState, type RefObject } from "react";
+import { createContext, useContext, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import NextLink from "next/link";
 import Image from "next/image";
 import { Link } from "@/lib/viewTransitions";
@@ -83,8 +84,6 @@ interface ProjectChaptersProps {
 
 // Lanes (laptop, 12 columns): the title lane is cols 1-3, the reading lane
 // cols 5-9. Media rows sit below the text row at one of three widths.
-const TITLE_LANE = "col-span-4 desktop:col-start-1 desktop:col-end-4";
-const READING_LANE = "col-span-4 mt-3 desktop:mt-0 desktop:col-start-5 desktop:col-end-10";
 const MEDIA_ROWS = {
   full: "desktop:col-start-1 desktop:col-end-13",
   "wide-left": "desktop:col-start-1 desktop:col-end-8",
@@ -153,8 +152,8 @@ function ChapterMedia({
   media: ChapterMediaValue;
   title: string;
   hidden: boolean;
-  /** row: fill the media row at the image's ratio. frame: fill the parent's fixed height at natural ratio (switcher). */
-  fit?: "row" | "frame";
+  /** row: fill the media row at the image's ratio. frame: fill the parent's fixed height at natural ratio. phone: cover a phone-shaped box (switcher). */
+  fit?: "row" | "frame" | "phone";
   sizes?: string;
 }) {
   if (!media) return null;
@@ -168,7 +167,9 @@ function ChapterMedia({
         poster={media.poster?.asset ? imageUrl(media.poster, 1600) : undefined}
         label={title}
         active={!hidden}
-        className={fit === "frame" ? "h-full w-full object-contain object-left-top" : ""}
+        className={
+          fit === "phone" ? "h-full w-full object-cover object-top" : fit === "frame" ? "h-full w-full object-contain object-left-top" : ""
+        }
       />
     );
   }
@@ -176,14 +177,14 @@ function ChapterMedia({
     const dims = media.image.asset.metadata?.dimensions;
     const width = dims?.width ?? 1600;
     const height = dims?.height ?? 1200;
-    if (fit === "frame") {
+    if (fit === "frame" || fit === "phone") {
       return (
         <Image
           src={imageUrl(media.image, 1600)}
           alt={title}
           width={width}
           height={height}
-          className="h-full w-full object-contain object-left-top"
+          className={`h-full w-full ${fit === "phone" ? "object-cover object-top" : "object-contain object-left-top"}`}
           sizes={sizes}
         />
       );
@@ -292,7 +293,7 @@ function ChapterSection({ chapter, index, hidden }: { chapter: Chapter; index: n
 }
 
 /** Hypothesis, metric, result, decision: the four lines an outsider should be able to repeat back. */
-function TestStory({ test }: { test: AbTest }) {
+function TestStory({ test, className = "" }: { test: AbTest; className?: string }) {
   const rows: [string, string | null | undefined][] = [
     ["Hypothesis", test.hypothesis],
     ["Metric", test.metric],
@@ -302,59 +303,268 @@ function TestStory({ test }: { test: AbTest }) {
   const filled = rows.filter(([, v]) => typeof v === "string" && v.trim().length > 0);
   if (filled.length === 0) return null;
   return (
-    <dl className="mt-6 border-t border-tertiary">
+    <dl className={`border-t border-tertiary ${className}`}>
       {filled.map(([k, v]) => (
-        <div key={k} className="grid grid-cols-[6rem_1fr] gap-x-4 border-b border-tertiary py-3">
-          <dt className="text-sub uppercase text-secondary">{k}</dt>
-          <dd className="text-body text-primary whitespace-pre-line">{v}</dd>
+        <div key={k} className="border-b border-tertiary py-3 desktop:grid desktop:grid-cols-6 desktop:gap-x-4">
+          <dt className="text-sm text-secondary desktop:text-body">{k}</dt>
+          <dd className="mt-1 text-body text-primary whitespace-pre-line desktop:col-span-5 desktop:mt-0">{v}</dd>
         </div>
       ))}
     </dl>
   );
 }
 
+/**
+ * How the switcher moves on a phone (lab, 10-30; laptop always uses the bar).
+ * bar = M1, the frosted bar scrolls the open test to the middle and the phone
+ * crossfades. swipe = M2, swipe the phones (neighbours peek) with a name chip
+ * and dots. arrows = M3, back/next on the photo, the phone slides out and in.
+ */
+export type SwitcherMotion = "bar" | "swipe" | "arrows";
+export const SwitcherMotionContext = createContext<SwitcherMotion>("bar");
+
+const FROST = "bg-white/80 backdrop-blur-md";
+const EASE = "duration-[240ms] ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none";
+// The phone: 390:844, 500 px tall on a phone, 600 on a laptop.
+const PHONE_BOX =
+  "relative aspect-[390/844] h-[500px] flex-none overflow-hidden rounded-[6%/2.8%] bg-white shadow-[0_24px_48px_-12px_rgba(0,0,0,0.35)] desktop:h-[600px]";
+const PHONE_STEP = 231 + 16; // phone width at 500 px tall + gap, for the swipe track
+
+function Chevron({ back }: { back?: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden className={back ? "rotate-180" : ""}>
+      <path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/**
+ * D2 (Figma pf 26:1098, Ali 10-30): the tests' phone sits in focus on a
+ * full-width lifestyle photo, a frosted segmented bar along the photo's
+ * bottom picks the test, and under the photo the title and text (cols 1-5)
+ * face the story rows (cols 7-12). Every phone and every text panel is
+ * rendered in one grid cell and the inactive ones fade out, so a switch
+ * never moves the page.
+ */
 function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: boolean }) {
   const tests = (block.tests ?? []).filter((t) => t.label || t.title);
   const [active, setActive] = useState(0);
   const phone = PHONE[useContext(MobileVariantContext)];
-  const current = Math.min(active, tests.length - 1);
+  const motion = useContext(SwitcherMotionContext);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [thumb, setThumb] = useState<{ left: number; width: number } | null>(null);
+  const current = Math.min(active, Math.max(0, tests.length - 1));
+
+  // The pistachio thumb slides to the open tab; on a phone the bar also
+  // scrolls so the open tab sits in the middle.
+  useLayoutEffect(() => {
+    const bar = tabsRef.current;
+    const tab = bar?.querySelectorAll<HTMLElement>("[role=tab]")[current];
+    if (!bar || !tab) return;
+    const place = () => setThumb({ left: tab.offsetLeft, width: tab.offsetWidth });
+    place();
+    bar.scrollTo({ left: tab.offsetLeft - (bar.clientWidth - tab.offsetWidth) / 2, behavior: "smooth" });
+    const ro = new ResizeObserver(place);
+    ro.observe(bar);
+    return () => ro.disconnect();
+  }, [current]);
+
   if (!tests.length) return null;
   const sectionTitle = block.title ?? "Tests";
-  const pill = "inline-flex h-8 items-center rounded-full px-4 text-sub uppercase transition-colors duration-200";
-  // Every panel is rendered in the same grid cell; the inactive ones stay
-  // invisible so the cell keeps the tallest panel's height (no layout shift).
-  const stacked = "col-start-1 row-start-1";
-  const gate = (i: number) => (i === current ? "" : " invisible");
+  const nameOf = (t: AbTest) => t.label ?? t.title ?? "Test";
+  const swipe = motion === "swipe";
+  const arrows = motion === "arrows";
+
+  const select = (i: number) => {
+    const next = Math.max(0, Math.min(tests.length - 1, i));
+    setActive(next);
+    const track = trackRef.current;
+    if (swipe && track && track.scrollWidth > track.clientWidth) {
+      track.scrollTo({ left: next * PHONE_STEP, behavior: "smooth" });
+    }
+  };
+  const onTabKey = (e: React.KeyboardEvent) => {
+    const keys: Record<string, number> = { ArrowRight: current + 1, ArrowLeft: current - 1, Home: 0, End: tests.length - 1 };
+    if (!(e.key in keys)) return;
+    e.preventDefault();
+    const next = (keys[e.key] + tests.length) % tests.length;
+    select(next);
+    tabsRef.current?.querySelectorAll<HTMLElement>("[role=tab]")[next]?.focus();
+  };
+  // Swipe (M2): the phone nearest the middle of the track is the open test.
+  const onTrackScroll = () => {
+    const track = trackRef.current;
+    if (!track || track.scrollWidth <= track.clientWidth) return;
+    const i = Math.max(0, Math.min(tests.length - 1, Math.round(track.scrollLeft / PHONE_STEP)));
+    if (i !== current) setActive(i);
+  };
+
+  const fade = (i: number) =>
+    `transition-[opacity,visibility] ${EASE} ${i === current ? "opacity-100" : "invisible opacity-0"}`;
+  // A phone's state: crossfade (bar), peek at the sides (swipe), slide out and in (arrows).
+  const phoneState = (i: number) => {
+    if (swipe) {
+      const laptop = i === current ? "" : "desktop:invisible desktop:opacity-0";
+      return `snap-center transition-[opacity,visibility] ${EASE} ${i === current ? "opacity-100" : "opacity-55"} ${laptop}`;
+    }
+    if (arrows) {
+      const slide = i < current ? "max-desktop:-translate-x-[70%]" : i > current ? "max-desktop:translate-x-[70%]" : "";
+      return `transition-[opacity,visibility,translate] duration-[320ms] ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none ${slide} ${i === current ? "opacity-100" : "invisible opacity-0"}`;
+    }
+    return fade(i);
+  };
+  const chip = `${FROST} pointer-events-auto flex h-10 items-center rounded-full px-4 text-body text-primary`;
+  const round = `${FROST} pointer-events-auto flex size-10 items-center justify-center rounded-full text-primary disabled:opacity-40`;
+  const backdrop = block.backdrop?.asset ? block.backdrop : null;
+  const hotspot = backdrop?.hotspot;
 
   return (
     <section className="grid-site px-margin py-6 desktop:py-12" aria-label={sectionTitle}>
       {block.title && (
-        <h2 className={`${phone.title} desktop:col-start-1 desktop:col-end-10 desktop:text-h3 text-primary mb-6 desktop:mb-8`}>
-          {block.title}
-        </h2>
+        <h2 className={`${phone.title} desktop:col-span-12 desktop:text-h3 text-primary mb-6 desktop:mb-8`}>{block.title}</h2>
       )}
-      <div className={`${TITLE_LANE} flex flex-wrap gap-2 desktop:flex-col desktop:items-start`} role="tablist">
-        {tests.map((t, i) => {
-          const selected = i === current;
-          return (
-            <button
+
+      {/* The photo with the phone in focus. */}
+      <div className="relative col-span-4 h-[560px] overflow-hidden bg-tertiary desktop:col-span-12 desktop:h-[760px]">
+        {backdrop && (
+          <Image
+            src={imageUrl(backdrop, 2400)}
+            alt=""
+            fill
+            sizes="100vw"
+            className="object-cover"
+            style={hotspot?.x != null && hotspot?.y != null ? { objectPosition: `${hotspot.x * 100}% ${hotspot.y * 100}%` } : undefined}
+            placeholder={backdrop.asset?.metadata?.lqip ? "blur" : "empty"}
+            blurDataURL={backdrop.asset?.metadata?.lqip ?? undefined}
+          />
+        )}
+        <div
+          ref={trackRef}
+          onScroll={swipe ? onTrackScroll : undefined}
+          className={`absolute inset-x-0 top-6 desktop:top-8 ${
+            swipe
+              ? "flex snap-x snap-mandatory gap-4 overflow-x-auto px-[calc(50%-115.5px)] pb-16 desktop:grid desktop:justify-items-center desktop:overflow-visible desktop:px-0 desktop:pb-0"
+              : "grid justify-items-center"
+          }`}
+        >
+          {tests.map((t, i) => (
+            <div
               key={t._key}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              aria-controls={`${block._key}-panel-${i}`}
-              id={`${block._key}-tab-${i}`}
-              onClick={() => setActive(i)}
-              className={`${pill} ${selected ? "bg-pistachio text-primary" : "border border-tertiary text-secondary hover:bg-lightpistachio hover:text-primary"}`}
+              className={`${PHONE_BOX} desktop:col-start-1 desktop:row-start-1 ${swipe ? "" : "col-start-1 row-start-1"} ${phoneState(i)}`}
+              aria-hidden={i !== current}
             >
-              {t.label ?? t.title}
+              <ChapterMedia
+                media={t.media}
+                title={t.title ?? nameOf(t)}
+                hidden={hidden || i !== current}
+                fit="phone"
+                sizes="(min-width: 75rem) 280px, 240px"
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* The bar: on a laptop always, on a phone in the bar motion (M1). */}
+        <div
+          className={`absolute inset-x-4 bottom-4 justify-center desktop:bottom-6 ${swipe || arrows ? "hidden desktop:flex" : "flex"}`}
+        >
+          <div className={`${FROST} max-w-full rounded-full p-1`}>
+            <div
+              ref={tabsRef}
+              role="tablist"
+              aria-label={sectionTitle}
+              onKeyDown={onTabKey}
+              className="relative flex overflow-x-auto rounded-full [mask-image:linear-gradient(to_right,transparent,black_12px,black_calc(100%-12px),transparent)] desktop:[mask-image:none]"
+            >
+              {thumb && (
+                <span
+                  aria-hidden
+                  className={`absolute inset-y-0 rounded-full bg-pistachio transition-[left,width] ${EASE}`}
+                  style={{ left: thumb.left, width: thumb.width }}
+                />
+              )}
+              {tests.map((t, i) => {
+                const selected = i === current;
+                return (
+                  <button
+                    key={t._key}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    aria-controls={`${block._key}-panel-${i}`}
+                    id={`${block._key}-tab-${i}`}
+                    tabIndex={selected ? 0 : -1}
+                    onClick={() => select(i)}
+                    className={`relative h-10 flex-none whitespace-nowrap rounded-full px-[18px] text-body text-primary transition-colors ${
+                      selected ? `font-medium${thumb ? "" : " bg-pistachio"}` : "hover:bg-lightpistachio/70"
+                    }`}
+                  >
+                    {nameOf(t)}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Swipe (M2): name chip with dots. */}
+        {swipe && (
+          <div className="pointer-events-none absolute inset-x-4 bottom-4 flex justify-center desktop:hidden">
+            <div className={`${chip} gap-3`}>
+              <span aria-live="polite">{nameOf(tests[current])}</span>
+              <span className="flex items-center gap-1.5">
+                {tests.map((t, i) => (
+                  <button
+                    key={t._key}
+                    type="button"
+                    aria-label={`Show ${nameOf(t)}`}
+                    aria-current={i === current}
+                    onClick={() => select(i)}
+                    className={`h-1.5 rounded-full transition-[width,background-color] ${EASE} ${
+                      i === current ? "w-4 bg-primary" : "w-1.5 bg-primary/30"
+                    }`}
+                  />
+                ))}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Arrows (M3): back and next around the name chip. */}
+        {arrows && (
+          <div className="pointer-events-none absolute inset-x-4 bottom-4 flex items-center justify-center gap-2 desktop:hidden">
+            <button type="button" aria-label="Previous test" disabled={current === 0} onClick={() => select(current - 1)} className={round}>
+              <Chevron back />
             </button>
-          );
-        })}
+            <span className={chip} aria-live="polite">
+              {nameOf(tests[current])}
+            </span>
+            <button
+              type="button"
+              aria-label="Next test"
+              disabled={current === tests.length - 1}
+              onClick={() => select(current + 1)}
+              className={round}
+            >
+              <Chevron />
+            </button>
+          </div>
+        )}
       </div>
-      <div className={`${READING_LANE} grid`}>
+
+      <div className="col-span-4 grid desktop:col-span-12">
+        {tests.map((t, i) => (
+          <div key={t._key} className={`col-start-1 row-start-1 ${fade(i)}`} aria-hidden={i !== current}>
+            <Caption text={t.caption} />
+          </div>
+        ))}
+      </div>
+
+      {/* Title and text (cols 1-5) facing the story (cols 7-12). */}
+      <div className="col-span-4 mt-6 grid desktop:col-span-12 desktop:mt-10">
         {tests.map((t, i) => {
-          const title = t.title ?? t.label ?? "Test";
+          const title = t.title ?? nameOf(t);
           const text = Array.isArray(t.text) && t.text.length > 0 ? (t.text as PortableTextBlock[]) : null;
           return (
             <div
@@ -363,41 +573,20 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
               role="tabpanel"
               aria-labelledby={`${block._key}-tab-${i}`}
               aria-hidden={i !== current}
-              className={`${stacked}${gate(i)}`}
+              className={`col-start-1 row-start-1 desktop:grid desktop:grid-cols-12 desktop:gap-x-4 desktop:items-start ${fade(i)}`}
             >
-              <p className="text-sub text-secondary tabular-nums">
-                Test {i + 1} of {tests.length}
-                {t.status ? ` · ${t.status}` : ""}
-              </p>
-              <h3 className="mt-2 text-h3 text-primary">{title}</h3>
-              {text && (
-                <div className={`mt-4 ${readingText}`}>
-                  <PortableText value={text} components={portableTextComponents} />
-                </div>
-              )}
-              <TestStory test={t} />
+              <div className="desktop:col-span-5">
+                <h3 className="text-h3 text-primary desktop:text-h2">{title}</h3>
+                {text && (
+                  <div className={`mt-3 desktop:mt-4 ${readingText}`}>
+                    <PortableText value={text} components={portableTextComponents} />
+                  </div>
+                )}
+              </div>
+              <TestStory test={t} className="mt-6 desktop:col-start-7 desktop:col-end-13 desktop:mt-0" />
             </div>
           );
         })}
-      </div>
-      {/* Media: one phone-shaped box (390:844) shared by every test, so the swap never shifts the page.
-          On laptop it sits beside the reading lane (cols 10-12), so it is never pushed below the fold
-          by the tallest panel's reserved height. */}
-      <div className={`${phone.frame} desktop:mt-0 desktop:col-start-10 desktop:col-end-13 grid`}>
-        {tests.map((t, i) => (
-          <div key={t._key} className={`${stacked}${gate(i)}`} aria-hidden={i !== current}>
-            <div className={`aspect-[390/844] ${phone.frameBox} desktop:h-[min(720px,80dvh)]`}>
-              <ChapterMedia
-                media={t.media}
-                title={t.title ?? t.label ?? "Test"}
-                hidden={hidden || i !== current}
-                fit="frame"
-                sizes="(min-width: 75rem) 25vw, 100vw"
-              />
-            </div>
-            <Caption text={t.caption} />
-          </div>
-        ))}
       </div>
     </section>
   );

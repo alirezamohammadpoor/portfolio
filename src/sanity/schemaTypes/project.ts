@@ -481,13 +481,20 @@ export const project = defineType({
           name: "testSwitcher",
           title: "Test switcher",
           description:
-            "One view for several A/B tests: the tests stack as pills in the title lane, the selected test's text sits in the reading lane and its media below.",
+            "One view for several A/B tests: a segmented bar picks the test, its phone sits in focus on a full-width photo, and its text and story sit below.",
           fields: [
             defineField({
               name: "title",
               title: "Section title",
               type: "string",
               description: "Optional heading above the switcher.",
+            }),
+            defineField({
+              name: "backdrop",
+              title: "Backdrop photo",
+              type: "image",
+              options: { hotspot: true },
+              description: "Lifestyle photo behind the phone, full width. Without one the panel is a flat tone.",
             }),
             defineField({
               name: "tests",

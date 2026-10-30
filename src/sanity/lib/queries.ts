@@ -40,6 +40,7 @@ const PROJECT_FIELDS = `
       }
     },
     _type == "testSwitcher" => {
+      backdrop { ..., asset-> { ..., metadata { dimensions, lqip } } },
       tests[]{
         _key,
         label,
