@@ -601,7 +601,7 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
       {/* The photo with the phone in focus. */}
       <div
         ref={stageRef}
-        className={`relative col-span-4 overflow-hidden bg-tertiary desktop:static desktop:col-span-12 desktop:h-[760px] ${
+        className={`relative col-span-4 overflow-hidden bg-tertiary desktop:relative desktop:top-auto desktop:col-span-12 desktop:h-[760px] ${
           sticky
             ? "sticky top-[var(--header-height)] z-10 h-[45dvh] [--phone-h:calc(45dvh-40px)] desktop:z-auto"
             : "h-[560px] [--phone-h:500px]"
