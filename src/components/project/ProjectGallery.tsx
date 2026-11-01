@@ -13,8 +13,6 @@ import NextProjectPreview, { type NextProject } from "@/components/project/NextP
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
-import { useNextVariant } from "@/lib/nextVariant";
-import { isPlainLeftClick } from "@/lib/clicks";
 
 type ProjectGalleryItems = NonNullable<
   NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["gallery"]
@@ -45,7 +43,6 @@ export default function ProjectGallery({
   onNavigateNext,
 }: ProjectGalleryProps) {
   const previewWrapRef = useRef<HTMLDivElement>(null);
-  const nextVariant = useNextVariant();
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   // Project → project: when the clone carries a live <video> of item 1's
   // file, item 1 is that element. Decided once at mount (only the landing
@@ -282,9 +279,8 @@ export default function ProjectGallery({
                   onNavigate={onNavigateNext}
                   sizes="(min-width: 75rem) 66vw, 100vw"
                   aspect={LANDING_ASPECT.chapters}
-                  labelHidden={nextVariant !== "d"}
+                  labelHidden
                 />
-                {nextVariant === "a" && <NextTitle nextProject={nextProject} onNavigate={onNavigateNext} />}
               </div>
             </div>
           </div>
@@ -295,31 +291,11 @@ export default function ProjectGallery({
               previewRef={previewRef}
               onNavigate={onNavigateNext}
               aspect={LANDING_ASPECT.gallery}
-              labelHidden={nextVariant !== "d"}
+              labelHidden
             />
-            {nextVariant === "a" && <NextTitle nextProject={nextProject} onNavigate={onNavigateNext} />}
           </div>
         )
       )}
     </div>
-  );
-}
-
-/** Next-project test, variant A: the title at 88px under the preview. */
-function NextTitle({ nextProject, onNavigate }: { nextProject: NextProject; onNavigate: () => void }) {
-  return (
-    <h2 className="mt-4 text-[5.5rem] leading-none tracking-[-0.02em] text-primary">
-      <a
-        href={`/project/${nextProject.slug?.current ?? ""}`}
-        className="link-underline"
-        onClick={(e) => {
-          if (!isPlainLeftClick(e)) return;
-          e.preventDefault();
-          onNavigate();
-        }}
-      >
-        {nextProject.title}
-      </a>
-    </h2>
   );
 }
