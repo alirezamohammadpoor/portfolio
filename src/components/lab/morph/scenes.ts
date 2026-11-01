@@ -67,7 +67,8 @@ const t2Design = S("t2-design", 374, 548);
 /** C2b (Ali 30 Oct): the colour row as 2.5 similar-product cards, Figma 226:232. */
 const t3Design = S("t3-design", 374, 792);
 const t4Today = S("t4-today", 374, 508);
-const t4Design = S("t4-design", 374, 683);
+/** A3c grey panel (Ali 1 Nov): "prova en liknande modell", why-line, Figma 228:597. */
+const t4Design = S("t4-design", 374, 718);
 const t5Today = S("t5-today", 390, 844);
 const t5Design = S("t5-design", 390, 844);
 const t5Picked = S("t5-picked", 390, 844);
@@ -181,7 +182,7 @@ const soldout: Scene = {
   poster: t3.poster(t3Design),
 };
 
-const t4 = pdp(683);
+const t4 = pdp(718);
 const similar: Scene = {
   key: "similar",
   label: "Similar product",
@@ -193,13 +194,13 @@ const similar: Scene = {
     t4.slice("sizesDesign", t4Design, [316, 394], 316, { hidden: true }),
     t4.slice("findSize", t4Today, [394, 422], 394),
     t4.slice("low", t4Today, [422, 508], 422),
-    t4.slice("band", t4Design, [394, 597], 394, { reveal: "down" }),
+    t4.slice("band", t4Design, [394, 632], 394, { reveal: "down" }),
   ],
   steps: [
     { kind: "hold", d: 0.6 },
     { kind: "tap", x: t4.x(138.4), y: t4.Y(358) },
     { kind: "fade", out: ["sizesToday", "findSize"], in: ["sizesDesign"], dy: t4.dy(8), d: 0.35 },
-    { kind: "move", ids: ["low"], dy: t4.dy(175), d: 0.7, at: "-=0.1" },
+    { kind: "move", ids: ["low"], dy: t4.dy(210), d: 0.7, at: "-=0.1" },
     { kind: "reveal", ids: ["band"], d: 0.7, at: "<0.1" },
     { kind: "hold", d: 0.2 },
   ],
