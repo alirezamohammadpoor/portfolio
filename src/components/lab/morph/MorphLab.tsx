@@ -53,8 +53,9 @@ function Player({ index }: { index: number }) {
   );
 }
 
-/** `?solo=<key>`: one bare 390 x 844 stage with its timeline on
- * `window.__morph`, for frame-by-frame renders of a single test. */
+/** `?solo=<key>`: one bare 390 x 844 stage that plays on open and replays on
+ * tap. Its timeline sits on `window.__morph`, so the frame renderer can pause
+ * and seek it. */
 function Solo({ sceneKey }: { sceneKey: string }) {
   const ref = useRef<TestMorphHandle>(null);
   const scene = SCENES.find((s) => s.key === sceneKey) ?? SCENES[0];
@@ -62,9 +63,15 @@ function Solo({ sceneKey }: { sceneKey: string }) {
     (window as unknown as { __morph?: TestMorphHandle | null }).__morph = ref.current;
   });
   return (
-    <div data-solo style={{ position: "fixed", left: 0, top: 0, width: 390, zIndex: 100 }}>
-      <TestMorph ref={ref} scene={scene} />
-    </div>
+    <button
+      type="button"
+      data-solo
+      aria-label={`Replay ${scene.label}`}
+      onClick={() => ref.current?.replay()}
+      style={{ position: "fixed", left: 0, top: 0, width: 390, zIndex: 100, display: "block", cursor: "pointer" }}
+    >
+      <TestMorph ref={ref} scene={scene} autoplay />
+    </button>
   );
 }
 
