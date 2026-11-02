@@ -370,7 +370,7 @@ export const project = defineType({
     defineField({
       name: "gallery",
       title: "Gallery",
-      description: "Mixed images and videos shown in the project page gallery. Drag to reorder.",
+      description: "Mixed images, videos and phone pairs shown in the project page gallery. Drag to reorder.",
       type: "array",
       of: [
         {
@@ -406,6 +406,25 @@ export const project = defineType({
           ],
           preview: {
             prepare: () => ({ title: "Video" }),
+          },
+        },
+        {
+          type: "object",
+          name: "galleryPhones",
+          title: "Phones",
+          description: "Two or three phone screens side by side on the page, each a still or a clip, e.g. a product page still next to a menu clip. Record at the phone's own ratio, flush, no device frame.",
+          fields: [
+            defineField({
+              name: "phones",
+              title: "Screens",
+              type: "array",
+              of: [{ type: "object", name: "phoneSlot", fields: phoneSlotFields, preview: { select: { type: "type" }, prepare: ({ type }) => ({ title: type === "image" ? "Still" : "Clip" }) } }],
+              validation: (rule) => rule.required().min(1).max(3),
+            }),
+          ],
+          preview: {
+            select: { phones: "phones" },
+            prepare: ({ phones }) => ({ title: `Phones (${Array.isArray(phones) ? phones.length : 0})` }),
           },
         },
       ],

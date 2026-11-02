@@ -10,6 +10,7 @@ import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { ease, prefersReducedMotion } from "@/lib/motion";
 import { HERO_VARIANTS, LANDING_ASPECT, heroVariant, imageAspect, videoAspect } from "@/lib/landing";
 import NextProjectPreview, { type NextProject } from "@/components/project/NextProjectPreview";
+import GalleryPhones from "@/components/project/GalleryPhones";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
@@ -209,6 +210,24 @@ export default function ProjectGallery({
       className={`flex flex-col gap-2 px-4 pb-10 desktop:px-6 desktop:ml-[50%] desktop:w-1/2${hidden ? " opacity-0 pointer-events-none" : ""}`}
     >
       {gallery.map((item, i) => {
+        if (item._type === "galleryPhones") {
+          return (
+            <div
+              key={item._key}
+              ref={(el) => {
+                itemRefs.current[i] = el;
+              }}
+              className="relative w-full"
+            >
+              <GalleryPhones
+                item={item}
+                title={projectTitle ?? "Project"}
+                active={!hidden}
+                sizes="(min-width: 75rem) 25vw, 50vw"
+              />
+            </div>
+          );
+        }
         const isImage = item._type === "galleryImage";
         // Each box takes its media's own ratio, fitted to the column: an
         // image's from Sanity, a video's once it has metadata (16:10, the

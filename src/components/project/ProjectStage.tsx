@@ -29,6 +29,7 @@ import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
 import { isPlainLeftClick } from "@/lib/clicks";
+import GalleryPhones from "@/components/project/GalleryPhones";
 import { LANDING_ASPECT, imageAspect, landingKind, videoAspect } from "@/lib/landing";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
@@ -287,6 +288,33 @@ export default function ProjectStage({
           }}
         >
           {gallery.map((item, i) => {
+            if (item._type === "galleryPhones") {
+              return (
+                <div
+                  key={item._key}
+                  ref={(el) => {
+                    itemRefs.current[i] = el;
+                  }}
+                  className="relative shrink-0 snap-center will-change-transform"
+                  style={{
+                    width: ITEM_W,
+                    marginLeft: i === 0 ? 0 : -OVERLAP,
+                    transition:
+                      reduceMotion || scrolling ? "none" : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}`,
+                  }}
+                  role="group"
+                  aria-roledescription="slide"
+                  aria-label={`${i + 1} of ${gallery.length}`}
+                >
+                  <GalleryPhones
+                    item={item}
+                    title={project.title ?? "Project"}
+                    active={Math.abs(i - index) <= 1}
+                    sizes="50vw"
+                  />
+                </div>
+              );
+            }
             const isImage = item._type === "galleryImage";
             const near = Math.abs(i - index) <= 1;
             const aspect =
