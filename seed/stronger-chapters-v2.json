@@ -99,7 +99,8 @@
           "hypothesis": "A bestseller badge is proof of trust, especially for someone buying their first tights. More clicks on the badged cards would lead to more adds to cart and a higher conversion, at the cost of stealing clicks from the other cards. A trade-off I was prepared to pay.",
           "metric": "Add to cart rate, target +5 % relative. PLP → PDP click-through as the leading indicator; purchase and revenue guarded.",
           "result": "64,222 users. Bestseller card click 22.5 % → 23.1 % (+2.7 %, 96 % chance to beat control, interval touching zero). PLP → PDP click 48.7 % → 49.4 % (+1.2 %). The other cards gained clicks too (+1.0 %), so the badge did not cannibalise. Add to cart 14.7 % → 14.6 % (−1.1 %, 29 %). Purchase 3.91 % → 3.86 %, flat. Revenue per user −4.5 %, wide interval.",
-          "decision": "It did not move add to cart. Clicks up, carts flat: hypothesis half-confirmed. Not shipped; the next test goes under the button."
+          "decision": "It did not move add to cart. Clicks up, carts flat: hypothesis half-confirmed. Not shipped; the next test goes under the button.",
+          "morph": "badge"
         },
         {
           "_key": "t-countdown",
@@ -118,7 +119,8 @@
           "hypothesis": "Showing shipping and returns facts under the add-to-cart button lowers hesitation, compared with today, where nothing is shown.",
           "metric": "Add to cart, purchase as guardrail. The primary metric is not locked with the client yet.",
           "result": "Not run yet.",
-          "decision": "Ready to build, waiting on ops to confirm the 13:50 cut-off. Runs alongside test 3, on a different part of the page."
+          "decision": "Ready to build, waiting on ops to confirm the 13:50 cut-off. Runs alongside test 3, on a different part of the page.",
+          "morph": "delivery"
         },
         {
           "_key": "t-soldout",
@@ -137,7 +139,8 @@
           "hypothesis": "Sending sold-out-size intent to an in-stock colour recovers add to carts that today end in a notify-me form.",
           "metric": "Add to cart, purchase secondary. Exposure only on a sold-out tap where another colour has the size, in both arms.",
           "result": "Not run yet. Found on the way: the notify-me form said \"Skickat!\" even when the sign-up failed and sent no events. Flagged as hygiene fixes before the test.",
-          "decision": "Mobile design and spec done, desktop row still to design. First in the queue after the badge."
+          "decision": "Mobile design and spec done, desktop row still to design. First in the queue after the badge.",
+          "morph": "soldout"
         },
         {
           "_key": "t-similar",
@@ -156,7 +159,8 @@
           "hypothesis": "A single, size-matched alternative at the moment of a sold-out tap recovers more add to carts than the notify-me form alone.",
           "metric": "Add to cart; purchase and revenue per user secondary. The flag is read in the component that mounts on the tap, so only shoppers who saw the card count.",
           "result": "Not run yet. Scoped as an MVP: a hand-picked map of 5 to 10 products, 2 to 3 dev days plus a day of QA.",
-          "decision": "Designed, specced and estimated. Runs after test 3, never at the same time, since both trigger on the same tap."
+          "decision": "Designed, specced and estimated. Runs after test 3, never at the same time, since both trigger on the same tap.",
+          "morph": "similar"
         },
         {
           "_key": "t-kit",
@@ -175,7 +179,8 @@
           "hypothesis": "A shopper who has one piece is more likely to buy the rest of the same kit than unrelated recommendations.",
           "metric": "Revenue per exposed user, purchase rate as guardrail. Changed from average order value in review: AOV only counts buyers, so a block that scares off 799 SEK buyers could raise it while losing money.",
           "result": "Not run yet. An adversarial review changed six things, among them the metric, kits matched by collection, the price reframed as what you add, and eligibility checked before assignment.",
-          "decision": "Designed and reviewed. Comes once two kit bugs are fixed: sizes showing as Onesize after a reload, and the free-shipping widget asking for 1 SEK more at exactly 799 SEK."
+          "decision": "Designed and reviewed. Comes once two kit bugs are fixed: sizes showing as Onesize after a reload, and the free-shipping widget asking for 1 SEK more at exactly 799 SEK.",
+          "morph": "kit"
         }
       ]
     }

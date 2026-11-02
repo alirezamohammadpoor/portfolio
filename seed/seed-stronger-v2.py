@@ -159,6 +159,7 @@ def main():
                             "metric": t.get("metric"),
                             "result": t.get("result"),
                             "decision": t.get("decision"),
+                            "morph": t.get("morph"),
                             "text": blocks(t["text"], t["_key"]),
                             "caption": t.get("caption"),
                             "media": media_doc(t["media"]),
