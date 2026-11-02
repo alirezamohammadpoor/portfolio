@@ -80,11 +80,13 @@ export default async function SiteLayout({
           <JsonLd data={[personLd, websiteLd]} />
           {/* Home intro gate, before hydration: a fresh load of the home
               keeps the page content hidden until the name has landed in the
-              header (src/lib/intro.ts). Reduced motion skips the intro. */}
+              header (src/lib/intro.ts); the first such load in a browser session
+              also plays the entry reel (src/lib/reel.ts). Reduced motion
+              skips both. */}
           <script
             dangerouslySetInnerHTML={{
               __html:
-                '(function(){try{if(location.pathname==="/"&&!matchMedia("(prefers-reduced-motion: reduce)").matches){document.documentElement.dataset.intro="pending"}}catch(e){}})()',
+                '(function(){try{if(location.pathname==="/"&&!matchMedia("(prefers-reduced-motion: reduce)").matches){document.documentElement.dataset.intro="pending";if(/[?&]reel/.test(location.search)||!sessionStorage.getItem("home-reel")){document.documentElement.dataset.reel="pending"}}}catch(e){}})()',
             }}
           />
         </head>

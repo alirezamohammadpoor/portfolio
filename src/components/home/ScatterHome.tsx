@@ -6,14 +6,17 @@ import { Link } from "@/lib/viewTransitions";
 import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { usePageTransition } from "@/context/TransitionContext";
-import { dur, ease, prefersReducedMotion } from "@/lib/motion";
+import { dur, ease, prefersReducedMotion, stagger } from "@/lib/motion";
 import { isPlainLeftClick } from "@/lib/clicks";
 import { restoreVideoPosition, saveVideoPosition } from "@/lib/videoPosition";
-import { useIntroState } from "@/lib/intro";
+import { getIntroState, useIntroState } from "@/lib/intro";
+import { getReelState } from "@/lib/reel";
+import HomeReel from "./HomeReel";
 
 type Project = PROJECTS_QUERY_RESULT[number];
 
@@ -81,27 +84,77 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
   const router = useRouter();
   const { startTransition } = usePageTransition();
 
-  // Rows reveal once as they scroll in: media and label rise together. Once
-  // only per visit: the home stays mounted behind a project page and its
+  // Entrances, once per visit: the opening line, then each row as it
+  // scrolls in. Text rises line by line out of a mask (SplitText, reverted
+  // when done so a resize never re-splits a finished line); covers fade and
+  // rise. Once only: the home stays mounted behind a project page and its
   // effects run again when it is shown (Activity), which must not hide the
   // rows a second time with their scroll positions measured while hidden.
   // On a fresh load the intro plays first (src/lib/intro.ts) and <main> stays
   // hidden until the name has landed, so the entrance waits for "done".
+  // After the entry reel the covers are already in place (the reel landed on
+  // them), so only the text enters. Reduced motion: the text fades, nothing
+  // moves.
   const introDone = useIntroState() === "done";
   const playedRef = useRef(false);
   useGSAP(
     () => {
-      if (!introDone || prefersReducedMotion() || playedRef.current) return;
+      // The store, not the hook: during hydration the hook reports the
+      // server's "done" while the intro is still pending, which used to
+      // play the whole entrance under the hidden page.
+      if (!introDone || getIntroState() !== "done" || playedRef.current) return;
       playedRef.current = true;
+      const reduce = prefersReducedMotion();
+      const reelLanded = getReelState() !== "off";
+
+      function riseIn(els: HTMLElement[], delay: number) {
+        if (!els.length) return;
+        if (reduce) {
+          gsap.from(els, { autoAlpha: 0, duration: dur.ui, ease: ease.out, delay });
+          return;
+        }
+        const splits = els.map((el) => SplitText.create(el, { type: "lines", mask: "lines", linesClass: "line", aria: "none" }));
+        gsap.from(
+          splits.flatMap((split) => split.lines),
+          {
+            yPercent: 105,
+            duration: dur.text,
+            ease: ease.out,
+            stagger,
+            delay,
+            onComplete: () => splits.forEach((split) => split.revert()),
+          },
+        );
+      }
+
+      const statement = gsap.utils.toArray<HTMLElement>("[data-statement]");
+      riseIn(statement, 0);
+
       const rows = gsap.utils.toArray<HTMLElement>("[data-row]");
+      const fold = window.innerHeight * 0.85;
+      let inView = 0;
       rows.forEach((row) => {
-        gsap.from(row.querySelectorAll("[data-reveal]"), {
-          y: 24,
-          autoAlpha: 0,
-          duration: dur.ui,
-          ease: ease.out,
-          stagger: 0.08,
-          scrollTrigger: { trigger: row, start: "top 85%", once: true },
+        const media = reelLanded || reduce ? [] : gsap.utils.toArray<HTMLElement>(row.querySelectorAll("[data-reveal]"));
+        const text = gsap.utils.toArray<HTMLElement>(row.querySelectorAll("[data-text]"));
+        const enter = (delay: number) => {
+          if (media.length) gsap.from(media, { y: 24, autoAlpha: 0, duration: dur.ui, ease: ease.out, delay });
+          riseIn(text, delay + (media.length ? stagger : 0));
+        };
+        if (row.getBoundingClientRect().top < fold) {
+          // Rows on screen at the start follow the opening line.
+          inView += 1;
+          enter(stagger * (inView + 1));
+          return;
+        }
+        gsap.set([...media, ...text], { autoAlpha: 0 });
+        ScrollTrigger.create({
+          trigger: row,
+          start: "top 85%",
+          once: true,
+          onEnter: () => {
+            gsap.set([...media, ...text], { autoAlpha: 1 });
+            enter(0);
+          },
         });
       });
       ScrollTrigger.refresh();
@@ -143,9 +196,10 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
 
   return (
     <div ref={rootRef} className="px-margin pb-24 desktop:pb-40">
+      <HomeReel projects={projects} pageRef={rootRef} />
       {/* Opening statement, cols 1-7 on the laptop. */}
       <section className="pt-8 desktop:grid desktop:grid-cols-12 desktop:gap-4 desktop:pt-12">
-        <h2 className="text-h2 desktop:col-start-1 desktop:col-end-8 desktop:text-h1">
+        <h2 data-statement className="text-h2 desktop:col-start-1 desktop:col-end-8 desktop:text-h1">
           Frontend developer at the intersection of product and design. Currently at TRY, Stockholm.
         </h2>
       </section>
@@ -160,12 +214,15 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
           const backdrop = project.homeBackdrop?.asset ? project.homeBackdrop : null;
           const label = (
             <div
-              data-reveal
               className={`mt-4 desktop:mt-0 ${preset.under ? "desktop:col-start-1 desktop:col-end-4 desktop:row-start-2 desktop:mt-6" : `desktop:row-start-1 ${preset.label} ${ALIGN[align]}`}`}
             >
               <Link href={href} onClick={(e) => handleClick(e, project)} className="block">
-                <h3 className="text-h3">{project.title}</h3>
-                {!preset.under && <p className="mt-2 text-body text-primary">{project.shortDescription}</p>}
+                <h3 data-text className="text-h3">{project.title}</h3>
+                {!preset.under && (
+                  <p data-text className="mt-2 text-body text-primary">
+                    {project.shortDescription}
+                  </p>
+                )}
               </Link>
             </div>
           );
@@ -195,7 +252,7 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
               )}
               {label}
               {preset.under && (
-                <p data-reveal className="mt-2 text-body text-primary desktop:col-start-5 desktop:col-end-10 desktop:row-start-2 desktop:mt-6 desktop:text-lead">
+                <p data-text className="mt-2 text-body text-primary desktop:col-start-5 desktop:col-end-10 desktop:row-start-2 desktop:mt-6 desktop:text-lead">
                   {project.shortDescription}
                 </p>
               )}
@@ -299,7 +356,7 @@ function CoverMedia({ project, aspect, priority = false }: CoverMediaProps) {
 
   if (coverMedia?.type === "video" && coverMedia.video?.asset?._ref) {
     return (
-      <div className={`relative w-full overflow-hidden bg-tertiary ${aspect}`}>
+      <div data-cover className={`relative w-full overflow-hidden bg-tertiary ${aspect}`}>
         <video
           ref={videoRef}
           src={fileUrl(coverMedia.video.asset._ref)}
@@ -317,7 +374,7 @@ function CoverMedia({ project, aspect, priority = false }: CoverMediaProps) {
 
   if (coverMedia?.type === "image" && coverMedia.image?.asset) {
     return (
-      <div className={`relative w-full overflow-hidden bg-tertiary ${aspect}`}>
+      <div data-cover className={`relative w-full overflow-hidden bg-tertiary ${aspect}`}>
         <Image
           src={imageUrl(coverMedia.image, 1600)}
           alt={title}
@@ -331,7 +388,7 @@ function CoverMedia({ project, aspect, priority = false }: CoverMediaProps) {
   }
 
   return (
-    <div className={`relative flex w-full items-center justify-center bg-tertiary ${aspect}`}>
+    <div data-cover className={`relative flex w-full items-center justify-center bg-tertiary ${aspect}`}>
       <span className="text-sub text-secondary">{title}</span>
     </div>
   );
