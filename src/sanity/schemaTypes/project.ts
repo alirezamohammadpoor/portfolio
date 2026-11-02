@@ -553,6 +553,21 @@ export const project = defineType({
                       type: "string",
                       description: "Ship, kill, iterate or still running, with the date.",
                     }),
+                    defineField({
+                      name: "morph",
+                      title: "Morph",
+                      type: "string",
+                      options: {
+                        list: [
+                          { title: "Bestseller badge", value: "badge" },
+                          { title: "Delivery promise", value: "delivery" },
+                          { title: "Sold-out row", value: "soldout" },
+                          { title: "Similar product", value: "similar" },
+                          { title: "Kit upgrade", value: "kit" },
+                        ],
+                      },
+                      description: "The coded animation (today's page into the design) that plays in the phone. Takes the place of the media below; the media stays as the fallback.",
+                    }),
                     chapterMediaField,
                     chapterCaptionField,
                   ],

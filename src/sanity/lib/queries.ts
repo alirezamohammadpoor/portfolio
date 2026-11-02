@@ -51,6 +51,7 @@ const PROJECT_FIELDS = `
         metric,
         result,
         decision,
+        morph,
         caption,
         media {
           type,

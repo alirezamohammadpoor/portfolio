@@ -41,6 +41,8 @@ import { portableTextComponents } from "@/components/portableText/components";
 import NextProjectPreview, { type NextProject } from "@/components/project/NextProjectPreview";
 import InlineClip from "@/components/project/InlineClip";
 import LandingMedia from "@/components/project/LandingMedia";
+import TestMorph, { type TestMorphHandle } from "@/components/lab/morph/TestMorph";
+import { SCENE_BY_KEY } from "@/components/lab/morph/scenes";
 import { isPlainLeftClick } from "@/lib/clicks";
 import { HERO_VARIANTS, LANDING_ASPECT, heroVariant, landingKind } from "@/lib/landing";
 
@@ -50,6 +52,7 @@ export type Chapter = Extract<ChapterBlock, { _type: "chapter" }>;
 export type TestSwitcher = Extract<ChapterBlock, { _type: "testSwitcher" }>;
 export type AbTest = NonNullable<TestSwitcher["tests"]>[number];
 type ChapterMediaValue = Chapter["media"];
+type MorphKey = keyof typeof SCENE_BY_KEY;
 
 /**
  * Phone layout (lab exploration, 2026-10-29). "default" = one column, media
@@ -528,6 +531,20 @@ function useFloatingControls(on: boolean, stageRef: RefObject<HTMLElement | null
   return on && floating;
 }
 
+// The coded morph per test (today's page into the design). Tests seeded before
+// the morph field existed fall back on their label.
+const MORPH_BY_LABEL: Record<string, MorphKey> = {
+  "Bestseller badge": "badge",
+  "Delivery promise": "delivery",
+  "Sold-out row": "soldout",
+  "Similar product": "similar",
+  "Kit upgrade": "kit",
+};
+const morphOf = (t: AbTest) => {
+  const key = (t.morph ?? MORPH_BY_LABEL[t.label ?? ""]) as MorphKey | undefined;
+  return key ? SCENE_BY_KEY[key] : undefined;
+};
+
 /**
  * D2 (Figma pf 26:1098, Ali 10-30): the tests' phone sits in focus on a
  * full-width lifestyle photo, a frosted segmented bar along the photo's
@@ -549,6 +566,14 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
   const stageRef = useRef<HTMLDivElement>(null);
   const current = Math.min(active, Math.max(0, tests.length - 1));
   const floating = useFloatingControls(follow, stageRef, textRef);
+  const morphs = useRef<(TestMorphHandle | null)[]>([]);
+  // A test's morph plays from the start each time it is opened.
+  const opened = useRef(current);
+  useEffect(() => {
+    if (opened.current === current) return;
+    opened.current = current;
+    morphs.current[current]?.replay();
+  }, [current]);
 
   if (!tests.length) return null;
   const stepOf = (track: HTMLElement) => ((track.firstElementChild as HTMLElement | null)?.offsetWidth ?? 231) + TRACK_GAP;
@@ -640,13 +665,24 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
               className={`${PHONE_BOX} desktop:col-start-1 desktop:row-start-1 ${swipe ? "" : "col-start-1 row-start-1"} ${phoneState(i)}`}
               aria-hidden={i !== current}
             >
-              <ChapterMedia
-                media={t.media}
-                title={t.title ?? nameOf(t)}
-                hidden={hidden || i !== current}
-                fit="phone"
-                sizes="(min-width: 75rem) 280px, 240px"
-              />
+              {morphOf(t) ? (
+                <TestMorph
+                  ref={(h) => {
+                    morphs.current[i] = h;
+                  }}
+                  scene={morphOf(t)!}
+                  autoplay={!hidden}
+                  className="h-full w-full"
+                />
+              ) : (
+                <ChapterMedia
+                  media={t.media}
+                  title={t.title ?? nameOf(t)}
+                  hidden={hidden || i !== current}
+                  fit="phone"
+                  sizes="(min-width: 75rem) 280px, 240px"
+                />
+              )}
             </div>
           ))}
         </div>

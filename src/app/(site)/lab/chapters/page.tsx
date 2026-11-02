@@ -140,6 +140,7 @@ export default async function ChaptersLabPage() {
         metric: t.metric ?? null,
         result: t.result ?? null,
         decision: t.decision ?? null,
+        morph: null,
         caption: t.caption,
         text: [block(t.text, `fixture-test-${i}-0`)],
         media: film(FILMS[i]),
