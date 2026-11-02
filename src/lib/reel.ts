@@ -26,27 +26,15 @@ const SESSION_KEY = "home-reel";
 export const REEL_BEAT = {
   /** The first project holds full bleed while the name starts. */
   hold: 0.6,
-  /** The other heroes pass upward, each quicker than the last. With a
-   *  quadratic ease-in over 3.4 s each is on screen about 0.65, 0.5, 0.4,
-   *  0.36 s after the first one's 1.5 s. */
-  reel: 3.4,
+  /** The other heroes pass upward, each quicker than the last, up to the
+   *  second-last project (quadratic ease-in). */
+  reel: 3.0,
   reelEase: "power1.in",
-  /** Rubber band at the bottom (Ali 11-02: the hit into the pull back was
-   *  too sharp). The scroll runs past the last project by this share of the
-   *  screen, decelerating from the reel's speed... */
-  overshoot: 0.15,
-  overshootTime: 0.25,
-  /** ...springs back onto it... */
-  settle: 0.55,
-  /** ...and the pull back starts this long before the spring has settled. */
-  settleOverlap: 0.15,
-  /** Soft stop instead (`?end=soft`): the reel runs this long to the
-   *  second-last project, the last one decelerates in over `softStop`
-   *  (power1.out, so it leaves at the speed power1.in arrived with) and
-   *  holds `softHold` before the pull back. */
-  softReel: 3.0,
-  softStop: 0.75,
-  softHold: 0.3,
+  /** Soft stop (Ali 11-02, over a rubber band; the hard hit into the pull
+   *  back was too sharp): the last project decelerates in, power1.out
+   *  leaving at the speed power1.in arrived with, and holds. */
+  stop: 0.75,
+  stopHold: 0.3,
   /** Pull back to the whole home while the heroes slide into their slots. */
   out: 0.9,
   /** Top-to-bottom offset between the heroes' slides. */
@@ -59,21 +47,8 @@ export const REEL_BEAT = {
   handOver: 0.3,
 };
 
-export type ReelEnding = "band" | "soft";
-
-/** How the reel meets the bottom; `?end=soft` picks the soft stop while Ali
- *  compares the two (11-02). */
-export function reelEnding(): ReelEnding {
-  return typeof location !== "undefined" && new URLSearchParams(location.search).get("end") === "soft" ? "soft" : "band";
-}
-
 /** When the pull back starts: the name leaves for the header then. */
-export function reelPullBackAt(ending: ReelEnding = reelEnding()) {
-  const b = REEL_BEAT;
-  return ending === "soft"
-    ? b.hold + b.softReel + b.softStop + b.softHold
-    : b.hold + b.reel + b.overshootTime + b.settle - b.settleOverlap;
-}
+export const REEL_PULL_BACK_AT = REEL_BEAT.hold + REEL_BEAT.reel + REEL_BEAT.stop + REEL_BEAT.stopHold;
 
 let state: ReelState =
   typeof document !== "undefined" && document.documentElement.dataset.reel === "pending"
