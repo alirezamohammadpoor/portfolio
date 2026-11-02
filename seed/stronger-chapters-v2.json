@@ -138,6 +138,20 @@
         "The “Bästsäljare” badge ran on production, 50/50 on a user cookie, about 32,000 users per arm. My hypothesis was that a bestseller badge is proof of trust for someone buying their first pair of tights, that it would pull clicks, and that it would steal some of them from other cards, a trade-off I was prepared to pay. Half of that held. Bestseller cards got 2.7 % more clicks (96 % chance to beat control, interval touching zero), other cards were not cannibalised, and the listing-to-product rate rose 1.2 %. Add to cart, the goal, moved −1.1 %. Purchase −1.5 %, revenue per user −4.5 %, both inside wide intervals. Trust got the click; it did not get the cart.",
         "What I take from it: the badge changed where people clicked, not whether they bought, so the next test belongs where the buying decision is made, under the button. The delivery promise is designed and waiting on the warehouse cut-off; the sold-out-size row and the similar-product card are specced and expose only on a sold-out tap."
       ]
+    },
+    {
+      "_type": "chapter",
+      "_key": "v3-hygiene",
+      "title": "Small fixes add up",
+      "layout": "wide-left",
+      "caption": "Header and cart drawer by keyboard: focus goes in, stays in, and comes back out.",
+      "media": {
+        "type": "video",
+        "video": "file-9806ff88936aea23432de866d64521fa0d21be41-mp4"
+      },
+      "text": [
+        "Big sites and big brands almost always carry small hygiene issues: a bug on one device or browser, something that has been there for a while and keeps slipping down the priority list. I look for those moments. I like being the detective who works out what is wrong, fixes it and leaves the site a little cleaner. Making a site 0.1 % better, in performance, accessibility or design, adds up over time. Not everything has to be a big change; there is always a long list of bugs and fixes to work through. At Stronger it started in my first week: keyboard users could not reach the menu or search, colour swatches showed no focus, and some header buttons had no name a screen reader could read. Later I found a notify-me form that said “sent” even when the sign-up failed, and a free-shipping bar asking for one more krona at exactly the threshold."
+      ]
     }
   ]
 }
