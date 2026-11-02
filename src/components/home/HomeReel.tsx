@@ -11,7 +11,7 @@ import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { ease } from "@/lib/motion";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { holdIntro, releaseIntro } from "@/lib/intro";
-import { REEL_BEAT as BEAT, getReelState, reelScrubMode, setReelState, skipReel, useReelState } from "@/lib/reel";
+import { REEL_BEAT as BEAT, getReelState, reelEnding, reelPullBackAt, reelScrubMode, setReelState, skipReel, useReelState } from "@/lib/reel";
 
 type Project = PROJECTS_QUERY_RESULT[number];
 
@@ -165,12 +165,24 @@ export default function HomeReel({ projects, pageRef }: HomeReelProps) {
         setReelState("playing");
 
         tl = gsap.timeline({ paused: scrubbing, onComplete: scrubbing ? undefined : finish });
-        tl.to(world, { y: -(n - 1) * VH, duration: BEAT.reel, ease: BEAT.reelEase }, BEAT.hold);
-        const outAt = BEAT.hold + BEAT.reel;
-        tl.to(world, { x: (VW - VW * s) / 2, y: (VH - H * s) / 2, scale: s, duration: BEAT.out, ease: ease.out }, outAt);
+        const bottom = -(n - 1) * VH;
+        if (reelEnding() === "soft") {
+          // Soft stop: speeding up to the second-last project, then the
+          // last one decelerates in and holds.
+          tl.to(world, { y: bottom + VH, duration: BEAT.softReel, ease: BEAT.reelEase }, BEAT.hold);
+          tl.to(world, { y: bottom, duration: BEAT.softStop, ease: "power1.out" });
+        } else {
+          // Rubber band: the reel's speed runs out past the last project
+          // (power3.out starts near the reel's end speed), then springs back.
+          tl.to(world, { y: bottom, duration: BEAT.reel, ease: BEAT.reelEase }, BEAT.hold);
+          tl.to(world, { y: bottom - BEAT.overshoot * VH, duration: BEAT.overshootTime, ease: "power3.out" });
+          tl.to(world, { y: bottom, duration: BEAT.settle, ease: "power2.inOut" });
+        }
+        const outAt = reelPullBackAt();
+        tl.to(world, { x: (VW - VW * s) / 2, y: (VH - H * s) / 2, scale: s, duration: BEAT.out, ease: ease.inOut }, outAt);
         tl.to(
           heroes,
-          { x: 0, y: 0, scale: 1, clipPath: "inset(0px 0px)", duration: BEAT.out, ease: ease.out, stagger: BEAT.stagger },
+          { x: 0, y: 0, scale: 1, clipPath: "inset(0px 0px)", duration: BEAT.out, ease: ease.inOut, stagger: BEAT.stagger },
           outAt,
         );
         const diveAt = outAt + BEAT.out + BEAT.stagger * (n - 1) + BEAT.map;
