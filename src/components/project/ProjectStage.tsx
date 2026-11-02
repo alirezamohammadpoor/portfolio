@@ -29,7 +29,7 @@ import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
 import { isPlainLeftClick } from "@/lib/clicks";
-import { LANDING_ASPECT, landingKind } from "@/lib/landing";
+import { LANDING_ASPECT, imageAspect, landingKind, videoAspect } from "@/lib/landing";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -86,6 +86,17 @@ export default function ProjectStage({
     firstVideoRef.current = adopted;
   }, [adopted, isTransitioning, project.title]);
   const [index, setIndex] = useState(0);
+  // Video ratios as they report metadata (by item key); images carry theirs.
+  // An adopted element already knows its size.
+  const [videoAspects, setVideoAspects] = useState<Record<string, number>>(() => {
+    const first = gallery[0];
+    const known = adopted && first?._type === "galleryVideo" ? videoAspect(adopted) : null;
+    return known && first?._key ? { [first._key]: known } : {};
+  });
+  const setVideoAspect = (key: string | undefined, aspect: number | null) => {
+    if (!key || !aspect) return;
+    setVideoAspects((prev) => (prev[key] === aspect ? prev : { ...prev, [key]: aspect }));
+  };
   const [reduceMotion, setReduceMotion] = useState(false);
 
   // Text entrance, same vocabulary as the desktop panel: title chars drop in,
@@ -278,6 +289,8 @@ export default function ProjectStage({
           {gallery.map((item, i) => {
             const isImage = item._type === "galleryImage";
             const near = Math.abs(i - index) <= 1;
+            const aspect =
+              (isImage ? imageAspect(item.image) : videoAspects[item._key]) ?? LANDING_ASPECT.stage;
             return (
               <div
                 key={item._key}
@@ -288,7 +301,7 @@ export default function ProjectStage({
                 className="relative shrink-0 snap-center overflow-hidden bg-black will-change-transform"
                 style={{
                   width: ITEM_W,
-                  aspectRatio: "4 / 3",
+                  aspectRatio: aspect,
                   marginLeft: i === 0 ? 0 : -OVERLAP,
                   boxShadow: i === index && !reduceMotion ? "0 8px 24px rgba(0,0,0,0.18)" : "none",
                   transition:
@@ -323,6 +336,7 @@ export default function ProjectStage({
                     playsInline
                     preload="metadata"
                     autoPlay={i === 0}
+                    onLoadedMetadata={(e) => setVideoAspect(item._key, videoAspect(e.currentTarget))}
                   />
                 )}
               </div>

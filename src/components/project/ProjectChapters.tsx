@@ -517,7 +517,8 @@ export default function ProjectChapters({
             phone), with the title in the other half. */}
         {nextProject && onNavigateNext && nextProject.slug?.current && (() => {
           const title = (
-            <h2 className="text-h2 desktop:text-h1 text-primary">
+            // The bar carries the title on a laptop (ScrollProgress).
+            <h2 className="text-h2 text-primary desktop:hidden">
               <a
                 href={`/project/${nextProject.slug.current}`}
                 className="link-underline"

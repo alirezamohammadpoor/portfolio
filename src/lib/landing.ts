@@ -10,9 +10,9 @@
  * - chapters (a project with `chapters[]`, every breakpoint): a 16:10 box
  *   in the hero, eight columns on a laptop (which side per `heroLayout`
  *   or the slug hash), full width on a phone.
- * - gallery (laptop, no chapters): the first 4:3 item of the right-hand
+ * - gallery (laptop, no chapters): the first item of the right-hand
  *   gallery column, flush with the top of <main>.
- * - stage (phone, no chapters): the first 4:3 card of the strip, centred
+ * - stage (phone, no chapters): the first card of the strip, centred
  *   in the viewport under the title block; its top depends on that layout,
  *   so there is nothing to slide to and the clone settles onto it instead.
  */
@@ -24,12 +24,30 @@ export function landingKind(hasChapters: boolean | null | undefined, isDesktop: 
   return isDesktop ? "gallery" : "stage";
 }
 
-/** The landing box ratio: flush covers on chapter pages, 4:3 elsewhere. */
+/**
+ * The landing box ratio before the media reports its own: the flush laptop
+ * covers are 16:10 everywhere. Gallery items and stage cards then take the
+ * ratio of their image (Sanity dimensions) or video (loadedmetadata), so a
+ * clip is never cropped (mediaAspect below).
+ */
 export const LANDING_ASPECT: Record<LandingKind, number> = {
   chapters: 16 / 10,
-  gallery: 4 / 3,
-  stage: 4 / 3,
+  gallery: 16 / 10,
+  stage: 16 / 10,
 };
+
+/** Width / height of a Sanity image with dimensions metadata, else null. */
+export function imageAspect(
+  image: { asset?: { metadata?: { dimensions?: { width?: number | null; height?: number | null } | null } | null } | null } | null | undefined,
+): number | null {
+  const d = image?.asset?.metadata?.dimensions;
+  return d?.width && d?.height ? d.width / d.height : null;
+}
+
+/** Width / height of a video element once it knows its size, else null. */
+export function videoAspect(video: HTMLVideoElement | null | undefined): number | null {
+  return video?.videoWidth && video.videoHeight ? video.videoWidth / video.videoHeight : null;
+}
 
 /**
  * Top padding of the chapter page's hero section (ProjectChapters renders
