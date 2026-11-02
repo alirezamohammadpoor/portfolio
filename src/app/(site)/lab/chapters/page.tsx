@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getProject } from "@/sanity/lib/data";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
-import type { Chapter, TestSwitcher } from "@/components/project/ProjectChapters";
+import type { AbTest, Chapter, TestSwitcher } from "@/components/project/ProjectChapters";
 import ChaptersLabClient from "./ChaptersLabClient";
 
 // Prototype route for the chapter project page (brief-v2, Figma frame E):
@@ -99,14 +99,38 @@ export default async function ChaptersLabPage() {
       media: item && item._type === "galleryVideo" ? { type: "video", video: item.video ?? null, image: null, poster: null, phones: null, panel: null, panelImage: null } : null,
     };
   });
+  // The test films from the animation thread (today's page morphing into the design), served from public/.
+  const FILMS = ["1-badge", "2-delivery", "3-soldout", "4-similar", "5-kit"];
+  const film = (name: string | undefined): AbTest["media"] =>
+    name
+      ? {
+          type: "video",
+          video: { _type: "file", asset: { _type: "reference", _ref: `/lab/tests/${name}.mp4` } },
+          poster: { _type: "image", asset: { _type: "reference", _ref: `/lab/tests/${name}.jpg` } },
+          image: null,
+          phones: null,
+          panel: null,
+          panelImage: null,
+        }
+      : null;
   const switcher: TestSwitcher = {
     _key: "fixture-switcher",
     _type: "testSwitcher",
     title: "The five tests, designed before a line was written",
-    // The published switcher's photo, once the seed has uploaded it.
-    backdrop: (project.chapters ?? []).find((c): c is TestSwitcher => c._type === "testSwitcher")?.backdrop ?? null,
+    // The published switcher's photo once the seed has uploaded it, the same photo from public/ until then.
+    backdrop: (project.chapters ?? []).find((c): c is TestSwitcher => c._type === "testSwitcher")?.backdrop ?? {
+      _type: "image",
+      asset: {
+        _id: "lab-backdrop",
+        _type: "sanity.imageAsset",
+        _createdAt: "",
+        _updatedAt: "",
+        _rev: "",
+        url: "/lab/tests/backdrop.jpg",
+        metadata: { dimensions: { _type: "sanity.imageDimensions", width: 2400, height: 1200 }, lqip: null },
+      },
+    },
     tests: TESTS.map((t, i) => {
-      const item = videos[i % Math.max(1, videos.length)];
       return {
         _key: `fixture-test-${i}`,
         label: t.label,
@@ -118,7 +142,7 @@ export default async function ChaptersLabPage() {
         decision: t.decision ?? null,
         caption: t.caption,
         text: [block(t.text, `fixture-test-${i}-0`)],
-        media: item && item._type === "galleryVideo" ? { type: "video", video: item.video ?? null, image: null, poster: null, phones: null, panel: null, panelImage: null } : null,
+        media: film(FILMS[i]),
       };
     }),
   };

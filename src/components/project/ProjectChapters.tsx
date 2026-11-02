@@ -142,6 +142,12 @@ const PHONE = {
   },
 } as const;
 
+// A ref that starts with "/" is a file in public/ (lab fixtures only); anything else is a Sanity asset.
+const clipSrc = (ref: string) => (ref.startsWith("/") ? ref : fileUrl(ref));
+type Poster = { asset?: { _ref: string } } | null | undefined;
+const posterSrc = (poster: Poster, width: number) =>
+  poster?.asset ? (poster.asset._ref.startsWith("/") ? poster.asset._ref : imageUrl(poster as Parameters<typeof imageUrl>[0], width)) : undefined;
+
 function ChapterMedia({
   media,
   title,
@@ -163,8 +169,8 @@ function ChapterMedia({
   if (media.type === "video" && media.video?.asset?._ref) {
     return (
       <InlineClip
-        src={fileUrl(media.video.asset._ref)}
-        poster={media.poster?.asset ? imageUrl(media.poster, 1600) : undefined}
+        src={clipSrc(media.video.asset._ref)}
+        poster={posterSrc(media.poster, 1600)}
         label={title}
         active={!hidden}
         className={
@@ -223,8 +229,8 @@ function PhonesPanel({ media, title, hidden }: { media: NonNullable<ChapterMedia
         >
           {slot.type === "video" && slot.video?.asset?._ref ? (
             <InlineClip
-              src={fileUrl(slot.video.asset._ref)}
-              poster={slot.poster?.asset ? imageUrl(slot.poster, 800) : undefined}
+              src={clipSrc(slot.video.asset._ref)}
+              poster={posterSrc(slot.poster, 800)}
               label={`${title}, screen ${i + 1}`}
               active={!hidden}
               className="absolute inset-0 h-full w-full object-cover object-top"
@@ -609,7 +615,7 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
       >
         {backdrop && (
           <Image
-            src={imageUrl(backdrop, 2400)}
+            src={backdrop.asset?.url?.startsWith("/") ? backdrop.asset.url : imageUrl(backdrop, 2400)}
             alt=""
             fill
             sizes="100vw"
