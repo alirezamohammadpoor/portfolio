@@ -93,8 +93,8 @@
           "caption": "Production, same session: the list as shipped, then the variant with \"Bästsäljare\" on the cards. Under reduced motion the first frame stays.",
           "media": {
             "type": "video",
-            "video": "file:10-mobile-plp-badge-390.mp4",
-            "poster": "file:10-mobile-plp-badge-390-poster.jpg"
+            "video": "file:morph-1-badge.mp4",
+            "poster": "file:morph-1-badge-poster.jpg"
           },
           "hypothesis": "A bestseller badge is proof of trust, especially for someone buying their first tights. More clicks on the badged cards would lead to more adds to cart and a higher conversion, at the cost of stealing clicks from the other cards. A trade-off I was prepared to pay.",
           "metric": "Add to cart rate, target +5 % relative. PLP → PDP click-through as the leading indicator; purchase and revenue guarded.",
