@@ -14,9 +14,10 @@ interface ScrollProgressProps {
  * the grid gutter sits flush to the right edge and fills black from the top
  * with the scroll, like a scrollbar. Over the last tenth of the page it
  * widens to the page margin (24px, never over the content) and the next
- * project's title runs up inside it, light on the black. The pull towards the next project (--pull) is a green copy of
- * the bar wiping down over the black, title included, so the text turns dark
- * exactly where the green has reached it. No scroll number: the bar does
+ * project's title runs up inside it, light on the black. The pull towards
+ * the next project (--pull) is a green copy of the bar wiping down over the
+ * black, title included, so the text turns dark exactly where the green has
+ * reached it. No scroll number: the bar does
  * that job.
  *
  * --p and --pull are written on the root and inherited by every layer, so a
