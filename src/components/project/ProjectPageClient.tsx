@@ -280,6 +280,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
       <ProjectGallery
         gallery={gallery}
         projectTitle={project.title}
+        frameSource={project}
         galleryRef={galleryRef}
         firstImageRef={firstImageRef}
         hidden={skip}

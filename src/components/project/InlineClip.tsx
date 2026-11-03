@@ -13,6 +13,7 @@ export default function InlineClip({
   label,
   active = true,
   className = "",
+  onAspect,
 }: {
   src: string;
   poster?: string;
@@ -20,6 +21,8 @@ export default function InlineClip({
   /** false under the transition clone or for a hidden switcher panel: paused, no observer. */
   active?: boolean;
   className?: string;
+  /** Width / height once the clip reports its size. */
+  onAspect?: (aspect: number) => void;
 }) {
   const ref = useRef<HTMLVideoElement | null>(null);
   const [still, setStill] = useState(false);
@@ -73,6 +76,10 @@ export default function InlineClip({
       playsInline
       preload={still ? "none" : "metadata"}
       aria-label={label}
+      onLoadedMetadata={(e) => {
+        const v = e.currentTarget;
+        if (onAspect && v.videoWidth && v.videoHeight) onAspect(v.videoWidth / v.videoHeight);
+      }}
       className={`block w-full h-auto bg-tertiary/40 ${className}`}
     />
   );

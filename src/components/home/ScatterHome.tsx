@@ -17,6 +17,8 @@ import { restoreVideoPosition, saveVideoPosition } from "@/lib/videoPosition";
 import { getIntroState, useIntroState } from "@/lib/intro";
 import { getReelState } from "@/lib/reel";
 import HomeReel from "./HomeReel";
+import { FrameBackground, backgroundStyle } from "@/components/MediaFrame";
+import { resolveFrame, type ResolvedFrame } from "@/lib/mediaFrame";
 
 type Project = PROJECTS_QUERY_RESULT[number];
 
@@ -211,7 +213,11 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
           const preset = PRESETS[layout];
           const align = isAlign(project.homeTextAlign) ? project.homeTextAlign : preset.align;
           const href = `/project/${project.slug?.current}`;
-          const backdrop = project.homeBackdrop?.asset ? project.homeBackdrop : null;
+          // The cover's background (Sanity: the cover's own, else the project
+          // default). The recording stays flush; the page draws what is behind it.
+          const frame = resolveFrame(project.coverMedia?.frame, project, "landscape");
+          const backdrop = frame.background ? frame : null;
+          const coverSize = project.coverMedia?.frame?.size ?? null;
           const label = (
             <div
               className={`mt-4 desktop:mt-0 ${preset.under ? "desktop:col-start-1 desktop:col-end-4 desktop:row-start-2 desktop:mt-6" : `desktop:row-start-1 ${preset.label} ${ALIGN[align]}`}`}
@@ -229,12 +235,15 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
           return (
             <article key={project._id} data-row className="desktop:grid desktop:grid-cols-12 desktop:gap-4">
               {backdrop ? (
-                <Backdrop backdrop={backdrop} className={`desktop:row-start-1 ${preset.media}`} wide={preset.under}>
+                <Backdrop frame={backdrop} className={`desktop:row-start-1 ${preset.media}`} wide={preset.under}>
                   <Link
                     href={href}
                     aria-label={`View ${project.title ?? "project"}`}
                     onClick={(e) => handleClick(e, project)}
-                    className={`block ${preset.under ? "w-[88%] desktop:w-[66%]" : "w-[84%]"}`}
+                    // Cover width on its background: the preset (84 %, or 66 % of a
+                    // full width row on the laptop) unless Sanity overrides it.
+                    className={`block ${preset.under && !coverSize ? "w-[88%] desktop:w-[66%]" : ""}`}
+                    style={preset.under && !coverSize ? undefined : { width: `${coverSize ?? backdrop.size}%` }}
                   >
                     <CoverMedia project={project} aspect={preset.aspect} priority={index === 0} />
                   </Link>
@@ -289,18 +298,19 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
 }
 
 /**
- * Image behind (Figma backdrop study): a campaign still from Sanity spans
- * the media cell at reduced opacity and the cover sits centred on it, a bit
- * smaller. The backdrop lives on the page, never inside the recording. Full
- * width rows give the still the whole row and the cover two thirds of it.
+ * The cover's background from Sanity (Figma backdrop study): its colour,
+ * and an optional still over it at reduced opacity, span the media cell and
+ * the cover sits centred on it, a bit smaller. The background lives on the
+ * page, never inside the recording. Full width rows give the background the
+ * whole row and the cover two thirds of it.
  */
 function Backdrop({
-  backdrop,
+  frame,
   className,
   wide,
   children,
 }: {
-  backdrop: NonNullable<Project["homeBackdrop"]>;
+  frame: ResolvedFrame;
   className: string;
   wide?: boolean;
   children: React.ReactNode;
@@ -309,8 +319,11 @@ function Backdrop({
     <div
       data-reveal
       className={`relative flex items-center justify-center overflow-hidden ${wide ? "py-8 desktop:py-20" : "py-6 desktop:py-10"} ${className}`}
+      style={backgroundStyle(frame)}
     >
-      <Image src={imageUrl(backdrop, 2000)} alt="" fill className="object-cover opacity-60" sizes={wide ? "100vw" : "(min-width: 75rem) 66vw, 100vw"} />
+      {frame.background && (
+        <FrameBackground background={frame.background} sizes={wide ? "100vw" : "(min-width: 75rem) 66vw, 100vw"} />
+      )}
       <div className="relative flex w-full justify-center">{children}</div>
     </div>
   );
