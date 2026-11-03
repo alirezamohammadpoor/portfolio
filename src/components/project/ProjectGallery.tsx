@@ -11,6 +11,8 @@ import { ease, prefersReducedMotion } from "@/lib/motion";
 import { HERO_VARIANTS, LANDING_ASPECT, heroVariant, imageAspect, videoAspect } from "@/lib/landing";
 import NextProjectPreview, { type NextProject } from "@/components/project/NextProjectPreview";
 import GalleryPhones from "@/components/project/GalleryPhones";
+import MediaFrame from "@/components/MediaFrame";
+import { resolveFrame, type ProjectFrameSource } from "@/lib/mediaFrame";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
@@ -22,6 +24,8 @@ type ProjectGalleryItems = NonNullable<
 interface ProjectGalleryProps {
   gallery: ProjectGalleryItems;
   projectTitle: string | null;
+  /** The project's brand colours and default media background. */
+  frameSource?: ProjectFrameSource;
   galleryRef: React.RefObject<HTMLDivElement | null>;
   firstImageRef: React.RefObject<HTMLDivElement | null>;
   /** Under the clone: invisible, no scroll reveals, no playback retries. */
@@ -35,6 +39,7 @@ interface ProjectGalleryProps {
 export default function ProjectGallery({
   gallery,
   projectTitle,
+  frameSource,
   galleryRef,
   firstImageRef,
   hidden,
@@ -221,6 +226,7 @@ export default function ProjectGallery({
             >
               <GalleryPhones
                 item={item}
+                frame={resolveFrame(item.frame, frameSource, "phones")}
                 title={projectTitle ?? "Project"}
                 active={!hidden}
                 sizes="(min-width: 75rem) 25vw, 50vw"
@@ -235,16 +241,8 @@ export default function ProjectGallery({
         const aspect =
           (isImage ? imageAspect(item.image) : videoAspects[item._key]) ?? LANDING_ASPECT.gallery;
 
-        return (
-          <div
-            key={item._key}
-            ref={(el) => {
-              itemRefs.current[i] = el;
-              if (i === 0) firstImageRef.current = el;
-            }}
-            className="relative w-full overflow-hidden bg-black"
-            style={{ aspectRatio: aspect }}
-          >
+        const media = (
+          <>
             {isImage && item.image?.asset && (
               <Image
                 src={imageUrl(item.image, 1200)}
@@ -276,6 +274,40 @@ export default function ProjectGallery({
                 onLoadedMetadata={(e) => setVideoAspect(item._key, videoAspect(e.currentTarget))}
               />
             )}
+          </>
+        );
+
+        // Item 1 is the landing media, where the home → project clone lands:
+        // it stays flush so the morph meets a box the media fills. Every
+        // later item sits on its background from Sanity (none: flush).
+        if (i > 0) {
+          const frame = resolveFrame(item.frame, frameSource, aspect < 1 ? "portrait" : "landscape");
+          return (
+            <div
+              key={item._key}
+              ref={(el) => {
+                itemRefs.current[i] = el;
+              }}
+              className="relative w-full"
+            >
+              <MediaFrame frame={frame} mediaAspect={aspect} boxClassName="bg-black" sizes="(min-width: 75rem) 50vw, 100vw">
+                {media}
+              </MediaFrame>
+            </div>
+          );
+        }
+
+        return (
+          <div
+            key={item._key}
+            ref={(el) => {
+              itemRefs.current[i] = el;
+              if (i === 0) firstImageRef.current = el;
+            }}
+            className="relative w-full overflow-hidden bg-black"
+            style={{ aspectRatio: aspect }}
+          >
+            {media}
           </div>
         );
       })}

@@ -30,6 +30,8 @@ import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
 import { isPlainLeftClick } from "@/lib/clicks";
 import GalleryPhones from "@/components/project/GalleryPhones";
+import MediaFrame from "@/components/MediaFrame";
+import { resolveFrame } from "@/lib/mediaFrame";
 import { LANDING_ASPECT, imageAspect, landingKind, videoAspect } from "@/lib/landing";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
@@ -308,6 +310,7 @@ export default function ProjectStage({
                 >
                   <GalleryPhones
                     item={item}
+                    frame={resolveFrame(item.frame, project, "phones")}
                     title={project.title ?? "Project"}
                     active={Math.abs(i - index) <= 1}
                     sizes="50vw"
@@ -319,28 +322,11 @@ export default function ProjectStage({
             const near = Math.abs(i - index) <= 1;
             const aspect =
               (isImage ? imageAspect(item.image) : videoAspects[item._key]) ?? LANDING_ASPECT.stage;
-            return (
-              <div
-                key={item._key}
-                ref={(el) => {
-                  itemRefs.current[i] = el;
-                  if (i === 0 && firstCardRef) firstCardRef.current = el;
-                }}
-                className="relative shrink-0 snap-center overflow-hidden bg-black will-change-transform"
-                style={{
-                  width: ITEM_W,
-                  aspectRatio: aspect,
-                  marginLeft: i === 0 ? 0 : -OVERLAP,
-                  boxShadow: i === index && !reduceMotion ? "0 8px 24px rgba(0,0,0,0.18)" : "none",
-                  transition:
-                    reduceMotion || scrolling
-                      ? "none"
-                      : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}, box-shadow ${SETTLE_MS}ms`,
-                }}
-                role="group"
-                aria-roledescription="slide"
-                aria-label={`${i + 1} of ${gallery.length}`}
-              >
+            // Card 1 is the landing media (the clone lands on it): always flush.
+            const frame = i > 0 ? resolveFrame(item.frame, project, aspect < 1 ? "portrait" : "landscape") : null;
+            const framed = frame && frame.fit !== "flush" ? frame : null;
+            const media = (
+              <>
                 {isImage && item.image?.asset && (
                   <Image
                     src={imageUrl(item.image, 900)}
@@ -366,6 +352,38 @@ export default function ProjectStage({
                     autoPlay={i === 0}
                     onLoadedMetadata={(e) => setVideoAspect(item._key, videoAspect(e.currentTarget))}
                   />
+                )}
+              </>
+            );
+            return (
+              <div
+                key={item._key}
+                ref={(el) => {
+                  itemRefs.current[i] = el;
+                  if (i === 0 && firstCardRef) firstCardRef.current = el;
+                }}
+                className={`relative shrink-0 snap-center overflow-hidden will-change-transform ${framed ? "" : "bg-black"}`}
+                style={{
+                  width: ITEM_W,
+                  aspectRatio: framed ? undefined : aspect,
+                  ...(frame && !framed && frame.background?.colour ? { backgroundColor: frame.background.colour } : null),
+                  marginLeft: i === 0 ? 0 : -OVERLAP,
+                  boxShadow: i === index && !reduceMotion ? "0 8px 24px rgba(0,0,0,0.18)" : "none",
+                  transition:
+                    reduceMotion || scrolling
+                      ? "none"
+                      : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}, box-shadow ${SETTLE_MS}ms`,
+                }}
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`${i + 1} of ${gallery.length}`}
+              >
+                {framed ? (
+                  <MediaFrame frame={framed} mediaAspect={aspect} boxClassName="bg-black" sizes="100vw">
+                    {media}
+                  </MediaFrame>
+                ) : (
+                  media
                 )}
               </div>
             );

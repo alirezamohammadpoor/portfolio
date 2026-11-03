@@ -13,6 +13,8 @@ const PROJECT_FIELDS = `
   caseStudy->{ _id, slug },
   coverMedia,
   heroLayout,
+  palette,
+  mediaBackground,
   gallery[]{
     ...,
     _type == "galleryImage" => {
@@ -35,8 +37,7 @@ const PROJECT_FIELDS = `
         poster,
         image { ..., asset-> { ..., metadata { dimensions } } },
         phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },
-        panel,
-        panelImage
+        frame
       }
     },
     _type == "testSwitcher" => {
@@ -57,8 +58,7 @@ const PROJECT_FIELDS = `
           poster,
           image { ..., asset-> { ..., metadata { dimensions } } },
           phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },
-          panel,
-          panelImage
+          frame
         }
       }
     }
@@ -117,7 +117,8 @@ export const PROJECTS_QUERY = defineQuery(`
     coverMedia,
     homeLayout,
     homeTextAlign,
-    homeBackdrop,
+    palette,
+    mediaBackground,
     ${NEXT_PROJECT_MEDIA}
   }
 `);

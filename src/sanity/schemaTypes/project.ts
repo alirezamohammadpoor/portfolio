@@ -1,4 +1,5 @@
 import { defineType, defineField } from "sanity";
+import { paletteField, defaultBackgroundField } from "./mediaFrame";
 
 
 // Shared by chapters and the tests inside a test switcher.
@@ -80,7 +81,7 @@ const chapterMediaField = defineField({
         list: [
           { title: "Image", value: "image" },
           { title: "Video", value: "video" },
-          { title: "Phones on a panel (one to three screens)", value: "phones" },
+          { title: "Phones (one to three screens)", value: "phones" },
         ],
         layout: "radio",
       },
@@ -95,29 +96,6 @@ const chapterMediaField = defineField({
       of: [{ type: "object", name: "phoneSlot", fields: phoneSlotFields, preview: { select: { type: "type" }, prepare: ({ type }) => ({ title: type === "image" ? "Still" : "Clip" }) } }],
       validation: (rule) => rule.max(3),
       hidden: ({ parent }) => parent?.type !== "phones",
-    }),
-    defineField({
-      name: "panel",
-      title: "Panel",
-      type: "string",
-      options: {
-        list: [
-          { title: "Black", value: "black" },
-          { title: "Image behind", value: "image" },
-        ],
-        layout: "radio",
-        direction: "horizontal",
-      },
-      initialValue: "black",
-      hidden: ({ parent }) => parent?.type !== "phones",
-    }),
-    defineField({
-      name: "panelImage",
-      title: "Panel image",
-      description: "Shown at reduced opacity behind the screens.",
-      type: "image",
-      options: { hotspot: true },
-      hidden: ({ parent }) => parent?.type !== "phones" || parent?.panel !== "image",
     }),
     defineField({
       name: "image",
@@ -140,6 +118,7 @@ const chapterMediaField = defineField({
       description: "First frame of the video, shown until it loads.",
       hidden: ({ parent }) => parent?.type !== "video",
     }),
+    defineField({ name: "frame", title: "Background", type: "mediaFrame" }),
   ],
 });
 
@@ -309,8 +288,11 @@ export const project = defineType({
           options: { accept: "video/*" },
           hidden: ({ parent }) => parent?.type !== "video",
         }),
+        defineField({ name: "frame", title: "Background", type: "mediaFrame" }),
       ],
     }),
+    paletteField,
+    defaultBackgroundField,
     defineField({
       name: "homeLayout",
       title: "Home layout",
@@ -323,19 +305,11 @@ export const project = defineType({
           { title: "Wide media left, text on the right", value: "wide-left" },
           { title: "Wide media right, text on the left", value: "wide-right" },
           { title: "Media centred, text on the right", value: "centre" },
-          { title: "Full width with the backdrop image behind, text under it", value: "full" },
+          { title: "Full width, text under it", value: "full" },
           { title: "Narrow media left, text beside it", value: "narrow-left" },
           { title: "Small media right, text on the left", value: "small-right" },
         ],
       },
-    }),
-    defineField({
-      name: "homeBackdrop",
-      title: "Home backdrop image",
-      description:
-        "Optional campaign still shown on the page behind the cover, at reduced opacity, with the cover set smaller on it (Figma backdrop study, image behind). Keep recordings clean; the backdrop lives here, not in the video.",
-      type: "image",
-      options: { hotspot: true },
     }),
     defineField({
       name: "homeTextAlign",
@@ -385,6 +359,7 @@ export const project = defineType({
               options: { hotspot: true },
               validation: (rule) => rule.required(),
             }),
+            defineField({ name: "frame", title: "Background", type: "mediaFrame" }),
           ],
           preview: {
             select: { media: "image" },
@@ -403,6 +378,7 @@ export const project = defineType({
               options: { accept: "video/*" },
               validation: (rule) => rule.required(),
             }),
+            defineField({ name: "frame", title: "Background", type: "mediaFrame" }),
           ],
           preview: {
             prepare: () => ({ title: "Video" }),
@@ -421,6 +397,7 @@ export const project = defineType({
               of: [{ type: "object", name: "phoneSlot", fields: phoneSlotFields, preview: { select: { type: "type" }, prepare: ({ type }) => ({ title: type === "image" ? "Still" : "Clip" }) } }],
               validation: (rule) => rule.required().min(1).max(3),
             }),
+            defineField({ name: "frame", title: "Background", type: "mediaFrame" }),
           ],
           preview: {
             select: { phones: "phones" },
