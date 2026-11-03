@@ -27,6 +27,8 @@ const PROJECT_FIELDS = `
     _type,
     title,
     _type == "chapter" => {
+      statement,
+      subtext,
       text,
       caption,
       layout,
@@ -37,6 +39,14 @@ const PROJECT_FIELDS = `
         poster,
         image { ..., asset-> { ..., metadata { dimensions } } },
         phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },
+        table[]{ _key, cells },
+        frame
+      },
+      phone {
+        type,
+        video,
+        poster,
+        image { ..., asset-> { ..., metadata { dimensions } } },
         frame
       }
     },
@@ -60,6 +70,7 @@ const PROJECT_FIELDS = `
           poster,
           image { ..., asset-> { ..., metadata { dimensions } } },
           phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },
+          table[]{ _key, cells },
           frame
         }
       }

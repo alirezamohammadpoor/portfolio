@@ -82,11 +82,30 @@ const chapterMediaField = defineField({
           { title: "Image", value: "image" },
           { title: "Video", value: "video" },
           { title: "Phones (one to three screens)", value: "phones" },
+          { title: "Table", value: "table" },
         ],
         layout: "radio",
       },
       initialValue: "video",
       validation: (rule) => rule.required(),
+    }),
+    defineField({
+      name: "table",
+      title: "Table",
+      description: "A small table of results. The first row is the header. Numbers belong here, not in the sentences.",
+      type: "array",
+      of: [
+        {
+          type: "object",
+          name: "tableRow",
+          fields: [defineField({ name: "cells", title: "Cells", type: "array", of: [{ type: "string" }] })],
+          preview: {
+            select: { cells: "cells" },
+            prepare: ({ cells }) => ({ title: Array.isArray(cells) ? cells.join(" · ") : "Row" }),
+          },
+        },
+      ],
+      hidden: ({ parent }) => parent?.type !== "table",
     }),
     defineField({
       name: "phones",
@@ -419,14 +438,38 @@ export const project = defineType({
           title: "Chapter",
           fields: [
             defineField({
+              name: "statement",
+              title: "Statement",
+              type: "string",
+              description:
+                "Optional. A big full-width question or statement that opens the chapter, e.g. \"What else could move add to cart?\". Leave the title empty for a statement on its own.",
+            }),
+            defineField({
               name: "title",
               title: "Title",
               type: "string",
-              description: "A written title, e.g. \"Every test had been off since 1 July\". Numbers go inside the sentence.",
-              validation: (rule) => rule.required(),
+              description: "The chapter heading, a written title. Plain words, no numbers.",
+              validation: (rule) =>
+                rule.custom((value, ctx) =>
+                  value || (ctx.parent as { statement?: string } | undefined)?.statement ? true : "A title or a statement is needed",
+                ),
+            }),
+            defineField({
+              name: "subtext",
+              title: "Subtext",
+              type: "text",
+              rows: 2,
+              description: "One line under the heading that sums up the chapter for someone skimming.",
             }),
             chapterTextField,
             chapterMediaField,
+            defineField({
+              ...chapterMediaField,
+              name: "phone",
+              title: "Phone media",
+              description: "Laptop + phone layouts only: the phone recording that sits beside the laptop media.",
+              hidden: ({ parent }) => !String(parent?.layout ?? "").startsWith("pair"),
+            }),
             chapterCaptionField,
             defineField({
               name: "layout",
@@ -440,12 +483,14 @@ export const project = defineType({
                   { title: "Wide left (1-7)", value: "wide-left" },
                   { title: "Wide right (6-12)", value: "wide-right" },
                   { title: "Beside (text + media on one row)", value: "beside" },
+                  { title: "Beside, phone (text 1-5, phone 8-11)", value: "beside-phone" },
+                  { title: "Phone 1-4 + laptop 5-12", value: "pair-left" },
+                  { title: "Laptop 1-8 + phone 9-12", value: "pair-right" },
                 ],
                 layout: "radio",
                 direction: "horizontal",
               },
               initialValue: "full",
-              validation: (rule) => rule.required(),
             }),
             defineField({
               name: "side",
@@ -465,10 +510,10 @@ export const project = defineType({
             }),
           ],
           preview: {
-            select: { title: "title", layout: "layout", side: "side", media: "media.image" },
-            prepare({ title, layout, side, media }) {
+            select: { title: "title", statement: "statement", layout: "layout", side: "side", media: "media.image" },
+            prepare({ title, statement, layout, side, media }) {
               const place = layout === "beside" ? `beside · ${side ?? "right"}` : (layout ?? "full");
-              return { title: title || "Chapter", subtitle: place, media };
+              return { title: title || statement || "Chapter", subtitle: statement && title ? `${place} · statement: ${statement}` : place, media };
             },
           },
         },

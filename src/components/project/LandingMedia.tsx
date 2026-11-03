@@ -34,7 +34,11 @@ interface LandingMediaProps {
 export default function LandingMedia({ item, title, slotRef, onReady, sizes = "(min-width: 75rem) 50vw, 100vw", frame }: LandingMediaProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { isTransitioning, inPlace, sourceVideoElement } = usePageTransition();
-  const src = item?._type === "galleryVideo" && item.video?.asset?._ref ? fileUrl(item.video.asset._ref) : undefined;
+  const src = item?._type === "galleryVideo" && item.video?.asset?._ref
+      ? item.video.asset._ref.startsWith("/") // public/ file, lab fixtures only
+        ? item.video.asset._ref
+        : fileUrl(item.video.asset._ref)
+      : undefined;
   const [adopted] = useState(() => adoptableVideo(sourceVideoElement, inPlace, src));
   const adoptHostRef = useRef<HTMLDivElement>(null);
 

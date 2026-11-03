@@ -28,7 +28,7 @@
  * title beside it.
  */
 
-import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import NextLink from "next/link";
 import Image from "next/image";
 import { Link } from "@/lib/viewTransitions";
@@ -98,7 +98,7 @@ const MEDIA_ROWS = {
   "wide-right": "desktop:col-start-6 desktop:col-end-13",
 } as const;
 type MediaWidth = keyof typeof MEDIA_ROWS;
-type Layout = MediaWidth | "beside";
+type Layout = MediaWidth | "beside" | "beside-phone" | "pair-left" | "pair-right";
 
 // Legacy values (half / wide / narrow) from the first draft map onto the lanes.
 function layoutOf(chapter: Chapter): Layout {
@@ -108,6 +108,9 @@ function layoutOf(chapter: Chapter): Layout {
     case "wide-left":
     case "wide-right":
     case "beside":
+    case "beside-phone":
+    case "pair-left":
+    case "pair-right":
       return layout;
     case "half":
     case "narrow":
@@ -248,46 +251,168 @@ function Caption({ text }: { text: string | null | undefined }) {
   return text ? <p className="mt-2 text-sub text-secondary">{text}</p> : null;
 }
 
+/**
+ * A small results table (chapter media type "table"): the first row is the
+ * header. Numbers live here, not in the chapter's sentences (Ali, 11-02).
+ */
+function ResultTable({ rows, title }: { rows: NonNullable<NonNullable<ChapterMediaValue>["table"]>; title: string }) {
+  const cells = rows.map((r) => (r.cells ?? []).filter((c): c is string => typeof c === "string"));
+  if (cells.length === 0) return null;
+  const [head, ...body] = cells;
+  return (
+    <table className="w-full border-collapse text-sm tabular-nums desktop:text-body" aria-label={title}>
+      <thead>
+        <tr className="border-y border-tertiary">
+          {head.map((c, i) => (
+            <th key={i} scope="col" className={`py-2.5 pr-4 text-left font-normal text-secondary desktop:py-3 ${i === 0 ? "w-1/2" : ""}`}>
+              {c}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {body.map((row, r) => (
+          <tr key={r} className="border-b border-tertiary">
+            {row.map((c, i) =>
+              i === 0 ? (
+                <th key={i} scope="row" className="py-2.5 pr-4 text-left font-normal text-primary desktop:py-3">
+                  {c}
+                </th>
+              ) : (
+                <td key={i} className="py-2.5 pr-4 text-primary desktop:py-3">
+                  {c}
+                </td>
+              ),
+            )}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/**
+ * One chapter (type scale, Ali 11-02): an optional statement, a big
+ * full-width question or statement at h1 (h2 on a phone) that opens an act;
+ * then the heading (24) in the title lane, and in the reading lane a one-line
+ * subtext (18) over the paragraph (16). A chapter can be a statement on its
+ * own (no title), text without media, or carry a laptop + phone pair.
+ * On a phone a statement chapter stacks statement, media, heading, text.
+ */
 function ChapterSection({ chapter, index, hidden }: { chapter: Chapter; index: number; hidden: boolean }) {
   const phone = PHONE[useContext(MobileVariantContext)];
-  const title = chapter.title ?? `Chapter ${index + 1}`;
+  const statement = chapter.statement?.trim() || null;
+  const heading = chapter.title?.trim() || null;
+  const label = heading ?? statement ?? `Chapter ${index + 1}`;
+  const subtext = chapter.subtext?.trim() || null;
   const text = Array.isArray(chapter.text) && chapter.text.length > 0 ? (chapter.text as PortableTextBlock[]) : null;
-  const body = text ? (
-    <div className="text-primary [&>p]:my-0 [&>p+p]:mt-3">
-      <PortableText value={text} components={portableTextComponents} />
-    </div>
-  ) : null;
+  const hasMedia = Boolean(chapter.media?.type);
   const layout = layoutOf(chapter);
+  const H = statement ? "h3" : "h2";
 
-  if (layout === "beside") {
-    const left = chapter.side === "left";
-    return (
-      <section className="grid-site px-margin py-6 desktop:items-center desktop:py-12" aria-label={title}>
-        <div
-          className={`col-span-4 ${left ? "desktop:col-start-8 desktop:col-end-13" : "desktop:col-start-1 desktop:col-end-6"} desktop:row-start-1`}
-        >
-          <h2 className={`${phone.title} desktop:text-h3 text-primary`}>{title}</h2>
-          <div className="mt-3 desktop:mt-6">{body}</div>
-        </div>
-        <div
-          className={`${phone.beside} desktop:col-auto desktop:mt-0 ${left ? "desktop:col-start-1 desktop:col-end-7" : "desktop:col-start-7 desktop:col-end-13"} desktop:row-start-1`}
-        >
-          <ChapterMedia media={chapter.media} title={title} hidden={hidden} sizes="(min-width: 75rem) 50vw, 100vw" />
-          <Caption text={chapter.caption} />
-        </div>
+  const statementEl = statement ? (
+    <h2 className="col-span-4 text-h2 text-primary desktop:col-start-1 desktop:col-end-11 desktop:text-h1">{statement}</h2>
+  ) : null;
+
+  if (!heading && !subtext && !text && !hasMedia) {
+    return statementEl ? (
+      <section className="grid-site px-margin pt-16 pb-6 desktop:pt-32 desktop:pb-12" aria-label={label}>
+        {statementEl}
       </section>
+    ) : null;
+  }
+
+  // On a phone a statement chapter shows its media right under the statement.
+  const mediaFirst = statement && hasMedia;
+  const o = { text: mediaFirst ? "order-2 desktop:order-none" : "" };
+  const mediaBox = (phoneBase: string) =>
+    mediaFirst ? "col-span-4 order-1 mb-6 desktop:order-none desktop:mb-0" : phoneBase;
+
+  const reading = (subtext || text) && (
+    <>
+      {subtext && <p className="text-lead text-primary">{subtext}</p>}
+      {text && (
+        <div className={`text-body text-primary [&>p]:my-0 [&>p+p]:mt-3 ${subtext ? "mt-3 desktop:mt-4" : ""}`}>
+          <PortableText value={text} components={portableTextComponents} />
+        </div>
+      )}
+    </>
+  );
+  const headingEl = heading && <H className={`${phone.title} text-primary desktop:text-h3`}>{heading}</H>;
+
+  const media = (sizes: string, value: ChapterMediaValue = chapter.media) =>
+    value?.type === "table" ? (
+      <ResultTable rows={value.table ?? []} title={label} />
+    ) : (
+      <ChapterMedia media={value} title={label} hidden={hidden} sizes={sizes} />
+    );
+
+  let body: ReactNode;
+  if (layout === "beside" || layout === "beside-phone") {
+    const left = chapter.side === "left";
+    const phoneLane = layout === "beside-phone";
+    const textCols = left ? "desktop:col-start-8 desktop:col-end-13" : "desktop:col-start-1 desktop:col-end-6";
+    const mediaCols = phoneLane
+      ? left ? "desktop:col-start-2 desktop:col-end-6" : "desktop:col-start-8 desktop:col-end-12"
+      : left ? "desktop:col-start-1 desktop:col-end-7" : "desktop:col-start-7 desktop:col-end-13";
+    body = (
+      <div className="grid-site desktop:items-center">
+        <div className={`col-span-4 ${textCols} desktop:row-start-1 ${o.text}`}>
+          {headingEl}
+          {reading && <div className={heading ? "mt-3 desktop:mt-6" : ""}>{reading}</div>}
+        </div>
+        {hasMedia && (
+          <div className={`${mediaBox(phone.beside)} desktop:mt-0 ${mediaCols} desktop:row-start-1`}>
+            {media(phoneLane ? "(min-width: 75rem) 30vw, 100vw" : "(min-width: 75rem) 50vw, 100vw")}
+            <Caption text={chapter.caption} />
+          </div>
+        )}
+      </div>
+    );
+  } else {
+    const pair = layout === "pair-left" || layout === "pair-right";
+    const width: MediaWidth = pair ? "full" : layout;
+    body = (
+      <div className="grid-site">
+        {headingEl && <div className={`col-span-4 desktop:col-start-1 desktop:col-end-4 ${o.text}`}>{headingEl}</div>}
+        {reading && (
+          <div className={`col-span-4 ${heading ? "mt-3" : ""} desktop:col-start-5 desktop:col-end-10 desktop:mt-0 ${o.text}`}>{reading}</div>
+        )}
+        {hasMedia && !pair && (
+          <div className={`${mediaBox(phone.media(width, index))} desktop:mt-8 ${MEDIA_ROWS[width]}`}>
+            {media(width === "full" ? "100vw" : "(min-width: 75rem) 60vw, 100vw")}
+            <Caption text={chapter.caption} />
+          </div>
+        )}
+        {hasMedia && pair && (
+          <div className={`${mediaBox("col-span-4 mt-4")} desktop:col-span-12 desktop:mt-8`}>
+            <div className="grid-site items-stretch">
+              <div className={`col-span-4 ${layout === "pair-left" ? "desktop:col-start-5 desktop:col-end-13 desktop:row-start-1" : "desktop:col-start-1 desktop:col-end-9"}`}>
+                {media("(min-width: 75rem) 66vw, 100vw")}
+              </div>
+              {chapter.phone?.type && (
+                // The phone stands as tall as the laptop media beside it (laptop), centred in its four columns.
+                <div className={`relative col-span-4 mt-4 desktop:mt-0 ${layout === "pair-left" ? "desktop:col-start-1 desktop:col-end-5 desktop:row-start-1" : "desktop:col-start-9 desktop:col-end-13"}`}>
+                  <div className="mx-auto aspect-[390/844] w-2/3 overflow-hidden rounded-[18px] desktop:absolute desktop:inset-y-0 desktop:left-1/2 desktop:w-auto desktop:-translate-x-1/2 desktop:rounded-[24px]">
+                    <ChapterMedia media={chapter.phone as ChapterMediaValue} title={label} hidden={hidden} fit="phone" sizes="(min-width: 75rem) 20vw, 66vw" />
+                  </div>
+                </div>
+              )}
+            </div>
+            <Caption text={chapter.caption} />
+          </div>
+        )}
+      </div>
     );
   }
 
-  const sizes = layout === "full" ? "(min-width: 75rem) 100vw, 100vw" : "(min-width: 75rem) 60vw, 100vw";
   return (
-    <section className="grid-site px-margin py-6 desktop:py-12" aria-label={title}>
-      <h2 className={`${phone.title} desktop:col-start-1 desktop:col-end-4 desktop:text-h3 text-primary`}>{title}</h2>
-      <div className={`${phone.body} desktop:col-start-5 desktop:col-end-10 desktop:mt-0 desktop:text-lead`}>{body}</div>
-      <div className={`${phone.media(layout, index)} desktop:col-auto desktop:mt-8 ${MEDIA_ROWS[layout]}`}>
-        <ChapterMedia media={chapter.media} title={title} hidden={hidden} sizes={sizes} />
-        <Caption text={chapter.caption} />
-      </div>
+    <section
+      className={`px-margin ${statement ? "pt-16 pb-6 desktop:pt-32 desktop:pb-12" : "py-6 desktop:py-12"}`}
+      aria-label={label}
+    >
+      {statementEl && <div className="grid-site mb-6 desktop:mb-12">{statementEl}</div>}
+      {body}
     </section>
   );
 }
@@ -713,7 +838,7 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
               className={`col-start-1 row-start-1 desktop:grid desktop:grid-cols-12 desktop:gap-x-4 desktop:items-start ${fade(i)}`}
             >
               <div className="desktop:col-span-5">
-                <h3 className="text-h3 text-primary desktop:text-h2">{title}</h3>
+                <h3 className="text-h3 text-primary">{title}</h3>
                 {text && (
                   <div className={`mt-3 desktop:mt-4 ${readingText}`}>
                     <PortableText value={text} components={portableTextComponents} />
@@ -807,7 +932,7 @@ export default function ProjectChapters({
           {Array.isArray(project.fullDescription) && project.fullDescription.length > 0 && (
             <div
               ref={descRef}
-              className="mt-4 text-body text-primary [&>p]:my-0 [&>p+p]:mt-3 [&>h2]:mt-12 [&>h3]:mt-10"
+              className="mt-4 text-lead text-primary [&>p]:my-0 [&>p+p]:mt-3 [&>h2]:mt-12 [&>h3]:mt-10"
             >
               <PortableText
                 value={project.fullDescription as PortableTextBlock[]}

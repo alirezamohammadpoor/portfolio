@@ -1,0 +1,93 @@
+{
+  "_comment": "Stronger page copy, new shape (Ali, 11-02 grill + Figma pf 35:1066). One source for /lab/stronger and scripts/sanity/stronger-v3.py. Plain English, no numbers in sentences; numbers only in the result table.",
+  "claim": "I read the numbers, design the test in the client's own system, and ship it.",
+  "stack": ["Figma", "GrowthBook", "Next.js", "Storyblok"],
+  "chapters": [
+    {
+      "_key": "v3-brand",
+      "title": "A strong brand with room to test",
+      "subtext": "A brand with a design system that worked, and a team that already tested.",
+      "text": [
+        "At TRY, I was the frontend between Stronger's e-commerce team and Made People, the agency that runs the storefront. I wrote the test programme, the hypotheses and the GrowthBook setup, designed all five tests in Figma, and built the badge with Made People's team.",
+        "Stronger is a Swedish activewear brand with a strong design system and good numbers, so I could sit in Figma, reuse their components and try ideas quickly. An earlier test had already won: a view counter on the product page showing how many people were browsing. Add to cart is the metric they care about most, so I went through the product list and the product page looking for what else could move it."
+      ],
+      "layout": "pair-right",
+      "media": { "video": "file-94cdbae7c91ff12805a6399d0fa1135b30e65f60-mp4" },
+      "phone": { "video": "public:/lab/stronger/pdp-phone.mp4", "poster": "public:/lab/stronger/pdp-phone.jpg" },
+      "caption": "The homepage and the product page, with the view counter that had already won."
+    },
+    { "_key": "v3-tests-statement", "statement": "What else could move add to cart?" },
+    { "_key": "switcher" },
+    {
+      "_key": "v3-badge-result",
+      "statement": "It did not move add to cart.",
+      "title": "What the badge showed",
+      "subtext": "Shoppers clicked the badged cards more. They did not add more to cart.",
+      "text": [
+        "My hypothesis was that a bestseller badge builds trust for someone buying their first pair of tights. Half of that held: the badged cards got more clicks, and they did not steal them from other cards. But add to cart, the goal, did not move, and revenue per shopper dipped inside a wide margin.",
+        "Trust got the click; it did not get the cart. The next test belongs where the buying decision is made, under the button."
+      ],
+      "layout": "wide-right",
+      "table": [
+        ["Metric", "Change", "Chance to beat control"],
+        ["Add to cart, the goal", "−1.1 %", "29 %"],
+        ["Bestseller card click", "+2.7 %", "96 %"],
+        ["List to product click", "+1.2 %", "92 %"],
+        ["Revenue per user", "−4.5 %", "16 %"]
+      ],
+      "caption": "Production test, half the shoppers on each side. The intervals are wide on every line but clicks."
+    },
+    {
+      "_key": "v3-hygiene",
+      "title": "Small fixes add up",
+      "subtext": "Small fixes, done often, leave a big site a little better every week.",
+      "text": [
+        "Big sites almost always carry small hygiene issues: a bug on one browser, something that keeps slipping down the list. I like being the detective who finds it, fixes it and leaves the site a little cleaner.",
+        "At Stronger it started in my first week: keyboard users could not reach the menu or search, colour swatches showed no focus, and some header buttons had no name a screen reader could read. Later I found a sign-up form that said “sent” even when it failed."
+      ]
+    }
+  ],
+  "tests": {
+    "Bestseller badge": {
+      "morph": "badge",
+      "text": "A “Bästsäljare” badge on product-list cards, in the slot the Archive badge already used, so the grid never shifts. Shipped to production.",
+      "hypothesis": "A bestseller badge builds trust for someone buying their first pair of tights, and pulls clicks to those cards, even if it takes some from the others.",
+      "metric": "Add to cart, with clicks from the list into the product as the early signal. Purchases and revenue watched so nothing breaks.",
+      "result": "More clicks on the badged cards, without taking clicks from the others. No more add to carts.",
+      "decision": "Not kept. The badge changed where people clicked, not whether they bought. The next test goes under the buy button."
+    },
+    "Delivery promise": {
+      "morph": "delivery",
+      "text": "One line under the buy button: order before the cut-off and it ships today. It adds urgency and answers the question that matters when you need something fast, for a gift or an event, with versions for after the cut-off, weekends and holidays.",
+      "hypothesis": "Telling shoppers when their order ships, right under the button, takes away a reason to wait.",
+      "metric": "Add to cart, with purchases watched.",
+      "result": "Not run yet.",
+      "decision": "Designed and ready to build, waiting on the warehouse to confirm the cut-off time."
+    },
+    "Sold-out row": {
+      "morph": "soldout",
+      "text": "When a size is sold out, a quiet row shows the colours that still have it, instead of a dead end.",
+      "hypothesis": "Pointing a shopper to a colour that has their size saves add to carts that today end in a notify-me form.",
+      "metric": "Add to cart, counted only for shoppers who tapped a sold-out size.",
+      "result": "Not run yet. On the way I found the notify-me form said “sent” even when the sign-up failed.",
+      "decision": "Designed and specced, first in line after the badge."
+    },
+    "Similar product": {
+      "morph": "similar",
+      "text": "Many Stronger leggings share fabric and fit and differ in one detail: scrunch or no scrunch, a front seam or none, full length or capri. For some customers the colour matters, so another colour is no answer. When their size is sold out, they see one similar model in that size, with the difference named and a one-tap add to cart.",
+      "hypothesis": "One close match in the right size saves more add to carts than the notify-me form on its own.",
+      "metric": "Add to cart, counted only for shoppers who saw the card.",
+      "result": "Not run yet. Scoped small: a hand-picked list of close matches to start.",
+      "decision": "Designed and specced. Runs after the sold-out row, never at the same time, because both start on the same tap."
+    },
+    "Kit upgrade": {
+      "morph": "kit",
+      "text": "Stronger sells a lot as kits, because the pieces work together. Shoppers who missed the kit on the product page get a second chance in the cart: the rest of the kit, one button to upgrade, and the kit discount applied right there.",
+      "hypothesis": "A shopper who already has one piece is more likely to buy the rest of the same kit than an unrelated recommendation.",
+      "metric": "Revenue per shopper who saw it, with purchases watched.",
+      "result": "Not run yet. A review changed the metric and how kits are matched before anything was built.",
+      "decision": "Designed and reviewed. Waits on two small kit bugs being fixed first."
+    }
+  },
+  "compilation": { "video": "public:/lab/stronger/compilation.mp4", "poster": "public:/lab/stronger/compilation.jpg" }
+}
