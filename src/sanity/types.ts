@@ -52,13 +52,38 @@ export type Poster = {
 };
 
 export type Media = {
-  type?: "image" | "video" | "phones";
+  type: "image" | "video" | "phones" | "bento" | "carousel";
   phones?: Array<{
-    type?: "image" | "video";
+    type: "image" | "video";
     image?: PhoneSlotImage;
     video?: Video;
     poster?: Poster;
     _type: "phoneSlot";
+    _key: string;
+  }>;
+  rows?: Array<{
+    tiles?: Array<{
+      type: "image" | "video";
+      image?: PhoneSlotImage;
+      video?: Video;
+      poster?: Poster;
+      device: "laptop" | "phone";
+      frame?: MediaFrame;
+      _type: "tile";
+      _key: string;
+    }>;
+    _type: "bentoRow";
+    _key: string;
+  }>;
+  slides?: Array<{
+    label?: string;
+    type: "image" | "video";
+    image?: PhoneSlotImage;
+    video?: Video;
+    poster?: Poster;
+    device: "laptop" | "phone";
+    frame?: MediaFrame;
+    _type: "slide";
     _key: string;
   }>;
   image?: {
@@ -138,18 +163,18 @@ export type About = {
 
 export type SanityImageCrop = {
   _type: "sanity.imageCrop";
-  top?: number;
-  bottom?: number;
-  left?: number;
-  right?: number;
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
 };
 
 export type SanityImageHotspot = {
   _type: "sanity.imageHotspot";
-  x?: number;
-  y?: number;
-  height?: number;
-  width?: number;
+  x: number;
+  y: number;
+  height: number;
+  width: number;
 };
 
 export type JournalPage = {
@@ -174,8 +199,8 @@ export type Project = {
   _createdAt: string;
   _updatedAt: string;
   _rev: string;
-  title?: string;
-  slug?: Slug;
+  title: string;
+  slug: Slug;
   shortDescription?: string;
   fullDescription?: Array<
     | {
@@ -202,7 +227,7 @@ export type Project = {
               _key: string;
             }
           | {
-              explanation?: string;
+              explanation: string;
               _type: "glossary";
               _key: string;
             }
@@ -239,7 +264,7 @@ export type Project = {
   sitePassword?: string;
   caseStudy?: JournalPostReference;
   coverMedia?: {
-    type?: "image" | "video";
+    type: "image" | "video";
     image?: {
       asset?: SanityImageAssetReference;
       media?: unknown;
@@ -256,7 +281,7 @@ export type Project = {
   };
   palette?: Array<{
     name?: string;
-    hex?: string;
+    hex: string;
     _type: "swatch";
     _key: string;
   }>;
@@ -283,7 +308,7 @@ export type Project = {
   heroLayout?: "media-right" | "media-left";
   gallery?: Array<
     | {
-        image?: {
+        image: {
           asset?: SanityImageAssetReference;
           media?: unknown;
           hotspot?: SanityImageHotspot;
@@ -295,7 +320,7 @@ export type Project = {
         _key: string;
       }
     | {
-        video?: {
+        video: {
           asset?: SanityFileAssetReference;
           media?: unknown;
           _type: "file";
@@ -305,8 +330,8 @@ export type Project = {
         _key: string;
       }
     | {
-        phones?: Array<{
-          type?: "image" | "video";
+        phones: Array<{
+          type: "image" | "video";
           image?: PhoneSlotImage;
           video?: Video;
           poster?: Poster;
@@ -320,7 +345,7 @@ export type Project = {
   >;
   chapters?: Array<
     | {
-        title?: string;
+        title: string;
         text?: Array<{
           children?: Array<{
             marks?: Array<string>;
@@ -341,16 +366,22 @@ export type Project = {
         }>;
         media?: Media;
         caption?: string;
-        layout?: "full" | "wide-left" | "wide-right" | "beside";
+        layout: "full" | "wide-left" | "wide-right" | "beside";
         side?: "left" | "right";
         _type: "chapter";
         _key: string;
       }
     | {
+        text: string;
+        subtext?: string;
+        _type: "statement";
+        _key: string;
+      }
+    | {
         title?: string;
         tests?: Array<{
-          label?: string;
-          title?: string;
+          label: string;
+          title: string;
           status?: string;
           text?: Array<{
             children?: Array<{
@@ -425,8 +456,8 @@ export type JournalPost = {
   _createdAt: string;
   _updatedAt: string;
   _rev: string;
-  title?: string;
-  slug?: Slug;
+  title: string;
+  slug: Slug;
   excerpt?: string;
   body?: Array<
     | {
@@ -453,7 +484,7 @@ export type JournalPost = {
               _key: string;
             }
           | {
-              explanation?: string;
+              explanation: string;
               _type: "glossary";
               _key: string;
             }
@@ -485,7 +516,7 @@ export type JournalPost = {
         _key: string;
       }
     | {
-        videoUrl?: string;
+        videoUrl: string;
         poster?: {
           asset?: SanityImageAssetReference;
           media?: unknown;
@@ -500,7 +531,7 @@ export type JournalPost = {
         _key: string;
       }
     | {
-        text?: Array<{
+        text: Array<{
           children?: Array<{
             marks?: Array<string>;
             text?: string;
@@ -516,7 +547,7 @@ export type JournalPost = {
                 _key: string;
               }
             | {
-                explanation?: string;
+                explanation: string;
                 _type: "glossary";
                 _key: string;
               }
@@ -582,11 +613,11 @@ export type JournalPost = {
     media?: unknown;
     hotspot?: SanityImageHotspot;
     crop?: SanityImageCrop;
-    alt?: string;
+    alt: string;
     _type: "image";
   };
   tags?: Array<string>;
-  publishedAt?: string;
+  publishedAt: string;
   relatedProject?: ProjectReference;
   seo?: {
     title?: string;
@@ -604,7 +635,7 @@ export type JournalPost = {
 
 export type Slug = {
   _type: "slug";
-  current?: string;
+  current: string;
   source?: string;
 };
 
@@ -638,9 +669,9 @@ export type SanityImagePalette = {
 
 export type SanityImageDimensions = {
   _type: "sanity.imageDimensions";
-  height?: number;
-  width?: number;
-  aspectRatio?: number;
+  height: number;
+  width: number;
+  aspectRatio: number;
 };
 
 export type SanityImageMetadata = {
@@ -666,14 +697,14 @@ export type SanityFileAsset = {
   title?: string;
   description?: string;
   altText?: string;
-  sha1hash?: string;
-  extension?: string;
-  mimeType?: string;
-  size?: number;
-  assetId?: string;
+  sha1hash: string;
+  extension: string;
+  mimeType: string;
+  size: number;
+  assetId: string;
   uploadId?: string;
-  path?: string;
-  url?: string;
+  path: string;
+  url: string;
   source?: SanityAssetSourceData;
 };
 
@@ -695,14 +726,14 @@ export type SanityImageAsset = {
   title?: string;
   description?: string;
   altText?: string;
-  sha1hash?: string;
-  extension?: string;
-  mimeType?: string;
-  size?: number;
-  assetId?: string;
+  sha1hash: string;
+  extension: string;
+  mimeType: string;
+  size: number;
+  assetId: string;
   uploadId?: string;
-  path?: string;
-  url?: string;
+  path: string;
+  url: string;
   metadata?: SanityImageMetadata;
   source?: SanityAssetSourceData;
 };
@@ -781,11 +812,11 @@ export type ABOUT_QUERY_RESULT = {
 // Query: *[_type == "project"] | order(order asc) {    _id,    title,    slug,    shortDescription,    coverMedia,    homeLayout,    homeTextAlign,    palette,    mediaBackground,      "firstMedia": gallery[_type != "galleryPhones"][0]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  }  }
 export type PROJECTS_QUERY_RESULT = Array<{
   _id: string;
-  title: string | null;
-  slug: Slug | null;
+  title: string;
+  slug: Slug;
   shortDescription: string | null;
   coverMedia: {
-    type?: "image" | "video";
+    type: "image" | "video";
     image?: {
       asset?: SanityImageAssetReference;
       media?: unknown;
@@ -811,7 +842,7 @@ export type PROJECTS_QUERY_RESULT = Array<{
   homeTextAlign: "bottom" | "middle" | "top" | null;
   palette: Array<{
     name?: string;
-    hex?: string;
+    hex: string;
     _type: "swatch";
     _key: string;
   }> | null;
@@ -841,14 +872,14 @@ export type PROJECTS_QUERY_RESULT = Array<{
             title?: string;
             description?: string;
             altText?: string;
-            sha1hash?: string;
-            extension?: string;
-            mimeType?: string;
-            size?: number;
-            assetId?: string;
+            sha1hash: string;
+            extension: string;
+            mimeType: string;
+            size: number;
+            assetId: string;
             uploadId?: string;
-            path?: string;
-            url?: string;
+            path: string;
+            url: string;
             metadata: {
               dimensions: SanityImageDimensions | null;
             } | null;
@@ -858,13 +889,13 @@ export type PROJECTS_QUERY_RESULT = Array<{
           hotspot?: SanityImageHotspot;
           crop?: SanityImageCrop;
           _type: "image";
-        } | null;
+        };
         frame?: MediaFrame;
         _type: "galleryImage";
         _key: string;
       }
     | {
-        video?: {
+        video: {
           asset?: SanityFileAssetReference;
           media?: unknown;
           _type: "file";
@@ -878,12 +909,12 @@ export type PROJECTS_QUERY_RESULT = Array<{
 
 // Source: src/sanity/lib/queries.ts
 // Variable: PROJECT_BY_SLUG_QUERY
-// Query: *[_type == "project" && slug.current == $slug][0] {      _id,  _updatedAt,  title,  slug,  shortDescription,  fullDescription,  techStack,  siteUrl,  sitePassword,  caseStudy->{ _id, slug },  coverMedia,  heroLayout,  palette,  mediaBackground,  gallery[]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  },  chapters[]{    _key,    _type,    title,    _type == "chapter" => {      text,      caption,      layout,      side,      media {        type,        video,        poster,        image { ..., asset-> { ..., metadata { dimensions } } },        phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },        frame      }    },    _type == "testSwitcher" => {      tests[]{        _key,        label,        title,        status,        text,        hypothesis,        metric,        result,        decision,        caption,        media {          type,          video,          poster,          image { ..., asset-> { ..., metadata { dimensions } } },          phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },          frame        }      }    }  },  order,  seo { title, description, ogImage, noIndex },    "nextProject": coalesce(      *[_type == "project" && _id != ^._id && order > ^.order] | order(order asc) [0] { title, slug, heroLayout, "hasChapters": count(chapters) > 0,   "firstMedia": gallery[_type != "galleryPhones"][0]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  } },      *[_type == "project" && _id != ^._id] | order(order asc) [0] { title, slug, heroLayout, "hasChapters": count(chapters) > 0,   "firstMedia": gallery[_type != "galleryPhones"][0]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  } }    ),    "prevProject": coalesce(      *[_type == "project" && _id != ^._id && order < ^.order] | order(order desc) [0] { title, slug },      *[_type == "project" && _id != ^._id] | order(order desc) [0] { title, slug }    )  }
+// Query: *[_type == "project" && slug.current == $slug][0] {      _id,  _updatedAt,  title,  slug,  shortDescription,  fullDescription,  techStack,  siteUrl,  sitePassword,  caseStudy->{ _id, slug },  coverMedia,  heroLayout,  palette,  mediaBackground,  gallery[]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  },  chapters[]{    _key,    _type,    title,    _type == "chapter" => {      text,      caption,      layout,      side,      media {        type,        video,        poster,        image { ..., asset-> { ..., metadata { dimensions } } },        phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },        rows[]{ _key, tiles[]{ _key, type, device, video, poster, image { ..., asset-> { ..., metadata { dimensions } } }, frame } },        slides[]{ label, ...{ _key, type, device, video, poster, image { ..., asset-> { ..., metadata { dimensions } } }, frame } },        frame      }    },    _type == "statement" => {      text,      subtext    },    _type == "testSwitcher" => {      tests[]{        _key,        label,        title,        status,        text,        hypothesis,        metric,        result,        decision,        caption,        media {          type,          video,          poster,          image { ..., asset-> { ..., metadata { dimensions } } },          phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },          rows[]{ _key, tiles[]{ _key, type, device, video, poster, image { ..., asset-> { ..., metadata { dimensions } } }, frame } },          slides[]{ label, ...{ _key, type, device, video, poster, image { ..., asset-> { ..., metadata { dimensions } } }, frame } },          frame        }      }    }  },  order,  seo { title, description, ogImage, noIndex },    "nextProject": coalesce(      *[_type == "project" && _id != ^._id && order > ^.order] | order(order asc) [0] { title, slug, heroLayout, "hasChapters": count(chapters) > 0,   "firstMedia": gallery[_type != "galleryPhones"][0]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  } },      *[_type == "project" && _id != ^._id] | order(order asc) [0] { title, slug, heroLayout, "hasChapters": count(chapters) > 0,   "firstMedia": gallery[_type != "galleryPhones"][0]{    ...,    _type == "galleryImage" => {      ...,      image { ..., asset-> { ..., metadata { dimensions } } }    }  } }    ),    "prevProject": coalesce(      *[_type == "project" && _id != ^._id && order < ^.order] | order(order desc) [0] { title, slug },      *[_type == "project" && _id != ^._id] | order(order desc) [0] { title, slug }    )  }
 export type PROJECT_BY_SLUG_QUERY_RESULT = {
   _id: string;
   _updatedAt: string;
-  title: string | null;
-  slug: Slug | null;
+  title: string;
+  slug: Slug;
   shortDescription: string | null;
   fullDescription: Array<
     | {
@@ -905,7 +936,7 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
         listItem?: "bullet" | "number";
         markDefs?: Array<
           | {
-              explanation?: string;
+              explanation: string;
               _type: "glossary";
               _key: string;
             }
@@ -947,10 +978,10 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
   sitePassword: string | null;
   caseStudy: {
     _id: string;
-    slug: Slug | null;
+    slug: Slug;
   } | null;
   coverMedia: {
-    type?: "image" | "video";
+    type: "image" | "video";
     image?: {
       asset?: SanityImageAssetReference;
       media?: unknown;
@@ -968,7 +999,7 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
   heroLayout: "media-left" | "media-right" | null;
   palette: Array<{
     name?: string;
-    hex?: string;
+    hex: string;
     _type: "swatch";
     _key: string;
   }> | null;
@@ -998,14 +1029,14 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
             title?: string;
             description?: string;
             altText?: string;
-            sha1hash?: string;
-            extension?: string;
-            mimeType?: string;
-            size?: number;
-            assetId?: string;
+            sha1hash: string;
+            extension: string;
+            mimeType: string;
+            size: number;
+            assetId: string;
             uploadId?: string;
-            path?: string;
-            url?: string;
+            path: string;
+            url: string;
             metadata: {
               dimensions: SanityImageDimensions | null;
             } | null;
@@ -1015,14 +1046,14 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
           hotspot?: SanityImageHotspot;
           crop?: SanityImageCrop;
           _type: "image";
-        } | null;
+        };
         frame?: MediaFrame;
         _type: "galleryImage";
         _key: string;
       }
     | {
-        phones?: Array<{
-          type?: "image" | "video";
+        phones: Array<{
+          type: "image" | "video";
           image?: PhoneSlotImage;
           video?: Video;
           poster?: Poster;
@@ -1034,7 +1065,7 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
         _key: string;
       }
     | {
-        video?: {
+        video: {
           asset?: SanityFileAssetReference;
           media?: unknown;
           _type: "file";
@@ -1048,7 +1079,7 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
     | {
         _key: string;
         _type: "chapter";
-        title: string | null;
+        title: string;
         text: Array<{
           children?: Array<{
             marks?: Array<string>;
@@ -1068,10 +1099,10 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
           _key: string;
         }> | null;
         caption: string | null;
-        layout: "beside" | "full" | "wide-left" | "wide-right" | null;
+        layout: "beside" | "full" | "wide-left" | "wide-right";
         side: "left" | "right" | null;
         media: {
-          type: "image" | "phones" | "video" | null;
+          type: "bento" | "carousel" | "image" | "phones" | "video";
           video: {
             asset?: SanityFileAssetReference;
             media?: unknown;
@@ -1096,14 +1127,14 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
               title?: string;
               description?: string;
               altText?: string;
-              sha1hash?: string;
-              extension?: string;
-              mimeType?: string;
-              size?: number;
-              assetId?: string;
+              sha1hash: string;
+              extension: string;
+              mimeType: string;
+              size: number;
+              assetId: string;
               uploadId?: string;
-              path?: string;
-              url?: string;
+              path: string;
+              url: string;
               metadata: {
                 dimensions: SanityImageDimensions | null;
               } | null;
@@ -1116,7 +1147,7 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
           } | null;
           phones: Array<{
             _key: string;
-            type: "image" | "video" | null;
+            type: "image" | "video";
             video: Video | null;
             poster: Poster | null;
             image: {
@@ -1131,14 +1162,14 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
                 title?: string;
                 description?: string;
                 altText?: string;
-                sha1hash?: string;
-                extension?: string;
-                mimeType?: string;
-                size?: number;
-                assetId?: string;
+                sha1hash: string;
+                extension: string;
+                mimeType: string;
+                size: number;
+                assetId: string;
                 uploadId?: string;
-                path?: string;
-                url?: string;
+                path: string;
+                url: string;
                 metadata: {
                   dimensions: SanityImageDimensions | null;
                 } | null;
@@ -1150,8 +1181,95 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
               _type: "image";
             } | null;
           }> | null;
+          rows: Array<{
+            _key: string;
+            tiles: Array<{
+              _key: string;
+              type: "image" | "video";
+              device: "laptop" | "phone";
+              video: Video | null;
+              poster: Poster | null;
+              image: {
+                asset: {
+                  _id: string;
+                  _type: "sanity.imageAsset";
+                  _createdAt: string;
+                  _updatedAt: string;
+                  _rev: string;
+                  originalFilename?: string;
+                  label?: string;
+                  title?: string;
+                  description?: string;
+                  altText?: string;
+                  sha1hash: string;
+                  extension: string;
+                  mimeType: string;
+                  size: number;
+                  assetId: string;
+                  uploadId?: string;
+                  path: string;
+                  url: string;
+                  metadata: {
+                    dimensions: SanityImageDimensions | null;
+                  } | null;
+                  source?: SanityAssetSourceData;
+                } | null;
+                media?: unknown;
+                hotspot?: SanityImageHotspot;
+                crop?: SanityImageCrop;
+                _type: "image";
+              } | null;
+              frame: MediaFrame | null;
+            }> | null;
+          }> | null;
+          slides: Array<{
+            label: string | null;
+            _key: string;
+            type: "image" | "video";
+            device: "laptop" | "phone";
+            video: Video | null;
+            poster: Poster | null;
+            image: {
+              asset: {
+                _id: string;
+                _type: "sanity.imageAsset";
+                _createdAt: string;
+                _updatedAt: string;
+                _rev: string;
+                originalFilename?: string;
+                label?: string;
+                title?: string;
+                description?: string;
+                altText?: string;
+                sha1hash: string;
+                extension: string;
+                mimeType: string;
+                size: number;
+                assetId: string;
+                uploadId?: string;
+                path: string;
+                url: string;
+                metadata: {
+                  dimensions: SanityImageDimensions | null;
+                } | null;
+                source?: SanityAssetSourceData;
+              } | null;
+              media?: unknown;
+              hotspot?: SanityImageHotspot;
+              crop?: SanityImageCrop;
+              _type: "image";
+            } | null;
+            frame: MediaFrame | null;
+          }> | null;
           frame: MediaFrame | null;
         } | null;
+      }
+    | {
+        _key: string;
+        _type: "statement";
+        title: null;
+        text: string;
+        subtext: string | null;
       }
     | {
         _key: string;
@@ -1159,8 +1277,8 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
         title: string | null;
         tests: Array<{
           _key: string;
-          label: string | null;
-          title: string | null;
+          label: string;
+          title: string;
           status: string | null;
           text: Array<{
             children?: Array<{
@@ -1186,7 +1304,7 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
           decision: string | null;
           caption: string | null;
           media: {
-            type: "image" | "phones" | "video" | null;
+            type: "bento" | "carousel" | "image" | "phones" | "video";
             video: {
               asset?: SanityFileAssetReference;
               media?: unknown;
@@ -1211,14 +1329,14 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
                 title?: string;
                 description?: string;
                 altText?: string;
-                sha1hash?: string;
-                extension?: string;
-                mimeType?: string;
-                size?: number;
-                assetId?: string;
+                sha1hash: string;
+                extension: string;
+                mimeType: string;
+                size: number;
+                assetId: string;
                 uploadId?: string;
-                path?: string;
-                url?: string;
+                path: string;
+                url: string;
                 metadata: {
                   dimensions: SanityImageDimensions | null;
                 } | null;
@@ -1231,7 +1349,7 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
             } | null;
             phones: Array<{
               _key: string;
-              type: "image" | "video" | null;
+              type: "image" | "video";
               video: Video | null;
               poster: Poster | null;
               image: {
@@ -1246,14 +1364,14 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
                   title?: string;
                   description?: string;
                   altText?: string;
-                  sha1hash?: string;
-                  extension?: string;
-                  mimeType?: string;
-                  size?: number;
-                  assetId?: string;
+                  sha1hash: string;
+                  extension: string;
+                  mimeType: string;
+                  size: number;
+                  assetId: string;
                   uploadId?: string;
-                  path?: string;
-                  url?: string;
+                  path: string;
+                  url: string;
                   metadata: {
                     dimensions: SanityImageDimensions | null;
                   } | null;
@@ -1264,6 +1382,86 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
                 crop?: SanityImageCrop;
                 _type: "image";
               } | null;
+            }> | null;
+            rows: Array<{
+              _key: string;
+              tiles: Array<{
+                _key: string;
+                type: "image" | "video";
+                device: "laptop" | "phone";
+                video: Video | null;
+                poster: Poster | null;
+                image: {
+                  asset: {
+                    _id: string;
+                    _type: "sanity.imageAsset";
+                    _createdAt: string;
+                    _updatedAt: string;
+                    _rev: string;
+                    originalFilename?: string;
+                    label?: string;
+                    title?: string;
+                    description?: string;
+                    altText?: string;
+                    sha1hash: string;
+                    extension: string;
+                    mimeType: string;
+                    size: number;
+                    assetId: string;
+                    uploadId?: string;
+                    path: string;
+                    url: string;
+                    metadata: {
+                      dimensions: SanityImageDimensions | null;
+                    } | null;
+                    source?: SanityAssetSourceData;
+                  } | null;
+                  media?: unknown;
+                  hotspot?: SanityImageHotspot;
+                  crop?: SanityImageCrop;
+                  _type: "image";
+                } | null;
+                frame: MediaFrame | null;
+              }> | null;
+            }> | null;
+            slides: Array<{
+              label: string | null;
+              _key: string;
+              type: "image" | "video";
+              device: "laptop" | "phone";
+              video: Video | null;
+              poster: Poster | null;
+              image: {
+                asset: {
+                  _id: string;
+                  _type: "sanity.imageAsset";
+                  _createdAt: string;
+                  _updatedAt: string;
+                  _rev: string;
+                  originalFilename?: string;
+                  label?: string;
+                  title?: string;
+                  description?: string;
+                  altText?: string;
+                  sha1hash: string;
+                  extension: string;
+                  mimeType: string;
+                  size: number;
+                  assetId: string;
+                  uploadId?: string;
+                  path: string;
+                  url: string;
+                  metadata: {
+                    dimensions: SanityImageDimensions | null;
+                  } | null;
+                  source?: SanityAssetSourceData;
+                } | null;
+                media?: unknown;
+                hotspot?: SanityImageHotspot;
+                crop?: SanityImageCrop;
+                _type: "image";
+              } | null;
+              frame: MediaFrame | null;
             }> | null;
             frame: MediaFrame | null;
           } | null;
@@ -1284,8 +1482,8 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
     noIndex: boolean | null;
   } | null;
   nextProject: {
-    title: string | null;
-    slug: Slug | null;
+    title: string;
+    slug: Slug;
     heroLayout: "media-left" | "media-right" | null;
     hasChapters: boolean | null;
     firstMedia:
@@ -1302,14 +1500,14 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
               title?: string;
               description?: string;
               altText?: string;
-              sha1hash?: string;
-              extension?: string;
-              mimeType?: string;
-              size?: number;
-              assetId?: string;
+              sha1hash: string;
+              extension: string;
+              mimeType: string;
+              size: number;
+              assetId: string;
               uploadId?: string;
-              path?: string;
-              url?: string;
+              path: string;
+              url: string;
               metadata: {
                 dimensions: SanityImageDimensions | null;
               } | null;
@@ -1319,13 +1517,13 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
             hotspot?: SanityImageHotspot;
             crop?: SanityImageCrop;
             _type: "image";
-          } | null;
+          };
           frame?: MediaFrame;
           _type: "galleryImage";
           _key: string;
         }
       | {
-          video?: {
+          video: {
             asset?: SanityFileAssetReference;
             media?: unknown;
             _type: "file";
@@ -1337,8 +1535,8 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
       | null;
   } | null;
   prevProject: {
-    title: string | null;
-    slug: Slug | null;
+    title: string;
+    slug: Slug;
   } | null;
 } | null;
 
@@ -1355,23 +1553,23 @@ export type JOURNAL_PAGE_QUERY_RESULT = {
 export type JOURNAL_POSTS_QUERY_RESULT = Array<{
   _id: string;
   _updatedAt: string;
-  title: string | null;
-  slug: Slug | null;
+  title: string;
+  slug: Slug;
   excerpt: string | null;
   coverImage: {
     asset?: SanityImageAssetReference;
     media?: unknown;
     hotspot?: SanityImageHotspot;
     crop?: SanityImageCrop;
-    alt?: string;
+    alt: string;
     _type: "image";
   } | null;
   tags: Array<string> | null;
-  publishedAt: string | null;
+  publishedAt: string;
   relatedProject: {
     _id: string;
-    title: string | null;
-    slug: Slug | null;
+    title: string;
+    slug: Slug;
   } | null;
   seo: {
     title: string | null;
@@ -1393,23 +1591,23 @@ export type JOURNAL_POSTS_QUERY_RESULT = Array<{
 export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
   _id: string;
   _updatedAt: string;
-  title: string | null;
-  slug: Slug | null;
+  title: string;
+  slug: Slug;
   excerpt: string | null;
   coverImage: {
     asset?: SanityImageAssetReference;
     media?: unknown;
     hotspot?: SanityImageHotspot;
     crop?: SanityImageCrop;
-    alt?: string;
+    alt: string;
     _type: "image";
   } | null;
   tags: Array<string> | null;
-  publishedAt: string | null;
+  publishedAt: string;
   relatedProject: {
     _id: string;
-    title: string | null;
-    slug: Slug | null;
+    title: string;
+    slug: Slug;
   } | null;
   seo: {
     title: string | null;
@@ -1443,7 +1641,7 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
         listItem?: "bullet" | "number";
         markDefs?: Array<
           | {
-              explanation?: string;
+              explanation: string;
               _type: "glossary";
               _key: string;
             }
@@ -1480,7 +1678,7 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
         _key: string;
       }
     | {
-        text?: Array<{
+        text: Array<{
           children?: Array<{
             marks?: Array<string>;
             text?: string;
@@ -1491,7 +1689,7 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
           listItem?: never;
           markDefs?: Array<
             | {
-                explanation?: string;
+                explanation: string;
                 _type: "glossary";
                 _key: string;
               }
@@ -1557,7 +1755,7 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
         _key: string;
       }
     | {
-        videoUrl?: string;
+        videoUrl: string;
         poster?: {
           asset?: SanityImageAssetReference;
           media?: unknown;
@@ -1575,23 +1773,23 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
   relatedPosts: Array<{
     _id: string;
     _updatedAt: string;
-    title: string | null;
-    slug: Slug | null;
+    title: string;
+    slug: Slug;
     excerpt: string | null;
     coverImage: {
       asset?: SanityImageAssetReference;
       media?: unknown;
       hotspot?: SanityImageHotspot;
       crop?: SanityImageCrop;
-      alt?: string;
+      alt: string;
       _type: "image";
     } | null;
     tags: Array<string> | null;
-    publishedAt: string | null;
+    publishedAt: string;
     relatedProject: {
       _id: string;
-      title: string | null;
-      slug: Slug | null;
+      title: string;
+      slug: Slug;
     } | null;
     seo: {
       title: string | null;
@@ -1612,21 +1810,21 @@ export type JOURNAL_POST_BY_SLUG_QUERY_RESULT = {
 // Variable: PROJECT_SLUGS_QUERY
 // Query: *[_type == "project" && defined(slug.current)]{ "slug": slug.current }
 export type PROJECT_SLUGS_QUERY_RESULT = Array<{
-  slug: string | null;
+  slug: string;
 }>;
 
 // Source: src/sanity/lib/queries.ts
 // Variable: JOURNAL_POST_SLUGS_QUERY
 // Query: *[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current }
 export type JOURNAL_POST_SLUGS_QUERY_RESULT = Array<{
-  slug: string | null;
+  slug: string;
 }>;
 
 // Source: src/sanity/lib/queries.ts
 // Variable: PROJECT_SITEMAP_QUERY
 // Query: *[_type == "project" && defined(slug.current)]{ "slug": slug.current, _updatedAt }
 export type PROJECT_SITEMAP_QUERY_RESULT = Array<{
-  slug: string | null;
+  slug: string;
   _updatedAt: string;
 }>;
 
@@ -1634,7 +1832,7 @@ export type PROJECT_SITEMAP_QUERY_RESULT = Array<{
 // Variable: JOURNAL_POST_SITEMAP_QUERY
 // Query: *[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current, _updatedAt }
 export type JOURNAL_POST_SITEMAP_QUERY_RESULT = Array<{
-  slug: string | null;
+  slug: string;
   _updatedAt: string;
 }>;
 
@@ -1644,7 +1842,7 @@ declare module "@sanity/client" {
   interface SanityQueries {
     '\n  *[_type == "about"][0] {\n    heading,\n    bio,\n    portrait,\n    email,\n    linkedinUrl,\n    githubUrl\n  }\n': ABOUT_QUERY_RESULT;
     '\n  *[_type == "project"] | order(order asc) {\n    _id,\n    title,\n    slug,\n    shortDescription,\n    coverMedia,\n    homeLayout,\n    homeTextAlign,\n    palette,\n    mediaBackground,\n    \n  "firstMedia": gallery[_type != "galleryPhones"][0]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  }\n\n  }\n': PROJECTS_QUERY_RESULT;
-    '\n  *[_type == "project" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  sitePassword,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  heroLayout,\n  palette,\n  mediaBackground,\n  gallery[]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  },\n  chapters[]{\n    _key,\n    _type,\n    title,\n    _type == "chapter" => {\n      text,\n      caption,\n      layout,\n      side,\n      media {\n        type,\n        video,\n        poster,\n        image { ..., asset-> { ..., metadata { dimensions } } },\n        phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },\n        frame\n      }\n    },\n    _type == "testSwitcher" => {\n      tests[]{\n        _key,\n        label,\n        title,\n        status,\n        text,\n        hypothesis,\n        metric,\n        result,\n        decision,\n        caption,\n        media {\n          type,\n          video,\n          poster,\n          image { ..., asset-> { ..., metadata { dimensions } } },\n          phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },\n          frame\n        }\n      }\n    }\n  },\n  order,\n  seo { title, description, ogImage, noIndex }\n,\n    "nextProject": coalesce(\n      *[_type == "project" && _id != ^._id && order > ^.order] | order(order asc) [0] { title, slug, heroLayout, "hasChapters": count(chapters) > 0, \n  "firstMedia": gallery[_type != "galleryPhones"][0]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  }\n },\n      *[_type == "project" && _id != ^._id] | order(order asc) [0] { title, slug, heroLayout, "hasChapters": count(chapters) > 0, \n  "firstMedia": gallery[_type != "galleryPhones"][0]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  }\n }\n    ),\n    "prevProject": coalesce(\n      *[_type == "project" && _id != ^._id && order < ^.order] | order(order desc) [0] { title, slug },\n      *[_type == "project" && _id != ^._id] | order(order desc) [0] { title, slug }\n    )\n  }\n': PROJECT_BY_SLUG_QUERY_RESULT;
+    '\n  *[_type == "project" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  sitePassword,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  heroLayout,\n  palette,\n  mediaBackground,\n  gallery[]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  },\n  chapters[]{\n    _key,\n    _type,\n    title,\n    _type == "chapter" => {\n      text,\n      caption,\n      layout,\n      side,\n      media {\n        type,\n        video,\n        poster,\n        image { ..., asset-> { ..., metadata { dimensions } } },\n        phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },\n        rows[]{ _key, tiles[]{ _key, type, device, video, poster, image { ..., asset-> { ..., metadata { dimensions } } }, frame } },\n        slides[]{ label, ...{ _key, type, device, video, poster, image { ..., asset-> { ..., metadata { dimensions } } }, frame } },\n        frame\n      }\n    },\n    _type == "statement" => {\n      text,\n      subtext\n    },\n    _type == "testSwitcher" => {\n      tests[]{\n        _key,\n        label,\n        title,\n        status,\n        text,\n        hypothesis,\n        metric,\n        result,\n        decision,\n        caption,\n        media {\n          type,\n          video,\n          poster,\n          image { ..., asset-> { ..., metadata { dimensions } } },\n          phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },\n          rows[]{ _key, tiles[]{ _key, type, device, video, poster, image { ..., asset-> { ..., metadata { dimensions } } }, frame } },\n          slides[]{ label, ...{ _key, type, device, video, poster, image { ..., asset-> { ..., metadata { dimensions } } }, frame } },\n          frame\n        }\n      }\n    }\n  },\n  order,\n  seo { title, description, ogImage, noIndex }\n,\n    "nextProject": coalesce(\n      *[_type == "project" && _id != ^._id && order > ^.order] | order(order asc) [0] { title, slug, heroLayout, "hasChapters": count(chapters) > 0, \n  "firstMedia": gallery[_type != "galleryPhones"][0]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  }\n },\n      *[_type == "project" && _id != ^._id] | order(order asc) [0] { title, slug, heroLayout, "hasChapters": count(chapters) > 0, \n  "firstMedia": gallery[_type != "galleryPhones"][0]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  }\n }\n    ),\n    "prevProject": coalesce(\n      *[_type == "project" && _id != ^._id && order < ^.order] | order(order desc) [0] { title, slug },\n      *[_type == "project" && _id != ^._id] | order(order desc) [0] { title, slug }\n    )\n  }\n': PROJECT_BY_SLUG_QUERY_RESULT;
     '\n  *[_type == "journalPage"][0] { description }\n': JOURNAL_PAGE_QUERY_RESULT;
     '\n  *[_type == "journalPost"] | order(publishedAt desc) { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n }\n': JOURNAL_POSTS_QUERY_RESULT;
     '\n  *[_type == "journalPost" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n,\n    body,\n    "relatedPosts": *[_type == "journalPost" && _id != ^._id] | order(publishedAt desc) [0...3] { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n }\n  }\n': JOURNAL_POST_BY_SLUG_QUERY_RESULT;

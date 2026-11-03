@@ -37,8 +37,14 @@ const PROJECT_FIELDS = `
         poster,
         image { ..., asset-> { ..., metadata { dimensions } } },
         phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },
+        rows[]{ _key, tiles[]{ _key, type, device, video, poster, image { ..., asset-> { ..., metadata { dimensions } } }, frame } },
+        slides[]{ label, ...{ _key, type, device, video, poster, image { ..., asset-> { ..., metadata { dimensions } } }, frame } },
         frame
       }
+    },
+    _type == "statement" => {
+      text,
+      subtext
     },
     _type == "testSwitcher" => {
       tests[]{
@@ -58,6 +64,8 @@ const PROJECT_FIELDS = `
           poster,
           image { ..., asset-> { ..., metadata { dimensions } } },
           phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },
+          rows[]{ _key, tiles[]{ _key, type, device, video, poster, image { ..., asset-> { ..., metadata { dimensions } } }, frame } },
+          slides[]{ label, ...{ _key, type, device, video, poster, image { ..., asset-> { ..., metadata { dimensions } } }, frame } },
           frame
         }
       }

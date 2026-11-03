@@ -68,6 +68,31 @@ const phoneSlotFields = [
   }),
 ];
 
+// One tile of a bento row or one carousel step: a still or a clip, recorded
+// flush at the device's own ratio (laptop 16:10, phone 390:844).
+const tileFields = [
+  ...phoneSlotFields,
+  defineField({
+    name: "device",
+    title: "Device",
+    type: "string",
+    description: "What the recording is: a laptop screen (16:10) or a phone screen (390:844).",
+    options: { list: [{ title: "Laptop", value: "laptop" }, { title: "Phone", value: "phone" }], layout: "radio", direction: "horizontal" },
+    initialValue: "laptop",
+    validation: (rule) => rule.required(),
+  }),
+  defineField({ name: "frame", title: "Background", type: "mediaFrame" }),
+];
+
+const tilePreview = {
+  select: { type: "type", device: "device", label: "label", media: "image" },
+  prepare: ({ type, device, label, media }: { type?: string; device?: string; label?: string; media?: unknown }) => ({
+    title: label || `${device === "phone" ? "Phone" : "Laptop"} ${type === "image" ? "still" : "clip"}`,
+    subtitle: label ? `${device === "phone" ? "Phone" : "Laptop"} ${type === "image" ? "still" : "clip"}` : undefined,
+    media: media as never,
+  }),
+};
+
 const chapterMediaField = defineField({
   name: "media",
   title: "Media",
@@ -82,6 +107,8 @@ const chapterMediaField = defineField({
           { title: "Image", value: "image" },
           { title: "Video", value: "video" },
           { title: "Phones (one to three screens)", value: "phones" },
+          { title: "Bento (rows of one or two loops)", value: "bento" },
+          { title: "Carousel (steps, one at a time)", value: "carousel" },
         ],
         layout: "radio",
       },
@@ -96,6 +123,55 @@ const chapterMediaField = defineField({
       of: [{ type: "object", name: "phoneSlot", fields: phoneSlotFields, preview: { select: { type: "type" }, prepare: ({ type }) => ({ title: type === "image" ? "Still" : "Clip" }) } }],
       validation: (rule) => rule.max(3),
       hidden: ({ parent }) => parent?.type !== "phones",
+    }),
+    defineField({
+      name: "rows",
+      title: "Rows",
+      description: "Each row holds one or two loops side by side at the same height, 2 px apart (e.g. a laptop and a phone). One idea per loop.",
+      type: "array",
+      of: [
+        {
+          type: "object",
+          name: "bentoRow",
+          title: "Row",
+          fields: [
+            defineField({
+              name: "tiles",
+              title: "Loops",
+              type: "array",
+              of: [{ type: "object", name: "tile", title: "Loop", fields: tileFields, preview: tilePreview }],
+              validation: (rule) => rule.min(1).max(2),
+            }),
+          ],
+          preview: {
+            select: { tiles: "tiles" },
+            prepare: ({ tiles }) => ({
+              title: Array.isArray(tiles) ? tiles.map((t: { device?: string }) => (t.device === "phone" ? "Phone" : "Laptop")).join(" + ") : "Row",
+            }),
+          },
+        },
+      ],
+      hidden: ({ parent }) => parent?.type !== "bento",
+    }),
+    defineField({
+      name: "slides",
+      title: "Steps",
+      description: "Shown one at a time in the same box; each clip plays through once, then the next step follows. Record every step on the same device.",
+      type: "array",
+      of: [
+        {
+          type: "object",
+          name: "slide",
+          title: "Step",
+          fields: [
+            defineField({ name: "label", title: "Step label", type: "string", description: "Short, e.g. \"Inbox\"." }),
+            ...tileFields,
+          ],
+          preview: tilePreview,
+        },
+      ],
+      validation: (rule) => rule.max(6),
+      hidden: ({ parent }) => parent?.type !== "carousel",
     }),
     defineField({
       name: "image",
@@ -470,6 +546,33 @@ export const project = defineType({
               const place = layout === "beside" ? `beside · ${side ?? "right"}` : (layout ?? "full");
               return { title: title || "Chapter", subtitle: place, media };
             },
+          },
+        },
+        {
+          type: "object",
+          name: "statement",
+          title: "Statement",
+          description: "One big line between chapters: a question or a claim that the next part answers. No media.",
+          fields: [
+            defineField({
+              name: "text",
+              title: "Line",
+              type: "text",
+              rows: 2,
+              description: "Plain English, no numbers, e.g. \"A working product beats slides.\"",
+              validation: (rule) => rule.required(),
+            }),
+            defineField({
+              name: "subtext",
+              title: "Subtext",
+              type: "text",
+              rows: 3,
+              description: "Optional, one or two sentences under the line.",
+            }),
+          ],
+          preview: {
+            select: { title: "text", subtitle: "subtext" },
+            prepare: ({ title, subtitle }) => ({ title: title || "Statement", subtitle: subtitle ? `Statement · ${subtitle}` : "Statement" }),
           },
         },
         {

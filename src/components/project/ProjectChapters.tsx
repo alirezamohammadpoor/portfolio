@@ -42,6 +42,7 @@ import InlineClip from "@/components/project/InlineClip";
 import LandingMedia from "@/components/project/LandingMedia";
 import MediaFrame from "@/components/MediaFrame";
 import PhonesRow from "@/components/PhonesRow";
+import { BentoMedia, CarouselMedia, StatementSection, type LoopTile } from "@/components/project/ChapterLoops";
 import { resolveFrame, resolveLandingFrame, type ProjectFrameSource } from "@/lib/mediaFrame";
 import { isPlainLeftClick } from "@/lib/clicks";
 import { HERO_VARIANTS, LANDING_ASPECT, heroVariant, landingKind } from "@/lib/landing";
@@ -50,6 +51,7 @@ type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 export type ChapterBlock = NonNullable<Project["chapters"]>[number];
 export type Chapter = Extract<ChapterBlock, { _type: "chapter" }>;
 export type TestSwitcher = Extract<ChapterBlock, { _type: "testSwitcher" }>;
+export type Statement = Extract<ChapterBlock, { _type: "statement" }>;
 export type AbTest = NonNullable<TestSwitcher["tests"]>[number];
 type ChapterMediaValue = Chapter["media"];
 
@@ -169,6 +171,12 @@ function ChapterMedia({
   const source = useContext(FrameSourceContext);
   const [clipAspect, setClipAspect] = useState<number | null>(null);
   if (!media) return null;
+  if (media.type === "bento" && fit === "row") {
+    return <BentoMedia rows={(media.rows ?? []) as Array<{ _key?: string | null; tiles?: LoopTile[] | null }>} source={source} title={title} active={!hidden} />;
+  }
+  if (media.type === "carousel" && fit === "row") {
+    return <CarouselMedia slides={(media.slides ?? []) as LoopTile[]} source={source} title={title} active={!hidden} />;
+  }
   if (media.type === "phones") {
     return (
       <PhonesRow
@@ -491,6 +499,8 @@ export default function ProjectChapters({
         {chapters.map((block, i) =>
           block._type === "testSwitcher" ? (
             <TestSwitcherSection key={block._key} block={block} hidden={hidden} />
+          ) : block._type === "statement" ? (
+            <StatementSection key={block._key} text={block.text} subtext={block.subtext} />
           ) : (
             <ChapterSection key={block._key} chapter={block} index={i} hidden={hidden} />
           ),

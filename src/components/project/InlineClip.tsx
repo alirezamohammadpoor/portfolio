@@ -14,6 +14,8 @@ export default function InlineClip({
   active = true,
   className = "",
   onAspect,
+  loop = true,
+  onEnded,
 }: {
   src: string;
   poster?: string;
@@ -23,6 +25,9 @@ export default function InlineClip({
   className?: string;
   /** Width / height once the clip reports its size. */
   onAspect?: (aspect: number) => void;
+  /** false for carousel steps: the clip plays through once and reports `onEnded`. */
+  loop?: boolean;
+  onEnded?: () => void;
 }) {
   const ref = useRef<HTMLVideoElement | null>(null);
   const [still, setStill] = useState(false);
@@ -72,7 +77,8 @@ export default function InlineClip({
       src={src}
       poster={poster}
       muted
-      loop
+      loop={loop}
+      onEnded={onEnded}
       playsInline
       preload={still ? "none" : "metadata"}
       aria-label={label}

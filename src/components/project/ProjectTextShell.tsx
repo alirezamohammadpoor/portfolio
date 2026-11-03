@@ -94,6 +94,11 @@ export default function ProjectTextShell({ project }: { project: Project }) {
                   </section>
                 ))}
               </section>
+            ) : block._type === "statement" ? (
+              <section key={block._key} className="mt-10">
+                <p className="text-h2 text-primary">{block.text}</p>
+                {block.subtext && <p className="mt-3 text-body text-secondary">{block.subtext}</p>}
+              </section>
             ) : (
               <section key={block._key} className="mt-10">
                 {block.title && <h2 className="text-h2 text-primary">{block.title}</h2>}
