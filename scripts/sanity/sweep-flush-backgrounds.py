@@ -19,6 +19,7 @@ should happen after the background code is merged.
 
   python3 sweep-flush-backgrounds.py --dry-run   # no token, no writes: prints the plan
   python3 sweep-flush-backgrounds.py             # uploads + writes drafts
+  python3 sweep-flush-backgrounds.py --only zone-2 [--dry-run]   # one project first
 
 Token: SANITY_API_READ_TOKEN (write-capable) from
 ~/Developer/portfolio-layout/.env.local, or SANITY_TOKEN in the environment.
@@ -31,6 +32,7 @@ API = f"https://{PROJECT}.api.sanity.io/v2024-01-01"
 FLUSH = Path.home() / "Developer/portfolio-media/flush"
 ENV = Path.home() / "Developer/portfolio-layout/.env.local"
 DRY = "--dry-run" in sys.argv
+ONLY = sys.argv[sys.argv.index("--only") + 1] if "--only" in sys.argv else None
 DIRS = {"zone-2": "zone2"}
 SLUG_ALIAS = {"deploymentbar": "deploybar"}
 PANEL_HEX = "#1a1a1a"  # bg-primary, what the "black" phones panel drew
@@ -173,7 +175,11 @@ def sweep(doc, files):
 
 
 def main():
-    projects = query('*[_type=="project" && !(_id in path("drafts.**"))]{_id}')
+    projects = query('*[_type=="project" && !(_id in path("drafts.**"))]{_id, "slug": slug.current}')
+    if ONLY:
+        projects = [p for p in projects if p["slug"] == ONLY]
+        if not projects:
+            sys.exit(f"no project with slug {ONLY!r}")
     assets = query('*[_type=="sanity.fileAsset"]{_id, originalFilename}')
     files = {a["_id"]: a.get("originalFilename") or "" for a in assets}
     mutations = []

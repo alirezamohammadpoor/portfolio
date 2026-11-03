@@ -12,7 +12,7 @@ import { HERO_VARIANTS, LANDING_ASPECT, heroVariant, imageAspect, videoAspect } 
 import NextProjectPreview, { type NextProject } from "@/components/project/NextProjectPreview";
 import GalleryPhones from "@/components/project/GalleryPhones";
 import MediaFrame from "@/components/MediaFrame";
-import { resolveFrame, type ProjectFrameSource } from "@/lib/mediaFrame";
+import { resolveFrame, resolveLandingFrame, type ProjectFrameSource } from "@/lib/mediaFrame";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
@@ -278,36 +278,36 @@ export default function ProjectGallery({
         );
 
         // Item 1 is the landing media, where the home → project clone lands:
-        // it stays flush so the morph meets a box the media fills. Every
-        // later item sits on its background from Sanity (none: flush).
-        if (i > 0) {
-          const frame = resolveFrame(item.frame, frameSource, aspect < 1 ? "portrait" : "landscape");
-          return (
-            <div
-              key={item._key}
-              ref={(el) => {
-                itemRefs.current[i] = el;
-              }}
-              className="relative w-full"
-            >
-              <MediaFrame frame={frame} mediaAspect={aspect} boxClassName="bg-black" sizes="(min-width: 75rem) 50vw, 100vw">
-                {media}
-              </MediaFrame>
-            </div>
-          );
-        }
-
+        // it takes its background as a laptop-shaped box and the clone lands
+        // on the media inside. Every later item sits on its own background
+        // from Sanity (none: flush).
+        const frame =
+          i === 0
+            ? resolveLandingFrame(item.frame, frameSource)
+            : resolveFrame(item.frame, frameSource, aspect < 1 ? "portrait" : "landscape");
         return (
           <div
             key={item._key}
             ref={(el) => {
               itemRefs.current[i] = el;
-              if (i === 0) firstImageRef.current = el;
             }}
-            className="relative w-full overflow-hidden bg-black"
-            style={{ aspectRatio: aspect }}
+            className="relative w-full"
           >
-            {media}
+            <MediaFrame
+              frame={frame}
+              mediaAspect={aspect}
+              boxClassName="bg-black"
+              sizes="(min-width: 75rem) 50vw, 100vw"
+              mediaRef={
+                i === 0
+                  ? (el: HTMLDivElement | null) => {
+                      firstImageRef.current = el;
+                    }
+                  : undefined
+              }
+            >
+              {media}
+            </MediaFrame>
           </div>
         );
       })}

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { CSSProperties, ReactNode } from "react";
+import type { CSSProperties, ReactNode, Ref } from "react";
 import { imageUrl } from "@/sanity/lib/image";
 import type { ResolvedFrame } from "@/lib/mediaFrame";
 
@@ -39,6 +39,7 @@ export default function MediaFrame({
   className = "",
   boxClassName = "",
   sizes,
+  mediaRef,
   children,
 }: {
   frame: ResolvedFrame;
@@ -48,11 +49,13 @@ export default function MediaFrame({
   /** Extra classes on the media box (e.g. a placeholder fill). */
   boxClassName?: string;
   sizes?: string;
+  /** The media box itself (not the background): e.g. the clone's landing rect. */
+  mediaRef?: Ref<HTMLDivElement>;
   children: ReactNode;
 }) {
   if (frame.fit === "flush") {
     return (
-      <div className={`relative w-full overflow-hidden ${boxClassName} ${className}`} style={{ aspectRatio: mediaAspect, ...backgroundStyle(frame) }}>
+      <div ref={mediaRef} className={`relative w-full overflow-hidden ${boxClassName} ${className}`} style={{ aspectRatio: mediaAspect, ...backgroundStyle(frame) }}>
         {children}
       </div>
     );
@@ -69,7 +72,7 @@ export default function MediaFrame({
       style={{ aspectRatio: phone ? 4 / 5 : mediaAspect, ...backgroundStyle(frame) }}
     >
       {frame.background && <FrameBackground background={frame.background} sizes={sizes} />}
-      <div className={`relative overflow-hidden ${phone ? PHONE_RADIUS : ""} ${boxClassName}`} style={inner}>
+      <div ref={mediaRef} className={`relative overflow-hidden ${phone ? PHONE_RADIUS : ""} ${boxClassName}`} style={inner}>
         {children}
       </div>
     </div>

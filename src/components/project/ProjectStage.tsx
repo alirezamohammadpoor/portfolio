@@ -31,7 +31,7 @@ import { usePageTransition } from "@/context/TransitionContext";
 import { isPlainLeftClick } from "@/lib/clicks";
 import GalleryPhones from "@/components/project/GalleryPhones";
 import MediaFrame from "@/components/MediaFrame";
-import { resolveFrame } from "@/lib/mediaFrame";
+import { resolveFrame, resolveLandingFrame } from "@/lib/mediaFrame";
 import { LANDING_ASPECT, imageAspect, landingKind, videoAspect } from "@/lib/landing";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
@@ -322,8 +322,12 @@ export default function ProjectStage({
             const near = Math.abs(i - index) <= 1;
             const aspect =
               (isImage ? imageAspect(item.image) : videoAspects[item._key]) ?? LANDING_ASPECT.stage;
-            // Card 1 is the landing media (the clone lands on it): always flush.
-            const frame = i > 0 ? resolveFrame(item.frame, project, aspect < 1 ? "portrait" : "landscape") : null;
+            // Card 1 is the landing media (the clone lands on it): a laptop-shaped
+            // box, the clone landing on the media inside its background.
+            const frame =
+              i === 0
+                ? resolveLandingFrame(item.frame, project)
+                : resolveFrame(item.frame, project, aspect < 1 ? "portrait" : "landscape");
             const framed = frame && frame.fit !== "flush" ? frame : null;
             const media = (
               <>
@@ -360,7 +364,7 @@ export default function ProjectStage({
                 key={item._key}
                 ref={(el) => {
                   itemRefs.current[i] = el;
-                  if (i === 0 && firstCardRef) firstCardRef.current = el;
+                  if (i === 0 && firstCardRef && !framed) firstCardRef.current = el;
                 }}
                 className={`relative shrink-0 snap-center overflow-hidden will-change-transform ${framed ? "" : "bg-black"}`}
                 style={{
@@ -379,7 +383,19 @@ export default function ProjectStage({
                 aria-label={`${i + 1} of ${gallery.length}`}
               >
                 {framed ? (
-                  <MediaFrame frame={framed} mediaAspect={aspect} boxClassName="bg-black" sizes="100vw">
+                  <MediaFrame
+                    frame={framed}
+                    mediaAspect={aspect}
+                    boxClassName="bg-black"
+                    sizes="100vw"
+                    mediaRef={
+                      i === 0 && firstCardRef
+                        ? (el: HTMLDivElement | null) => {
+                            firstCardRef.current = el;
+                          }
+                        : undefined
+                    }
+                  >
                     {media}
                   </MediaFrame>
                 ) : (

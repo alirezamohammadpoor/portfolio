@@ -42,7 +42,7 @@ import InlineClip from "@/components/project/InlineClip";
 import LandingMedia from "@/components/project/LandingMedia";
 import MediaFrame from "@/components/MediaFrame";
 import PhonesRow from "@/components/PhonesRow";
-import { resolveFrame, type ProjectFrameSource } from "@/lib/mediaFrame";
+import { resolveFrame, resolveLandingFrame, type ProjectFrameSource } from "@/lib/mediaFrame";
 import { isPlainLeftClick } from "@/lib/clicks";
 import { HERO_VARIANTS, LANDING_ASPECT, heroVariant, landingKind } from "@/lib/landing";
 
@@ -428,6 +428,7 @@ export default function ProjectChapters({
             slotRef={firstImageRef}
             onReady={onFirstReady}
             sizes="(min-width: 75rem) 66vw, 100vw"
+            frame={landing && landing._type !== "galleryPhones" ? resolveLandingFrame(landing.frame, project) : undefined}
           />
         </div>
         <div

@@ -67,3 +67,15 @@ export function resolveFrame(frame: FrameInput, project: ProjectFrameSource, kin
   const size = frame?.size && frame.size >= 20 && frame.size <= 100 ? frame.size : preset;
   return { background: bg, fit, size };
 }
+
+/**
+ * The landing media (first media on a project page, where the home → project
+ * clone and the project → project hand-off land) takes the same background,
+ * but always as a laptop-shaped box: the clone morphs from a 16:10 cover, so
+ * a phone fit would squash it. The clone lands on the media box inside.
+ */
+export function resolveLandingFrame(frame: FrameInput, project: ProjectFrameSource): ResolvedFrame {
+  const resolved = resolveFrame(frame, project, "landscape");
+  if (resolved.fit !== "phone") return resolved;
+  return { ...resolved, fit: resolved.background ? "laptop" : "flush", size: resolved.background ? FRAME_PRESET.laptop : 100 };
+}
