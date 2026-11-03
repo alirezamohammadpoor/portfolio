@@ -143,10 +143,10 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
   const {
     galleryRef,
     firstImageRef,
-    nextTextWrapperRef,
     nextTextRef,
+    progressFillRef,
+    pullRef,
     gallery,
-    scrollProgressElRef,
     mobileProgressElRef,
     footerWipeRef,
     showMobileNav,
@@ -158,6 +158,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
     inPlace,
     animateClone,
     markTargetReady,
+    mounted,
     navigateNext,
   });
 
@@ -185,10 +186,12 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
   // "waiting", project → project) runs the hooks once against empty refs and
   // the text simply appears.
   const textDeps = [textKey, mounted];
-  useTitleAnimation(titleRef, panelRef, { duration: 1, skip: textWaiting, dependencies: textDeps });
+  // Title → description → meta row (tech and links on one beat), the site's
+  // out curve, one stagger step apart.
+  useTitleAnimation(titleRef, panelRef, { duration: dur.text, skip: textWaiting, dependencies: textDeps });
   useBodyAnimation(descRef, panelRef, { duration: dur.text, delay: stagger, skip: textWaiting, dependencies: textDeps });
   useBodyAnimation(techRef, panelRef, { duration: dur.text, delay: 2 * stagger, skip: textWaiting, dependencies: textDeps });
-  useInlineAnimation(linksRef, panelRef, "a:not([data-pill])", { duration: dur.text, delay: 3 * stagger, skip: textWaiting, dependencies: textDeps });
+  useInlineAnimation(linksRef, panelRef, "a:not([data-pill])", { duration: dur.text, delay: 2 * stagger, skip: textWaiting, dependencies: textDeps });
 
   // Pill button animation (SplitText mask clips rounded corners)
   useGSAP(
@@ -199,7 +202,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
       gsap.fromTo(
         pills,
         { yPercent: 40, autoAlpha: 0 },
-        { yPercent: 0, autoAlpha: 1, duration: dur.text, ease: ease.out, delay: 3 * stagger },
+        { yPercent: 0, autoAlpha: 1, duration: dur.text, ease: ease.out, delay: 2 * stagger },
       );
     },
     { scope: panelRef, dependencies: textDeps },
@@ -237,11 +240,10 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
         />
         {!skip && (
           <ScrollProgress
-            progressRef={scrollProgressElRef}
+            progressFillRef={progressFillRef}
+            pullRef={pullRef}
             nextProjectSlug={nextSlug}
-            nextTextWrapperRef={nextTextWrapperRef}
-            nextTextRef={nextTextRef}
-            align="right"
+            nextProjectTitle={nextProject?.title}
           />
         )}
       </>
@@ -278,6 +280,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
       <ProjectGallery
         gallery={gallery}
         projectTitle={project.title}
+        frameSource={project}
         galleryRef={galleryRef}
         firstImageRef={firstImageRef}
         hidden={skip}
@@ -289,10 +292,10 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
 
       {!skip && (
         <ScrollProgress
-          progressRef={scrollProgressElRef}
+          progressFillRef={progressFillRef}
+          pullRef={pullRef}
           nextProjectSlug={nextProject?.slug?.current ?? undefined}
-          nextTextWrapperRef={nextTextWrapperRef}
-          nextTextRef={nextTextRef}
+          nextProjectTitle={nextProject?.title}
         />
       )}
 

@@ -43,6 +43,9 @@ import InlineClip from "@/components/project/InlineClip";
 import LandingMedia from "@/components/project/LandingMedia";
 import TestMorph, { type TestMorphHandle } from "@/components/lab/morph/TestMorph";
 import { SCENE_BY_KEY } from "@/components/lab/morph/scenes";
+import MediaFrame from "@/components/MediaFrame";
+import PhonesRow from "@/components/PhonesRow";
+import { resolveFrame, resolveLandingFrame, type ProjectFrameSource } from "@/lib/mediaFrame";
 import { isPlainLeftClick } from "@/lib/clicks";
 import { HERO_VARIANTS, LANDING_ASPECT, heroVariant, landingKind } from "@/lib/landing";
 
@@ -62,6 +65,8 @@ type MorphKey = keyof typeof SCENE_BY_KEY;
  */
 export type MobileVariant = "default" | "offset" | "stack";
 const MobileVariantContext = createContext<MobileVariant>("default");
+/** The project's brand colours and default media background, for chapter media. */
+const FrameSourceContext = createContext<ProjectFrameSource>(null);
 
 interface ProjectChaptersProps {
   project: Project;
@@ -161,25 +166,56 @@ function ChapterMedia({
   media: ChapterMediaValue;
   title: string;
   hidden: boolean;
-  /** row: fill the media row at the image's ratio. frame: fill the parent's fixed height at natural ratio. phone: cover a phone-shaped box (switcher). */
+  /**
+   * row: the media in its own box on its background from Sanity. frame: fill
+   * the parent's fixed phone-shaped box at natural ratio. phone: cover a
+   * phone-shaped box (switcher). frame and phone draw no background.
+   */
   fit?: "row" | "frame" | "phone";
   sizes?: string;
 }) {
+  const source = useContext(FrameSourceContext);
+  const [clipAspect, setClipAspect] = useState<number | null>(null);
   if (!media) return null;
   if (media.type === "phones") {
-    return <PhonesPanel media={media} title={title} hidden={hidden} />;
+    return (
+      <PhonesRow
+        slots={media.phones ?? []}
+        frame={resolveFrame(media.frame, source, "phones")}
+        title={title}
+        active={!hidden}
+        sizes="(min-width: 75rem) 30vw, 52vw"
+      />
+    );
   }
   if (media.type === "video" && media.video?.asset?._ref) {
-    return (
+    const clip = (framed: boolean) => (
       <InlineClip
-        src={clipSrc(media.video.asset._ref)}
+        src={clipSrc(media.video!.asset!._ref!)}
         poster={posterSrc(media.poster, 1600)}
         label={title}
         active={!hidden}
+        onAspect={setClipAspect}
         className={
-          fit === "phone" ? "h-full w-full object-cover object-top" : fit === "frame" ? "h-full w-full object-contain object-left-top" : ""
+          fit === "phone"
+            ? "h-full w-full object-cover object-top"
+            : fit === "frame"
+              ? "h-full w-full object-contain object-left-top"
+              : framed
+                ? "absolute inset-0 h-full w-full object-cover"
+                : ""
         }
       />
+    );
+    if (fit === "frame" || fit === "phone") return clip(false);
+    // Until the clip reports its size, assume the flush laptop shape (16:10).
+    const aspect = clipAspect ?? 16 / 10;
+    const frame = resolveFrame(media.frame, source, aspect < 1 ? "portrait" : "landscape");
+    if (frame.fit === "flush" && !frame.background) return clip(false);
+    return (
+      <MediaFrame frame={frame} mediaAspect={aspect} sizes={sizes}>
+        {clip(true)}
+      </MediaFrame>
     );
   }
   if (media.type === "image" && media.image?.asset) {
@@ -198,59 +234,14 @@ function ChapterMedia({
         />
       );
     }
+    const aspect = width / height;
     return (
-      <div className="relative w-full overflow-hidden" style={{ aspectRatio: `${width} / ${height}` }}>
+      <MediaFrame frame={resolveFrame(media.frame, source, aspect < 1 ? "portrait" : "landscape")} mediaAspect={aspect} sizes={sizes}>
         <Image src={imageUrl(media.image, 1600)} alt={title} fill className="object-cover" sizes={sizes} />
-      </div>
+      </MediaFrame>
     );
   }
   return null;
-}
-
-/**
- * Phones on a panel (Ali, 10-29, alternative E): one to three phone screens
- * side by side on a 16:10 panel, each a still or a silent clip at the
- * phone's own ratio with rounded corners, no device frame. The panel is
- * black or carries an image at reduced opacity.
- */
-const PHONE_WIDTH = ["w-[52%] desktop:w-[30%]", "w-[38%] desktop:w-[24%]", "w-[28%] desktop:w-[20%]"];
-
-function PhonesPanel({ media, title, hidden }: { media: NonNullable<ChapterMediaValue>; title: string; hidden: boolean }) {
-  const slots = (media.phones ?? []).slice(0, 3);
-  if (slots.length === 0) return null;
-  const width = PHONE_WIDTH[slots.length - 1];
-  const panelImage = media.panel === "image" && media.panelImage?.asset ? media.panelImage : null;
-  return (
-    <div className="relative flex aspect-[16/10] w-full items-center justify-center gap-4 overflow-hidden bg-primary desktop:gap-10">
-      {panelImage && (
-        <Image src={imageUrl(panelImage, 2000)} alt="" fill className="object-cover opacity-55" sizes="100vw" />
-      )}
-      {slots.map((slot, i) => (
-        <div
-          key={slot._key ?? i}
-          className={`relative aspect-[390/844] flex-none overflow-hidden rounded-[18px] bg-white desktop:rounded-[28px] ${width}`}
-        >
-          {slot.type === "video" && slot.video?.asset?._ref ? (
-            <InlineClip
-              src={clipSrc(slot.video.asset._ref)}
-              poster={posterSrc(slot.poster, 800)}
-              label={`${title}, screen ${i + 1}`}
-              active={!hidden}
-              className="absolute inset-0 h-full w-full object-cover object-top"
-            />
-          ) : slot.type === "image" && slot.image?.asset ? (
-            <Image
-              src={imageUrl(slot.image, 800)}
-              alt={`${title}, screen ${i + 1}`}
-              fill
-              className="object-cover object-top"
-              sizes="(min-width: 75rem) 30vw, 52vw"
-            />
-          ) : null}
-        </div>
-      ))}
-    </div>
-  );
 }
 
 function Caption({ text }: { text: string | null | undefined }) {
@@ -787,6 +778,7 @@ export default function ProjectChapters({
 
   return (
     <MobileVariantContext.Provider value={mobileVariant}>
+    <FrameSourceContext.Provider value={project}>
     <div ref={galleryRef} data-project-gallery className="pb-10">
       {/* Hero */}
       <section className="grid-site px-margin pt-2 pb-6 desktop:pt-6 desktop:pb-12">
@@ -800,6 +792,7 @@ export default function ProjectChapters({
             slotRef={firstImageRef}
             onReady={onFirstReady}
             sizes="(min-width: 75rem) 66vw, 100vw"
+            frame={landing && landing._type !== "galleryPhones" ? resolveLandingFrame(landing.frame, project) : undefined}
           />
         </div>
         <div
@@ -875,7 +868,8 @@ export default function ProjectChapters({
             phone), with the title in the other half. */}
         {nextProject && onNavigateNext && nextProject.slug?.current && (() => {
           const title = (
-            <h2 className="text-h2 desktop:text-h1 text-primary">
+            // The bar carries the title on a laptop (ScrollProgress).
+            <h2 className="text-h2 text-primary desktop:hidden">
               <a
                 href={`/project/${nextProject.slug.current}`}
                 className="link-underline"
@@ -923,6 +917,7 @@ export default function ProjectChapters({
         })()}
       </div>
     </div>
+    </FrameSourceContext.Provider>
     </MobileVariantContext.Provider>
   );
 }

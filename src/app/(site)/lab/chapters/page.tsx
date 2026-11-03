@@ -96,7 +96,7 @@ export default async function ChaptersLabPage() {
       layout: c.layout,
       side: c.side,
       text: c.text.map((t, j) => block(t, `fixture-${i}-${j}`)),
-      media: item && item._type === "galleryVideo" ? { type: "video", video: item.video ?? null, image: null, poster: null, phones: null, panel: null, panelImage: null } : null,
+      media: item && item._type === "galleryVideo" ? { type: "video", video: item.video ?? null, image: null, poster: null, phones: null, frame: null } : null,
     };
   });
   // The test films from the animation thread (today's page morphing into the design), served from public/.
@@ -109,8 +109,7 @@ export default async function ChaptersLabPage() {
           poster: { _type: "image", asset: { _type: "reference", _ref: `/lab/tests/${name}.jpg` } },
           image: null,
           phones: null,
-          panel: null,
-          panelImage: null,
+          frame: null,
         }
       : null;
   const switcher: TestSwitcher = {

@@ -31,6 +31,12 @@ interface UseGalleryScrollOptions {
   markTargetReady: () => void;
   /** Threshold passed at the bottom: run the in-place next-project transition. */
   navigateNext: () => void;
+  /**
+   * The page tree is in the DOM (the client renders a text shell on the
+   * first pass). The progress trigger needs the gallery element, so it is
+   * created once this flips; on a direct load nothing else re-runs it.
+   */
+  mounted: boolean;
 }
 
 // Wheel deltaY units needed to trigger navigation (~20 mouse clicks or ~4 trackpad swipes)
@@ -40,7 +46,6 @@ const THRESHOLD = 2500;
 // (project → project).
 const UNLOCK_DELAY_CLONE_MS = 800;
 const UNLOCK_DELAY_IN_PLACE_MS = 250;
-const UNLOCK_DELAY_MS = 1300;
 // A trackpad keeps delivering inertia wheel events for up to ~1.5 s after
 // the swipe that crossed the threshold. Unlocking on the timer alone lets
 // that tail scroll the page that just landed, which reads as a yank, so the
@@ -94,6 +99,7 @@ export function useGalleryScroll({
   animateClone,
   markTargetReady,
   navigateNext,
+  mounted,
 }: UseGalleryScrollOptions) {
   const scrollProgressElRef = useRef<HTMLElement>(null);
   const mobileProgressElRef = useRef<HTMLElement>(null);
@@ -101,6 +107,8 @@ export function useGalleryScroll({
   const firstImageRef = useRef<HTMLDivElement>(null);
   const nextTextWrapperRef = useRef<HTMLDivElement>(null);
   const nextTextRef = useRef<HTMLDivElement>(null);
+  const progressFillRef = useRef<HTMLElement>(null);
+  const pullRef = useRef<HTMLElement>(null);
   const hasNavigated = useRef(false);
   const footerWipeRef = useRef<HTMLDivElement>(null);
 
@@ -120,30 +128,36 @@ export function useGalleryScroll({
     lenisRef.current = lenis;
   });
 
-  // Lock scroll on mount, reset to top, unlock after delay. Desktop only:
+  // Lock scroll on arrival, reset to top, unlock after delay. Desktop only:
   // below the desktop breakpoint the page is the horizontal stage and the
-  // global touchmove lock would make it unswipeable for UNLOCK_DELAY_MS.
+  // global touchmove lock would make it unswipeable for the delay.
+  // A direct load has no arrival animation to protect, so it never locks:
+  // the reader may already be scrolling (the server HTML scrolls before
+  // hydration), and a reset to the top would throw them back up with the
+  // progress bar.
   useEffect(() => {
     const isDesktop = window.matchMedia(DESKTOP_QUERY).matches;
-    if (!isDesktop) {
+    const arrived = arrivedByCloneRef.current;
+    setTimeout(() => {
+      if (nextTextWrapperRef.current) gsap.set(nextTextWrapperRef.current, { autoAlpha: 0 });
+    }, 0);
+    if (!isDesktop || !arrived) {
       isReady.current = true;
       hasNavigated.current = false;
       return;
     }
+    // The global lock only cancels native scrolling; Lenis turns the same
+    // wheel events into its own scroll, so it is stopped too. Otherwise the
+    // page moves under the lock and the unlock below snaps it back to 0.
     lockScroll();
+    lenisRef.current?.stop();
 
-    // Next tick: reset scroll + force-hide the hint wrapper
     setTimeout(() => {
       window.scrollTo(0, 0);
-      lenisRef.current?.scrollTo(0, { immediate: true });
-      if (nextTextWrapperRef.current) gsap.set(nextTextWrapperRef.current, { autoAlpha: 0 });
+      lenisRef.current?.scrollTo(0, { immediate: true, force: true });
     }, 0);
 
-    const delay = arrivedInPlaceRef.current
-      ? UNLOCK_DELAY_IN_PLACE_MS
-      : arrivedByCloneRef.current
-        ? UNLOCK_DELAY_CLONE_MS
-        : UNLOCK_DELAY_MS;
+    const delay = arrivedInPlaceRef.current ? UNLOCK_DELAY_IN_PLACE_MS : UNLOCK_DELAY_CLONE_MS;
     const started = performance.now();
     let lastWheel = -Infinity;
     let unlocked = false;
@@ -254,19 +268,30 @@ export function useGalleryScroll({
     return () => cancelAnimationFrame(raf);
   }, [isTransitioning, fireAnimateClone]);
 
-  // Gallery scroll progress (0-100%) + hint visibility
+  // Page scroll progress (0-100%) + hint visibility. The bar reads like a
+  // scrollbar, so it maps the whole scrollable page: full exactly at the
+  // bottom edge, where the pull to the next project takes over. Media boxes
+  // settle their ratio after load (video metadata), which moves the page's
+  // end; the trigger is re-measured whenever the page changes height.
   useGSAP(
     () => {
       if (!galleryRef.current || isTransitioning) return;
 
+      let raf = 0;
+      const resize = new ResizeObserver(() => {
+        cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => ScrollTrigger.refresh());
+      });
+      resize.observe(document.body);
+
       ScrollTrigger.create({
-        trigger: galleryRef.current,
-        start: "top top",
-        end: "bottom bottom",
+        start: 0,
+        end: "max",
         onUpdate: (self) => {
           const val = Math.round(self.progress * 100);
           if (scrollProgressElRef.current) scrollProgressElRef.current.textContent = String(val);
           if (mobileProgressElRef.current) mobileProgressElRef.current.textContent = String(val);
+          if (progressFillRef.current) progressFillRef.current.style.setProperty("--p", self.progress.toFixed(4));
 
           if (!isReady.current) return;
 
@@ -280,8 +305,13 @@ export function useGalleryScroll({
           }
         },
       });
+
+      return () => {
+        cancelAnimationFrame(raf);
+        resize.disconnect();
+      };
     },
-    { scope: galleryRef, dependencies: [isTransitioning] },
+    { scope: galleryRef, dependencies: [isTransitioning, mounted] },
   );
 
   const isAtBottom = useCallback(() => {
@@ -291,6 +321,14 @@ export function useGalleryScroll({
 
   const updateBottomVisuals = useCallback((progress: number) => {
     animateClipReveal(nextTextRef.current, progress);
+    if (pullRef.current) {
+      gsap.to(pullRef.current, {
+        "--pull": Math.min(1, Math.max(0, progress)),
+        duration: prefersReducedMotion() ? 0 : 0.4,
+        ease: "power2.out",
+        overwrite: true,
+      });
+    }
     animateClipReveal(footerWipeRef.current, progress);
     toggleVisibility(nextTextWrapperRef.current, progress > 0, wasShowingBottom);
   }, []);
@@ -336,6 +374,8 @@ export function useGalleryScroll({
     firstImageRef,
     nextTextWrapperRef,
     nextTextRef,
+    progressFillRef,
+    pullRef,
     gallery,
     scrollProgressElRef,
     mobileProgressElRef,

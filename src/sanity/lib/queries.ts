@@ -13,6 +13,8 @@ const PROJECT_FIELDS = `
   caseStudy->{ _id, slug },
   coverMedia,
   heroLayout,
+  palette,
+  mediaBackground,
   gallery[]{
     ...,
     _type == "galleryImage" => {
@@ -35,8 +37,7 @@ const PROJECT_FIELDS = `
         poster,
         image { ..., asset-> { ..., metadata { dimensions } } },
         phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },
-        panel,
-        panelImage
+        frame
       }
     },
     _type == "testSwitcher" => {
@@ -59,8 +60,7 @@ const PROJECT_FIELDS = `
           poster,
           image { ..., asset-> { ..., metadata { dimensions } } },
           phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },
-          panel,
-          panelImage
+          frame
         }
       }
     }
@@ -69,11 +69,11 @@ const PROJECT_FIELDS = `
   seo { title, description, ogImage, noIndex }
 `;
 
-// The next project's first gallery item: preloaded on arrival and shown as the
-// 4:3 preview block at the end of the gallery, which is the morph source for
-// the in-place project → project transition.
+// The next project's first gallery image or video (never a phones row):
+// preloaded on arrival and shown as the preview block at the end of the
+// gallery, the morph source for the in-place project → project transition.
 const NEXT_PROJECT_MEDIA = `
-  "firstMedia": gallery[0]{
+  "firstMedia": gallery[_type != "galleryPhones"][0]{
     ...,
     _type == "galleryImage" => {
       ...,
@@ -119,7 +119,8 @@ export const PROJECTS_QUERY = defineQuery(`
     coverMedia,
     homeLayout,
     homeTextAlign,
-    homeBackdrop,
+    palette,
+    mediaBackground,
     ${NEXT_PROJECT_MEDIA}
   }
 `);

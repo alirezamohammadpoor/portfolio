@@ -7,6 +7,8 @@ import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
+import MediaFrame from "@/components/MediaFrame";
+import type { ResolvedFrame } from "@/lib/mediaFrame";
 
 type GalleryItem = NonNullable<NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["gallery"]>[number];
 
@@ -18,6 +20,8 @@ interface LandingMediaProps {
   /** The media has a frame to paint: the clone may be removed. */
   onReady?: () => void;
   sizes?: string;
+  /** Background from Sanity (see resolveLandingFrame); the clone lands on the media box inside it. */
+  frame?: ResolvedFrame;
 }
 
 /**
@@ -27,7 +31,7 @@ interface LandingMediaProps {
  * project's preview, which carries its live <video> over, see adoptVideo.ts)
  * lands here unchanged.
  */
-export default function LandingMedia({ item, title, slotRef, onReady, sizes = "(min-width: 75rem) 50vw, 100vw" }: LandingMediaProps) {
+export default function LandingMedia({ item, title, slotRef, onReady, sizes = "(min-width: 75rem) 50vw, 100vw", frame }: LandingMediaProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { isTransitioning, inPlace, sourceVideoElement } = usePageTransition();
   const src = item?._type === "galleryVideo" && item.video?.asset?._ref ? fileUrl(item.video.asset._ref) : undefined;
@@ -74,8 +78,8 @@ export default function LandingMedia({ item, title, slotRef, onReady, sizes = "(
   // No media at all: an empty slot keeps the layout; the clone collapses on it.
   const isImage = item?._type === "galleryImage";
 
-  return (
-    <div ref={slotRef} className="relative w-full overflow-hidden bg-tertiary" style={{ aspectRatio: 16 / 10 }}>
+  const media = (
+    <>
       {isImage && item.image?.asset && (
         <Image
           src={imageUrl(item.image, 1200)}
@@ -101,6 +105,20 @@ export default function LandingMedia({ item, title, slotRef, onReady, sizes = "(
           preload="auto"
         />
       )}
+    </>
+  );
+
+  if (frame && frame.fit !== "flush") {
+    return (
+      <MediaFrame frame={frame} mediaAspect={16 / 10} mediaRef={slotRef} boxClassName="bg-tertiary" sizes={sizes}>
+        {media}
+      </MediaFrame>
+    );
+  }
+
+  return (
+    <div ref={slotRef} className="relative w-full overflow-hidden bg-tertiary" style={{ aspectRatio: 16 / 10, ...(frame?.background?.colour ? { backgroundColor: frame.background.colour } : null) }}>
+      {media}
     </div>
   );
 }

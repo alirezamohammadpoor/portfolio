@@ -29,7 +29,10 @@ import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
 import { isPlainLeftClick } from "@/lib/clicks";
-import { LANDING_ASPECT, landingKind } from "@/lib/landing";
+import GalleryPhones from "@/components/project/GalleryPhones";
+import MediaFrame from "@/components/MediaFrame";
+import { resolveFrame, resolveLandingFrame } from "@/lib/mediaFrame";
+import { LANDING_ASPECT, imageAspect, landingKind, videoAspect } from "@/lib/landing";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -86,6 +89,17 @@ export default function ProjectStage({
     firstVideoRef.current = adopted;
   }, [adopted, isTransitioning, project.title]);
   const [index, setIndex] = useState(0);
+  // Video ratios as they report metadata (by item key); images carry theirs.
+  // An adopted element already knows its size.
+  const [videoAspects, setVideoAspects] = useState<Record<string, number>>(() => {
+    const first = gallery[0];
+    const known = adopted && first?._type === "galleryVideo" ? videoAspect(adopted) : null;
+    return known && first?._key ? { [first._key]: known } : {};
+  });
+  const setVideoAspect = (key: string | undefined, aspect: number | null) => {
+    if (!key || !aspect) return;
+    setVideoAspects((prev) => (prev[key] === aspect ? prev : { ...prev, [key]: aspect }));
+  };
   const [reduceMotion, setReduceMotion] = useState(false);
 
   // Text entrance, same vocabulary as the desktop panel: title chars drop in,
@@ -276,30 +290,47 @@ export default function ProjectStage({
           }}
         >
           {gallery.map((item, i) => {
+            if (item._type === "galleryPhones") {
+              return (
+                <div
+                  key={item._key}
+                  ref={(el) => {
+                    itemRefs.current[i] = el;
+                  }}
+                  className="relative shrink-0 snap-center will-change-transform"
+                  style={{
+                    width: ITEM_W,
+                    marginLeft: i === 0 ? 0 : -OVERLAP,
+                    transition:
+                      reduceMotion || scrolling ? "none" : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}`,
+                  }}
+                  role="group"
+                  aria-roledescription="slide"
+                  aria-label={`${i + 1} of ${gallery.length}`}
+                >
+                  <GalleryPhones
+                    item={item}
+                    frame={resolveFrame(item.frame, project, "phones")}
+                    title={project.title ?? "Project"}
+                    active={Math.abs(i - index) <= 1}
+                    sizes="50vw"
+                  />
+                </div>
+              );
+            }
             const isImage = item._type === "galleryImage";
             const near = Math.abs(i - index) <= 1;
-            return (
-              <div
-                key={item._key}
-                ref={(el) => {
-                  itemRefs.current[i] = el;
-                  if (i === 0 && firstCardRef) firstCardRef.current = el;
-                }}
-                className="relative shrink-0 snap-center overflow-hidden bg-black will-change-transform"
-                style={{
-                  width: ITEM_W,
-                  aspectRatio: "4 / 3",
-                  marginLeft: i === 0 ? 0 : -OVERLAP,
-                  boxShadow: i === index && !reduceMotion ? "0 8px 24px rgba(0,0,0,0.18)" : "none",
-                  transition:
-                    reduceMotion || scrolling
-                      ? "none"
-                      : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}, box-shadow ${SETTLE_MS}ms`,
-                }}
-                role="group"
-                aria-roledescription="slide"
-                aria-label={`${i + 1} of ${gallery.length}`}
-              >
+            const aspect =
+              (isImage ? imageAspect(item.image) : videoAspects[item._key]) ?? LANDING_ASPECT.stage;
+            // Card 1 is the landing media (the clone lands on it): a laptop-shaped
+            // box, the clone landing on the media inside its background.
+            const frame =
+              i === 0
+                ? resolveLandingFrame(item.frame, project)
+                : resolveFrame(item.frame, project, aspect < 1 ? "portrait" : "landscape");
+            const framed = frame && frame.fit !== "flush" ? frame : null;
+            const media = (
+              <>
                 {isImage && item.image?.asset && (
                   <Image
                     src={imageUrl(item.image, 900)}
@@ -323,7 +354,52 @@ export default function ProjectStage({
                     playsInline
                     preload="metadata"
                     autoPlay={i === 0}
+                    onLoadedMetadata={(e) => setVideoAspect(item._key, videoAspect(e.currentTarget))}
                   />
+                )}
+              </>
+            );
+            return (
+              <div
+                key={item._key}
+                ref={(el) => {
+                  itemRefs.current[i] = el;
+                  if (i === 0 && firstCardRef && !framed) firstCardRef.current = el;
+                }}
+                className={`relative shrink-0 snap-center overflow-hidden will-change-transform ${framed ? "" : "bg-black"}`}
+                style={{
+                  width: ITEM_W,
+                  aspectRatio: framed ? undefined : aspect,
+                  ...(frame && !framed && frame.background?.colour ? { backgroundColor: frame.background.colour } : null),
+                  marginLeft: i === 0 ? 0 : -OVERLAP,
+                  boxShadow: i === index && !reduceMotion ? "0 8px 24px rgba(0,0,0,0.18)" : "none",
+                  transition:
+                    reduceMotion || scrolling
+                      ? "none"
+                      : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}, box-shadow ${SETTLE_MS}ms`,
+                }}
+                role="group"
+                aria-roledescription="slide"
+                aria-label={`${i + 1} of ${gallery.length}`}
+              >
+                {framed ? (
+                  <MediaFrame
+                    frame={framed}
+                    mediaAspect={aspect}
+                    boxClassName="bg-black"
+                    sizes="100vw"
+                    mediaRef={
+                      i === 0 && firstCardRef
+                        ? (el: HTMLDivElement | null) => {
+                            firstCardRef.current = el;
+                          }
+                        : undefined
+                    }
+                  >
+                    {media}
+                  </MediaFrame>
+                ) : (
+                  media
                 )}
               </div>
             );
