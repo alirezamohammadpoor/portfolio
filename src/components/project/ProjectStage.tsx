@@ -65,8 +65,10 @@ const SETTLE_MS = 200;
 const ITEM_W = "calc(100vw - 2 * var(--grid-margin))";
 // Laptop: one height for every card (Figma "Gallery · laptop alternatives",
 // 11-04: 640 at 1440×900), the width follows each card's ratio.
-const DESK_H = "min(640px, calc(100svh - var(--header-height) - 200px))";
+const DESK_H = "min(760px, calc(100svh - var(--header-height) - 200px))";
 const DESK_GAP = 48;
+// Card height cap on laptop (Ali 11-04: raised from 640 so big screens keep 8 columns).
+const DESK_MAX_H = 760;
 // Vertical wheel → one card. Trackpad flings keep firing for a second, so
 // after a step the wheel stays locked until it has been quiet for a moment.
 const WHEEL_STEP = 40;
@@ -74,6 +76,17 @@ const WHEEL_LOCK_MS = 450;
 const WHEEL_QUIET_MS = 140;
 // Hold on the next project's cover before it opens.
 const AUTO_NEXT_MS = 1500;
+
+type DeskGrid = { col: number; gutter: number; h: number };
+/** Laptop grid in px (globals.css: 12 columns, --grid-margin, --grid-gutter) and the card height budget. */
+function measureDeskGrid(): DeskGrid {
+  const cs = getComputedStyle(document.documentElement);
+  const margin = parseFloat(cs.getPropertyValue("--grid-margin")) || 24;
+  const gutter = parseFloat(cs.getPropertyValue("--grid-gutter")) || 16;
+  const header = parseFloat(cs.getPropertyValue("--header-height")) || 40;
+  const vw = document.documentElement.clientWidth;
+  return { col: (vw - 2 * margin - 11 * gutter) / 12, gutter, h: Math.min(DESK_MAX_H, window.innerHeight - header - 200) };
+}
 
 export default function ProjectStage({
   project,
@@ -133,10 +146,15 @@ export default function ProjectStage({
     };
   }, []);
   // Video ratios as they report metadata (by item key); images carry theirs.
-  // An adopted element already knows its size.
+  // An adopted element already knows its size, and so does the home cover the
+  // clone came from when it is the same file: card 1 takes its real ratio on
+  // the first render, so the clone is aimed at the box it will keep (otherwise
+  // a clip that is not 16:10 resized under the landed clone on metadata).
   const [videoAspects, setVideoAspects] = useState<Record<string, number>>(() => {
     const first = gallery[0];
-    const known = adopted && first?._type === "galleryVideo" ? videoAspect(adopted) : null;
+    const src = first?._type === "galleryVideo" && first.video?.asset?._ref ? fileUrl(first.video.asset._ref) : undefined;
+    const sized = adopted ?? (isTransitioning ? adoptableVideo(sourceVideoElement, true, src) : null);
+    const known = sized && first?._type === "galleryVideo" ? videoAspect(sized) : null;
     return known && first?._key ? { [first._key]: known } : {};
   });
   const setVideoAspect = (key: string | undefined, aspect: number | null) => {
@@ -144,20 +162,16 @@ export default function ProjectStage({
     setVideoAspects((prev) => (prev[key] === aspect ? prev : { ...prev, [key]: aspect }));
   };
   const [reduceMotion, setReduceMotion] = useState(false);
-  // Laptop grid in px (globals.css: 12 columns, --grid-margin, --grid-gutter)
-  // and the card height budget (DESK_H), measured on resize.
-  const [grid, setGrid] = useState<{ col: number; gutter: number; h: number } | null>(null);
+  // Laptop grid, re-measured on resize.
+  // Measured in the initialiser too: the home → project clone measures card 1
+  // in the page's own layout effect, which runs before a re-render from this
+  // component's effects would land, so the first render must already be snapped.
+  const [grid, setGrid] = useState<DeskGrid | null>(() => (isDesktop ? measureDeskGrid() : null));
   useLayoutEffect(() => {
     if (!isDesktop) return;
     const measure = () => {
-      const cs = getComputedStyle(document.documentElement);
-      const margin = parseFloat(cs.getPropertyValue("--grid-margin")) || 24;
-      const gutter = parseFloat(cs.getPropertyValue("--grid-gutter")) || 16;
-      const header = parseFloat(cs.getPropertyValue("--header-height")) || 40;
-      const vw = document.documentElement.clientWidth;
-      const col = (vw - 2 * margin - 11 * gutter) / 12;
-      const h = Math.min(640, window.innerHeight - header - 200);
-      setGrid((prev) => (prev && prev.col === col && prev.gutter === gutter && prev.h === h ? prev : { col, gutter, h }));
+      const g = measureDeskGrid();
+      setGrid((prev) => (prev && prev.col === g.col && prev.gutter === g.gutter && prev.h === g.h ? prev : g));
     };
     measure();
     window.addEventListener("resize", measure);

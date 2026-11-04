@@ -90,9 +90,43 @@ export default function TransitionOverlay() {
       // been autoplaying on the homepage, but don't crash if it does).
     }
   }, [paintSnapshot, sourceVideoElement]);
+  // The landing rect can still change after the morph has started: card 1
+  // takes its real ratio when its clip reports metadata (a gallery clip that
+  // is not 16:10 and is a different file from the home cover). The tween reads
+  // the latest rect every frame instead of restarting, so the clone glides
+  // onto the box it will keep; after landing it is set onto it directly.
+  const targetRef = useRef(targetRect);
+  useLayoutEffect(() => {
+    targetRef.current = targetRect;
+  }, [targetRect]);
+  const hasTarget = Boolean(targetRect);
+  const landedRef = useRef(false);
+  const transformsFor = (p: number) => {
+    const t = targetRef.current;
+    if (!t || !sourceRect) return null;
+    const dx = t.left - sourceRect.left;
+    const dy = t.top - sourceRect.top;
+    const sx = t.width / Math.max(sourceRect.width, 1);
+    const sy = t.height / Math.max(sourceRect.height, 1);
+    const wx = 1 + (sx - 1) * p;
+    const wy = 1 + (sy - 1) * p;
+    const k = Math.max(wx, wy);
+    return { win: `translate3d(${dx * p}px, ${dy * p}px, 0) scale(${wx}, ${wy})`, media: `scale(${k / wx}, ${k / wy})` };
+  };
   const targetKey = targetRect
     ? `${targetRect.top}:${targetRect.left}:${targetRect.width}:${targetRect.height}`
     : "none";
+  useLayoutEffect(() => {
+    if (!landedRef.current) return;
+    const win = windowRef.current;
+    const media = mediaRef.current;
+    const tf = transformsFor(1);
+    if (!win || !media || !tf) return;
+    win.style.transform = tf.win;
+    media.style.transform = tf.media;
+    // transformsFor reads refs; only the key decides when to re-apply.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetKey]);
 
   useGSAP(
     () => {
@@ -121,6 +155,7 @@ export default function TransitionOverlay() {
       // clone just covers the swap until the media under it has decoded.
       if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) {
         revealContent();
+        landedRef.current = true;
         setLanded(true);
         return;
       }
@@ -150,24 +185,29 @@ export default function TransitionOverlay() {
         ease: settle ? ease.out : ease.inOut,
         onUpdate: () => {
           const p = proxy.p;
-          const wx = 1 + (sx - 1) * p;
-          const wy = 1 + (sy - 1) * p;
-          const k = Math.max(wx, wy);
-          setWin(`translate3d(${dx * p}px, ${dy * p}px, 0) scale(${wx}, ${wy})`);
-          setMedia(`scale(${k / wx}, ${k / wy})`);
+          const tf = transformsFor(p);
+          if (tf) {
+            setWin(tf.win);
+            setMedia(tf.media);
+          }
           if (!revealed && p >= REVEAL_AT) {
             revealed = true;
             revealContent();
           }
         },
-        onComplete: () => setLanded(true),
+        onComplete: () => {
+          landedRef.current = true;
+          setLanded(true);
+        },
       });
     },
-    { dependencies: [targetKey, inPlace, clearTransition, revealContent] },
+    // Started once per target arrival; later rect changes are read per frame.
+    { dependencies: [hasTarget, inPlace, clearTransition, revealContent] },
   );
 
   useEffect(() => {
     if (!isTransitioning) {
+      landedRef.current = false;
       setLanded(false);
       return;
     }
