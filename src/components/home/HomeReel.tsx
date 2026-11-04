@@ -8,13 +8,14 @@ import { useGSAP } from "@gsap/react";
 import { useLenis } from "lenis/react";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
-import { ease } from "@/lib/motion";
+import { dur, ease } from "@/lib/motion";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { holdIntro, releaseIntro } from "@/lib/intro";
 import {
   REEL_BEAT as BEAT,
   REEL_PULL_BACK_AT,
   SCATTER_BEAT,
+  scatterStartsAt,
   getReelState,
   reelScrubMode,
   reelVariant,
@@ -312,7 +313,7 @@ function scatterTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: H
   });
   gsap.set(world, { transformOrigin: "0 0", x: 0, y: 0, scale: 1, autoAlpha: 1 });
 
-  const at = SCATTER_BEAT.write;
+  const at = scatterStartsAt();
   // Out of the middle, first project first, each to its spot.
   heroes.forEach((hero, i) => {
     const { x, y, scale } = spread[i];
@@ -326,6 +327,9 @@ function scatterTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: H
   const dx = first.x + first.w / 2 - K * spread[0].cx;
   const dy = first.y + first.h / 2 - K * spread[0].cy;
   const holdAt = at + SCATTER_BEAT.scatter + SCATTER_BEAT.stagger * (heroes.length - 1);
+  // The dive waits for the name to reach the header (the early scatter is
+  // full while the name is still writing).
+  const diveAt = Math.max(holdAt + SCATTER_BEAT.hold, SCATTER_BEAT.write + dur.page + SCATTER_BEAT.afterName);
   // A slow lean toward the first project while the field holds.
   const lean = 0.04;
   const leanK = 1 + lean;
@@ -335,12 +339,12 @@ function scatterTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: H
       x: -lean * spread[0].cx,
       y: -lean * spread[0].cy,
       scale: leanK,
-      duration: SCATTER_BEAT.hold + SCATTER_BEAT.scatter * 0.5,
+      duration: diveAt - (holdAt - SCATTER_BEAT.scatter * 0.5),
       ease: "none",
     },
     holdAt - SCATTER_BEAT.scatter * 0.5,
   );
-  tl.to(world, { x: dx, y: dy, scale: K, duration: SCATTER_BEAT.dive, ease: ease.inOut }, holdAt + SCATTER_BEAT.hold);
+  tl.to(world, { x: dx, y: dy, scale: K, duration: SCATTER_BEAT.dive, ease: ease.inOut }, diveAt);
 }
 
 function HeroMedia({ project, eager }: { project: Project; eager: boolean }) {

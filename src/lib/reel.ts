@@ -12,7 +12,8 @@
  * Experiment (Ali 11-04): `?reel=scatter` plays the scatter variant instead:
  * the name is written on an empty page and, as it leaves for the header,
  * every project scatters out from the middle onto one field, holds, and the
- * view dives into the first one. `?reel=scatter&scrub` scrubs it.
+ * view dives into the first one. `?reel=scatter&scrub` scrubs it;
+ * `&early` scatters behind the name while it is still being written.
  */
 
 import { useSyncExternalStore } from "react";
@@ -77,9 +78,21 @@ export const SCATTER_BEAT = {
   /** Dive into the first project: it grows into its slot at the top of the
    *  home while the rest of the field passes out of frame. */
   dive: 1.2,
+  /** `&early` (Ali 11-04): the covers scatter out behind the name while it
+   *  is still being written, from this point. */
+  earlyStart: 1.0,
+  /** Earliest dive after the name has landed in the header. */
+  afterName: 0.3,
   /** Crossfade from the stage to the page's own covers. */
   handOver: 0.3,
 };
+
+/** When the covers leave the middle: as the name moves, or with `&early`
+ *  while it is still writing. */
+export function scatterStartsAt() {
+  const early = typeof location !== "undefined" && new URLSearchParams(location.search).has("early");
+  return early ? SCATTER_BEAT.earlyStart : SCATTER_BEAT.write;
+}
 
 /** When the name leaves the middle for the header, by variant. */
 export function reelNameMoveAt() {
