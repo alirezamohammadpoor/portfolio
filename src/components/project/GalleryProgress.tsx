@@ -60,9 +60,8 @@ function Filmstrip({ gallery, index, onEnd, nextProject, title, isDesktop, reduc
   const nextSrc = next ? thumbSrc(next) : {};
   const fade = reduceMotion ? "none" : `opacity 200ms ${EASE_OUT_CSS}`;
   return (
-    <div ref={rootRef} className="absolute inset-x-0 bottom-0 z-30 flex justify-center px-margin pb-7 desktop:pb-8">
-      {/* On a pistachio frost tray, like the name pill (Ali, 11-04). */}
-      <div className="frost-soft flex items-center gap-1.5 rounded-[10px] p-1.5 desktop:gap-2 desktop:p-2">
+    <div ref={rootRef} className="absolute inset-x-0 bottom-0 z-30 flex justify-center px-margin pb-11 desktop:pb-12">
+      <div className="flex items-center gap-1.5 desktop:gap-2">
         {gallery.length > 1 &&
           gallery.map((item, i) => (
             <button
@@ -95,13 +94,18 @@ function Filmstrip({ gallery, index, onEnd, nextProject, title, isDesktop, reduc
             >
               <Thumb src={nextSrc} label="" />
             </button>
-            <span
-              aria-hidden="true"
-              className="absolute top-full mt-2.5 whitespace-nowrap text-[11px] text-primary desktop:mt-3 desktop:text-xs"
-              style={{ opacity: onEnd ? 1 : 0, transition: fade }}
+            {/* The hand-off as a pistachio frost pill, like the name pill
+                (Ali, 11-04), once the last clip is centred. */}
+            <button
+              type="button"
+              onClick={onNavigateNext}
+              tabIndex={onEnd ? 0 : -1}
+              aria-hidden={!onEnd}
+              className={`frost-soft absolute top-full right-0 mt-2 inline-flex desktop:right-auto h-7 items-center whitespace-nowrap rounded-full px-3 text-sub text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97] ${onEnd ? "cursor-pointer" : "pointer-events-none"}`}
+              style={{ opacity: onEnd ? 1 : 0, transition: reduceMotion ? "none" : `opacity 200ms ${EASE_OUT_CSS}, scale 160ms ${EASE_OUT_CSS}` }}
             >
               Next – {nextProject.title}
-            </span>
+            </button>
           </div>
         )}
       </div>
