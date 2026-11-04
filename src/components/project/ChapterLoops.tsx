@@ -6,8 +6,8 @@
  * Bento: rows of one or two loops side by side at the same height, 2 px
  * apart. A laptop loop is a flush 16:10 box; a phone loop stands centred in a
  * 4:5 box (MediaFrame "phone" fit), on its background from Sanity or on the
- * page. Each tile's width follows its box ratio, so a row of laptop + phone
- * is about 2:1.
+ * page. On a laptop each tile's width follows its box ratio, so a row of
+ * laptop + phone is about 2:1; on a phone the loops stack at full width.
  *
  * Carousel: steps shown one at a time in the same box. A clip plays through
  * once, then the next step follows; a still holds for STILL_MS. The step
@@ -15,7 +15,7 @@
  * cell, so switching never shifts the page.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import InlineClip from "@/components/project/InlineClip";
@@ -113,14 +113,16 @@ export function BentoMedia({
   return (
     <div className="flex flex-col gap-[2px]">
       {filled.map((row, r) => (
-        <div key={row._key ?? r} className="flex gap-[2px]">
+        // Phone: the loops stack, each at full width (a pair side by side
+        // leaves a phone loop a few dozen pixels wide). Laptop: one row.
+        <div key={row._key ?? r} className="flex flex-col gap-[2px] desktop:flex-row">
           {row.tiles.map((tile, i) => {
             const frame = frameOf(tile, source);
             const aspect = mediaAspect(tile);
             const share = boxAspect(frame, aspect);
             const sizes = row.tiles.length > 1 ? "(min-width: 75rem) 50vw, 60vw" : "(min-width: 75rem) 100vw, 100vw";
             return (
-              <div key={tile._key ?? i} className="min-w-0" style={{ flex: `${share} 1 0%` }}>
+              <div key={tile._key ?? i} className="min-w-0 desktop:[flex:var(--share)_1_0%]" style={{ "--share": share } as CSSProperties}>
                 <MediaFrame frame={frame} mediaAspect={aspect} sizes={sizes} boxClassName="bg-tertiary/40">
                   <TileMedia tile={tile} title={title} active={active} sizes={sizes} />
                 </MediaFrame>
