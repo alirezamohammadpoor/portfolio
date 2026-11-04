@@ -26,6 +26,11 @@ type Props = {
   scene: Scene;
   /** Play once when at least half the frame is on screen. */
   autoplay?: boolean;
+  /**
+   * Loop while in view: play, hold on the design, start again from today
+   * (every clip on the page loops). Pauses off screen. Needs autoplay.
+   */
+  loop?: boolean;
   className?: string;
   onUpdate?: (t: number, d: number) => void;
 };
@@ -68,7 +73,7 @@ function LayerView({ layer }: { layer: Layer }) {
 }
 
 const TestMorph = forwardRef<TestMorphHandle, Props>(function TestMorph(
-  { scene, autoplay = false, className, onUpdate },
+  { scene, autoplay = false, loop = false, className, onUpdate },
   ref,
 ) {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -109,6 +114,7 @@ const TestMorph = forwardRef<TestMorphHandle, Props>(function TestMorph(
 
     const tl = gsap.timeline({
       paused: true,
+      ...(loop ? { repeat: -1, repeatDelay: 1.2 } : {}),
       defaults: { ease: ease.inOut },
       onUpdate: () => onUpdate?.(tl.time(), tl.duration()),
     });
@@ -198,25 +204,32 @@ const TestMorph = forwardRef<TestMorphHandle, Props>(function TestMorph(
       tlRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rebuild only when the scene changes
-  }, [scene, reduced]);
+  }, [scene, reduced, loop]);
 
-  // Play once when the frame is mostly on screen.
+  // Play once when the frame is mostly on screen; a loop also pauses off screen.
   useEffect(() => {
     if (!autoplay || reduced) return;
     const box = boxRef.current;
     if (!box) return;
     const io = new IntersectionObserver(
       ([e]) => {
-        if (e.isIntersecting) {
-          tlRef.current?.play(0);
-          io.disconnect();
+        const tl = tlRef.current;
+        if (!tl) return;
+        if (!loop) {
+          if (e.isIntersecting) {
+            tl.play(0);
+            io.disconnect();
+          }
+          return;
         }
+        if (e.isIntersecting) tl.play();
+        else tl.pause();
       },
       { threshold: 0.5 },
     );
     io.observe(box);
     return () => io.disconnect();
-  }, [autoplay, reduced, scene]);
+  }, [autoplay, loop, reduced, scene]);
 
   const clip = scene.clip;
   const chrome = new Set(scene.chrome ?? []);

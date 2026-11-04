@@ -788,6 +788,7 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
                   }}
                   scene={morphOf(t)!}
                   autoplay={!hidden}
+                  loop={i === current}
                   className="h-full w-full"
                 />
               ) : (
