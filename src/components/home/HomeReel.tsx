@@ -146,7 +146,11 @@ export default function HomeReel({ projects, pageRef }: HomeReelProps) {
           return { x: r.left, y: r.top + window.scrollY, w: r.width, h: r.height };
         });
         tl = gsap.timeline({ paused: true, onComplete: scrubbing ? undefined : finish });
-        if (variant === "scatter") scatterTimeline(tl, heroes, world, rects);
+        if (variant === "scatter") {
+          // Keeps the name black over the scatter (globals.css).
+          document.documentElement.dataset.reelVariant = "scatter";
+          scatterTimeline(tl, heroes, world, rects);
+        }
         else reelTimeline(tl, heroes, world, rects);
 
         lenisRef.current?.stop();
@@ -247,24 +251,26 @@ function reelTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: HTML
  * Field spots for the scatter variant: left, top and width of each cover as
  * fractions of the field. Laptop: the six-tile composition of /lab/scatter
  * fitted to one screen (a 16:10 field inside the viewport, under the
- * header). Phone: a zigzag down the whole screen, left and right columns apart. More projects than
+ * header). Phone: a zigzag down the whole screen, left and right columns apart.
+ * Both keep a band across the middle clear for the name (Ali 11-04: the
+ * name over a cover was too busy). More projects than
  * spots reuse them, nudged.
  */
 const SCATTER_LAPTOP = [
-  { l: 0.02, t: 0.04, w: 0.27 },
-  { l: 0.6, t: 0.0, w: 0.3 },
-  { l: 0.35, t: 0.36, w: 0.23 },
-  { l: 0.7, t: 0.45, w: 0.27 },
-  { l: 0.04, t: 0.6, w: 0.28 },
-  { l: 0.42, t: 0.74, w: 0.21 },
+  { l: 0.02, t: 0.02, w: 0.27 },
+  { l: 0.39, t: 0.0, w: 0.23 },
+  { l: 0.7, t: 0.06, w: 0.28 },
+  { l: 0.04, t: 0.64, w: 0.26 },
+  { l: 0.41, t: 0.73, w: 0.21 },
+  { l: 0.72, t: 0.62, w: 0.26 },
 ];
 const SCATTER_PHONE = [
-  { l: 0.02, t: 0.02, w: 0.5 },
-  { l: 0.5, t: 0.14, w: 0.48 },
-  { l: 0.06, t: 0.32, w: 0.44 },
-  { l: 0.52, t: 0.46, w: 0.46 },
-  { l: 0.02, t: 0.63, w: 0.47 },
-  { l: 0.54, t: 0.8, w: 0.42 },
+  { l: 0.02, t: 0.0, w: 0.5 },
+  { l: 0.5, t: 0.12, w: 0.48 },
+  { l: 0.06, t: 0.25, w: 0.44 },
+  { l: 0.52, t: 0.55, w: 0.46 },
+  { l: 0.02, t: 0.69, w: 0.47 },
+  { l: 0.54, t: 0.84, w: 0.42 },
 ];
 
 /**

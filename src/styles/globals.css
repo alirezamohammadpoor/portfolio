@@ -197,6 +197,14 @@
   html[data-reel="done"] .intro-overlay .intro-name {
     color: #fff !important;
   }
+  /* Scatter variant (Ali 11-04): the name stays black the whole way, over
+     the empty page and over the covers as they fly out under it. */
+  html[data-reel-variant="scatter"] .intro-overlay {
+    mix-blend-mode: normal;
+  }
+  html[data-reel-variant="scatter"] .intro-overlay .intro-name {
+    color: var(--color-primary) !important;
+  }
 
   .parastoo-font {
     font-family: var(--font-parastoo), serif;
