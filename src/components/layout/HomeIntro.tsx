@@ -5,7 +5,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { dur, ease } from "@/lib/motion";
 import { getIntroState, setIntroState } from "@/lib/intro";
-import { REEL_PULL_BACK_AT, getReelState, onReelSkip, useReelState } from "@/lib/reel";
+import { reelNameMoveAt, getReelState, onReelSkip, useReelState } from "@/lib/reel";
 import { PERSIAN_NAME } from "@/lib/name";
 
 /** Seconds the finished name holds in the centre before it moves. */
@@ -340,9 +340,9 @@ export default function HomeIntro({ targetRef }: HomeIntroProps) {
       const from = name.getBoundingClientRect();
       const to = target.getBoundingClientRect();
       // Over the reel the written name waits on the passing covers and
-      // leaves as the view pulls back.
+      // leaves as the view pulls back (scatter variant: as the covers fly out).
       const elapsed = (performance.now() - startedAt) / 1000;
-      const wait = getReelState() === "playing" && hurry === 1 ? Math.max(0, REEL_PULL_BACK_AT - elapsed) : 0;
+      const wait = getReelState() === "playing" && hurry === 1 ? Math.max(0, reelNameMoveAt() - elapsed) : 0;
       move = gsap.to(name, {
         delay: wait,
         x: to.left - from.left,

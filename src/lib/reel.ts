@@ -8,6 +8,11 @@
  *
  * `?reel` in the URL forces it on any load; `?reel=scrub` keeps it paused
  * under a slider for tuning the beats.
+ *
+ * Experiment (Ali 11-04): `?reel=scatter` plays the scatter variant instead:
+ * the name is written on an empty page and, as it leaves for the header,
+ * every project scatters out from the middle onto one field, holds, and the
+ * view dives into the first one. `?reel=scatter&scrub` scrubs it.
  */
 
 import { useSyncExternalStore } from "react";
@@ -49,6 +54,37 @@ export const REEL_BEAT = {
 
 /** When the pull back starts: the name leaves for the header then. */
 export const REEL_PULL_BACK_AT = REEL_BEAT.hold + REEL_BEAT.reel + REEL_BEAT.stop + REEL_BEAT.stopHold;
+
+export type ReelVariant = "reel" | "scatter";
+
+/** Which entry plays: the cover reel (default) or the scatter experiment. */
+export function reelVariant(): ReelVariant {
+  if (typeof location === "undefined") return "reel";
+  return new URLSearchParams(location.search).get("reel") === "scatter" ? "scatter" : "reel";
+}
+
+/** Beats of the scatter variant, seconds. */
+export const SCATTER_BEAT = {
+  /** The name is written alone on the empty page (≈2.6 s writing plus its
+   *  0.5 s hold); the scatter starts as it leaves for the header. */
+  write: 3.1,
+  /** Every cover flies out from the middle to its place on the field. */
+  scatter: 1.1,
+  /** Offset between the covers leaving the middle. */
+  stagger: 0.06,
+  /** The whole field, still but for a slow drift toward the first project. */
+  hold: 1.0,
+  /** Dive into the first project: it grows into its slot at the top of the
+   *  home while the rest of the field passes out of frame. */
+  dive: 1.2,
+  /** Crossfade from the stage to the page's own covers. */
+  handOver: 0.3,
+};
+
+/** When the name leaves the middle for the header, by variant. */
+export function reelNameMoveAt() {
+  return reelVariant() === "scatter" ? SCATTER_BEAT.write : REEL_PULL_BACK_AT;
+}
 
 let state: ReelState =
   typeof document !== "undefined" && document.documentElement.dataset.reel === "pending"
@@ -106,5 +142,7 @@ export function onReelSkip(cb: () => void) {
 }
 
 export function reelScrubMode() {
-  return typeof location !== "undefined" && new URLSearchParams(location.search).get("reel") === "scrub";
+  if (typeof location === "undefined") return false;
+  const params = new URLSearchParams(location.search);
+  return params.get("reel") === "scrub" || params.has("scrub");
 }
