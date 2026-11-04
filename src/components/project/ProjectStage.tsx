@@ -413,8 +413,7 @@ export default function ProjectStage({
           aria-expanded={detailsOpen}
           aria-controls="project-details"
           onClick={() => setDetailsOpen((o) => !o)}
-          className="invisible inline-flex h-9 items-center gap-2 rounded-full border border-tertiary px-4 text-body text-primary active:scale-[0.97]"
-          style={{ backgroundColor: "var(--pill-bg)" }}
+          className="frost-soft invisible inline-flex h-9 items-center gap-2 rounded-full px-4 text-body text-primary active:scale-[0.97]"
         >
           {project.title}
           <span aria-hidden="true" className="text-[0.5rem] transition-transform" style={{ transform: detailsOpen ? "rotate(180deg)" : "none" }}>

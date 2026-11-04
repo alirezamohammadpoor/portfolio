@@ -1,5 +1,6 @@
 import { ImageResponse } from "next/og";
 import { getJournalPost } from "@/sanity/lib/data";
+import { palette } from "@/lib/palette";
 
 export const alt = "Ali Reza Mohammad Poor — Journal";
 export const size = { width: 1200, height: 630 };
@@ -27,8 +28,8 @@ export default async function JournalOgImage({
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "80px",
-          background: "#f5f4f1",
-          color: "#111",
+          background: palette.bg,
+          color: palette.primary,
           fontFamily: "sans-serif",
         }}
       >
@@ -38,7 +39,7 @@ export default async function JournalOgImage({
             justifyContent: "space-between",
             fontSize: 24,
             letterSpacing: "-0.01em",
-            color: "#555",
+            color: palette.secondary,
           }}
         >
           <span>alirezamp.com/journal</span>
@@ -70,7 +71,7 @@ export default async function JournalOgImage({
             <div
               style={{
                 fontSize: 28,
-                color: "#555",
+                color: palette.secondary,
                 letterSpacing: "-0.01em",
                 lineHeight: 1.3,
                 display: "-webkit-box",
@@ -88,7 +89,7 @@ export default async function JournalOgImage({
           style={{
             display: "flex",
             fontSize: 24,
-            color: "#111",
+            color: palette.primary,
           }}
         >
           Ali Reza Mohammad Poor
