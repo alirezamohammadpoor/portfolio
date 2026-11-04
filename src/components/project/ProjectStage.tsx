@@ -142,6 +142,7 @@ export default function ProjectStage({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsOpenRef = useRef(false);
   const barRef = useRef<HTMLDivElement>(null);
+  const fillRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     detailsOpenRef.current = detailsOpen;
   }, [detailsOpen]);
@@ -216,6 +217,29 @@ export default function ProjectStage({
         el.style.zIndex = String(10 - Math.round(t * 5));
       });
       posRef.current = bestAll.i;
+      // The bar follows the strip continuously, one clip's share at the first
+      // clip, full at the last (the preview beyond it adds nothing).
+      // Piecewise between card centres, so each clip lands on exactly its
+      // share whatever the card widths.
+      const fill = fillRef.current;
+      if (fill) {
+        const centres = itemRefs.current
+          .slice(0, last + 1)
+          .map((el) => (el ? el.offsetLeft + el.offsetWidth / 2 : NaN));
+        let t = 0;
+        if (mid >= centres[last]) t = last;
+        else
+          for (let k = 0; k < last; k++) {
+            const a = centres[k];
+            const b = centres[k + 1];
+            if (mid < b) {
+              t = k + (b > a ? Math.max(0, (mid - a) / (b - a)) : 0);
+              break;
+            }
+          }
+        const n = Math.max(1, last + 1);
+        fill.style.clipPath = `inset(0 ${((1 - (1 + t) / n) * 100).toFixed(3)}% 0 0)`;
+      }
       setIndex((prev) => (prev === best.i ? prev : best.i));
     };
     let idle = 0;
@@ -276,9 +300,24 @@ export default function ProjectStage({
     const strip = stripRef.current;
     const el = itemRefs.current[i];
     if (!strip || !el) return;
-    strip.scrollTo({
-      left: el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2,
-      behavior: reduceMotion || instant ? "auto" : "smooth",
+    const left = el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2;
+    if (reduceMotion || instant) {
+      gsap.killTweensOf(strip);
+      strip.scrollTo({ left, behavior: "auto" });
+      return;
+    }
+    // The glide on the site's out curve (the browser's own smooth scroll has
+    // its own timing and stutters against snap). Snap is off while it runs,
+    // and a new step retargets from wherever the strip is.
+    strip.style.scrollSnapType = "none";
+    gsap.to(strip, {
+      scrollLeft: left,
+      duration: 0.6,
+      ease: ease.out,
+      overwrite: true,
+      onComplete: () => {
+        strip.style.scrollSnapType = "";
+      },
     });
   };
   // One card forward or back; past the end (the preview, or the last card
@@ -665,14 +704,7 @@ export default function ProjectStage({
             } as CSSProperties
           }
         >
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-primary"
-            style={{
-              clipPath: `inset(0 ${((1 - (index + 1) / Math.max(1, gallery.length)) * 100).toFixed(3)}% 0 0)`,
-              transition: reduceMotion ? "none" : `clip-path 240ms ${EASE_OUT_CSS}`,
-            }}
-          >
+          <div ref={fillRef} aria-hidden="true" className="absolute inset-0 bg-primary">
             {nextSlug && <BarTitle text={`Next project – ${nextProject?.title ?? ""}`} className="text-bg" show={onEnd} reduceMotion={reduceMotion} />}
             <div className="absolute inset-0 bg-pistachio" style={{ clipPath: "inset(0 calc((1 - var(--pull, 0)) * 100%) 0 0)" }}>
               {nextSlug && <BarTitle text={`Next project – ${nextProject?.title ?? ""}`} className="text-primary" show={onEnd} reduceMotion={reduceMotion} />}
