@@ -351,6 +351,29 @@ function scatterTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: H
     holdAt - SCATTER_BEAT.scatter * 0.5,
   );
   tl.to(world, { x: dx, y: dy, scale: K, duration: SCATTER_BEAT.dive, ease: ease.inOut }, diveAt);
+  // The rest of the field clears out of frame as the camera dives: on the
+  // phone the zoom alone left the neighbours' edges in view at the hand-over
+  // (Ali 11-04). Each cover drifts away from the first one and fades.
+  const push = (0.5 * Math.max(VW, VH)) / K;
+  heroes.forEach((hero, i) => {
+    if (i === 0) return;
+    const ax = spread[i].cx - spread[0].cx;
+    const ay = spread[i].cy - spread[0].cy;
+    const len = Math.hypot(ax, ay) || 1;
+    tl.to(
+      hero,
+      {
+        x: spread[i].x + (ax / len) * push,
+        y: spread[i].y + (ay / len) * push,
+        autoAlpha: 0,
+        // With the camera, over the whole dive: they drift off as it moves
+        // rather than vanishing at its start (Ali 11-04: too sudden).
+        duration: SCATTER_BEAT.dive,
+        ease: ease.inOut,
+      },
+      diveAt,
+    );
+  });
 }
 
 function HeroMedia({ project, eager }: { project: Project; eager: boolean }) {

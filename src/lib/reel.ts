@@ -76,15 +76,16 @@ export const SCATTER_BEAT = {
   /** The whole field, still but for a slow drift toward the first project. */
   hold: 1.0,
   /** Dive into the first project: it grows into its slot at the top of the
-   *  home while the rest of the field passes out of frame. */
-  dive: 1.2,
+   *  home while the rest of the field drifts out of frame and fades. */
+  dive: 1.4,
   /** `&early` (Ali 11-04): the covers scatter out behind the name while it
    *  is still being written, from this point. */
   earlyStart: 1.0,
   /** Earliest dive after the name has landed in the header. */
   afterName: 0.3,
-  /** Crossfade from the stage to the page's own covers. */
-  handOver: 0.3,
+  /** Crossfade from the stage to the page: longer than the reel's, the
+   *  page's second row fades up here. */
+  handOver: 0.5,
 };
 
 /** When the covers leave the middle: as the name moves, or with `&early`
