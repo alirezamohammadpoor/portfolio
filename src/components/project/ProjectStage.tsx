@@ -144,6 +144,25 @@ export default function ProjectStage({
     setVideoAspects((prev) => (prev[key] === aspect ? prev : { ...prev, [key]: aspect }));
   };
   const [reduceMotion, setReduceMotion] = useState(false);
+  // Laptop grid in px (globals.css: 12 columns, --grid-margin, --grid-gutter)
+  // and the card height budget (DESK_H), measured on resize.
+  const [grid, setGrid] = useState<{ col: number; gutter: number; h: number } | null>(null);
+  useLayoutEffect(() => {
+    if (!isDesktop) return;
+    const measure = () => {
+      const cs = getComputedStyle(document.documentElement);
+      const margin = parseFloat(cs.getPropertyValue("--grid-margin")) || 24;
+      const gutter = parseFloat(cs.getPropertyValue("--grid-gutter")) || 16;
+      const header = parseFloat(cs.getPropertyValue("--header-height")) || 40;
+      const vw = document.documentElement.clientWidth;
+      const col = (vw - 2 * margin - 11 * gutter) / 12;
+      const h = Math.min(640, window.innerHeight - header - 200);
+      setGrid((prev) => (prev && prev.col === col && prev.gutter === gutter && prev.h === h ? prev : { col, gutter, h }));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [isDesktop]);
 
   // Entrance (Ali, 11-04: nothing moves until the morph is done). The stage
   // stays hidden while the home → project clone is in flight and `hidden`
@@ -482,12 +501,35 @@ export default function ProjectStage({
   }, [index]);
 
   const onEnd = index >= last && Boolean(nextSlug && onNavigateNext);
-  // Desktop card box: one height, the width from the box ratio.
-  const deskBox = (boxAspect: number, i: number) => ({
-    height: DESK_H,
-    aspectRatio: boxAspect,
-    marginLeft: i === 0 ? 0 : DESK_GAP,
-  });
+  // Desktop card box (Ali, 11-04: "use the columns"): the widest even
+  // column span that fits the card height at the box's ratio, so the
+  // centred card starts and ends on the 12-column grid (an even span
+  // centred in 12 columns lands on column edges). The height follows the
+  // width. Before the grid is measured: one height, the width from the ratio.
+  const span = (n: number) => (grid ? n * grid.col + (n - 1) * grid.gutter : 0);
+  const snapWidth = (natural: number) => {
+    if (!grid) return 0;
+    let n = 12;
+    while (n > 2 && span(n) > natural) n -= 2;
+    return span(n);
+  };
+  const deskBox = (boxAspect: number, i: number) => {
+    if (!grid) return { height: DESK_H, aspectRatio: boxAspect, marginLeft: i === 0 ? 0 : DESK_GAP };
+    const width = snapWidth(grid.h * boxAspect);
+    return { width, height: width / boxAspect, marginLeft: i === 0 ? 0 : DESK_GAP };
+  };
+  // Phones on the page: the screens fill the snapped width, the height follows.
+  const phonesDeskBox = (screens: number, i: number) => {
+    const gaps = (screens - 1) * 16;
+    if (!grid)
+      return {
+        height: DESK_H,
+        width: `calc(${DESK_H} * ${(screens * PHONE_ASPECT).toFixed(4)} + ${gaps}px)`,
+        marginLeft: i === 0 ? 0 : DESK_GAP,
+      };
+    const width = snapWidth(grid.h * screens * PHONE_ASPECT + gaps);
+    return { width, height: (width - gaps) / (screens * PHONE_ASPECT), marginLeft: i === 0 ? 0 : DESK_GAP };
+  };
 
   return (
     <div
@@ -550,11 +592,7 @@ export default function ProjectStage({
               const screens = Math.min(3, Math.max(1, item.phones?.length ?? 1));
               const phonesBox = phonesFrame.background
                 ? deskBox(LANDING_ASPECT.stage, i)
-                : {
-                    height: DESK_H,
-                    width: `calc(${DESK_H} * ${(screens * PHONE_ASPECT).toFixed(4)} + ${(screens - 1) * 16}px)`,
-                    marginLeft: i === 0 ? 0 : DESK_GAP,
-                  };
+                : phonesDeskBox(screens, i);
               return (
                 <div
                   key={item._key}
