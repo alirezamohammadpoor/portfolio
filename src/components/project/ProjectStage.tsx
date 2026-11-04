@@ -340,10 +340,32 @@ export default function ProjectStage({
     if (!isDesktop) return;
     let acc = 0;
     let lockedUntil = 0;
+    // A sideways trackpad swipe scrolls the strip natively, which simply
+    // stops at the end. A fresh swipe that starts with the strip already at
+    // its end (not the tail of the one that got it there) hands off instead.
+    let lastWheel = 0;
+    let sideAtEnd = false;
+    let sideAcc = 0;
     const onWheel = (e: WheelEvent) => {
       if (detailsOpenRef.current) return;
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       const now = performance.now();
+      const fresh = now - lastWheel > WHEEL_QUIET_MS;
+      lastWheel = now;
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        const strip = stripRef.current;
+        if (fresh) {
+          sideAcc = 0;
+          sideAtEnd = Boolean(strip && strip.scrollLeft >= strip.scrollWidth - strip.clientWidth - 2);
+        }
+        if (!sideAtEnd || now < lockedUntil) return;
+        sideAcc += e.deltaX;
+        if (sideAcc < WHEEL_STEP) return;
+        sideAcc = 0;
+        sideAtEnd = false;
+        lockedUntil = now + WHEEL_LOCK_MS;
+        stepRef.current(1);
+        return;
+      }
       if (now < lockedUntil) {
         lockedUntil = Math.max(lockedUntil, now + WHEEL_QUIET_MS);
         return;
