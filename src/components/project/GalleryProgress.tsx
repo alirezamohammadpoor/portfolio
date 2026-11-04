@@ -60,7 +60,7 @@ function Filmstrip({ gallery, index, onEnd, nextProject, title, isDesktop, reduc
   const nextSrc = next ? thumbSrc(next) : {};
   const fade = reduceMotion ? "none" : `opacity 200ms ${EASE_OUT_CSS}`;
   return (
-    <div ref={rootRef} className="absolute inset-x-0 bottom-0 z-30 flex justify-center px-margin pb-11 desktop:pb-12">
+    <div ref={rootRef} data-stage-chrome="film" className="invisible absolute inset-x-0 bottom-0 z-30 flex justify-center px-margin pb-11 desktop:pb-12">
       <div className="flex items-center gap-1.5 desktop:gap-2">
         {gallery.length > 1 &&
           gallery.map((item, i) => (

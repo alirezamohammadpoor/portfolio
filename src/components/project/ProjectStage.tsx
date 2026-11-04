@@ -117,21 +117,46 @@ export default function ProjectStage({
   };
   const [reduceMotion, setReduceMotion] = useState(false);
 
-  // Entrance: the name pill and the bottom row lift in once the stage is
-  // shown (a direct load at once; an arrival when the clone has landed). The
-  // cards do not animate: card 1 is the shared element the clone lands on.
+  // Entrance (Ali, 11-04: nothing moves until the morph is done). The stage
+  // stays hidden while the home → project clone is in flight and `hidden`
+  // flips on the clone's own completion (TransitionOverlay: the morph tween's
+  // onComplete, then the landing media's first frame → pageRevealed), never
+  // on a timer. Then the name pill, the cards beside card 1 (slide 2 and on,
+  // the next project's preview) and the filmstrip come in one beat apart. A
+  // direct load runs the same entrance at once. Card 1 does not animate: it
+  // is the shared element the clone lands on.
   const rootRef = useRef<HTMLDivElement>(null);
+  // The cards' CSS settle transition would smooth (and delay) every frame
+  // of the entrance, so it is off until the entrance is done.
+  const [entering, setEntering] = useState(true);
   useGSAP(
     () => {
-      if (hidden || !rootRef.current) return;
-      const chrome = rootRef.current.querySelectorAll("[data-stage-chrome]");
-      if (!chrome.length) return;
-      // Reduced motion: the same beat as a fade, no rise.
-      gsap.fromTo(
-        chrome,
-        { yPercent: reduceMotion ? 0 : 40, autoAlpha: 0 },
-        { yPercent: 0, autoAlpha: 1, duration: dur.text, ease: ease.out, stagger: reduceMotion ? 0 : stagger },
-      );
+      const root = rootRef.current;
+      if (hidden || !root) return;
+      const pill = root.querySelectorAll("[data-stage-chrome='pill']");
+      const film = root.querySelectorAll("[data-stage-chrome='film']");
+      const cards = itemRefs.current.slice(1).filter((el): el is HTMLDivElement => Boolean(el));
+      const rise = reduceMotion ? 0 : 40;
+      const tl = gsap.timeline({ defaults: { duration: dur.text, ease: ease.out }, onComplete: () => setEntering(false) });
+      if (pill.length) tl.fromTo(pill, { yPercent: rise, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1 }, 0);
+      if (cards.length) {
+        // Phone: the neighbours rest at NEIGHBOUR_OPACITY behind card 1 and
+        // the scroll loop owns their transform, so they only fade, to the
+        // opacity they rest at. Laptop: flat cards slide in from the right.
+        const rest = isDesktop || reduceMotion ? 1 : NEIGHBOUR_OPACITY;
+        tl.fromTo(
+          cards,
+          { opacity: 0, x: isDesktop && !reduceMotion ? 48 : 0 },
+          {
+            opacity: rest,
+            x: 0,
+            stagger: reduceMotion ? 0 : stagger,
+            clearProps: isDesktop || reduceMotion ? "opacity,transform" : "transform",
+          },
+          stagger,
+        );
+      }
+      if (film.length) tl.fromTo(film, { yPercent: rise, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1 }, 2 * stagger);
     },
     { scope: rootRef, dependencies: [hidden] },
   );
@@ -409,7 +434,7 @@ export default function ProjectStage({
       <div className="relative z-50 flex h-14 shrink-0 items-start justify-center pt-2">
         <button
           type="button"
-          data-stage-chrome
+          data-stage-chrome="pill"
           aria-expanded={detailsOpen}
           aria-controls="project-details"
           onClick={() => setDetailsOpen((o) => !o)}
@@ -477,7 +502,7 @@ export default function ProjectStage({
                           width: ITEM_W,
                           marginLeft: i === 0 ? 0 : -OVERLAP,
                           transition:
-                            reduceMotion || scrolling ? "none" : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}`,
+                            reduceMotion || scrolling || entering ? "none" : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}`,
                         }
                   }
                   role="group"
@@ -556,7 +581,7 @@ export default function ProjectStage({
                   ...(frame && !framed && frame.background?.colour ? { backgroundColor: frame.background.colour } : null),
                   boxShadow: i === index && !flat ? "0 8px 24px rgba(0,0,0,0.18)" : "none",
                   transition:
-                    reduceMotion || scrolling
+                    reduceMotion || scrolling || entering
                       ? "none"
                       : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}, box-shadow ${SETTLE_MS}ms`,
                 }}
