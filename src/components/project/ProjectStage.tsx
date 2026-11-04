@@ -130,10 +130,11 @@ export default function ProjectStage({
       if (hidden || !rootRef.current) return;
       const chrome = rootRef.current.querySelectorAll("[data-stage-chrome]");
       if (!chrome.length) return;
+      // Reduced motion: the same beat as a fade, no rise.
       gsap.fromTo(
         chrome,
-        { yPercent: 40, autoAlpha: 0 },
-        { yPercent: 0, autoAlpha: 1, duration: dur.text, ease: ease.out, stagger },
+        { yPercent: reduceMotion ? 0 : 40, autoAlpha: 0 },
+        { yPercent: 0, autoAlpha: 1, duration: dur.text, ease: ease.out, stagger: reduceMotion ? 0 : stagger },
       );
     },
     { scope: rootRef, dependencies: [hidden] },
@@ -269,19 +270,21 @@ export default function ProjectStage({
     };
   }, [isDesktop, gallery.length, hasPreview]);
 
-  const goTo = (i: number) => {
+  // Keyboard steps jump (Emil: never animate a keyboard action, it is
+  // repeated too often); the wheel glides.
+  const goTo = (i: number, instant = false) => {
     const strip = stripRef.current;
     const el = itemRefs.current[i];
     if (!strip || !el) return;
     strip.scrollTo({
       left: el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2,
-      behavior: reduceMotion ? "auto" : "smooth",
+      behavior: reduceMotion || instant ? "auto" : "smooth",
     });
   };
   // One card forward or back; past the end (the preview, or the last card
   // when there is none) the next project takes over.
-  const stepRef = useRef<(dir: 1 | -1) => void>(() => {});
-  const step = (dir: 1 | -1) => {
+  const stepRef = useRef<(dir: 1 | -1, instant?: boolean) => void>(() => {});
+  const step = (dir: 1 | -1, instant = false) => {
     const maxPos = hasPreview ? gallery.length : last;
     const target = posRef.current + dir;
     if (target > maxPos) {
@@ -290,7 +293,7 @@ export default function ProjectStage({
     }
     if (target < 0) return;
     posRef.current = target;
-    goTo(target);
+    goTo(target, instant);
   };
   useLayoutEffect(() => {
     stepRef.current = step;
@@ -350,7 +353,7 @@ export default function ProjectStage({
       const back = e.key === "ArrowLeft" || e.key === "ArrowUp" || e.key === "PageUp";
       if (!fwd && !back) return;
       e.preventDefault();
-      stepRef.current(fwd ? 1 : -1);
+      stepRef.current(fwd ? 1 : -1, true);
     };
     window.addEventListener("wheel", onWheel, { passive: true });
     window.addEventListener("keydown", onKey);
@@ -373,6 +376,19 @@ export default function ProjectStage({
     if (!first) return;
     return onFirstVideoFrame(first, onFirstReady);
   }, [onFirstReady, adopted]);
+
+  // The details overlay covers the strip with a 40 px backdrop blur: a clip
+  // playing under it repaints that blur every frame, so it pauses while the
+  // text is open and picks up again on close.
+  useEffect(() => {
+    const v = itemRefs.current[index]?.querySelector("video");
+    if (!v) return;
+    if (detailsOpen) v.pause();
+    else {
+      const p = v.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+  }, [detailsOpen, index]);
 
   // Video budget: only the centred card plays; neighbours sit paused on their
   // first frame; everything else is unmounted (see `near` below).
@@ -413,10 +429,14 @@ export default function ProjectStage({
           aria-expanded={detailsOpen}
           aria-controls="project-details"
           onClick={() => setDetailsOpen((o) => !o)}
-          className="frost-soft invisible inline-flex h-9 items-center gap-2 rounded-full px-4 text-body text-primary active:scale-[0.97]"
+          className="frost-soft invisible inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center gap-2 rounded-full px-4 text-body text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97]"
         >
-          {project.title}
-          <span aria-hidden="true" className="text-[0.5rem] transition-transform" style={{ transform: detailsOpen ? "rotate(180deg)" : "none" }}>
+          <span className="truncate">{project.title}</span>
+          <span
+            aria-hidden="true"
+            className="shrink-0 text-[0.5rem]"
+            style={{ transform: detailsOpen ? "rotate(180deg)" : "none", transition: reduceMotion ? "none" : `transform 200ms ${EASE_OUT_CSS}` }}
+          >
             ▼
           </span>
         </button>
@@ -441,10 +461,7 @@ export default function ProjectStage({
             const el = itemRefs.current[next];
             const strip = stripRef.current;
             if (!el || !strip) return;
-            strip.scrollTo({
-              left: el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2,
-              behavior: reduceMotion ? "auto" : "smooth",
-            });
+            strip.scrollTo({ left: el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2, behavior: "auto" });
           }}
         >
           {gallery.map((item, i) => {
@@ -689,10 +706,10 @@ function BarTitle({ text, className, show, reduceMotion }: { text: string; class
   return (
     <p
       aria-hidden="true"
-      className={`absolute inset-y-0 right-0 flex items-center px-margin whitespace-nowrap text-body font-medium ${className}`}
+      className={`absolute inset-y-0 right-0 flex max-w-full items-center px-margin text-body font-medium ${className}`}
       style={{ opacity: show ? 1 : 0, transition: reduceMotion ? "none" : `opacity 200ms ${EASE_OUT_CSS}` }}
     >
-      {text}
+      <span className="truncate">{text}</span>
     </p>
   );
 }

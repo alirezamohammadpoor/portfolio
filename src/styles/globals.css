@@ -97,6 +97,8 @@
   html {
     background-color: var(--color-bg);
     color: var(--color-primary);
+    /* No grey flash on tap: every control has its own :active feedback. */
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -398,4 +400,18 @@ html[data-custom-clone] ::view-transition-new(root) {
   background-color: var(--color-frost-soft);
   -webkit-backdrop-filter: blur(var(--blur-frost-soft));
   backdrop-filter: blur(var(--blur-frost-soft));
+}
+
+/* Reduced transparency: the frost turns solid, no blur. */
+@media (prefers-reduced-transparency: reduce) {
+  .frost-strong {
+    background-color: var(--color-bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .frost-soft {
+    background-color: rgb(190 220 170);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }

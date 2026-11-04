@@ -45,8 +45,16 @@ export default function ProjectDetailsOverlay({
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  const fade = reduceMotion ? "none" : `opacity 240ms ${EASE_OUT_CSS}, visibility 240ms`;
-  const lift = reduceMotion ? "none" : `transform 320ms ${EASE_OUT_CSS}, opacity 320ms ${EASE_OUT_CSS}`;
+  // One beat (choreograph): the frost and the text arrive together in
+  // 240 ms, the text rising 8 px; closing is faster (160 ms) and all at once,
+  // a plain fade. Reduced motion keeps the fade, drops the rise.
+  const ms = open ? 240 : 160;
+  const fade = `opacity ${ms}ms ${EASE_OUT_CSS}, visibility ${ms}ms`;
+  // On close the text only fades; it drops back to its start offset once
+  // it is invisible (the delayed 0 s transform), ready for the next open.
+  const lift = open
+    ? `transform ${reduceMotion ? 0 : ms}ms ${EASE_OUT_CSS}, opacity ${ms}ms ${EASE_OUT_CSS}`
+    : `opacity ${ms}ms ${EASE_OUT_CSS}, transform 0s ${ms}ms`;
 
   return (
     <div
@@ -71,7 +79,7 @@ export default function ProjectDetailsOverlay({
       >
       <div
         className="mx-auto flex min-h-full max-w-[44rem] flex-col px-margin pt-20 pb-28 desktop:pt-24"
-        style={{ transform: open ? "none" : "translateY(12px)", opacity: open ? 1 : 0, transition: lift }}
+        style={{ transform: open || reduceMotion ? "none" : "translateY(8px)", opacity: open ? 1 : 0, transition: lift }}
         onClick={(e) => {
           if (e.target === e.currentTarget) onClose();
         }}
@@ -109,7 +117,7 @@ export default function ProjectDetailsOverlay({
         type="button"
         onClick={onClose}
         tabIndex={open ? 0 : -1}
-        className="frost-soft absolute bottom-8 left-1/2 inline-flex h-9 -translate-x-1/2 items-center rounded-full px-4 text-sub uppercase font-medium text-primary active:scale-[0.97]"
+        className="frost-soft absolute bottom-8 left-1/2 inline-flex h-9 -translate-x-1/2 items-center rounded-full px-4 text-sub uppercase font-medium text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97]"
       >
         Close
       </button>
