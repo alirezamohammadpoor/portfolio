@@ -49,6 +49,15 @@
   --font-sans: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
 }
 
+/* Frost: the project details overlay over the gallery, and the name pill
+   that opens it (11-04). Kept here so the design-system tokens can take
+   them over without touching the components. */
+:root {
+  --frost-strong-bg: rgb(247 247 247 / 0.88);
+  --frost-strong-blur: 40px;
+  --pill-bg: #ffffff;
+}
+
 /* Layout grid (layout redesign 10-29): 16px margin / 12px gutter and 4
    columns on a phone; 24px margin / 16px gutter and 12 columns on a laptop.
    The margin matches the header's padding. One place to retune. */
