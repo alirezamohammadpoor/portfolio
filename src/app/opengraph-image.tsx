@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { palette } from "@/lib/palette";
 
 export const alt = "Ali Reza Mohammad Poor — Developer";
 export const size = { width: 1200, height: 630 };
@@ -15,8 +16,8 @@ export default function OpengraphImage() {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: "80px",
-          background: "#f5f4f1",
-          color: "#111",
+          background: palette.bg,
+          color: palette.primary,
           fontFamily: "sans-serif",
         }}
       >
@@ -24,7 +25,7 @@ export default function OpengraphImage() {
           style={{
             fontSize: 28,
             letterSpacing: "-0.01em",
-            color: "#555",
+            color: palette.secondary,
           }}
         >
           alirezamp.com
@@ -50,7 +51,7 @@ export default function OpengraphImage() {
           <div
             style={{
               fontSize: 40,
-              color: "#555",
+              color: palette.secondary,
               letterSpacing: "-0.01em",
             }}
           >
@@ -64,7 +65,7 @@ export default function OpengraphImage() {
             justifyContent: "space-between",
             alignItems: "flex-end",
             fontSize: 24,
-            color: "#555",
+            color: palette.secondary,
           }}
         >
           <span>Portfolio</span>

@@ -55,11 +55,8 @@ export default function ProjectDetailsOverlay({
       aria-modal="true"
       aria-label={`${project.title ?? "Project"} details`}
       aria-hidden={!open}
-      className="absolute inset-0 z-40"
+      className="frost-strong absolute inset-0 z-40"
       style={{
-        backgroundColor: "var(--frost-strong-bg)",
-        backdropFilter: "blur(var(--frost-strong-blur))",
-        WebkitBackdropFilter: "blur(var(--frost-strong-blur))",
         opacity: open ? 1 : 0,
         visibility: open ? "visible" : "hidden",
         transition: fade,
@@ -112,8 +109,7 @@ export default function ProjectDetailsOverlay({
         type="button"
         onClick={onClose}
         tabIndex={open ? 0 : -1}
-        style={{ backgroundColor: "var(--pill-bg)" }}
-        className="absolute bottom-8 left-1/2 inline-flex h-9 -translate-x-1/2 items-center rounded-full border border-tertiary px-4 text-sub uppercase font-medium text-primary active:scale-[0.97]"
+        className="frost-soft absolute bottom-8 left-1/2 inline-flex h-9 -translate-x-1/2 items-center rounded-full px-4 text-sub uppercase font-medium text-primary active:scale-[0.97]"
       >
         Close
       </button>

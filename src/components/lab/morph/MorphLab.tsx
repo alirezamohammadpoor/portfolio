@@ -25,7 +25,7 @@ function Player({ index }: { index: number }) {
       />
       <figcaption className="flex items-center gap-3 text-[12px] leading-4">
         <span className="min-w-0 flex-1 truncate">{scene.label}</span>
-        <span className="tabular-nums text-[#8f8f8f]">
+        <span className="tabular-nums text-secondary">
           {t.toFixed(2)} / {d.toFixed(2)} s
         </span>
         <button
