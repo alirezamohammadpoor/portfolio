@@ -72,6 +72,8 @@ const DESK_GAP = 48;
 const WHEEL_STEP = 40;
 const WHEEL_LOCK_MS = 450;
 const WHEEL_QUIET_MS = 140;
+// Hold on the next project's cover before it opens.
+const AUTO_NEXT_MS = 1500;
 
 export default function ProjectStage({
   project,
@@ -104,6 +106,32 @@ export default function ProjectStage({
     firstVideoRef.current = adopted;
   }, [adopted, isTransitioning, project.title]);
   const [index, setIndex] = useState(0);
+  // The next project's cover is the centred card.
+  const [onPreview, setOnPreview] = useState(false);
+  // One hand-off per page: the wheel and the hold must not both start it.
+  const leavingRef = useRef(false);
+  // The hold only counts once the visitor has moved the strip themselves:
+  // browser back keeps this page mounted (Activity, effects re-run) still
+  // sitting on the cover, and must not bounce straight forward again.
+  const armedRef = useRef(false);
+  useEffect(() => {
+    leavingRef.current = false;
+    armedRef.current = false;
+    const arm = () => {
+      armedRef.current = true;
+    };
+    const root = rootRef.current;
+    window.addEventListener("wheel", arm, { passive: true });
+    window.addEventListener("keydown", arm);
+    root?.addEventListener("pointerdown", arm);
+    root?.addEventListener("touchstart", arm, { passive: true });
+    return () => {
+      window.removeEventListener("wheel", arm);
+      window.removeEventListener("keydown", arm);
+      root?.removeEventListener("pointerdown", arm);
+      root?.removeEventListener("touchstart", arm);
+    };
+  }, []);
   // Video ratios as they report metadata (by item key); images carry theirs.
   // An adopted element already knows its size.
   const [videoAspects, setVideoAspects] = useState<Record<string, number>>(() => {
@@ -236,6 +264,7 @@ export default function ProjectStage({
         el.style.zIndex = String(10 - Math.round(t * 5));
       });
       posRef.current = bestAll.i;
+      setOnPreview(bestAll.i > last);
       setIndex((prev) => (prev === best.i ? prev : best.i));
     };
     let idle = 0;
@@ -323,7 +352,10 @@ export default function ProjectStage({
     const maxPos = hasPreview ? gallery.length : last;
     const target = posRef.current + dir;
     if (target > maxPos) {
-      if (dir > 0 && onNavigateNext && nextSlug) onNavigateNext();
+      if (dir > 0 && onNavigateNext && nextSlug && !leavingRef.current) {
+        leavingRef.current = true;
+        onNavigateNext();
+      }
       return;
     }
     if (target < 0) return;
@@ -394,6 +426,19 @@ export default function ProjectStage({
       window.removeEventListener("keydown", onKey);
     };
   }, [isDesktop]);
+
+  // Landing on the next project's cover opens it after a short hold (Ali,
+  // 11-04: a scroll past the last clip felt stuck). The hold restarts on any
+  // movement, waits for the strip to settle, and stops while the text is open.
+  useEffect(() => {
+    if (!onPreview || scrolling || detailsOpen || hidden || !onNavigateNext || !armedRef.current) return;
+    const t = window.setTimeout(() => {
+      if (leavingRef.current) return;
+      leavingRef.current = true;
+      onNavigateNext();
+    }, AUTO_NEXT_MS);
+    return () => window.clearTimeout(t);
+  }, [onPreview, scrolling, detailsOpen, hidden, onNavigateNext]);
 
   // A video first card reports ready on its first presented frame (see
   // ProjectGallery): the clone covering it must not leave on a black frame.
