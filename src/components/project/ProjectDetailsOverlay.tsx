@@ -93,7 +93,7 @@ export default function ProjectDetailsOverlay({
           </div>
         )}
         {project.techStack && project.techStack.length > 0 && (
-          <p className="mt-6 text-body text-secondary">{project.techStack.join(", ")}</p>
+          <p className="mt-6 text-body text-primary/60">{project.techStack.join(", ")}</p>
         )}
         <div className="mt-6 flex flex-col gap-1 text-body text-primary">
           {project.caseStudy?.slug?.current && (
@@ -117,7 +117,7 @@ export default function ProjectDetailsOverlay({
         type="button"
         onClick={onClose}
         tabIndex={open ? 0 : -1}
-        className="frost-soft absolute bottom-8 left-1/2 inline-flex h-9 -translate-x-1/2 items-center rounded-full px-4 text-sub uppercase font-medium text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97]"
+        className="frost-soft-grey absolute bottom-8 left-1/2 inline-flex h-9 -translate-x-1/2 items-center rounded-full px-4 text-sub uppercase font-medium text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97]"
       >
         Close
       </button>
