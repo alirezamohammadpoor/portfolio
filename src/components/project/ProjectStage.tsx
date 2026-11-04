@@ -4,8 +4,8 @@
  * The gallery project page ("stage"), every breakpoint since 11-04 (Ali, after
  * elodiefabbri.com): a pill with the project's name at the top opens the text
  * over the whole page (ProjectDetailsOverlay); the page itself is one clip at
- * a time in a horizontal strip, the counter bottom left and the scroll bar in
- * the bottom margin. On the last clip the bar widens into "Next project – X".
+ * a time in a horizontal strip with a filmstrip of thumbnails at the bottom
+ * (GalleryProgress); the next project's cover closes the filmstrip.
  *
  * Phone: cards are the full 4-column width with the neighbours stacked behind
  * (coverflow). Laptop: every card is the same height, centred, neighbours
@@ -35,7 +35,7 @@ import MediaFrame from "@/components/MediaFrame";
 import { resolveFrame, resolveLandingFrame } from "@/lib/mediaFrame";
 import { LANDING_ASPECT, imageAspect, landingKind, videoAspect } from "@/lib/landing";
 import ProjectDetailsOverlay from "@/components/project/ProjectDetailsOverlay";
-import GalleryProgress, { type ProgressVariant } from "@/components/project/GalleryProgress";
+import GalleryProgress from "@/components/project/GalleryProgress";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -137,24 +137,6 @@ export default function ProjectStage({
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsOpenRef = useRef(false);
-  const progressRef = useRef<HTMLDivElement>(null);
-  // S or F, test switch while Ali compares (11-04): ?progress=s|f, remembered.
-  const [variant, setVariant] = useState<ProgressVariant>("s");
-  useEffect(() => {
-    let v: string | null = new URLSearchParams(window.location.search).get("progress");
-    try {
-      if (v) localStorage.setItem("gallery-progress", v);
-      else v = localStorage.getItem("gallery-progress");
-    } catch {}
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- read once from the URL/storage on mount
-    if (v === "s" || v === "f") setVariant(v);
-  }, []);
-  const pickVariant = (v: ProgressVariant) => {
-    setVariant(v);
-    try {
-      localStorage.setItem("gallery-progress", v);
-    } catch {}
-  };
   useLayoutEffect(() => {
     detailsOpenRef.current = detailsOpen;
   }, [detailsOpen]);
@@ -229,31 +211,6 @@ export default function ProjectStage({
         el.style.zIndex = String(10 - Math.round(t * 5));
       });
       posRef.current = bestAll.i;
-      // The bar follows the strip continuously, one clip's share at the first
-      // clip, full at the last (the preview beyond it adds nothing).
-      // Piecewise between card centres, so each clip lands on exactly its
-      // share whatever the card widths.
-      const fills = progressRef.current?.querySelectorAll<HTMLElement>("[data-seg-fill]");
-      if (fills && fills.length) {
-        const centres = itemRefs.current
-          .slice(0, last + 1)
-          .map((el) => (el ? el.offsetLeft + el.offsetWidth / 2 : NaN));
-        let t = 0;
-        if (mid >= centres[last]) t = last;
-        else
-          for (let k = 0; k < last; k++) {
-            const a = centres[k];
-            const b = centres[k + 1];
-            if (mid < b) {
-              t = k + (b > a ? Math.max(0, (mid - a) / (b - a)) : 0);
-              break;
-            }
-          }
-        // Segment i is full once clip i is centred, filling as it arrives.
-        fills.forEach((el, i) => {
-          el.style.transform = `scaleX(${Math.min(1, Math.max(0, t - i + 1)).toFixed(4)})`;
-        });
-      }
       setIndex((prev) => (prev === best.i ? prev : best.i));
     };
     let idle = 0;
@@ -280,7 +237,7 @@ export default function ProjectStage({
       cancelAnimationFrame(raf);
       clearTimeout(idle);
     };
-  }, [gallery.length, reduceMotion, last, isDesktop, variant]);
+  }, [gallery.length, reduceMotion, last, isDesktop]);
 
   // Laptop: the strip's side padding centres the first and the last card
   // (their widths follow their media, which may report its size late).
@@ -659,9 +616,8 @@ export default function ProjectStage({
         {single ? "" : `${index + 1} of ${gallery.length}`}
       </p>
 
-      {/* Progress along the bottom: segments (S) or a filmstrip (F). */}
+      {/* Progress: a filmstrip at the bottom centre (Ali, 11-04). */}
       <GalleryProgress
-        variant={variant}
         gallery={gallery}
         index={index}
         onEnd={onEnd}
@@ -669,27 +625,12 @@ export default function ProjectStage({
         title={project.title ?? "Project"}
         isDesktop={isDesktop}
         reduceMotion={reduceMotion}
-        rootRef={progressRef}
         onSelect={(i) => {
           posRef.current = i;
           goTo(i);
         }}
         onNavigateNext={nextSlug ? onNavigateNext : undefined}
       />
-
-      {/* Test switch (remove once Ali picks) */}
-      <div className="absolute top-2 right-0 z-50 flex gap-1 px-margin text-sub">
-        {(["s", "f"] as const).map((v) => (
-          <button
-            key={v}
-            type="button"
-            onClick={() => pickVariant(v)}
-            className={`h-7 w-7 cursor-pointer rounded-full uppercase ${variant === v ? "bg-primary text-bg" : "bg-tertiary text-primary"}`}
-          >
-            {v}
-          </button>
-        ))}
-      </div>
 
       <ProjectDetailsOverlay project={project} open={detailsOpen} onClose={closeDetails} reduceMotion={reduceMotion} />
     </div>

@@ -10,11 +10,7 @@ type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 type GalleryItem = NonNullable<Project["gallery"]>[number];
 type NextProject = Project["nextProject"];
 
-/** Test switch while Ali compares them on localhost (11-04): S or F. */
-export type ProgressVariant = "s" | "f";
-
 type Props = {
-  variant: ProgressVariant;
   gallery: GalleryItem[];
   index: number;
   onEnd: boolean;
@@ -22,101 +18,19 @@ type Props = {
   title: string;
   isDesktop: boolean;
   reduceMotion: boolean;
-  /** Segments carry [data-seg-fill]; the stage writes their scaleX per scroll frame. */
-  rootRef: RefObject<HTMLDivElement | null>;
+  rootRef?: RefObject<HTMLDivElement | null>;
   onSelect: (i: number) => void;
   onNavigateNext?: () => void;
 };
 
 /**
- * The gallery's progress, horizontal (Figma "Gallery · progress ideas", 11-04).
- * S: one short segment per clip across the bottom margin; segments fill as
- * the strip moves, the counter sits above on the left and, on the last clip,
- * "Next project – X →" on the right. F: a filmstrip of tiny thumbnails at the
- * bottom centre, the current one outlined, the next project's cover last.
+ * The gallery's progress (Figma "Gallery · progress ideas", 11-04, Ali picked
+ * F): a filmstrip of tiny thumbnails at the bottom centre, the current one
+ * outlined, the next project's cover last with its name once you reach the
+ * last clip. Every thumbnail jumps to its clip; the last one hands off.
  */
 export default function GalleryProgress(props: Props) {
-  return props.variant === "f" ? <Filmstrip {...props} /> : <Segments {...props} />;
-}
-
-function NextLink({
-  nextProject,
-  onNavigateNext,
-  show,
-  reduceMotion,
-  className,
-  short = false,
-}: {
-  nextProject: NextProject;
-  onNavigateNext?: () => void;
-  show: boolean;
-  reduceMotion: boolean;
-  className: string;
-  short?: boolean;
-}) {
-  const slug = nextProject?.slug?.current;
-  if (!slug || !onNavigateNext) return null;
-  return (
-    <a
-      href={`/project/${slug}`}
-      tabIndex={show ? 0 : -1}
-      aria-hidden={!show}
-      onClick={(e) => {
-        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-        e.preventDefault();
-        onNavigateNext();
-      }}
-      className={`truncate ${show ? "" : "pointer-events-none"} ${className}`}
-      style={{ opacity: show ? 1 : 0, transition: reduceMotion ? "none" : `opacity 200ms ${EASE_OUT_CSS}` }}
-    >
-      {short ? "Next – " : "Next project – "}
-      {nextProject?.title} {short ? "" : "→"}
-    </a>
-  );
-}
-
-function Segments({ gallery, index, onEnd, nextProject, isDesktop, reduceMotion, rootRef, onNavigateNext, onSelect }: Props) {
-  const single = gallery.length <= 1;
-  return (
-    <div ref={rootRef} className="absolute inset-x-0 bottom-0 z-30 px-margin pb-4 desktop:pb-5">
-      <div className="mb-2 flex items-baseline justify-between gap-4 desktop:mb-3">
-        {!single ? (
-          <p data-stage-chrome aria-hidden="true" className="invisible shrink-0 text-body text-primary tabular-nums">
-            {index + 1} of {gallery.length}
-          </p>
-        ) : (
-          <span />
-        )}
-        <NextLink
-          nextProject={nextProject}
-          onNavigateNext={onNavigateNext}
-          show={onEnd}
-          reduceMotion={reduceMotion}
-          className={`min-w-0 font-medium text-primary hover:opacity-60 ${isDesktop ? "text-body" : "text-sub"}`}
-        />
-      </div>
-      {!single && (
-        <div className="flex gap-1" aria-hidden="true">
-          {gallery.map((item, i) => (
-            <button
-              key={item._key}
-              type="button"
-              tabIndex={-1}
-              onClick={() => onSelect(i)}
-              className="group relative h-3 flex-1 cursor-pointer"
-            >
-              <span className="absolute inset-x-0 top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-tertiary" />
-              <span
-                data-seg-fill
-                className="absolute inset-x-0 top-1/2 h-[3px] origin-left -translate-y-1/2 rounded-full bg-primary"
-                style={{ transform: "scaleX(0)" }}
-              />
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  return <Filmstrip {...props} />;
 }
 
 function thumbSrc(item: GalleryItem): { image?: string; video?: string } {
@@ -146,8 +60,9 @@ function Filmstrip({ gallery, index, onEnd, nextProject, title, isDesktop, reduc
   const nextSrc = next ? thumbSrc(next) : {};
   const fade = reduceMotion ? "none" : `opacity 200ms ${EASE_OUT_CSS}`;
   return (
-    <div ref={rootRef} className="absolute inset-x-0 bottom-0 z-30 flex justify-center px-margin pb-5 desktop:pb-6">
-      <div className="flex items-start gap-1.5 desktop:gap-2">
+    <div ref={rootRef} className="absolute inset-x-0 bottom-0 z-30 flex justify-center px-margin pb-7 desktop:pb-8">
+      {/* On a pistachio frost tray, like the name pill (Ali, 11-04). */}
+      <div className="frost-soft flex items-center gap-1.5 rounded-[10px] p-1.5 desktop:gap-2 desktop:p-2">
         {gallery.length > 1 &&
           gallery.map((item, i) => (
             <button
@@ -160,7 +75,7 @@ function Filmstrip({ gallery, index, onEnd, nextProject, title, isDesktop, reduc
               style={{
                 width: w,
                 height: h,
-                opacity: i === index ? 1 : 0.45,
+                opacity: i === index ? 1 : 0.6,
                 outline: i === index ? "1.5px solid var(--color-primary)" : "1.5px solid transparent",
                 outlineOffset: 1.5,
                 transition: reduceMotion ? "none" : `opacity 200ms ${EASE_OUT_CSS}, outline-color 200ms ${EASE_OUT_CSS}`,
@@ -170,19 +85,19 @@ function Filmstrip({ gallery, index, onEnd, nextProject, title, isDesktop, reduc
             </button>
           ))}
         {nextProject?.slug?.current && onNavigateNext && (
-          <div className="ml-2 flex flex-col items-center desktop:ml-3">
+          <div className="relative ml-2 flex flex-col items-center desktop:ml-3">
             <button
               type="button"
               onClick={onNavigateNext}
               aria-label={`Next project: ${nextProject.title}`}
               className="relative shrink-0 cursor-pointer overflow-hidden rounded-[2px] bg-tertiary active:scale-[0.96]"
-              style={{ width: w, height: h, opacity: onEnd ? 1 : 0.45, transition: fade }}
+              style={{ width: w, height: h, opacity: onEnd ? 1 : 0.6, transition: fade }}
             >
               <Thumb src={nextSrc} label="" />
             </button>
             <span
               aria-hidden="true"
-              className="mt-1.5 whitespace-nowrap text-[11px] text-primary desktop:text-xs"
+              className="absolute top-full mt-2.5 whitespace-nowrap text-[11px] text-primary desktop:mt-3 desktop:text-xs"
               style={{ opacity: onEnd ? 1 : 0, transition: fade }}
             >
               Next – {nextProject.title}
