@@ -18,7 +18,7 @@
  * reduced motion drops the depth transforms.
  */
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
 import Image from "next/image";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
@@ -30,10 +30,12 @@ import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
 import GalleryPhones from "@/components/project/GalleryPhones";
+import { PHONE_ASPECT } from "@/components/PhonesRow";
 import MediaFrame from "@/components/MediaFrame";
 import { resolveFrame, resolveLandingFrame } from "@/lib/mediaFrame";
 import { LANDING_ASPECT, imageAspect, landingKind, videoAspect } from "@/lib/landing";
 import ProjectDetailsOverlay from "@/components/project/ProjectDetailsOverlay";
+import { NEXT_THRESHOLD } from "@/hooks/useGalleryScroll";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -61,6 +63,10 @@ const NEIGHBOUR_SCALE = 0.92;
 const NEIGHBOUR_OPACITY = 0.6;
 const SETTLE_MS = 200;
 const ITEM_W = "calc(100vw - 2 * var(--grid-margin))";
+// The scroll bar: the grid gutter thick, the page margin on the last clip
+// (the chapter page's ScrollProgress, turned on its side).
+const BAR_THIN = "var(--grid-gutter)";
+const BAR_WIDE = "var(--grid-margin)";
 // Laptop: one height for every card (Figma "Gallery · laptop alternatives",
 // 11-04: 640 at 1440×900), the width follows each card's ratio.
 const DESK_H = "min(640px, calc(100svh - var(--header-height) - 200px))";
@@ -134,6 +140,7 @@ export default function ProjectStage({
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsOpenRef = useRef(false);
+  const barRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     detailsOpenRef.current = detailsOpen;
   }, [detailsOpen]);
@@ -295,10 +302,35 @@ export default function ProjectStage({
     if (!isDesktop) return;
     let acc = 0;
     let lockedUntil = 0;
+    // Past the end the wheel pulls instead of stepping (as on the chapter
+    // page): the bar wipes pistachio and the next project takes over once
+    // the pull is full. Wheeling back lets it go.
+    let pull = 0;
+    let gone = false;
+    const bar = barRef.current;
+    const setPull = (v: number) => {
+      const el = barRef.current;
+      if (!el) return;
+      gsap.to(el, { "--pull": v, duration: reduceMotion ? 0 : 0.4, ease: "power2.out", overwrite: true });
+    };
     const onWheel = (e: WheelEvent) => {
-      if (detailsOpenRef.current) return;
+      if (detailsOpenRef.current || gone) return;
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       const now = performance.now();
+      const canPull = Boolean(onNavigateNext && nextSlug) && posRef.current >= (hasPreview ? gallery.length : last);
+      if (canPull && (pull > 0 || (e.deltaY > 0 && now >= lockedUntil))) {
+        pull = Math.min(NEXT_THRESHOLD, Math.max(0, pull + e.deltaY));
+        setPull(pull / NEXT_THRESHOLD);
+        if (pull >= NEXT_THRESHOLD) {
+          gone = true;
+          onNavigateNext?.();
+        } else if (pull === 0) {
+          // Let go: the next wheel back steps again, after a beat.
+          lockedUntil = now + WHEEL_LOCK_MS;
+          acc = 0;
+        }
+        return;
+      }
       if (now < lockedUntil) {
         lockedUntil = Math.max(lockedUntil, now + WHEEL_QUIET_MS);
         return;
@@ -325,8 +357,9 @@ export default function ProjectStage({
     return () => {
       window.removeEventListener("wheel", onWheel);
       window.removeEventListener("keydown", onKey);
+      if (bar) gsap.set(bar, { "--pull": 0 });
     };
-  }, [isDesktop]);
+  }, [isDesktop, reduceMotion, onNavigateNext, nextSlug, hasPreview, gallery.length, last]);
 
   // A video first card reports ready on its first presented frame (see
   // ProjectGallery): the clone covering it must not leave on a black frame.
@@ -417,6 +450,19 @@ export default function ProjectStage({
         >
           {gallery.map((item, i) => {
             if (item._type === "galleryPhones") {
+              const phonesFrame = resolveFrame(item.frame, project, "phones");
+              // Laptop: screens on the page (no background) make the card
+              // exactly as wide as the screens at the card height, so whole
+              // phones show instead of a 16:10 crop of their tops. With a
+              // background the row is its own 16:10 panel.
+              const screens = Math.min(3, Math.max(1, item.phones?.length ?? 1));
+              const phonesBox = phonesFrame.background
+                ? deskBox(LANDING_ASPECT.stage, i)
+                : {
+                    height: DESK_H,
+                    width: `calc(${DESK_H} * ${(screens * PHONE_ASPECT).toFixed(4)} + ${(screens - 1) * 16}px)`,
+                    marginLeft: i === 0 ? 0 : DESK_GAP,
+                  };
               return (
                 <div
                   key={item._key}
@@ -426,7 +472,7 @@ export default function ProjectStage({
                   className="relative shrink-0 snap-center will-change-transform"
                   style={
                     isDesktop
-                      ? deskBox(LANDING_ASPECT.stage, i)
+                      ? phonesBox
                       : {
                           width: ITEM_W,
                           marginLeft: i === 0 ? 0 : -OVERLAP,
@@ -440,7 +486,7 @@ export default function ProjectStage({
                 >
                   <GalleryPhones
                     item={item}
-                    frame={resolveFrame(item.frame, project, "phones")}
+                    frame={phonesFrame}
                     title={project.title ?? "Project"}
                     active={Math.abs(i - index) <= 1}
                     sizes="50vw"
@@ -581,22 +627,41 @@ export default function ProjectStage({
         </p>
       )}
 
-      {/* Scroll bar in the bottom margin (Ali, 11-04: the bottom keeps it off
-          the content). On the last card it widens and names the next project;
-          tapping it hands off like the wheel does. */}
+      {/* Scroll bar: the chapter page's bar (ScrollProgress) laid along the
+          bottom edge (Ali, 11-04: the bottom keeps it off the content). No
+          track: a black line the height of the grid gutter fills from the
+          left, one step per clip. On the last clip it grows into the page
+          margin and the next project's title rides at its leading edge, light
+          on the black; the pull past the end (--pull) wipes a pistachio copy
+          over it, title included. Clicking it hands off like the pull. The
+          bar is always margin-tall and clipped down to the gutter, so the
+          grow is a clip, not a layout change. */}
       {(!single || onEnd) && (
         <div
-          className="absolute inset-x-0 bottom-0 z-30 overflow-hidden bg-tertiary"
-          style={{ height: onEnd ? 24 : 8, transition: reduceMotion ? "none" : `height 240ms ${EASE_OUT_CSS}` }}
+          ref={barRef}
+          className="pointer-events-none absolute inset-x-0 bottom-0 z-30"
+          style={
+            {
+              "--pull": 0,
+              height: BAR_WIDE,
+              clipPath: onEnd ? "inset(0 0 0 0)" : `inset(calc(100% - ${BAR_THIN}) 0 0 0)`,
+              transition: reduceMotion ? "none" : `clip-path 240ms ${EASE_OUT_CSS}`,
+            } as CSSProperties
+          }
         >
           <div
             aria-hidden="true"
-            className="h-full w-full origin-left bg-pistachio"
+            className="absolute inset-0 bg-primary"
             style={{
-              transform: `scaleX(${(index + 1) / Math.max(1, gallery.length)})`,
-              transition: reduceMotion ? "none" : `transform 240ms ${EASE_OUT_CSS}`,
+              clipPath: `inset(0 ${((1 - (index + 1) / Math.max(1, gallery.length)) * 100).toFixed(3)}% 0 0)`,
+              transition: reduceMotion ? "none" : `clip-path 240ms ${EASE_OUT_CSS}`,
             }}
-          />
+          >
+            {nextSlug && <BarTitle text={`Next project – ${nextProject?.title ?? ""}`} className="text-bg" show={onEnd} reduceMotion={reduceMotion} />}
+            <div className="absolute inset-0 bg-pistachio" style={{ clipPath: "inset(0 calc((1 - var(--pull, 0)) * 100%) 0 0)" }}>
+              {nextSlug && <BarTitle text={`Next project – ${nextProject?.title ?? ""}`} className="text-primary" show={onEnd} reduceMotion={reduceMotion} />}
+            </div>
+          </div>
           {nextSlug && onNavigateNext && (
             <a
               href={`/project/${nextSlug}`}
@@ -607,10 +672,9 @@ export default function ProjectStage({
                 e.preventDefault();
                 onNavigateNext();
               }}
-              className="absolute inset-0 flex items-center px-margin text-sub text-primary"
-              style={{ opacity: onEnd ? 1 : 0, transition: reduceMotion ? "none" : `opacity 240ms ${EASE_OUT_CSS}` }}
+              className={`absolute inset-0 ${onEnd ? "pointer-events-auto" : ""}`}
             >
-              Next project – {nextProject?.title}
+              <span className="sr-only">Next project – {nextProject?.title}</span>
             </a>
           )}
         </div>
@@ -618,5 +682,18 @@ export default function ProjectStage({
 
       <ProjectDetailsOverlay project={project} open={detailsOpen} onClose={closeDetails} reduceMotion={reduceMotion} />
     </div>
+  );
+}
+
+/** The next project's title at the fill's leading edge (the right end). */
+function BarTitle({ text, className, show, reduceMotion }: { text: string; className: string; show: boolean; reduceMotion: boolean }) {
+  return (
+    <p
+      aria-hidden="true"
+      className={`absolute inset-y-0 right-0 flex items-center px-margin whitespace-nowrap text-body font-medium ${className}`}
+      style={{ opacity: show ? 1 : 0, transition: reduceMotion ? "none" : `opacity 200ms ${EASE_OUT_CSS}` }}
+    >
+      {text}
+    </p>
   );
 }
