@@ -1,12 +1,16 @@
 "use client";
 
 /**
- * Mobile project page ("stage"). Title block on the 4-column grid (title on
- * columns 1–2, short description + stack on 3–4), a horizontal one-card-at-a-
- * time media strip centred in the viewport with the previous/next cards
- * stacked behind it, pills bottom-right (Case study + Visit; the next
- * project's preview card ends the strip, so a Next project pill appears only
- * when there is no preview media) and a 4 px progress line.
+ * The gallery project page ("stage"), every breakpoint since 11-04 (Ali, after
+ * elodiefabbri.com): a pill with the project's name at the top opens the text
+ * over the whole page (ProjectDetailsOverlay); the page itself is one clip at
+ * a time in a horizontal strip with a filmstrip of thumbnails at the bottom
+ * (GalleryProgress); the next project's cover closes the filmstrip.
+ *
+ * Phone: cards are the full 4-column width with the neighbours stacked behind
+ * (coverflow). Laptop: every card is the same height, centred, neighbours
+ * flat at the edges with a 48 px gap; the vertical wheel and the arrow keys
+ * move one card, and past the next project's preview the page hands off.
  *
  * Rules (see the action plan, phase 2): 1 item → no strip chrome; only the
  * current card and its two neighbours mount <video>; media fills a 4:3 frame
@@ -14,25 +18,24 @@
  * reduced motion drops the depth transforms.
  */
 
-import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
-import NextLink from "next/link";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import Image from "next/image";
-import { Link } from "@/lib/viewTransitions";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { EASE_OUT_CSS, dur, ease, stagger } from "@/lib/motion";
-import { useBodyAnimation, useTitleAnimation } from "@/hooks/useTextAnimation";
 import NextProjectPreview from "@/components/project/NextProjectPreview";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
-import { isPlainLeftClick } from "@/lib/clicks";
 import GalleryPhones from "@/components/project/GalleryPhones";
+import { PHONE_ASPECT } from "@/components/PhonesRow";
 import MediaFrame from "@/components/MediaFrame";
 import { resolveFrame, resolveLandingFrame } from "@/lib/mediaFrame";
 import { LANDING_ASPECT, imageAspect, landingKind, videoAspect } from "@/lib/landing";
+import ProjectDetailsOverlay from "@/components/project/ProjectDetailsOverlay";
+import GalleryProgress from "@/components/project/GalleryProgress";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -48,6 +51,8 @@ interface ProjectStageProps {
   previewRef?: RefObject<HTMLDivElement | null>;
   /** Run the in-place next-project transition (preview tap or pill). */
   onNavigateNext?: () => void;
+  /** Laptop layout: equal-height cards, flat neighbours, wheel steps. */
+  isDesktop?: boolean;
 }
 
 // Motion spec (phase 2). Reference: Swiper coverflow demo at 390 px —
@@ -58,6 +63,15 @@ const NEIGHBOUR_SCALE = 0.92;
 const NEIGHBOUR_OPACITY = 0.6;
 const SETTLE_MS = 200;
 const ITEM_W = "calc(100vw - 2 * var(--grid-margin))";
+// Laptop: one height for every card (Figma "Gallery · laptop alternatives",
+// 11-04: 640 at 1440×900), the width follows each card's ratio.
+const DESK_H = "min(640px, calc(100svh - var(--header-height) - 200px))";
+const DESK_GAP = 48;
+// Vertical wheel → one card. Trackpad flings keep firing for a second, so
+// after a step the wheel stays locked until it has been quiet for a moment.
+const WHEEL_STEP = 40;
+const WHEEL_LOCK_MS = 450;
+const WHEEL_QUIET_MS = 140;
 
 export default function ProjectStage({
   project,
@@ -66,6 +80,7 @@ export default function ProjectStage({
   onFirstReady,
   previewRef,
   onNavigateNext,
+  isDesktop = false,
 }: ProjectStageProps) {
   const gallery = project.gallery ?? [];
   const nextProject = project.nextProject;
@@ -102,38 +117,40 @@ export default function ProjectStage({
   };
   const [reduceMotion, setReduceMotion] = useState(false);
 
-  // Text entrance, same vocabulary as the desktop panel: title chars drop in,
-  // the meta lines mask up 70 ms later, the pills lift in after that. It runs
-  // once the stage is shown (a direct load at once; an arrival when the clone
-  // has landed). The cards do not animate: card 1 is the shared element the
-  // clone lands on, and the neighbours are already placed by the depth model.
+  // Entrance: the name pill and the bottom row lift in once the stage is
+  // shown (a direct load at once; an arrival when the clone has landed). The
+  // cards do not animate: card 1 is the shared element the clone lands on.
   const rootRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const metaRef = useRef<HTMLDivElement>(null);
-  const pillsRef = useRef<HTMLDivElement>(null);
-  useTitleAnimation(titleRef, rootRef, { duration: 1, skip: hidden, dependencies: [hidden] });
-  useBodyAnimation(metaRef, rootRef, { duration: dur.text, delay: stagger, skip: hidden, dependencies: [hidden] });
   useGSAP(
     () => {
-      if (hidden || !pillsRef.current) return;
+      if (hidden || !rootRef.current) return;
+      const chrome = rootRef.current.querySelectorAll("[data-stage-chrome]");
+      if (!chrome.length) return;
+      // Reduced motion: the same beat as a fade, no rise.
       gsap.fromTo(
-        pillsRef.current,
-        { yPercent: 40, autoAlpha: 0 },
-        { yPercent: 0, autoAlpha: 1, duration: dur.text, ease: ease.out, delay: 2 * stagger },
+        chrome,
+        { yPercent: reduceMotion ? 0 : 40, autoAlpha: 0 },
+        { yPercent: 0, autoAlpha: 1, duration: dur.text, ease: ease.out, stagger: reduceMotion ? 0 : stagger },
       );
     },
     { scope: rootRef, dependencies: [hidden] },
   );
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsOpenRef = useRef(false);
+  useLayoutEffect(() => {
+    detailsOpenRef.current = detailsOpen;
+  }, [detailsOpen]);
+  const closeDetails = useCallback(() => setDetailsOpen(false), []);
   // While the finger is down the cards track scroll 1:1 (no CSS transition
   // fighting the per-frame transform); the 200 ms settle applies once idle.
   const [scrolling, setScrolling] = useState(false);
   const last = gallery.length - 1;
-  const atEnd = index >= last;
   const single = gallery.length <= 1;
-  // Titles longer than ~11 characters don't fit two columns at h2 (phase 2
-  // rule: "Deploymentbar" overflowed), so the title takes all four columns
-  // and the meta drops below it.
-  const longTitle = (project.title?.length ?? 0) > 11;
+  // Centred card including the next project's preview (index stops at the
+  // last gallery card): the wheel steps from here.
+  const posRef = useRef(0);
+  const flat = reduceMotion || isDesktop;
+  const nextSlug = nextProject?.slug?.current;
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -153,8 +170,19 @@ export default function ProjectStage({
     const measure = () => {
       const mid = strip.scrollLeft + strip.clientWidth / 2;
       let best = { d: Infinity, i: 0 };
+      let bestAll = { d: Infinity, i: 0 };
       itemRefs.current.forEach((el, i) => {
         if (!el) return;
+        const dAll = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid);
+        if (dAll < bestAll.d) bestAll = { d: dAll, i };
+        if (isDesktop) {
+          // Laptop: flat strip, no depth.
+          el.style.transform = "";
+          el.style.opacity = "";
+          el.style.zIndex = "";
+          if (i <= last && dAll < best.d) best = { d: dAll, i };
+          return;
+        }
         // The preview card is not part of the gallery's progress; it only
         // gets the depth treatment.
         if (i > last) {
@@ -182,6 +210,7 @@ export default function ProjectStage({
         el.style.opacity = String(1 - (1 - NEIGHBOUR_OPACITY) * t);
         el.style.zIndex = String(10 - Math.round(t * 5));
       });
+      posRef.current = bestAll.i;
       setIndex((prev) => (prev === best.i ? prev : best.i));
     };
     let idle = 0;
@@ -208,7 +237,116 @@ export default function ProjectStage({
       cancelAnimationFrame(raf);
       clearTimeout(idle);
     };
-  }, [gallery.length, reduceMotion, last]);
+  }, [gallery.length, reduceMotion, last, isDesktop]);
+
+  // Laptop: the strip's side padding centres the first and the last card
+  // (their widths follow their media, which may report its size late).
+  useLayoutEffect(() => {
+    const strip = stripRef.current;
+    if (!isDesktop || !strip) return;
+    const apply = () => {
+      const kids = itemRefs.current.filter((el): el is HTMLDivElement => Boolean(el));
+      const first = kids[0];
+      const lastEl = kids[kids.length - 1];
+      if (!first || !lastEl) return;
+      strip.style.paddingLeft = `${Math.max(0, (strip.clientWidth - first.offsetWidth) / 2)}px`;
+      strip.style.paddingRight = `${Math.max(0, (strip.clientWidth - lastEl.offsetWidth) / 2)}px`;
+      const current = itemRefs.current[posRef.current];
+      if (current) strip.scrollLeft = current.offsetLeft - (strip.clientWidth - current.offsetWidth) / 2;
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(strip);
+    itemRefs.current.forEach((el) => el && ro.observe(el));
+    return () => {
+      ro.disconnect();
+      strip.style.paddingLeft = "";
+      strip.style.paddingRight = "";
+    };
+  }, [isDesktop, gallery.length, hasPreview]);
+
+  // Keyboard steps jump (Emil: never animate a keyboard action, it is
+  // repeated too often); the wheel glides.
+  const goTo = (i: number, instant = false) => {
+    const strip = stripRef.current;
+    const el = itemRefs.current[i];
+    if (!strip || !el) return;
+    const left = el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2;
+    if (reduceMotion || instant) {
+      gsap.killTweensOf(strip);
+      strip.scrollTo({ left, behavior: "auto" });
+      return;
+    }
+    // The glide on the site's out curve (the browser's own smooth scroll has
+    // its own timing and stutters against snap). Snap is off while it runs,
+    // and a new step retargets from wherever the strip is.
+    strip.style.scrollSnapType = "none";
+    gsap.to(strip, {
+      scrollLeft: left,
+      duration: 0.6,
+      ease: ease.out,
+      overwrite: true,
+      onComplete: () => {
+        strip.style.scrollSnapType = "";
+      },
+    });
+  };
+  // One card forward or back; past the end (the preview, or the last card
+  // when there is none) the next project takes over.
+  const stepRef = useRef<(dir: 1 | -1, instant?: boolean) => void>(() => {});
+  const step = (dir: 1 | -1, instant = false) => {
+    const maxPos = hasPreview ? gallery.length : last;
+    const target = posRef.current + dir;
+    if (target > maxPos) {
+      if (dir > 0 && onNavigateNext && nextSlug) onNavigateNext();
+      return;
+    }
+    if (target < 0) return;
+    posRef.current = target;
+    goTo(target, instant);
+  };
+  useLayoutEffect(() => {
+    stepRef.current = step;
+  });
+
+  // Laptop: vertical wheel and arrow keys step the strip (a horizontal
+  // trackpad swipe scrolls it natively, snapping on its own).
+  useEffect(() => {
+    if (!isDesktop) return;
+    let acc = 0;
+    let lockedUntil = 0;
+    const onWheel = (e: WheelEvent) => {
+      if (detailsOpenRef.current) return;
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      const now = performance.now();
+      if (now < lockedUntil) {
+        lockedUntil = Math.max(lockedUntil, now + WHEEL_QUIET_MS);
+        return;
+      }
+      acc += e.deltaY;
+      if (Math.abs(acc) < WHEEL_STEP) return;
+      const dir = acc > 0 ? 1 : -1;
+      acc = 0;
+      lockedUntil = now + WHEEL_LOCK_MS;
+      stepRef.current(dir);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (detailsOpenRef.current || e.defaultPrevented) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      const fwd = e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === "PageDown";
+      const back = e.key === "ArrowLeft" || e.key === "ArrowUp" || e.key === "PageUp";
+      if (!fwd && !back) return;
+      e.preventDefault();
+      stepRef.current(fwd ? 1 : -1, true);
+    };
+    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [isDesktop]);
 
   // A video first card reports ready on its first presented frame (see
   // ProjectGallery): the clone covering it must not leave on a black frame.
@@ -222,6 +360,19 @@ export default function ProjectStage({
     if (!first) return;
     return onFirstVideoFrame(first, onFirstReady);
   }, [onFirstReady, adopted]);
+
+  // The details overlay covers the strip with a 40 px backdrop blur: a clip
+  // playing under it repaints that blur every frame, so it pauses while the
+  // text is open and picks up again on close.
+  useEffect(() => {
+    const v = itemRefs.current[index]?.querySelector("video");
+    if (!v) return;
+    if (detailsOpen) v.pause();
+    else {
+      const p = v.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    }
+  }, [detailsOpen, index]);
 
   // Video budget: only the centred card plays; neighbours sit paused on their
   // first frame; everything else is unmounted (see `near` below).
@@ -238,59 +389,80 @@ export default function ProjectStage({
     });
   }, [index]);
 
-  const pill =
-    "inline-flex h-9 items-center rounded-full px-4 text-sub uppercase font-medium text-primary transition-colors active:scale-[0.97]";
-  const pillWhite = `${pill} bg-white border border-tertiary`;
-  const pillGreen = `${pill} bg-pistachio`;
+  const onEnd = index >= last && Boolean(nextSlug && onNavigateNext);
+  // Desktop card box: one height, the width from the box ratio.
+  const deskBox = (boxAspect: number, i: number) => ({
+    height: DESK_H,
+    aspectRatio: boxAspect,
+    marginLeft: i === 0 ? 0 : DESK_GAP,
+  });
 
   return (
     <div
       ref={rootRef}
       className={`fixed inset-x-0 bottom-0 top-[var(--header-height)] flex flex-col overflow-hidden bg-bg${hidden ? " opacity-0 pointer-events-none" : ""}`}
     >
-      {/* Title block B: title cols 1–2, meta cols 3–4. Reserved height: the
-          strip below is centred in the remaining space, so a block that
-          varies with title and description length (114–190px across the
-          current projects) would put card 1 on a different y per project,
-          and project → project lands the clone on the previous page's y. */}
-      <div className="grid-site px-margin pt-4 pb-4 min-h-[12rem]">
-        <h1 ref={titleRef} className={`${longTitle ? "col-span-4" : "col-span-2"} text-h2 text-primary`}>
-          {project.title}
-        </h1>
-        <div ref={metaRef} className={`${longTitle ? "col-span-4 pt-2" : "col-span-2 pt-1.5"} text-sub text-primary`}>
-          {project.shortDescription && <p>{project.shortDescription}</p>}
-          {project.techStack && project.techStack.length > 0 && (
-            <p className="mt-3 text-primary">{project.techStack.join(", ")}</p>
-          )}
-        </div>
+      {/* The name pill: the page's title and the one way into the text.
+          Fixed height, so card 1 sits on the same y on every project (the
+          project → project clone lands on the previous page's y). */}
+      <h1 className="sr-only">{project.title}</h1>
+      <div className="relative z-50 flex h-14 shrink-0 items-start justify-center pt-2">
+        <button
+          type="button"
+          data-stage-chrome
+          aria-expanded={detailsOpen}
+          aria-controls="project-details"
+          onClick={() => setDetailsOpen((o) => !o)}
+          className="frost-soft invisible inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center gap-2 rounded-full px-4 text-body text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97]"
+        >
+          <span className="truncate">{project.title}</span>
+          <span
+            aria-hidden="true"
+            className="shrink-0 text-[0.5rem]"
+            style={{ transform: detailsOpen ? "rotate(180deg)" : "none", transition: reduceMotion ? "none" : `transform 200ms ${EASE_OUT_CSS}` }}
+          >
+            ▼
+          </span>
+        </button>
       </div>
 
       {/* Strip, vertically centred in the remaining space */}
-      <div className="flex flex-1 items-center pb-[52px]">
+      <div className="flex flex-1 items-center pb-[52px] desktop:pb-[72px]">
         <div
           ref={stripRef}
-          className={`flex w-full items-start overflow-x-auto py-6 ${single ? "justify-center" : "snap-x snap-mandatory"}`}
-          style={{ scrollPaddingInline: "var(--grid-margin)", paddingInline: "var(--grid-margin)" }}
+          className={`flex w-full ${isDesktop ? "items-center" : "items-start"} overflow-x-auto py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${single ? "justify-center" : "snap-x snap-mandatory"}`}
+          style={isDesktop ? undefined : { scrollPaddingInline: "var(--grid-margin)", paddingInline: "var(--grid-margin)" }}
           data-lenis-prevent
           role="region"
           aria-roledescription="carousel"
           aria-label={`${project.title} gallery, ${gallery.length} items`}
           tabIndex={0}
           onKeyDown={(e) => {
+            if (isDesktop) return; // the window listener steps on laptop
             if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
             e.preventDefault();
             const next = Math.min(last, Math.max(0, index + (e.key === "ArrowRight" ? 1 : -1)));
             const el = itemRefs.current[next];
             const strip = stripRef.current;
             if (!el || !strip) return;
-            strip.scrollTo({
-              left: el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2,
-              behavior: reduceMotion ? "auto" : "smooth",
-            });
+            strip.scrollTo({ left: el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2, behavior: "auto" });
           }}
         >
           {gallery.map((item, i) => {
             if (item._type === "galleryPhones") {
+              const phonesFrame = resolveFrame(item.frame, project, "phones");
+              // Laptop: screens on the page (no background) make the card
+              // exactly as wide as the screens at the card height, so whole
+              // phones show instead of a 16:10 crop of their tops. With a
+              // background the row is its own 16:10 panel.
+              const screens = Math.min(3, Math.max(1, item.phones?.length ?? 1));
+              const phonesBox = phonesFrame.background
+                ? deskBox(LANDING_ASPECT.stage, i)
+                : {
+                    height: DESK_H,
+                    width: `calc(${DESK_H} * ${(screens * PHONE_ASPECT).toFixed(4)} + ${(screens - 1) * 16}px)`,
+                    marginLeft: i === 0 ? 0 : DESK_GAP,
+                  };
               return (
                 <div
                   key={item._key}
@@ -298,19 +470,23 @@ export default function ProjectStage({
                     itemRefs.current[i] = el;
                   }}
                   className="relative shrink-0 snap-center will-change-transform"
-                  style={{
-                    width: ITEM_W,
-                    marginLeft: i === 0 ? 0 : -OVERLAP,
-                    transition:
-                      reduceMotion || scrolling ? "none" : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}`,
-                  }}
+                  style={
+                    isDesktop
+                      ? phonesBox
+                      : {
+                          width: ITEM_W,
+                          marginLeft: i === 0 ? 0 : -OVERLAP,
+                          transition:
+                            reduceMotion || scrolling ? "none" : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}`,
+                        }
+                  }
                   role="group"
                   aria-roledescription="slide"
                   aria-label={`${i + 1} of ${gallery.length}`}
                 >
                   <GalleryPhones
                     item={item}
-                    frame={resolveFrame(item.frame, project, "phones")}
+                    frame={phonesFrame}
                     title={project.title ?? "Project"}
                     active={Math.abs(i - index) <= 1}
                     sizes="50vw"
@@ -329,15 +505,17 @@ export default function ProjectStage({
                 ? resolveLandingFrame(item.frame, project)
                 : resolveFrame(item.frame, project, aspect < 1 ? "portrait" : "landscape");
             const framed = frame && frame.fit !== "flush" ? frame : null;
+            // The card's own ratio: a phone frame is a 4:5 box (MediaFrame).
+            const boxAspect = framed?.fit === "phone" ? 4 / 5 : aspect;
             const media = (
               <>
                 {isImage && item.image?.asset && (
                   <Image
-                    src={imageUrl(item.image, 900)}
+                    src={imageUrl(item.image, isDesktop ? 1600 : 900)}
                     alt={`${project.title} — ${i + 1}`}
                     fill
                     className="object-cover"
-                    sizes="100vw"
+                    sizes={isDesktop ? "70vw" : "100vw"}
                     priority={i === 0}
                     onLoad={i === 0 ? onFirstReady : undefined}
                   />
@@ -368,11 +546,15 @@ export default function ProjectStage({
                 }}
                 className={`relative shrink-0 snap-center overflow-hidden will-change-transform ${framed ? "" : "bg-black"}`}
                 style={{
-                  width: ITEM_W,
-                  aspectRatio: framed ? undefined : aspect,
+                  ...(isDesktop
+                    ? deskBox(boxAspect, i)
+                    : {
+                        width: ITEM_W,
+                        aspectRatio: framed ? undefined : aspect,
+                        marginLeft: i === 0 ? 0 : -OVERLAP,
+                      }),
                   ...(frame && !framed && frame.background?.colour ? { backgroundColor: frame.background.colour } : null),
-                  marginLeft: i === 0 ? 0 : -OVERLAP,
-                  boxShadow: i === index && !reduceMotion ? "0 8px 24px rgba(0,0,0,0.18)" : "none",
+                  boxShadow: i === index && !flat ? "0 8px 24px rgba(0,0,0,0.18)" : "none",
                   transition:
                     reduceMotion || scrolling
                       ? "none"
@@ -387,7 +569,7 @@ export default function ProjectStage({
                     frame={framed}
                     mediaAspect={aspect}
                     boxClassName="bg-black"
-                    sizes="100vw"
+                    sizes={isDesktop ? "70vw" : "100vw"}
                     mediaRef={
                       i === 0 && firstCardRef
                         ? (el: HTMLDivElement | null) => {
@@ -410,7 +592,7 @@ export default function ProjectStage({
                 itemRefs.current[gallery.length] = el;
               }}
               className="relative shrink-0 snap-center will-change-transform"
-              style={{ width: ITEM_W, marginLeft: -OVERLAP }}
+              style={isDesktop ? deskBox(LANDING_ASPECT[landingKind(nextProject.hasChapters, true)], gallery.length) : { width: ITEM_W, marginLeft: -OVERLAP }}
               role="group"
               aria-roledescription="slide"
               aria-label="Next project"
@@ -419,9 +601,10 @@ export default function ProjectStage({
                 nextProject={nextProject}
                 previewRef={previewRef}
                 onNavigate={onNavigateNext!}
-                imageWidth={900}
-                sizes="100vw"
-                aspect={LANDING_ASPECT[landingKind(nextProject.hasChapters, false)]}
+                imageWidth={isDesktop ? 1600 : 900}
+                sizes={isDesktop ? "70vw" : "100vw"}
+                aspect={LANDING_ASPECT[landingKind(nextProject.hasChapters, isDesktop)]}
+                labelHidden={isDesktop}
               />
             </div>
           )}
@@ -433,44 +616,23 @@ export default function ProjectStage({
         {single ? "" : `${index + 1} of ${gallery.length}`}
       </p>
 
-      {/* Bottom row: pills */}
-      <div ref={pillsRef} className="invisible absolute inset-x-0 bottom-0 z-30 flex items-center justify-end gap-2 px-margin pb-4">
-        {atEnd && !single && !hasPreview && project.nextProject?.slug?.current ? (
-          <Link
-            href={`/project/${project.nextProject.slug.current}`}
-            className={pillWhite}
-            onClick={(e) => {
-              if (!onNavigateNext || !isPlainLeftClick(e)) return;
-              e.preventDefault();
-              onNavigateNext();
-            }}
-          >
-            Next project
-          </Link>
-        ) : project.caseStudy?.slug?.current ? (
-          <Link href={`/journal/${project.caseStudy.slug.current}`} className={pillWhite}>
-            Case study
-          </Link>
-        ) : null}
-        {project.siteUrl && (
-          <NextLink href={project.siteUrl} target="_blank" rel="noopener noreferrer" className={pillGreen}>
-            Visit<span className="sr-only"> (opens in a new tab)</span>
-          </NextLink>
-        )}
-      </div>
+      {/* Progress: a filmstrip at the bottom centre (Ali, 11-04). */}
+      <GalleryProgress
+        gallery={gallery}
+        index={index}
+        onEnd={onEnd}
+        nextProject={nextProject}
+        title={project.title ?? "Project"}
+        isDesktop={isDesktop}
+        reduceMotion={reduceMotion}
+        onSelect={(i) => {
+          posRef.current = i;
+          goTo(i);
+        }}
+        onNavigateNext={nextSlug ? onNavigateNext : undefined}
+      />
 
-      {/* Progress line (hidden for a single item) */}
-      {!single && (
-        <div className="absolute inset-x-0 bottom-0 z-30 h-1 bg-tertiary" aria-hidden="true">
-          <div
-            className="h-full w-full origin-left bg-pistachio"
-            style={{
-              transform: `scaleX(${(index + 1) / gallery.length})`,
-              transition: reduceMotion ? "none" : `transform 200ms ${EASE_OUT_CSS}`,
-            }}
-          />
-        </div>
-      )}
+      <ProjectDetailsOverlay project={project} open={detailsOpen} onClose={closeDetails} reduceMotion={reduceMotion} />
     </div>
   );
 }

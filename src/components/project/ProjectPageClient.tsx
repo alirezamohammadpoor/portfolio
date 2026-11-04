@@ -17,10 +17,6 @@ import { dur, ease, maskOutText, prefersReducedMotion, stagger } from "@/lib/mot
 import { cloneSourceFromElement } from "@/lib/cloneSource";
 import { landingKind, landingTop } from "@/lib/landing";
 import { usePrefetchProject } from "@/hooks/usePrefetchProject";
-import Footer from "@/components/layout/Footer";
-import DetailsDrawer from "@/components/project/DetailsDrawer";
-import ProjectInfoPanel from "@/components/project/ProjectInfoPanel";
-import ProjectGallery from "@/components/project/ProjectGallery";
 import ProjectStage from "@/components/project/ProjectStage";
 import { DESKTOP_QUERY, useIsDesktop } from "@/hooks/useIsDesktop";
 import ScrollProgress from "@/components/project/ScrollProgress";
@@ -56,7 +52,6 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
   // next route takes to arrive (noticeable on a dev server or a slow link).
   const [landingId] = useState(() => (transitionRunning ? transitionId : -1));
   const isTransitioning = transitionRunning && transitionId === landingId;
-  const [detailsOpen, setDetailsOpen] = useState(false);
   const isDesktop = useIsDesktop();
   // A project with chapters is a case study: one scrolling page on every
   // breakpoint (brief-v2). Without them it keeps the gallery page.
@@ -250,71 +245,18 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
     );
   }
 
-  if (!isDesktop) {
-    return (
-      // The stage holds the media too, so it stays hidden until the clone
-      // has landed (no double image); the desktop panel reveals early.
-      <ProjectStage
-        project={project}
-        hidden={skip}
-        firstCardRef={firstImageRef}
-        onFirstReady={onFirstReady}
-        previewRef={previewRef}
-        onNavigateNext={nextSlug ? navigateNext : undefined}
-      />
-    );
-  }
-
+  // Every other project is the stage, laptop and phone alike (11-04).
   return (
-    <>
-      <ProjectInfoPanel
-        project={project}
-        hidden={textWaiting}
-        panelRef={panelRef}
-        titleRef={titleRef}
-        descRef={descRef}
-        techRef={techRef}
-        linksRef={linksRef}
-      />
-
-      <ProjectGallery
-        gallery={gallery}
-        projectTitle={project.title}
-        frameSource={project}
-        galleryRef={galleryRef}
-        firstImageRef={firstImageRef}
-        hidden={skip}
-        onFirstReady={onFirstReady}
-        nextProject={nextProject}
-        previewRef={previewRef}
-        onNavigateNext={nextSlug ? navigateNext : undefined}
-      />
-
-      {!skip && (
-        <ScrollProgress
-          progressFillRef={progressFillRef}
-          pullRef={pullRef}
-          nextProjectSlug={nextProject?.slug?.current ?? undefined}
-          nextProjectTitle={nextProject?.title}
-        />
-      )}
-
-      <DetailsDrawer project={project} isOpen={detailsOpen} />
-
-      <Footer
-        projectTitle={project.title ?? undefined}
-        siteUrl={project.siteUrl ?? undefined}
-        sitePassword={project.sitePassword ?? undefined}
-        caseStudySlug={project.caseStudy?.slug?.current ?? undefined}
-        onDetailsToggle={() => setDetailsOpen((prev) => !prev)}
-        detailsOpen={detailsOpen}
-        visible={!skip}
-        progressRef={mobileProgressElRef}
-        wipeRef={footerWipeRef}
-        nextProjectSlug={nextProject?.slug?.current ?? undefined}
-        prevProjectSlug={prevProject?.slug?.current ?? undefined}
-        showNav={showMobileNav}
-      />
-    </>
+    // The stage holds the media too, so it stays hidden until the clone
+    // has landed (no double image).
+    <ProjectStage
+      project={project}
+      hidden={skip}
+      firstCardRef={firstImageRef}
+      onFirstReady={onFirstReady}
+      previewRef={previewRef}
+      onNavigateNext={nextSlug ? navigateNext : undefined}
+      isDesktop={isDesktop}
+    />
   );
 }
