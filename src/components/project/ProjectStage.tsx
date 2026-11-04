@@ -35,6 +35,7 @@ import MediaFrame from "@/components/MediaFrame";
 import { resolveFrame, resolveLandingFrame } from "@/lib/mediaFrame";
 import { LANDING_ASPECT, imageAspect, landingKind, videoAspect } from "@/lib/landing";
 import ProjectDetailsOverlay from "@/components/project/ProjectDetailsOverlay";
+import GalleryProgress, { type ProgressVariant } from "@/components/project/GalleryProgress";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -136,7 +137,24 @@ export default function ProjectStage({
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
   const detailsOpenRef = useRef(false);
-  const fillRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  // S or F, test switch while Ali compares (11-04): ?progress=s|f, remembered.
+  const [variant, setVariant] = useState<ProgressVariant>("s");
+  useEffect(() => {
+    let v: string | null = new URLSearchParams(window.location.search).get("progress");
+    try {
+      if (v) localStorage.setItem("gallery-progress", v);
+      else v = localStorage.getItem("gallery-progress");
+    } catch {}
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read once from the URL/storage on mount
+    if (v === "s" || v === "f") setVariant(v);
+  }, []);
+  const pickVariant = (v: ProgressVariant) => {
+    setVariant(v);
+    try {
+      localStorage.setItem("gallery-progress", v);
+    } catch {}
+  };
   useLayoutEffect(() => {
     detailsOpenRef.current = detailsOpen;
   }, [detailsOpen]);
@@ -215,8 +233,8 @@ export default function ProjectStage({
       // clip, full at the last (the preview beyond it adds nothing).
       // Piecewise between card centres, so each clip lands on exactly its
       // share whatever the card widths.
-      const fill = fillRef.current;
-      if (fill) {
+      const fills = progressRef.current?.querySelectorAll<HTMLElement>("[data-seg-fill]");
+      if (fills && fills.length) {
         const centres = itemRefs.current
           .slice(0, last + 1)
           .map((el) => (el ? el.offsetLeft + el.offsetWidth / 2 : NaN));
@@ -231,8 +249,10 @@ export default function ProjectStage({
               break;
             }
           }
-        const n = Math.max(1, last + 1);
-        fill.style.transform = `scaleX(${((1 + t) / n).toFixed(4)})`;
+        // Segment i is full once clip i is centred, filling as it arrives.
+        fills.forEach((el, i) => {
+          el.style.transform = `scaleX(${Math.min(1, Math.max(0, t - i + 1)).toFixed(4)})`;
+        });
       }
       setIndex((prev) => (prev === best.i ? prev : best.i));
     };
@@ -260,7 +280,7 @@ export default function ProjectStage({
       cancelAnimationFrame(raf);
       clearTimeout(idle);
     };
-  }, [gallery.length, reduceMotion, last, isDesktop]);
+  }, [gallery.length, reduceMotion, last, isDesktop, variant]);
 
   // Laptop: the strip's side padding centres the first and the last card
   // (their widths follow their media, which may report its size late).
@@ -639,45 +659,37 @@ export default function ProjectStage({
         {single ? "" : `${index + 1} of ${gallery.length}`}
       </p>
 
-      {/* Counter, bottom left */}
-      {!single && (
-        <p
-          data-stage-chrome
-          aria-hidden="true"
-          className="invisible absolute bottom-7 left-0 z-30 px-margin text-body text-primary tabular-nums desktop:bottom-10"
-        >
-          {index + 1} of {gallery.length}
-        </p>
-      )}
+      {/* Progress along the bottom: segments (S) or a filmstrip (F). */}
+      <GalleryProgress
+        variant={variant}
+        gallery={gallery}
+        index={index}
+        onEnd={onEnd}
+        nextProject={nextProject}
+        title={project.title ?? "Project"}
+        isDesktop={isDesktop}
+        reduceMotion={reduceMotion}
+        rootRef={progressRef}
+        onSelect={(i) => {
+          posRef.current = i;
+          goTo(i);
+        }}
+        onNavigateNext={nextSlug ? onNavigateNext : undefined}
+      />
 
-      {/* Scroll bar in the bottom margin (Ali, 11-04: the bottom keeps it off
-          the content). The fill follows the strip continuously; on the last
-          card the bar widens and names the next project, tapping it hands off
-          like the wheel does. */}
-      {(!single || onEnd) && (
-        <div
-          className="absolute inset-x-0 bottom-0 z-30 overflow-hidden bg-tertiary"
-          style={{ height: onEnd ? 24 : 8, transition: reduceMotion ? "none" : `height 240ms ${EASE_OUT_CSS}` }}
-        >
-          <div ref={fillRef} aria-hidden="true" className="h-full w-full origin-left bg-pistachio" />
-          {nextSlug && onNavigateNext && (
-            <a
-              href={`/project/${nextSlug}`}
-              tabIndex={onEnd ? 0 : -1}
-              aria-hidden={!onEnd}
-              onClick={(e) => {
-                if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-                e.preventDefault();
-                onNavigateNext();
-              }}
-              className="absolute inset-0 flex items-center px-margin text-sub text-primary"
-              style={{ opacity: onEnd ? 1 : 0, transition: reduceMotion ? "none" : `opacity 240ms ${EASE_OUT_CSS}` }}
-            >
-              <span className="truncate">Next project – {nextProject?.title}</span>
-            </a>
-          )}
-        </div>
-      )}
+      {/* Test switch (remove once Ali picks) */}
+      <div className="absolute top-2 right-0 z-50 flex gap-1 px-margin text-sub">
+        {(["s", "f"] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => pickVariant(v)}
+            className={`h-7 w-7 cursor-pointer rounded-full uppercase ${variant === v ? "bg-primary text-bg" : "bg-tertiary text-primary"}`}
+          >
+            {v}
+          </button>
+        ))}
+      </div>
 
       <ProjectDetailsOverlay project={project} open={detailsOpen} onClose={closeDetails} reduceMotion={reduceMotion} />
     </div>
