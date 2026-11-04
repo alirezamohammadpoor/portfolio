@@ -14,15 +14,13 @@
   --color-spotify: #1db954;
 
   /* Frost (11-04): translucent fill + backdrop blur for UI that floats over
-     the gallery. Both are pistachio (Ali, 11-04): strong is the full-page
-     details overlay, soft is the pills. Use the frost-strong / frost-soft
+     the gallery. Strong is the full-page details overlay (page grey); soft is
+     the pills on top (pistachio). Use the frost-strong / frost-soft
      utilities below, which pair each fill with its blur. */
-  --color-frost-strong: rgb(190 220 170 / 0.88);
+  --color-frost-strong: rgb(247 247 247 / 0.88);
   --color-frost-soft: rgb(190 220 170 / 0.65);
   --blur-frost-strong: 40px;
   --blur-frost-soft: 20px;
-  /* Pills that sit on the pistachio overlay flip to the page grey. */
-  --color-frost-soft-grey: rgb(247 247 247 / 0.65);
 
   --text-display: 3.5rem;
   --text-display--line-height: 4rem;
@@ -404,20 +402,9 @@ html[data-custom-clone] ::view-transition-new(root) {
   backdrop-filter: blur(var(--blur-frost-soft));
 }
 
-@utility frost-soft-grey {
-  background-color: var(--color-frost-soft-grey);
-  -webkit-backdrop-filter: blur(var(--blur-frost-soft));
-  backdrop-filter: blur(var(--blur-frost-soft));
-}
-
 /* Reduced transparency: the frost turns solid, no blur. */
 @media (prefers-reduced-transparency: reduce) {
   .frost-strong {
-    background-color: var(--color-pistachio);
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
-  }
-  .frost-soft-grey {
     background-color: var(--color-bg);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;

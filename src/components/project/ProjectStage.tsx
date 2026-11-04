@@ -413,7 +413,7 @@ export default function ProjectStage({
           aria-expanded={detailsOpen}
           aria-controls="project-details"
           onClick={() => setDetailsOpen((o) => !o)}
-          className={`${detailsOpen ? "frost-soft-grey" : "frost-soft"} invisible inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center gap-2 rounded-full px-4 text-body text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97]`}
+          className="frost-soft invisible inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center gap-2 rounded-full px-4 text-body text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97]"
         >
           <span className="truncate">{project.title}</span>
           <span
