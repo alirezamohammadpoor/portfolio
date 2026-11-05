@@ -64,8 +64,23 @@ const SETTLE_MS = 200;
 const ITEM_W = "calc(100vw - 2 * var(--grid-margin))";
 // Laptop: one height for every card (Figma "Gallery · laptop alternatives",
 // 11-04: 640 at 1440×900), the width follows each card's ratio.
-const DESK_H = "min(640px, calc(100svh - var(--header-height) - 200px))";
+const DESK_H = "min(760px, calc(100svh - var(--header-height) - 200px))";
 const DESK_GAP = 48;
+// Card height cap on laptop (Ali 11-04: raised from 640 so big screens keep 8 columns).
+const DESK_MAX_H = 760;
+// Hold on the next project's cover before it opens.
+const AUTO_NEXT_MS = 1500;
+
+type DeskGrid = { col: number; gutter: number; h: number };
+/** Laptop grid in px (globals.css: 12 columns, --grid-margin, --grid-gutter) and the card height budget. */
+function measureDeskGrid(): DeskGrid {
+  const cs = getComputedStyle(document.documentElement);
+  const margin = parseFloat(cs.getPropertyValue("--grid-margin")) || 24;
+  const gutter = parseFloat(cs.getPropertyValue("--grid-gutter")) || 16;
+  const header = parseFloat(cs.getPropertyValue("--header-height")) || 40;
+  const vw = document.documentElement.clientWidth;
+  return { col: (vw - 2 * margin - 11 * gutter) / 12, gutter, h: Math.min(DESK_MAX_H, window.innerHeight - header - 200) };
+}
 // Vertical wheel → one card per gesture (see the wheel effect).
 const WHEEL_STEP = 40;
 const GESTURE_SILENCE_MS = 150;
@@ -118,22 +133,62 @@ export default function ProjectStage({
     setVideoAspects((prev) => (prev[key] === aspect ? prev : { ...prev, [key]: aspect }));
   };
   const [reduceMotion, setReduceMotion] = useState(false);
+  // Laptop grid, re-measured on resize. Measured in the initialiser too: the
+  // home → project clone measures card 1 in the page's own layout effect,
+  // which runs before a re-render from this component's effects would land,
+  // so the first render must already be snapped.
+  const [grid, setGrid] = useState<DeskGrid | null>(() => (isDesktop ? measureDeskGrid() : null));
+  useLayoutEffect(() => {
+    if (!isDesktop) return;
+    const measure = () => {
+      const g = measureDeskGrid();
+      setGrid((prev) => (prev && prev.col === g.col && prev.gutter === g.gutter && prev.h === g.h ? prev : g));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [isDesktop]);
 
-  // Entrance: the name pill and the bottom row lift in once the stage is
-  // shown (a direct load at once; an arrival when the clone has landed). The
-  // cards do not animate: card 1 is the shared element the clone lands on.
+  // Entrance (Ali, 11-04: nothing moves until the morph is done). The stage
+  // stays hidden while the home → project clone is in flight and `hidden`
+  // flips on the clone's own completion (TransitionOverlay: the morph tween's
+  // onComplete, then the landing media's first frame → pageRevealed), never
+  // on a timer. Then the name pill, the cards beside card 1 (slide 2 and on,
+  // the next project's preview) and the filmstrip come in one beat apart. A
+  // direct load runs the same entrance at once. Card 1 does not animate: it
+  // is the shared element the clone lands on.
   const rootRef = useRef<HTMLDivElement>(null);
+  // The cards' CSS settle transition would smooth (and delay) every frame
+  // of the entrance, so it is off until the entrance is done.
+  const [entering, setEntering] = useState(true);
   useGSAP(
     () => {
-      if (hidden || !rootRef.current) return;
-      const chrome = rootRef.current.querySelectorAll("[data-stage-chrome]");
-      if (!chrome.length) return;
-      // Reduced motion: the same beat as a fade, no rise.
-      gsap.fromTo(
-        chrome,
-        { yPercent: reduceMotion ? 0 : 40, autoAlpha: 0 },
-        { yPercent: 0, autoAlpha: 1, duration: dur.text, ease: ease.out, stagger: reduceMotion ? 0 : stagger },
-      );
+      const root = rootRef.current;
+      if (hidden || !root) return;
+      const pill = root.querySelectorAll("[data-stage-chrome='pill']");
+      const film = root.querySelectorAll("[data-stage-chrome='film']");
+      const cards = itemRefs.current.slice(1).filter((el): el is HTMLDivElement => Boolean(el));
+      const rise = reduceMotion ? 0 : 40;
+      const tl = gsap.timeline({ defaults: { duration: dur.text, ease: ease.out }, onComplete: () => setEntering(false) });
+      if (pill.length) tl.fromTo(pill, { yPercent: rise, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1 }, 0);
+      if (cards.length) {
+        // Phone: the neighbours rest at NEIGHBOUR_OPACITY behind card 1 and
+        // the scroll loop owns their transform, so they only fade, to the
+        // opacity they rest at. Laptop: flat cards slide in from the right.
+        const rest = isDesktop || reduceMotion ? 1 : NEIGHBOUR_OPACITY;
+        tl.fromTo(
+          cards,
+          { opacity: 0, x: isDesktop && !reduceMotion ? 48 : 0 },
+          {
+            opacity: rest,
+            x: 0,
+            stagger: reduceMotion ? 0 : stagger,
+            clearProps: isDesktop || reduceMotion ? "opacity,transform" : "transform",
+          },
+          stagger,
+        );
+      }
+      if (film.length) tl.fromTo(film, { yPercent: rise, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1 }, 2 * stagger);
     },
     { scope: rootRef, dependencies: [hidden] },
   );
@@ -463,6 +518,25 @@ export default function ProjectStage({
     };
   }, [isDesktop]);
 
+  // Landing on the next project's cover opens it after a short hold (Ali,
+  // 11-04: a scroll past the last clip felt stuck). The hold restarts on any
+  // movement, waits for the strip to settle, and stops while the text is
+  // open. It shares the wheel's once-only hand-off guard.
+  // Shown again after browser back (every breakpoint; the laptop wheel effect
+  // resets it as well): it may hand off again.
+  useEffect(() => {
+    handedOffRef.current = false;
+  }, []);
+  useEffect(() => {
+    if (!atPreview || scrolling || detailsOpen || hidden || !onNavigateNext) return;
+    const t = window.setTimeout(() => {
+      if (handedOffRef.current) return;
+      handedOffRef.current = true;
+      onNavigateNext();
+    }, AUTO_NEXT_MS);
+    return () => window.clearTimeout(t);
+  }, [atPreview, scrolling, detailsOpen, hidden, onNavigateNext]);
+
   // A video first card reports ready on its first presented frame (see
   // ProjectGallery): the clone covering it must not leave on a black frame.
   useEffect(() => {
@@ -514,12 +588,35 @@ export default function ProjectStage({
   }, [index]);
 
   const onEnd = index >= last && Boolean(nextSlug && onNavigateNext);
-  // Desktop card box: one height, the width from the box ratio.
-  const deskBox = (boxAspect: number, i: number) => ({
-    height: DESK_H,
-    aspectRatio: boxAspect,
-    marginLeft: i === 0 ? 0 : DESK_GAP,
-  });
+  // Desktop card box (Ali, 11-04: "use the columns"): the widest even
+  // column span that fits the card height at the box's ratio, so the
+  // centred card starts and ends on the 12-column grid (an even span
+  // centred in 12 columns lands on column edges). The height follows the
+  // width. Before the grid is measured: one height, the width from the ratio.
+  const span = (n: number) => (grid ? n * grid.col + (n - 1) * grid.gutter : 0);
+  const snapWidth = (natural: number) => {
+    if (!grid) return 0;
+    let n = 12;
+    while (n > 2 && span(n) > natural) n -= 2;
+    return span(n);
+  };
+  const deskBox = (boxAspect: number, i: number) => {
+    if (!grid) return { height: DESK_H, aspectRatio: boxAspect, marginLeft: i === 0 ? 0 : DESK_GAP };
+    const width = snapWidth(grid.h * boxAspect);
+    return { width, height: width / boxAspect, marginLeft: i === 0 ? 0 : DESK_GAP };
+  };
+  // Phones on the page: the screens fill the snapped width, the height follows.
+  const phonesDeskBox = (screens: number, i: number) => {
+    const gaps = (screens - 1) * 16;
+    if (!grid)
+      return {
+        height: DESK_H,
+        width: `calc(${DESK_H} * ${(screens * PHONE_ASPECT).toFixed(4)} + ${gaps}px)`,
+        marginLeft: i === 0 ? 0 : DESK_GAP,
+      };
+    const width = snapWidth(grid.h * screens * PHONE_ASPECT + gaps);
+    return { width, height: (width - gaps) / (screens * PHONE_ASPECT), marginLeft: i === 0 ? 0 : DESK_GAP };
+  };
 
   return (
     <div
@@ -533,7 +630,7 @@ export default function ProjectStage({
       <div className="relative z-50 flex h-14 shrink-0 items-start justify-center pt-2">
         <button
           type="button"
-          data-stage-chrome
+          data-stage-chrome="pill"
           aria-expanded={detailsOpen}
           aria-controls="project-details"
           onClick={() => setDetailsOpen((o) => !o)}
@@ -584,11 +681,7 @@ export default function ProjectStage({
               const screens = Math.min(3, Math.max(1, item.phones?.length ?? 1));
               const phonesBox = phonesFrame.background
                 ? deskBox(LANDING_ASPECT.stage, i)
-                : {
-                    height: DESK_H,
-                    width: `calc(${DESK_H} * ${(screens * PHONE_ASPECT).toFixed(4)} + ${(screens - 1) * 16}px)`,
-                    marginLeft: i === 0 ? 0 : DESK_GAP,
-                  };
+                : phonesDeskBox(screens, i);
               return (
                 <div
                   key={item._key}
@@ -603,7 +696,7 @@ export default function ProjectStage({
                           width: ITEM_W,
                           marginLeft: i === 0 ? 0 : -OVERLAP,
                           transition:
-                            reduceMotion || scrolling ? "none" : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}`,
+                            reduceMotion || scrolling || entering ? "none" : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}`,
                         }
                   }
                   role="group"
@@ -698,7 +791,7 @@ export default function ProjectStage({
                   ...(frame && !framed && frame.background?.colour ? { backgroundColor: frame.background.colour } : null),
                   boxShadow: i === index && !flat ? "0 8px 24px rgba(0,0,0,0.18)" : "none",
                   transition:
-                    reduceMotion || scrolling
+                    reduceMotion || scrolling || entering
                       ? "none"
                       : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}, box-shadow ${SETTLE_MS}ms`,
                 }}

@@ -22,7 +22,7 @@ interface UseGalleryScrollOptions {
   isTransitioning: boolean;
   /** Arrived in place (project → project): the clone does not move. */
   inPlace: boolean;
-  animateClone: (rect: Rect, element?: HTMLElement | null) => void;
+  animateClone: (rect: Rect) => void;
   /** Gallery item 1 has decoded: the clone may be removed once it lands. */
   markTargetReady: () => void;
   /** Threshold passed at the bottom: run the in-place next-project transition. */
@@ -195,6 +195,7 @@ export function useGalleryScroll({
   // resting on the slot instead of a black box, and a fast one never waits.
   // Safety: if the slot never appears (empty gallery), collapse after 600 ms.
   const cloneFired = useRef(false);
+  const retargetRef = useRef<ResizeObserver | null>(null);
 
   const fireAnimateClone = useCallback((force = false) => {
     if (cloneFired.current) return;
@@ -210,7 +211,17 @@ export function useGalleryScroll({
         return;
       }
       const rect = el.getBoundingClientRect();
-      animateClone({ top: rect.top, left: rect.left, width: rect.width, height: rect.height }, el);
+      animateClone({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+      // Card 1 may still take its real size (a clip reporting its ratio on
+      // metadata): follow it until the transition clears, the overlay glides
+      // the clone onto the new rect instead of landing on a stale one.
+      retargetRef.current?.disconnect();
+      const ro = new ResizeObserver(() => {
+        const r = el.getBoundingClientRect();
+        animateClone({ top: r.top, left: r.left, width: r.width, height: r.height });
+      });
+      ro.observe(el);
+      retargetRef.current = ro;
     });
   }, [animateClone]);
 
@@ -222,6 +233,8 @@ export function useGalleryScroll({
   useEffect(() => {
     if (!isTransitioning) {
       cloneFired.current = false;
+      retargetRef.current?.disconnect();
+      retargetRef.current = null;
       return;
     }
     // Only the landing page targets the clone. The page being left also sees

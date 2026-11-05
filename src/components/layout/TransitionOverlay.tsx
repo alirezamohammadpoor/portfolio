@@ -37,7 +37,6 @@ export default function TransitionOverlay() {
     sourceVideoElement,
     sourceRect,
     targetRect,
-    targetElement,
     targetReady,
     inPlace,
     revealContent,
@@ -128,9 +127,43 @@ export default function TransitionOverlay() {
       // been autoplaying on the homepage, but don't crash if it does).
     }
   }, [paintSnapshot, sourceVideoElement]);
+  // The landing rect can still change after the morph has started: card 1
+  // takes its real ratio when its clip reports metadata (a gallery clip that
+  // is not 16:10 and is a different file from the home cover). The tween reads
+  // the latest rect every frame instead of restarting, so the clone glides
+  // onto the box it will keep; after landing it is set onto it directly.
+  const targetRef = useRef(targetRect);
+  useLayoutEffect(() => {
+    targetRef.current = targetRect;
+  }, [targetRect]);
+  const hasTarget = Boolean(targetRect);
+  const landedRef = useRef(false);
+  const transformsFor = (p: number) => {
+    const t = targetRef.current;
+    if (!t || !sourceRect) return null;
+    const dx = t.left - sourceRect.left;
+    const dy = t.top - sourceRect.top;
+    const sx = t.width / Math.max(sourceRect.width, 1);
+    const sy = t.height / Math.max(sourceRect.height, 1);
+    const wx = 1 + (sx - 1) * p;
+    const wy = 1 + (sy - 1) * p;
+    const k = Math.max(wx, wy);
+    return { win: `translate3d(${dx * p}px, ${dy * p}px, 0) scale(${wx}, ${wy})`, media: `scale(${k / wx}, ${k / wy})` };
+  };
   const targetKey = targetRect
     ? `${targetRect.top}:${targetRect.left}:${targetRect.width}:${targetRect.height}`
     : "none";
+  useLayoutEffect(() => {
+    if (!landedRef.current) return;
+    const win = windowRef.current;
+    const media = mediaRef.current;
+    const tf = transformsFor(1);
+    if (!win || !media || !tf) return;
+    win.style.transform = tf.win;
+    media.style.transform = tf.media;
+    // transformsFor reads refs; only the key decides when to re-apply.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetKey]);
 
   useGSAP(
     () => {
@@ -159,6 +192,7 @@ export default function TransitionOverlay() {
       // clone just covers the swap until the media under it has decoded.
       if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) {
         revealContent();
+        landedRef.current = true;
         setLanded(true);
         return;
       }
@@ -182,71 +216,35 @@ export default function TransitionOverlay() {
       const proxy = { p: 0 };
       let revealed = false;
 
-      // The landing rect was measured as soon as the card had a layout. A
-      // video card is a 16:10 placeholder until its metadata arrives, and on
-      // the phone a neighbour's late ratio moves card 1 too, so by the time
-      // the morph lands the card may sit elsewhere. Measured again here: a
-      // short settle from where the clone is onto where the card is now, so
-      // the media does not jump when the clone goes. Nothing changes when the
-      // card kept its box.
-      const land = () => {
-        const el = targetElement;
-        const r = el?.isConnected ? el.getBoundingClientRect() : null;
-        const moved =
-          r &&
-          (Math.abs(r.left - targetRect.left) > 1 ||
-            Math.abs(r.top - targetRect.top) > 1 ||
-            Math.abs(r.width - targetRect.width) > 1 ||
-            Math.abs(r.height - targetRect.height) > 1);
-        if (!r || !moved) {
-          setLanded(true);
-          return;
-        }
-        const dx2 = r.left - sourceRect.left;
-        const dy2 = r.top - sourceRect.top;
-        const sx2 = r.width / Math.max(sourceRect.width, 1);
-        const sy2 = r.height / Math.max(sourceRect.height, 1);
-        const q = { p: 0 };
-        gsap.to(q, {
-          p: 1,
-          duration: dur.ui,
-          ease: ease.out,
-          onUpdate: () => {
-            const p = q.p;
-            const wx = sx + (sx2 - sx) * p;
-            const wy = sy + (sy2 - sy) * p;
-            const k = Math.max(wx, wy);
-            setWin(`translate3d(${dx + (dx2 - dx) * p}px, ${dy + (dy2 - dy) * p}px, 0) scale(${wx}, ${wy})`);
-            setMedia(`scale(${k / wx}, ${k / wy})`);
-          },
-          onComplete: () => setLanded(true),
-        });
-      };
-
       gsap.to(proxy, {
         p: 1,
         duration: settle ? dur.ui : dur.page,
         ease: settle ? ease.out : ease.inOut,
         onUpdate: () => {
           const p = proxy.p;
-          const wx = 1 + (sx - 1) * p;
-          const wy = 1 + (sy - 1) * p;
-          const k = Math.max(wx, wy);
-          setWin(`translate3d(${dx * p}px, ${dy * p}px, 0) scale(${wx}, ${wy})`);
-          setMedia(`scale(${k / wx}, ${k / wy})`);
+          const tf = transformsFor(p);
+          if (tf) {
+            setWin(tf.win);
+            setMedia(tf.media);
+          }
           if (!revealed && p >= REVEAL_AT) {
             revealed = true;
             revealContent();
           }
         },
-        onComplete: land,
+        onComplete: () => {
+          landedRef.current = true;
+          setLanded(true);
+        },
       });
     },
-    { dependencies: [targetKey, inPlace, clearTransition, revealContent] },
+    // Started once per target arrival; later rect changes are read per frame.
+    { dependencies: [hasTarget, inPlace, clearTransition, revealContent] },
   );
 
   useEffect(() => {
     if (!isTransitioning) {
+      landedRef.current = false;
       setLanded(false);
       return;
     }

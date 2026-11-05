@@ -48,12 +48,6 @@ interface TransitionState {
   sourceVideoElement: HTMLVideoElement | null;
   sourceRect: Rect | null;
   targetRect: Rect | null;
-  /**
-   * The element targetRect was measured on, so the overlay can measure it
-   * again when the morph lands: a video card settles its ratio (metadata)
-   * while the clone is in flight, and a neighbour's resize can move it.
-   */
-  targetElement: HTMLElement | null;
 }
 
 export interface StartTransitionArgs {
@@ -66,7 +60,7 @@ export interface StartTransitionArgs {
 
 interface TransitionContextValue extends TransitionState {
   startTransition: (args: StartTransitionArgs) => void;
-  animateClone: (targetRect: Rect, targetElement?: HTMLElement | null) => void;
+  animateClone: (targetRect: Rect) => void;
   revealContent: () => void;
   markTargetReady: () => void;
   revealPage: () => void;
@@ -85,7 +79,6 @@ const initial: TransitionState = {
   sourceVideoElement: null,
   sourceRect: null,
   targetRect: null,
-  targetElement: null,
 };
 
 const TransitionContext = createContext<TransitionContextValue>({
@@ -117,12 +110,11 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
       sourceVideoElement: args.sourceVideoElement ?? null,
       sourceRect: args.sourceRect,
       targetRect: null,
-      targetElement: null,
     }));
   }, []);
 
-  const animateClone = useCallback((targetRect: Rect, targetElement: HTMLElement | null = null) => {
-    setState((prev) => ({ ...prev, targetRect, targetElement }));
+  const animateClone = useCallback((targetRect: Rect) => {
+    setState((prev) => ({ ...prev, targetRect }));
   }, []);
 
   const revealContent = useCallback(() => {

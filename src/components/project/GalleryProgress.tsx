@@ -72,7 +72,7 @@ function Filmstrip({ gallery, index, onEnd, atPreview, nextProject, title, isDes
   const thumbBox = { width: thumbW, aspectRatio: "56 / 35" };
   const handOver = atPreview && hasNext;
   return (
-    <div className="absolute inset-x-0 bottom-0 z-30 flex justify-center px-margin pb-11 desktop:pb-12">
+    <div data-stage-chrome="film" className="invisible absolute inset-x-0 bottom-0 z-30 flex justify-center px-margin pb-11 desktop:pb-12">
       <div className="relative">
         <div
           className="flex items-center gap-1.5 desktop:gap-2"
