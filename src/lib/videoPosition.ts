@@ -6,8 +6,11 @@
 const positions = new Map<string, number>();
 
 export function saveVideoPosition(video: HTMLVideoElement, key: string) {
-  if (!video.ended && video.currentTime > 0.25) positions.set(key, video.currentTime);
-  else positions.delete(key);
+  if (video.ended) positions.delete(key);
+  else if (video.currentTime > 0.25) positions.set(key, video.currentTime);
+  // A fresh element (near 0) keeps what an earlier one saved: React's dev
+  // StrictMode unmounts every new player once right after mounting, and
+  // that save used to wipe the position before the restore could read it.
 }
 
 /** Seeks to the saved time once metadata is known. No-op without one. */
