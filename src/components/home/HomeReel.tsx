@@ -26,6 +26,8 @@ type Project = PROJECTS_QUERY_RESULT[number];
 
 /** Longest wait for the first cover's frame before the entry starts anyway. */
 const READY_TIMEOUT = 1200;
+/** Wheel silence before the page may scroll again after a wheel skipped the reel. */
+const WHEEL_SILENCE_MS = 150;
 
 interface HomeReelProps {
   projects: PROJECTS_QUERY_RESULT;
@@ -78,6 +80,11 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
       const offs: (() => void)[] = [];
 
       let finishing = false;
+      // The last wheel event's time: a trackpad flick keeps sending its
+      // inertia tail for up to a second after the skip.
+      let lastWheelAt = -Infinity;
+      let wakeTimer = 0;
+      offs.push(() => window.clearTimeout(wakeTimer));
       function finish() {
         if (getReelState() !== "playing" || finishing) return;
         finishing = true;
@@ -91,12 +98,20 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
         // page slot, the others have faded).
         if (stage) stage.style.zIndex = "45";
         releaseIntro();
-        // Lenis wakes after the fade: the wheel that skipped the reel must
-        // not also scroll the page off the top it lands on.
-        const done = () => {
+        // Lenis wakes after the fade, and only once the wheel that skipped
+        // the reel has run dry: started under the flick's inertia tail it
+        // would scroll the page off the top the reel lands on.
+        const wake = () => {
+          if (performance.now() - lastWheelAt < WHEEL_SILENCE_MS) {
+            wakeTimer = window.setTimeout(wake, WHEEL_SILENCE_MS);
+            return;
+          }
           lenisRef.current?.start();
+        };
+        const done = () => {
           setReelState("done");
           ScrollTrigger.refresh();
+          wake();
         };
         if (cancelled || !stage) return done();
         gsap.to(stage, { autoAlpha: 0, duration: SCATTER_BEAT.handOver, ease: ease.out, onComplete: done });
@@ -115,6 +130,11 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
       }
       if (!scrubbing) {
         const opts = { passive: true, capture: true } as const;
+        const onWheel = () => {
+          lastWheelAt = performance.now();
+        };
+        window.addEventListener("wheel", onWheel, opts);
+        offs.push(() => window.removeEventListener("wheel", onWheel, opts));
         for (const type of ["wheel", "touchstart", "keydown", "pointerdown"] as const) {
           window.addEventListener(type, onInput, opts);
           offs.push(() => window.removeEventListener(type, onInput, opts));

@@ -293,7 +293,7 @@ export const project = defineType({
     defineField({
       name: "coverMedia",
       title: "Cover Media",
-      description: "Cover on the home and the first frame of the morph. Export flush: laptop recordings 16:10 (1920×1200), phone recordings 4:5 (1080×1350), no bars.",
+      description: "Cover on the home and the first frame of the morph, drawn 16:10 on every row. Export flush at 16:10 (1920×1200), no bars; a phone recording goes in the gallery, not here.",
       type: "object",
       fields: [
         defineField({

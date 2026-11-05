@@ -117,6 +117,12 @@ export const mediaFrame = defineType({
       title: "Fit",
       description: "Auto: a phone recording stands centred in a 4:5 box with rounded corners (on its background or the page); a laptop recording sits inset on its background, or flush when there is none.",
       type: "string",
+      // The home draws the cover 16:10 on its background whatever this says,
+      // so the cover's frame does not offer it. The form hands the parent
+      // value from the same document tree, so the cover's frame is known by
+      // identity; should that ever not hold, the field simply shows.
+      hidden: ({ document, parent }) =>
+        parent != null && parent === (document as { coverMedia?: { frame?: unknown } } | undefined)?.coverMedia?.frame,
       options: {
         list: [
           { title: "Auto", value: "auto" },

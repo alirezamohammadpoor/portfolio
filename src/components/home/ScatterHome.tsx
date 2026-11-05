@@ -209,7 +209,10 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
           // default). The recording stays flush; the page draws what is behind it.
           const frame = resolveFrame(project.coverMedia?.frame, project, "landscape");
           const backdrop = frame.background ? frame : null;
-          const coverSize = project.coverMedia?.frame?.size ?? null;
+          // Sanity's size override is only read through the resolved frame
+          // (clamped to 20–100, else the preset); here it just says whether
+          // the editor set one, which replaces the row preset's own width.
+          const coverSized = project.coverMedia?.frame?.size != null;
           const label = (
             <div
               className={`mt-4 desktop:mt-0 ${preset.under ? "desktop:col-start-1 desktop:col-end-4 desktop:row-start-2 desktop:mt-6" : `desktop:row-start-1 ${preset.label} ${ALIGN[align]}`}`}
@@ -234,8 +237,8 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
                     onClick={(e) => handleClick(e, project)}
                     // Cover width on its background: the preset (84 %, or 66 % of a
                     // full width row on the laptop) unless Sanity overrides it.
-                    className={`block ${preset.under && !coverSize ? "w-[88%] desktop:w-[66%]" : ""}`}
-                    style={preset.under && !coverSize ? undefined : { width: `${coverSize ?? backdrop.size}%` }}
+                    className={`block ${preset.under && !coverSized ? "w-[88%] desktop:w-[66%]" : ""}`}
+                    style={preset.under && !coverSized ? undefined : { width: `${backdrop.size}%` }}
                   >
                     <CoverMedia project={project} aspect={preset.aspect} priority={index === 0} sizes={coverSizes(project, index)} />
                   </Link>

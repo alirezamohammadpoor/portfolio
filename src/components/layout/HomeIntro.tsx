@@ -291,7 +291,9 @@ const brush: Variant = (tl, name, ctx) => {
       ctx.track(writing);
     });
   });
-  tl.add(() => {}, `+=${HOLD}`);
+  // No hold of its own: the move below holds HOLD after the last stroke, so
+  // the name leaves at the reel's `write` beat (REEL_NAME_MOVE_AT) and the
+  // dive lands `afterName` later, as lib/reel.ts documents.
 };
 
 interface HomeIntroProps {
