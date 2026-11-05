@@ -14,7 +14,7 @@ import {
 import { useGalleryScroll } from "@/hooks/useGalleryScroll";
 import { dur, ease, maskOutText, prefersReducedMotion, stagger } from "@/lib/motion";
 import { cloneSourceFromElement } from "@/lib/cloneSource";
-import { landingKind, landingTop } from "@/lib/landing";
+import { LANDING_SIZES, landingKind, landingTop } from "@/lib/landing";
 import { usePrefetchProject } from "@/hooks/usePrefetchProject";
 import ProjectStage from "@/components/project/ProjectStage";
 import { DESKTOP_QUERY, useIsDesktop } from "@/hooks/useIsDesktop";
@@ -87,7 +87,7 @@ function ProjectPageView({ project, nextProject, mobileVariant }: ProjectPageCli
   // Next project only, on arrival: its route and first media are ready long
   // before the reader reaches the end of the gallery. Previous gets nothing;
   // back navigation is cheap already.
-  usePrefetchProject(nextSlug, nextProject?.firstMedia);
+  usePrefetchProject(nextSlug, nextProject?.firstMedia, LANDING_SIZES[landingKind(nextProject?.hasChapters)]);
 
   // Project → project reads as one page: the gallery column carries the
   // preview block up into the first-item slot (the same move the reader has

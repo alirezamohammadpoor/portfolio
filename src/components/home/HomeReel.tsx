@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
+import { getImageProps } from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -10,6 +11,7 @@ import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { dur, ease } from "@/lib/motion";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
+import { DESKTOP_QUERY } from "@/hooks/useIsDesktop";
 import { holdIntro, releaseIntro } from "@/lib/intro";
 import {
   SCATTER_BEAT,
@@ -29,6 +31,8 @@ interface HomeReelProps {
   projects: PROJECTS_QUERY_RESULT;
   /** The home canvas: its `[data-cover]` boxes are where the heroes land. */
   pageRef: RefObject<HTMLElement | null>;
+  /** Each cover's `sizes` on the page, so a hero image shares its file. */
+  coverSizes: string[];
 }
 
 /**
@@ -42,7 +46,7 @@ interface HomeReelProps {
  * hero is a box the size of its cover on the page, so the landing is pixel
  * exact.
  */
-export default function HomeReel({ projects, pageRef }: HomeReelProps) {
+export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProps) {
   const reel = useReelState();
   const stageRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
@@ -81,6 +85,11 @@ export default function HomeReel({ projects, pageRef }: HomeReelProps) {
         // covers are in the same boxes, only at another moment of their
         // clips (seeking the page's videos to match stalls for up to a
         // second on sparse keyframes), so a short crossfade bridges them.
+        // The landed name sits in the header, which the stage covers until
+        // it has faded: drop the stage under the header first. Its header
+        // band is plain background by now (the first cover sits in its
+        // page slot, the others have faded).
+        if (stage) stage.style.zIndex = "45";
         releaseIntro();
         // Lenis wakes after the fade: the wheel that skipped the reel must
         // not also scroll the page off the top it lands on.
@@ -110,6 +119,15 @@ export default function HomeReel({ projects, pageRef }: HomeReelProps) {
           window.addEventListener(type, onInput, opts);
           offs.push(() => window.removeEventListener(type, onInput, opts));
         }
+        // The cover rects are measured once; a width change re-flows the rows
+        // under the heroes, so it ends the reel like an input. Height-only
+        // changes (a phone's URL bar) leave the covers where they are.
+        const width0 = window.innerWidth;
+        const onResize = () => {
+          if (window.innerWidth !== width0) onInput();
+        };
+        window.addEventListener("resize", onResize);
+        offs.push(() => window.removeEventListener("resize", onResize));
       }
 
       const first = heroes[0].querySelector<HTMLVideoElement | HTMLImageElement>("video, img");
@@ -157,7 +175,10 @@ export default function HomeReel({ projects, pageRef }: HomeReelProps) {
         finish();
       };
     },
-    { scope: stageRef, dependencies: [showStage] },
+    // revertOnUpdate: the cleanup also runs when the reel ends (showStage
+    // flips), so the window listeners and the timeline go with the stage
+    // instead of living on for the whole home visit.
+    { scope: stageRef, dependencies: [showStage], revertOnUpdate: true },
   );
 
   if (!showStage || typeof document === "undefined") return null;
@@ -168,7 +189,7 @@ export default function HomeReel({ projects, pageRef }: HomeReelProps) {
         <div ref={worldRef} className="invisible absolute left-0 top-0 will-change-transform">
           {projects.map((project, i) => (
             <div key={project._id} data-hero className="absolute left-0 top-0 overflow-hidden bg-tertiary will-change-transform">
-              <HeroMedia project={project} eager={i < 2} />
+              <HeroMedia project={project} eager={i < 2} sizes={coverSizes[i] ?? "(min-width: 75rem) 66vw, 100vw"} />
             </div>
           ))}
         </div>
@@ -223,7 +244,7 @@ const SCATTER_PHONE = [
 function scatterTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: HTMLElement, rects: Rect[]) {
   const VW = window.innerWidth;
   const VH = window.innerHeight;
-  const laptop = window.matchMedia("(width >= 75rem)").matches;
+  const laptop = window.matchMedia(DESKTOP_QUERY).matches;
   const spots = laptop ? SCATTER_LAPTOP : SCATTER_PHONE;
   // The field: under the header with a margin all round; on the laptop the
   // largest 16:10 box that fits, centred.
@@ -315,7 +336,7 @@ function scatterTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: H
   });
 }
 
-function HeroMedia({ project, eager }: { project: Project; eager: boolean }) {
+function HeroMedia({ project, eager, sizes }: { project: Project; eager: boolean; sizes: string }) {
   const coverMedia = project.coverMedia;
   if (coverMedia?.type === "video" && coverMedia.video?.asset?._ref) {
     return (
@@ -331,8 +352,17 @@ function HeroMedia({ project, eager }: { project: Project; eager: boolean }) {
     );
   }
   if (coverMedia?.type === "image" && coverMedia.image?.asset) {
+    // The same loader URL and srcset as the page's cover (ScatterHome
+    // CoverMedia), so the hero and the cover share one download.
+    const { props } = getImageProps({
+      src: imageUrl(coverMedia.image, 1600),
+      alt: "",
+      fill: true,
+      sizes,
+      loading: "eager",
+    });
     // eslint-disable-next-line @next/next/no-img-element -- a plain decode()-able image; the stage lives for five seconds
-    return <img src={imageUrl(coverMedia.image, 1600)} alt="" className="absolute inset-0 h-full w-full object-cover" />;
+    return <img {...props} alt="" className="absolute inset-0 h-full w-full object-cover" />;
   }
   return null;
 }
@@ -342,6 +372,7 @@ function Scrubber({ tl }: { tl: gsap.core.Timeline }) {
   const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(false);
   const total = tl.duration();
+  const lenis = useLenis();
 
   useEffect(() => {
     tl.eventCallback("onUpdate", () => setT(tl.time()));
@@ -386,9 +417,12 @@ function Scrubber({ tl }: { tl: gsap.core.Timeline }) {
       <button
         type="button"
         onClick={() => {
+          // The same hand-over as finish(): Lenis was stopped for the reel.
           tl.progress(1);
           releaseIntro();
+          lenis?.start();
           setReelState("done");
+          ScrollTrigger.refresh();
         }}
       >
         Done

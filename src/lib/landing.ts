@@ -33,6 +33,17 @@ export const LANDING_ASPECT: Record<LandingKind, number> = {
   stage: 16 / 10,
 };
 
+/**
+ * The landing media's `sizes` per page kind: the chapter hero's eight
+ * columns, the stage's centred card (ProjectStage deskBox). The next-project
+ * preload, the preview image that gets cloned and the landing image all use
+ * it, so the three resolve to one URL and one download.
+ */
+export const LANDING_SIZES: Record<LandingKind, string> = {
+  chapters: "(min-width: 75rem) 66vw, 100vw",
+  stage: "(min-width: 75rem) 70vw, 100vw",
+};
+
 /** Width / height of a Sanity image with dimensions metadata, else null. */
 export function imageAspect(
   image: { asset?: { metadata?: { dimensions?: { width?: number | null; height?: number | null } | null } | null } | null } | null | undefined,

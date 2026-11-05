@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { Link } from "@/lib/viewTransitions";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
-import { useIntroState } from "@/lib/intro";
+import { getIntroState, useIntroState } from "@/lib/intro";
 import { ENGLISH_NAME, PERSIAN_CHARS, PERSIAN_NAME } from "@/lib/name";
 import HomeIntro from "./HomeIntro";
 
@@ -18,7 +18,8 @@ export default function Header() {
   const introState = useIntroState();
 
   // The name stays Persian; a hover on a real pointer scrambles it to English
-  // and back on leave (feedback on the link, nothing on touch).
+  // and back on leave (feedback on the link, nothing on touch). Attached
+  // once: the handlers read the intro state when they run.
   useGSAP(
     () => {
       const link = linkRef.current;
@@ -28,7 +29,7 @@ export default function Header() {
       let tween: gsap.core.Tween | null = null;
 
       function toEnglish() {
-        if (!span || introState !== "done") return;
+        if (!span || getIntroState() !== "done") return;
         tween?.kill();
         span.className = ENGLISH_CLASS;
         tween = gsap.to(span, {
@@ -49,7 +50,7 @@ export default function Header() {
       }
 
       function toPersian() {
-        if (!span || introState !== "done") return;
+        if (!span || getIntroState() !== "done") return;
         tween?.kill();
         span.setAttribute("dir", "rtl");
         span.setAttribute("lang", "fa");
@@ -81,7 +82,7 @@ export default function Header() {
         span.setAttribute("lang", "fa");
       };
     },
-    { scope: linkRef, dependencies: [introState] },
+    { scope: linkRef },
   );
 
   return (

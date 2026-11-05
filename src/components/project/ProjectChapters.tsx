@@ -44,7 +44,7 @@ import MediaFrame from "@/components/MediaFrame";
 import PhonesRow from "@/components/PhonesRow";
 import { resolveFrame, resolveLandingFrame, type ProjectFrameSource } from "@/lib/mediaFrame";
 import { isPlainLeftClick } from "@/lib/clicks";
-import { HERO_VARIANTS, LANDING_ASPECT, heroVariant } from "@/lib/landing";
+import { HERO_VARIANTS, LANDING_ASPECT, LANDING_SIZES, heroVariant } from "@/lib/landing";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 export type ChapterBlock = NonNullable<Project["chapters"]>[number];
@@ -427,7 +427,7 @@ export default function ProjectChapters({
             title={project.title}
             slotRef={firstImageRef}
             onReady={onFirstReady}
-            sizes="(min-width: 75rem) 66vw, 100vw"
+            sizes={LANDING_SIZES.chapters}
             frame={landing && landing._type !== "galleryPhones" ? resolveLandingFrame(landing.frame, project) : undefined}
           />
         </div>
@@ -536,7 +536,7 @@ export default function ProjectChapters({
             >
               <div className={`col-span-4 desktop:row-start-1 desktop:self-end ${nextHero.text}`}>{title}</div>
               <div className={`col-span-4 mt-4 desktop:mt-0 desktop:row-start-1 ${nextHero.media}`}>
-                {preview("chapters", "(min-width: 75rem) 66vw, 100vw")}
+                {preview("chapters", LANDING_SIZES.chapters)}
               </div>
             </section>
           ) : (
@@ -546,7 +546,7 @@ export default function ProjectChapters({
             >
               <div className="px-margin desktop:w-1/2">{title}</div>
               <div className="mt-4 px-margin desktop:mt-0 desktop:w-1/2">
-                {preview("stage", "(min-width: 75rem) 50vw, 100vw")}
+                {preview("stage", LANDING_SIZES.stage)}
               </div>
             </section>
           );

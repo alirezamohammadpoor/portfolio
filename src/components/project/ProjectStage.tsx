@@ -32,7 +32,7 @@ import { usePageTransition } from "@/context/TransitionContext";
 import PhonesRow, { PHONE_ASPECT } from "@/components/PhonesRow";
 import MediaFrame from "@/components/MediaFrame";
 import { resolveFrame, resolveLandingFrame } from "@/lib/mediaFrame";
-import { LANDING_ASPECT, imageAspect, landingKind, videoAspect } from "@/lib/landing";
+import { LANDING_ASPECT, LANDING_SIZES, imageAspect, landingKind, videoAspect } from "@/lib/landing";
 import ProjectDetailsOverlay from "@/components/project/ProjectDetailsOverlay";
 import GalleryProgress from "@/components/project/GalleryProgress";
 
@@ -542,7 +542,7 @@ export default function ProjectStage({
                     alt={`${project.title} — ${i + 1}`}
                     fill
                     className="object-cover"
-                    sizes={isDesktop ? "70vw" : "100vw"}
+                    sizes={LANDING_SIZES.stage}
                     priority={i === 0}
                     onLoad={i === 0 ? onFirstReady : undefined}
                   />
@@ -598,7 +598,7 @@ export default function ProjectStage({
                     frame={framed}
                     mediaAspect={aspect}
                     boxClassName="bg-black"
-                    sizes={isDesktop ? "70vw" : "100vw"}
+                    sizes={LANDING_SIZES.stage}
                     mediaRef={
                       i === 0 && firstCardRef
                         ? (el: HTMLDivElement | null) => {
@@ -631,7 +631,7 @@ export default function ProjectStage({
                 previewRef={previewRef}
                 onNavigate={onNavigateNext!}
                 imageWidth={isDesktop ? 1600 : 900}
-                sizes={isDesktop ? "70vw" : "100vw"}
+                sizes={LANDING_SIZES[landingKind(nextProject.hasChapters)]}
                 aspect={LANDING_ASPECT[landingKind(nextProject.hasChapters)]}
                 labelHidden={isDesktop}
               />
