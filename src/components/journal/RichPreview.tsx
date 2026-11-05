@@ -19,6 +19,16 @@ interface RichPreviewProps {
 
 // Grace period when the pointer travels from the phrase to the popup.
 const LEAVE_MS = 150;
+// Hover intent: the pointer has to rest on the phrase this long before the
+// card opens, so passing over a link on the way somewhere else does nothing.
+const OPEN_MS = 120;
+// Desktop card: full width when it fits, narrower when neither side of the
+// phrase has room for it (the card used to clamp on top of the phrase).
+const CARD_MAX = 600;
+const CARD_MIN = 360;
+// Caption row + control bar + caret gap + viewport padding, generous for a
+// title that wraps to three lines.
+const CARD_CHROME = 150;
 
 /**
  * Pop-up preview on a phrase in a journal post. The card is portaled to
@@ -45,6 +55,8 @@ export default function RichPreview({
     y: number;
   } | null>(null);
   const leaveTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  const openTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  const [cardWidth, setCardWidth] = useState(CARD_MAX);
   // Last measured position, kept through the fade-out (the hook clears it
   // the moment `visible` drops).
   const lastPosition = useRef<{ top: number; left: number } | null>(null);
@@ -54,6 +66,7 @@ export default function RichPreview({
   const close = useCallback(() => {
     setVisible(false);
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    if (openTimer.current) clearTimeout(openTimer.current);
   }, []);
 
   const { isMobile, position, placement, caretLeft, ready } =
@@ -108,11 +121,30 @@ export default function RichPreview({
 
   const show = () => {
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    if (openTimer.current) clearTimeout(openTimer.current);
+    if (!visible) {
+      // Fit the 16:9 card into the roomier side of the phrase.
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const room = Math.max(rect.top, window.innerHeight - rect.bottom) - CARD_CHROME;
+        setCardWidth(Math.round(Math.max(CARD_MIN, Math.min(CARD_MAX, (room * 16) / 9))));
+      }
+    }
     setMounted(true);
     setVisible(true);
   };
 
+  // Pointer on the phrase: open after a short rest. Already open (or fading
+  // out): stay open without a delay.
+  const showSoon = () => {
+    if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    if (visible) return;
+    if (openTimer.current) clearTimeout(openTimer.current);
+    openTimer.current = setTimeout(show, OPEN_MS);
+  };
+
   const hideSoon = () => {
+    if (openTimer.current) clearTimeout(openTimer.current);
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
     leaveTimer.current = setTimeout(() => setVisible(false), LEAVE_MS);
   };
@@ -129,6 +161,7 @@ export default function RichPreview({
   useEffect(
     () => () => {
       if (leaveTimer.current) clearTimeout(leaveTimer.current);
+      if (openTimer.current) clearTimeout(openTimer.current);
     },
     [],
   );
@@ -194,12 +227,12 @@ export default function RichPreview({
   if (position) lastPosition.current = { top: position.top, left: position.left };
   const place = position ?? lastPosition.current;
   const showPopup = visible && ready;
-  const width = isMobile ? "min(420px, calc(100vw - 32px))" : 600;
+  const width = isMobile ? "min(420px, calc(100vw - 32px))" : cardWidth;
 
   return (
     <span
       className="relative inline"
-      onMouseEnter={isMobile ? undefined : show}
+      onMouseEnter={isMobile ? undefined : showSoon}
       onMouseLeave={isMobile ? undefined : hideSoon}
       onFocus={isMobile ? undefined : show}
       onBlur={isMobile ? undefined : hideSoon}
