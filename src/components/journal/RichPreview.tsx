@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import type { MouseEvent } from "react";
+import type { MouseEvent, PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -29,23 +29,19 @@ const CARD_MIN = 360;
 // Caption row + control bar + caret gap + viewport padding, generous for a
 // title that wraps to three lines.
 const CARD_CHROME = 150;
-// Lenis glides the page for ~2 s after the wheel stops, sliding links under
-// a still pointer. The browser reports that as a hover, and the overlay's
-// scroll listener closed the card a frame later: a flash on every link the
-// page scrolled past. Hover only counts once the page has been still this
-// long.
-const SCROLL_QUIET_MS = 200;
-let lastScroll = 0;
+// Where the pointer last was, updated after React's handlers run (window,
+// bubble phase). Chrome sends pointermoves while the page scrolls under a
+// still pointer; those repeat this position with zero movement.
+let lastPointer: { x: number; y: number } | null = null;
 if (typeof window !== "undefined") {
   window.addEventListener(
-    "scroll",
-    () => {
-      lastScroll = performance.now();
+    "pointermove",
+    (e) => {
+      lastPointer = { x: e.clientX, y: e.clientY };
     },
-    { passive: true, capture: true },
+    { passive: true },
   );
 }
-const scrolling = () => performance.now() - lastScroll < SCROLL_QUIET_MS;
 
 /**
  * Pop-up preview on a phrase in a journal post. The card is portaled to
@@ -92,6 +88,7 @@ export default function RichPreview({
       onClose: close,
       anchorPoint,
       anchorOnDesktop: true,
+      followOnScroll: true,
     });
 
   // Mounting happens in `show` (same commit as `visible`), so the anchoring
@@ -151,31 +148,46 @@ export default function RichPreview({
     setVisible(true);
   };
 
-  // Pointer on the phrase: open after a short rest. Already open (or fading
-  // out): stay open without a delay.
-  const showSoon = () => {
-    if (leaveTimer.current) clearTimeout(leaveTimer.current);
-    if (visible) return;
-    if (openTimer.current) clearTimeout(openTimer.current);
-    // Re-check until the page is still; leaving the link cancels it.
-    const attempt = () => {
-      if (scrolling()) {
-        openTimer.current = setTimeout(attempt, SCROLL_QUIET_MS);
-        return;
-      }
+  /*
+   * Desktop hover, as states (11-05 spec, from a real trackpad trace):
+   *   idle    → intent   a pointer move over the phrase that actually moved
+   *                      the pointer. A phrase sliding under a still pointer
+   *                      (Lenis glides ~2 s after the wheel) is not a hover.
+   *   intent  → open     after OPEN_MS, whether or not the page is moving.
+   *   intent  → idle     pointer leaves the phrase first.
+   *   open    → closing  pointer leaves phrase and card; scrolling alone
+   *                      does not close it, the card follows the phrase.
+   *   closing → open     pointer back on the phrase or the card in time.
+   *   closing → idle     after LEAVE_MS.
+   */
+  const onPhraseMove = (e: PointerEvent<HTMLSpanElement>) => {
+    if (e.pointerType !== "mouse" || isMobile) return;
+    if (visible) {
+      if (leaveTimer.current) clearTimeout(leaveTimer.current); // closing → open
+      return;
+    }
+    if (openTimer.current) return; // already in intent
+    const still =
+      e.movementX === 0 &&
+      e.movementY === 0 &&
+      lastPointer !== null &&
+      lastPointer.x === e.clientX &&
+      lastPointer.y === e.clientY;
+    if (still) return; // the page moved, not the pointer
+    openTimer.current = setTimeout(() => {
       openTimer.current = null;
       show();
-    };
-    openTimer.current = setTimeout(attempt, OPEN_MS);
+    }, OPEN_MS);
   };
 
-  // Safety net for a hover the browser reported before the page settled.
-  const onPointerMove = () => {
-    if (!visible && !openTimer.current) showSoon();
+  const onCardEnter = (e: PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "mouse" || !visible) return;
+    if (leaveTimer.current) clearTimeout(leaveTimer.current);
   };
 
   const hideSoon = () => {
     if (openTimer.current) clearTimeout(openTimer.current);
+    openTimer.current = null;
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
     leaveTimer.current = setTimeout(() => setVisible(false), LEAVE_MS);
   };
@@ -263,9 +275,6 @@ export default function RichPreview({
   return (
     <span
       className="relative inline"
-      onMouseEnter={isMobile ? undefined : showSoon}
-      onMouseMove={isMobile ? undefined : onPointerMove}
-      onMouseLeave={isMobile ? undefined : hideSoon}
       onFocus={isMobile ? undefined : show}
       onBlur={isMobile ? undefined : hideSoon}
     >
@@ -276,8 +285,8 @@ export default function RichPreview({
             ref={popupRef}
             aria-hidden={!visible || undefined}
             inert={!visible}
-            onMouseEnter={isMobile ? undefined : show}
-            onMouseLeave={isMobile ? undefined : hideSoon}
+            onPointerEnter={isMobile ? undefined : onCardEnter}
+            onPointerLeave={isMobile ? undefined : hideSoon}
             className={`fixed z-50 transition-[opacity,transform] duration-300 ease-[var(--ease-out)] ${
               showPopup
                 ? "pointer-events-auto translate-y-0 opacity-100"
@@ -296,6 +305,8 @@ export default function RichPreview({
 
       <span
         ref={triggerRef}
+        onPointerMove={onPhraseMove}
+        onPointerLeave={isMobile ? undefined : hideSoon}
         role="button"
         tabIndex={0}
         aria-label={label ? `Preview: ${label}` : "Show preview"}
