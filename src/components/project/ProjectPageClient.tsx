@@ -14,7 +14,7 @@ import {
 import { useGalleryScroll } from "@/hooks/useGalleryScroll";
 import { dur, ease, maskOutText, prefersReducedMotion, stagger } from "@/lib/motion";
 import { cloneSourceFromElement } from "@/lib/cloneSource";
-import { LANDING_SIZES, landingKind, landingTop } from "@/lib/landing";
+import { CHAPTER_PAGE, LANDING_SIZES, landingKind, landingTop, showsChapters } from "@/lib/landing";
 import { usePrefetchProject } from "@/hooks/usePrefetchProject";
 import ProjectStage from "@/components/project/ProjectStage";
 import { warmPreviewVideo } from "@/components/project/NextProjectPreview";
@@ -66,7 +66,7 @@ function ProjectPageView({ project, nextProject }: ProjectPageClientProps) {
   const isDesktop = useIsDesktop();
   // A project with chapters is a case study: one scrolling page on every
   // breakpoint (brief-v2). Without them it keeps the gallery page.
-  const hasChapters = (project.chapters?.length ?? 0) > 0;
+  const hasChapters = showsChapters(project.chapters);
   // Media trees mount only on the client so a phone never requests the
   // desktop gallery's six videos from the server HTML (the server snapshot
   // of useIsDesktop is "desktop"). The text is still in the server HTML: see
@@ -100,7 +100,7 @@ function ProjectPageView({ project, nextProject }: ProjectPageClientProps) {
   // slide (globals.css) must not run under the clone, and without a clone a
   // plain swap is still smoother than a slide that starts from a frozen
   // snapshot of a page scrolled to its end.
-  const nextHasChapters = nextProject?.hasChapters ?? false;
+  const nextHasChapters = CHAPTER_PAGE && (nextProject?.hasChapters ?? false);
   const navigateNext = useCallback(() => {
     if (!nextSlug) return;
     const href = `/project/${nextSlug}`;
