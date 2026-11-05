@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     template: "%s | Ali Reza Mohammad Poor",
   },
   description:
-    "Portfolio of Ali Reza Mohammad Poor — Full-stack developer and creative technologist.",
+    "Portfolio of Ali Reza Mohammad Poor, frontend developer at the intersection of product and design.",
   openGraph: {
     ...OPEN_GRAPH_BASE,
     type: "website",
@@ -53,7 +53,7 @@ export default async function SiteLayout({
     "@type": "Person",
     name: "Ali Reza Mohammad Poor",
     url: siteUrl,
-    jobTitle: "Full-stack developer and creative technologist",
+    jobTitle: "Frontend developer",
     ...(sameAs.length > 0 && { sameAs }),
   };
 

@@ -5,7 +5,7 @@ import { getProjects } from "@/sanity/lib/data";
 import { OPEN_GRAPH_BASE, SITE_OG_IMAGE } from "@/lib/site";
 
 const description =
-  "Portfolio of Ali Reza Mohammad Poor — Full-stack developer and creative technologist.";
+  "Portfolio of Ali Reza Mohammad Poor, frontend developer at the intersection of product and design.";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/" },
@@ -25,9 +25,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <h1 className="sr-only">
-        Ali Reza Mohammad Poor — Full-stack developer and creative technologist
-      </h1>
+      <h1 className="sr-only">Ali Reza Mohammad Poor — Frontend developer at the intersection of product and design</h1>
       <ScatterHome projects={projects} />
     </>
   );

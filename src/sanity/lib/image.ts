@@ -25,11 +25,17 @@ export const imageUrl = (
 ): string => urlFor(source).width(width).quality(quality).url();
 
 /**
+ * A crop to exactly `width` × `height`: with both set, the builder cuts the
+ * image around its hotspot (inside the editor's crop) to the target ratio.
+ */
+export const cropImageUrl = (source: SanityImageSource, width: number, height: number): string =>
+  urlFor(source).width(width).height(height).quality(85).url();
+
+/**
  * OpenGraph image URL — fixed 1200x630 with quality 85, the standard
  * og:image dimensions used in route-level generateMetadata.
  */
-export const ogImageUrl = (source: SanityImageSource): string =>
-  urlFor(source).width(1200).height(630).quality(85).url();
+export const ogImageUrl = (source: SanityImageSource): string => cropImageUrl(source, 1200, 630);
 
 export function fileUrl(ref: string): string {
   const [, id, ext] = ref.split('-');
