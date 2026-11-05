@@ -2,10 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { client } from "@/sanity/lib/client";
 import { draftMode } from "next/headers";
-import {
-  getJournalPost as getPost,
-  getJournalPostDraft as getPostDraft,
-} from "@/sanity/lib/data";
+import { getJournalPost as getPost } from "@/sanity/lib/data";
 import { JOURNAL_POST_SLUGS_QUERY } from "@/sanity/lib/queries";
 
 import JournalPost from "@/components/journal/JournalPost";
@@ -25,7 +22,9 @@ export async function generateMetadata({
   params,
 }: JournalPostPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = await getPost(slug);
+  // The preview tab shows the draft's title and description too.
+  const { isEnabled: isDraft } = await draftMode();
+  const post = await getPost(slug, isDraft ? "drafts" : "published");
   if (!post) return { title: "Post Not Found" };
 
   const canonicalPath = `/journal/${post.slug?.current ?? slug}`;
@@ -73,7 +72,7 @@ export default async function JournalPostPage({
 }: JournalPostPageProps) {
   const { slug } = await params;
   const { isEnabled: isDraft } = await draftMode();
-  const post = isDraft ? await getPostDraft(slug) : await getPost(slug);
+  const post = await getPost(slug, isDraft ? "drafts" : "published");
 
   if (!post) {
     notFound();

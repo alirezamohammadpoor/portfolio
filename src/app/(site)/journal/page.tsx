@@ -1,11 +1,6 @@
 import type { Metadata } from "next";
 import { draftMode } from "next/headers";
-import {
-  getJournalPage,
-  getJournalPageDraft,
-  getJournalPosts,
-  getJournalPostsDraft,
-} from "@/sanity/lib/data";
+import { getJournalPage, getJournalPosts } from "@/sanity/lib/data";
 import JournalContent from "@/components/journal/JournalContent";
 import { OPEN_GRAPH_BASE } from "@/lib/site";
 
@@ -26,10 +21,8 @@ export const metadata: Metadata = {
 
 export default async function JournalPage() {
   const { isEnabled: isDraft } = await draftMode();
-  const [posts, page] = await Promise.all([
-    isDraft ? getJournalPostsDraft() : getJournalPosts(),
-    isDraft ? getJournalPageDraft() : getJournalPage(),
-  ]);
+  const perspective = isDraft ? "drafts" : "published";
+  const [posts, page] = await Promise.all([getJournalPosts(perspective), getJournalPage(perspective)]);
 
   return <JournalContent posts={posts} description={page?.description} />;
 }

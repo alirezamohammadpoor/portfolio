@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { client } from "@/sanity/lib/client";
 import { draftMode } from "next/headers";
-import { getProject, getProjectDraft } from "@/sanity/lib/data";
+import { getProject } from "@/sanity/lib/data";
 import { PROJECT_SLUGS_QUERY } from "@/sanity/lib/queries";
 import ProjectPageClient from "@/components/project/ProjectPageClient";
 import JsonLd from "@/components/seo/JsonLd";
@@ -21,7 +21,9 @@ export async function generateMetadata({
   params,
 }: ProjectPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const project = await getProject(slug);
+  // The preview tab shows the draft's title and description too.
+  const { isEnabled: isDraft } = await draftMode();
+  const project = await getProject(slug, isDraft ? "drafts" : "published");
 
   if (!project) return {};
 
@@ -66,9 +68,7 @@ export async function generateMetadata({
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const { slug } = await params;
   const { isEnabled: isDraft } = await draftMode();
-  const project = isDraft
-    ? await getProjectDraft(slug)
-    : await getProject(slug);
+  const project = await getProject(slug, isDraft ? "drafts" : "published");
 
   if (!project) notFound();
 

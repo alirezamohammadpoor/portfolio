@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { draftMode } from "next/headers";
-import { getAbout, getAboutDraft } from "@/sanity/lib/data";
+import { getAbout } from "@/sanity/lib/data";
 import AboutContent from "@/components/about/AboutContent";
 import { OPEN_GRAPH_BASE } from "@/lib/site";
 
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default async function AboutPage() {
   const { isEnabled: isDraft } = await draftMode();
-  const about = isDraft ? await getAboutDraft() : await getAbout();
+  const about = await getAbout(isDraft ? "drafts" : "published");
 
   return (
     <div>

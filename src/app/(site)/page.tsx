@@ -1,10 +1,10 @@
 import { draftMode } from "next/headers";
 import ScatterHome from "@/components/home/ScatterHome";
-import { getProjects, getProjectsDraft } from "@/sanity/lib/data";
+import { getProjects } from "@/sanity/lib/data";
 
 export default async function HomePage() {
   const { isEnabled: isDraft } = await draftMode();
-  const projects = isDraft ? await getProjectsDraft() : await getProjects();
+  const projects = await getProjects(isDraft ? "drafts" : "published");
 
   return (
     <>
