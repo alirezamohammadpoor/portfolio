@@ -318,11 +318,19 @@ export default function ProjectStage({
   useEffect(() => {
     if (!isDesktop) return;
     let acc = 0;
-    let lockedUntil = 0;
+    // Starts locked: the page may have just taken over from the previous
+    // project mid-gesture, and the rest of that swipe's inertia must not
+    // step this strip. Each event inside the lock extends it, so it opens
+    // once the wheel has been quiet; a direct load loses nothing.
+    let lockedUntil = performance.now() + WHEEL_QUIET_MS;
     const onWheel = (e: WheelEvent) => {
       if (detailsOpenRef.current) return;
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-      const now = performance.now();
+      // When the event was made, not when it is handled: while the main
+      // thread is busy (a hand-off mounting the next page) the tail queues
+      // up and arrives in a burst, and handling time would read the wait as
+      // a quiet wheel and open the lock in the middle of the same swipe.
+      const now = e.timeStamp;
       if (now < lockedUntil) {
         lockedUntil = Math.max(lockedUntil, now + WHEEL_QUIET_MS);
         return;
