@@ -12,8 +12,9 @@
  * Behaviour (see docs in /video-player/audit.md):
  * - Autoplays muted when ≥50% in view, pauses out of view. Reduced motion:
  *   never autoplays; shows the first frame with a play button.
- * - Sound control exists only when the file has an audio track (prop or
- *   detection); the project masters are silent, the journal clips are not.
+ * - Sound control shows unless the file is known to be silent: the hasAudio
+ *   prop, or Firefox's mozHasAudio. Safari and Chromium can only prove that a
+ *   track exists (early reads come back empty), so they never hide it.
  * - Progress is written straight to the DOM from rAF; React state only
  *   changes on play/pause/mute/ended/scrub-start/scrub-end.
  * - Scrub: pointer drag on the tracker, arrow keys ±5 s, Home/End.
@@ -239,8 +240,13 @@ export default function VideoPlayer({
         audioTracks?: { length: number };
       };
       if (typeof anyV.mozHasAudio === "boolean") setAudioDetected(anyV.mozHasAudio);
-      else if (anyV.audioTracks) setAudioDetected(anyV.audioTracks.length > 0);
-      else if (typeof anyV.webkitAudioDecodedByteCount === "number") {
+      else if (anyV.audioTracks) {
+        // Safari: AVFoundation fills the list asynchronously, and on iPhone
+        // it can still be empty at loadedmetadata for a clip WITH sound, so
+        // an empty list proves nothing. Only a track is a verdict; one added
+        // later arrives through `addtrack` below.
+        if (anyV.audioTracks.length > 0) setAudioDetected(true);
+      } else if (typeof anyV.webkitAudioDecodedByteCount === "number") {
         // Chromium: the counter only moves once audio frames decode, and a
         // muted element may never decode any, so 0 proves nothing. Only a
         // positive count is a verdict; otherwise the control stays.
@@ -267,6 +273,8 @@ export default function VideoPlayer({
     v.addEventListener("volumechange", onVol);
     v.addEventListener("loadedmetadata", onMeta);
     v.addEventListener("timeupdate", onTime);
+    const tracks = (v as HTMLVideoElement & { audioTracks?: EventTarget }).audioTracks;
+    tracks?.addEventListener?.("addtrack", detect);
     if (v.readyState >= 1) onMeta();
     // Already playing when (re)attached: keep the tracker moving.
     if (!v.paused) {
@@ -278,8 +286,9 @@ export default function VideoPlayer({
       v.removeEventListener("pause", onPause);
       v.removeEventListener("ended", onEnded);
       v.removeEventListener("volumechange", onVol);
-        v.removeEventListener("loadedmetadata", onMeta);
+      v.removeEventListener("loadedmetadata", onMeta);
       v.removeEventListener("timeupdate", onTime);
+      tracks?.removeEventListener?.("addtrack", detect);
       stopLoop();
       saveVideoPosition(v, src);
     };
