@@ -29,6 +29,23 @@ const CARD_MIN = 360;
 // Caption row + control bar + caret gap + viewport padding, generous for a
 // title that wraps to three lines.
 const CARD_CHROME = 150;
+// Lenis glides the page for ~2 s after the wheel stops, sliding links under
+// a still pointer. The browser reports that as a hover, and the overlay's
+// scroll listener closed the card a frame later: a flash on every link the
+// page scrolled past. Hover only counts once the page has been still this
+// long.
+const SCROLL_QUIET_MS = 200;
+let lastScroll = 0;
+if (typeof window !== "undefined") {
+  window.addEventListener(
+    "scroll",
+    () => {
+      lastScroll = performance.now();
+    },
+    { passive: true, capture: true },
+  );
+}
+const scrolling = () => performance.now() - lastScroll < SCROLL_QUIET_MS;
 
 /**
  * Pop-up preview on a phrase in a journal post. The card is portaled to
@@ -140,7 +157,21 @@ export default function RichPreview({
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
     if (visible) return;
     if (openTimer.current) clearTimeout(openTimer.current);
-    openTimer.current = setTimeout(show, OPEN_MS);
+    // Re-check until the page is still; leaving the link cancels it.
+    const attempt = () => {
+      if (scrolling()) {
+        openTimer.current = setTimeout(attempt, SCROLL_QUIET_MS);
+        return;
+      }
+      openTimer.current = null;
+      show();
+    };
+    openTimer.current = setTimeout(attempt, OPEN_MS);
+  };
+
+  // Safety net for a hover the browser reported before the page settled.
+  const onPointerMove = () => {
+    if (!visible && !openTimer.current) showSoon();
   };
 
   const hideSoon = () => {
@@ -233,6 +264,7 @@ export default function RichPreview({
     <span
       className="relative inline"
       onMouseEnter={isMobile ? undefined : showSoon}
+      onMouseMove={isMobile ? undefined : onPointerMove}
       onMouseLeave={isMobile ? undefined : hideSoon}
       onFocus={isMobile ? undefined : show}
       onBlur={isMobile ? undefined : hideSoon}
