@@ -60,7 +60,10 @@ export function landingTop(kind: LandingKind, isDesktop: boolean): number | null
   if (typeof document === "undefined") return null;
   const main = document.querySelector("main");
   if (!main) return null;
-  const mainTop = main.getBoundingClientRect().top + window.scrollY;
+  // The content box: <main> carries the header's height as padding (the
+  // layout's pt-[var(--header-height)]), and the hero sits below it.
+  const mainTop =
+    main.getBoundingClientRect().top + window.scrollY + (parseFloat(getComputedStyle(main).paddingTop) || 0);
   switch (kind) {
     case "chapters":
       return mainTop + (isDesktop ? HERO_TOP.desktop : HERO_TOP.phone);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { usePageTransition } from "@/context/TransitionContext";
@@ -8,6 +9,14 @@ import { dur, ease, prefersReducedMotion } from "@/lib/motion";
 
 /** Progress of the morph at which the destination text starts masking in. */
 export const REVEAL_AT = 0.4;
+/**
+ * A transition whose landing page never aims the clone (a 404 or error page
+ * on the project route, a navigation that never commits) is dropped after
+ * this long, so the cover cannot stay fixed over every later page. The
+ * slowest legitimate landing measured was about 2.4 s on a throttled link;
+ * past the limit the page simply shows without the morph.
+ */
+const WATCHDOG_MS = 3000;
 
 /**
  * The media clone that carries the home cover onto the project page.
@@ -22,6 +31,7 @@ export const REVEAL_AT = 0.4;
 export default function TransitionOverlay() {
   const {
     isTransitioning,
+    id,
     mediaType,
     imageUrl,
     sourceVideoElement,
@@ -36,6 +46,33 @@ export default function TransitionOverlay() {
   // The morph has landed; the clone leaves once the media under it is ready
   // (or after a grace period, so a broken asset never leaves it stuck).
   const [landed, setLanded] = useState(false);
+
+  // Only a landing project page sets targetRect. Without one in time the
+  // transition is dropped (see WATCHDOG_MS); a new transition re-arms it.
+  useEffect(() => {
+    if (!isTransitioning || targetRect) return;
+    const timer = window.setTimeout(clearTransition, WATCHDOG_MS);
+    return () => window.clearTimeout(timer);
+  }, [isTransitioning, targetRect, clearTransition, id]);
+
+  // Superseded: a header link clicked while the project route was still on
+  // its way commits another route. No project page will ever land the clone,
+  // so it goes at once. The transition starts on the page being left (the
+  // pathname is still the old one), so that first pathname is remembered
+  // and only a later, non-project one clears.
+  const pathname = usePathname();
+  const startRef = useRef<{ id: number; pathname: string } | null>(null);
+  useEffect(() => {
+    if (!isTransitioning) {
+      startRef.current = null;
+      return;
+    }
+    if (startRef.current?.id !== id) {
+      startRef.current = { id, pathname };
+      return;
+    }
+    if (pathname !== startRef.current.pathname && !pathname.startsWith("/project/")) clearTransition();
+  }, [isTransitioning, id, pathname, clearTransition]);
   const windowRef = useRef<HTMLDivElement>(null);
   const mediaRef = useRef<HTMLElement>(null);
   const adoptRef = useRef<HTMLDivElement>(null);

@@ -45,6 +45,12 @@ export default function LandingMedia({ item, title, slotRef, onReady, sizes = "(
     videoRef.current = adopted;
   }, [adopted, isTransitioning, title]);
 
+  // Hidden (Next keeps a left page mounted, display: none does not pause
+  // media) the clip stops looping; the play effect below picks it up again
+  // when the page is shown. A layout cleanup, because the ref is still set
+  // when it runs, and the adopted element's ref is set by hand.
+  useLayoutEffect(() => () => videoRef.current?.pause(), []);
+
   // A video reports ready on its first presented frame, so the clone never
   // leaves while it still paints black. An adopted element is that frame.
   useEffect(() => {

@@ -62,8 +62,21 @@ export default function InlineClip({
   }, [active, still, src]);
 
   if (still && poster) {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img src={poster} alt={label} className={`block w-full h-auto ${className}`} />;
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={poster}
+        alt={label}
+        className={`block w-full h-auto ${className}`}
+        // The still stands in for the clip, so it reports the ratio too:
+        // otherwise a portrait recording keeps the landscape frame it was
+        // guessed into until metadata that never arrives.
+        onLoad={(e) => {
+          const i = e.currentTarget;
+          if (onAspect && i.naturalWidth && i.naturalHeight) onAspect(i.naturalWidth / i.naturalHeight);
+        }}
+      />
+    );
   }
 
   return (

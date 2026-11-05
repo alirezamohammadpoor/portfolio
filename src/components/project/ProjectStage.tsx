@@ -139,6 +139,10 @@ export default function ProjectStage({
   useLayoutEffect(() => {
     detailsOpenRef.current = detailsOpen;
   }, [detailsOpen]);
+  const hiddenRef = useRef(hidden);
+  useLayoutEffect(() => {
+    hiddenRef.current = hidden;
+  }, [hidden]);
   const closeDetails = useCallback(() => setDetailsOpen(false), []);
   // While the finger is down the cards track scroll 1:1 (no CSS transition
   // fighting the per-frame transform); the 200 ms settle applies once idle.
@@ -272,7 +276,9 @@ export default function ProjectStage({
     if (!strip || !el) return;
     const left = el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2;
     if (reduceMotion || instant) {
+      // A killed glide never runs its onComplete, so snap is given back here.
       gsap.killTweensOf(strip);
+      strip.style.scrollSnapType = "";
       strip.scrollTo({ left, behavior: "auto" });
       return;
     }
@@ -313,11 +319,22 @@ export default function ProjectStage({
   useEffect(() => {
     if (!isDesktop) return;
     let acc = 0;
-    let lockedUntil = 0;
+    // The gesture that brought the visitor here (a flick past the previous
+    // project's end, or a wheel during the morph) keeps delivering inertia
+    // events after the page is in place. Locked on attach, those are
+    // swallowed until the wheel has been quiet, so the strip stays on card 1.
+    let lockedUntil = performance.now() + WHEEL_LOCK_MS;
     const onWheel = (e: WheelEvent) => {
-      if (detailsOpenRef.current) return;
+      if (detailsOpenRef.current || e.ctrlKey) return;
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       const now = performance.now();
+      // Under the arriving clone the stage must not move: the clone's
+      // landing rect was measured on card 1.
+      if (hiddenRef.current) {
+        acc = 0;
+        lockedUntil = now + WHEEL_LOCK_MS;
+        return;
+      }
       if (now < lockedUntil) {
         lockedUntil = Math.max(lockedUntil, now + WHEEL_QUIET_MS);
         return;
@@ -330,7 +347,7 @@ export default function ProjectStage({
       stepRef.current(dir);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (detailsOpenRef.current || e.defaultPrevented) return;
+      if (detailsOpenRef.current || hiddenRef.current || e.defaultPrevented) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
       const fwd = e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === "PageDown";
@@ -364,28 +381,37 @@ export default function ProjectStage({
   // playing under it repaints that blur every frame, so it pauses while the
   // text is open and picks up again on close.
   useEffect(() => {
-    const v = itemRefs.current[index]?.querySelector("video");
-    if (!v) return;
-    if (detailsOpen) v.pause();
-    else {
-      const p = v.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
-    }
+    const videos = itemRefs.current[index]?.querySelectorAll("video");
+    if (!videos?.length) return;
+    videos.forEach((v) => {
+      if (detailsOpen) v.pause();
+      else {
+        const p = v.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      }
+    });
   }, [detailsOpen, index]);
 
   // Video budget: only the centred card plays; neighbours sit paused on their
-  // first frame; everything else is unmounted (see `near` below).
+  // first frame; everything else is unmounted (see `near` below). A phones
+  // row holds up to three clips, so every <video> of a card counts.
   useEffect(() => {
     itemRefs.current.forEach((el, i) => {
-      const v = el?.querySelector("video");
-      if (!v) return;
-      if (i === index) {
-        const p = v.play();
-        if (p && typeof p.catch === "function") p.catch(() => {});
-      } else {
-        v.pause();
-      }
+      el?.querySelectorAll("video").forEach((v) => {
+        if (i === index) {
+          const p = v.play();
+          if (p && typeof p.catch === "function") p.catch(() => {});
+        } else {
+          v.pause();
+        }
+      });
     });
+    // Left hidden (Next keeps the page mounted; display: none does not pause
+    // media) the centred clip stops looping. Captured here: the item refs are
+    // nulled before this cleanup runs on a hide. Querying at cleanup time
+    // also catches an element adopted into card 1 after this ran.
+    const current = itemRefs.current[index];
+    return () => current?.querySelectorAll("video").forEach((v) => v.pause());
   }, [index]);
 
   const onEnd = index >= last && Boolean(nextSlug && onNavigateNext);
@@ -412,7 +438,7 @@ export default function ProjectStage({
           aria-expanded={detailsOpen}
           aria-controls="project-details"
           onClick={() => setDetailsOpen((o) => !o)}
-          className="frost-soft invisible inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center gap-2 rounded-full px-4 text-body text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97]"
+          className="frost-soft invisible inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] cursor-pointer items-center gap-2 rounded-full px-4 text-body text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97]"
         >
           <span className="truncate">{project.title}</span>
           <span
@@ -429,7 +455,9 @@ export default function ProjectStage({
       <div className="flex flex-1 items-center pb-[52px] desktop:pb-[72px]">
         <div
           ref={stripRef}
-          className={`flex w-full ${isDesktop ? "items-center" : "items-start"} overflow-x-auto py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${single ? "justify-center" : "snap-x snap-mandatory"}`}
+          // A lone card is centred by the strip itself; with the next project's
+          // preview beside it the two overflow, so they snap like any strip.
+          className={`flex w-full ${isDesktop ? "items-center" : "items-start"} overflow-x-auto py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${single && !hasPreview ? "justify-center" : "snap-x snap-mandatory"}`}
           style={isDesktop ? undefined : { scrollPaddingInline: "var(--grid-margin)", paddingInline: "var(--grid-margin)" }}
           data-lenis-prevent
           role="region"
@@ -468,7 +496,7 @@ export default function ProjectStage({
                   ref={(el) => {
                     itemRefs.current[i] = el;
                   }}
-                  className="relative shrink-0 snap-center will-change-transform"
+                  className={`relative shrink-0 snap-center ${isDesktop ? "" : "will-change-transform"}`}
                   style={
                     isDesktop
                       ? phonesBox
@@ -543,7 +571,9 @@ export default function ProjectStage({
                   itemRefs.current[i] = el;
                   if (i === 0 && firstCardRef && !framed) firstCardRef.current = el;
                 }}
-                className={`relative shrink-0 snap-center overflow-hidden will-change-transform ${framed ? "" : "bg-black"}`}
+                // The depth transforms run per frame on the phone only; the
+                // laptop strip is flat, so no card needs its own layer there.
+                className={`relative shrink-0 snap-center overflow-hidden ${isDesktop ? "" : "will-change-transform"} ${framed ? "" : "bg-black"}`}
                 style={{
                   ...(isDesktop
                     ? deskBox(boxAspect, i)

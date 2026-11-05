@@ -95,6 +95,12 @@ export function useGalleryScroll({
   useEffect(() => {
     const isDesktop = window.matchMedia(DESKTOP_QUERY).matches;
     const arrived = arrivedByCloneRef.current;
+    // Shown again after a threshold navigation (browser back; Next keeps the
+    // page mounted hidden and runs the effects again): the accumulator and
+    // the pull bar are still where the hand-off left them, so the first
+    // wheel tick would navigate again. Both start from zero on every show.
+    bottomAcc.current = 0;
+    if (pullRef.current) gsap.set(pullRef.current, { "--pull": 0, overwrite: true });
     if (!isDesktop || !arrived) {
       isReady.current = true;
       hasNavigated.current = false;
@@ -137,6 +143,11 @@ export function useGalleryScroll({
       unlocked = true;
       isReady.current = true;
       hasNavigated.current = false;
+      // From here on the page behaves like a direct load: shown again later
+      // (browser back) it must not replay the arrival lock and the reset to
+      // the top, which would throw the reader off their reading position.
+      arrivedByCloneRef.current = false;
+      arrivedInPlaceRef.current = false;
       window.scrollTo(0, 0);
       lenisRef.current?.start();
       lenisRef.current?.scrollTo(0, { immediate: true });
@@ -161,7 +172,10 @@ export function useGalleryScroll({
       // Always release the global lock on unmount. Without this, if the user
       // navigates away before the timer fires (common on mobile where taps
       // happen within 2s), the lock persists forever and scroll stays frozen
-      // on every subsequent page.
+      // on every subsequent page. Lenis is one instance for the whole site:
+      // left stopped here (a header link or Back during the lock window) the
+      // next page could not scroll at all until a reload.
+      if (!unlocked) lenisRef.current?.start();
       unlockScroll();
     };
   }, []);
@@ -256,7 +270,9 @@ export function useGalleryScroll({
 
   const isAtBottom = useCallback(() => {
     const lenis = lenisRef.current;
-    return lenis ? lenis.scroll >= lenis.limit - BOTTOM_EDGE_PX : false;
+    // A page that cannot scroll (the fixed stage: limit ≈ 0) has no bottom
+    // edge to pull from.
+    return lenis ? lenis.limit > BOTTOM_EDGE_PX && lenis.scroll >= lenis.limit - BOTTOM_EDGE_PX : false;
   }, []);
 
   const updateBottomVisuals = useCallback((progress: number) => {
@@ -303,7 +319,19 @@ export function useGalleryScroll({
     };
 
     window.addEventListener("wheel", onWheel, { passive: false });
-    return () => window.removeEventListener("wheel", onWheel);
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      // The threshold stopped Lenis and took the global lock for the
+      // hand-off. When this page is left they are given back: on a clone
+      // hand-off the landing page locks again in the same commit (React runs
+      // the leaving page's cleanups before the landing page's mount effects),
+      // so the in-place morph keeps its lock; on a plain push (nothing to
+      // clone) the next page is no longer frozen.
+      if (hasNavigated.current) {
+        lenisRef.current?.start();
+        unlockScroll();
+      }
+    };
   }, [isTransitioning, nextProjectSlug, navigateNext, isAtBottom, updateBottomVisuals]);
 
   return {

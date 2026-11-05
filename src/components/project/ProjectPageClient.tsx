@@ -31,7 +31,21 @@ interface ProjectPageClientProps {
   mobileVariant?: MobileVariant;
 }
 
-export default function ProjectPageClient({ project, nextProject, mobileVariant }: ProjectPageClientProps) {
+/**
+ * Next keeps a left page mounted hidden (Activity) and shows the same
+ * instance again on a push to its route, not only on back/forward. The
+ * page tree below reads the running transition at mount (landingId, the
+ * arrival refs in useGalleryScroll), so a re-shown instance could never
+ * claim the clone aimed at it: the cover would stay fixed on screen. Keyed
+ * on bfcacheId it mounts fresh on every push (the path that works) and is
+ * still restored as it was on browser back/forward.
+ */
+export default function ProjectPageClient(props: ProjectPageClientProps) {
+  const { bfcacheId } = useRouter();
+  return <ProjectPageView key={bfcacheId} {...props} />;
+}
+
+function ProjectPageView({ project, nextProject, mobileVariant }: ProjectPageClientProps) {
   const plainRouter = useRouter();
   const {
     isTransitioning: transitionRunning,
@@ -136,7 +150,11 @@ export default function ProjectPageClient({ project, nextProject, mobileVariant 
     pullRef,
     onFirstReady,
   } = useGalleryScroll({
-    nextProjectSlug: nextSlug,
+    // The wheel pull past the bottom edge belongs to the scrolling chapter
+    // page. The stage never scrolls (fixed), so there it would start on the
+    // first wheel tick and hand off after a few trackpad flicks, whatever
+    // card is centred; the stage has its own stepper and end-of-strip hand-off.
+    nextProjectSlug: hasChapters ? nextSlug : undefined,
     isTransitioning,
     inPlace,
     animateClone,
