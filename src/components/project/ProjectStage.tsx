@@ -271,6 +271,10 @@ export default function ProjectStage({
 
   // Keyboard steps jump (Emil: never animate a keyboard action, it is
   // repeated too often); the wheel glides.
+  // Where a running glide is heading. The scroll handler moves posRef to the
+  // card nearest the centre on every frame, so mid-glide only this knows the
+  // target (a quick second swipe must go one past it, not repeat it).
+  const glideTargetRef = useRef<number | null>(null);
   const goTo = (i: number, instant = false) => {
     const strip = stripRef.current;
     const el = itemRefs.current[i];
@@ -278,6 +282,9 @@ export default function ProjectStage({
     const left = el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2;
     if (reduceMotion || instant) {
       gsap.killTweensOf(strip);
+      // A glide cut short never ran its onComplete: snap back on.
+      strip.style.scrollSnapType = "";
+      glideTargetRef.current = null;
       strip.scrollTo({ left, behavior: "auto" });
       return;
     }
@@ -285,6 +292,7 @@ export default function ProjectStage({
     // its own timing and stutters against snap). Snap is off while it runs,
     // and a new step retargets from wherever the strip is.
     strip.style.scrollSnapType = "none";
+    glideTargetRef.current = i;
     gsap.to(strip, {
       scrollLeft: left,
       duration: 0.6,
@@ -292,6 +300,7 @@ export default function ProjectStage({
       overwrite: true,
       onComplete: () => {
         strip.style.scrollSnapType = "";
+        glideTargetRef.current = null;
       },
     });
   };
@@ -317,7 +326,8 @@ export default function ProjectStage({
     // Mid-glide the target is the truth; at rest the strip is (a page shown
     // again after browser back may sit somewhere else than posRef says).
     const strip = stripRef.current;
-    const from = strip && !gsap.isTweening(strip) ? nearest() : posRef.current;
+    const from =
+      strip && gsap.isTweening(strip) && glideTargetRef.current !== null ? glideTargetRef.current : nearest();
     const target = from + dir;
     if (target > maxPos) {
       // Once: a second flick on the way out must not start a second hand-off.
@@ -626,7 +636,7 @@ export default function ProjectStage({
                 )}
                 {!isImage && i === 0 && adopted && <div ref={adoptHostRef} className="absolute inset-0" />}
                 {poster && !near && (
-                  <Image src={poster} alt="" fill className="object-cover" sizes={isDesktop ? "70vw" : "100vw"} />
+                  <Image src={poster} unoptimized alt="" fill className="object-cover" sizes={isDesktop ? "70vw" : "100vw"} />
                 )}
                 {!isImage && item.video?.asset?._ref && near && !(i === 0 && adopted) && (
                   <video

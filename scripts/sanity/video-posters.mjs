@@ -13,6 +13,7 @@
 //   node scripts/sanity/video-posters.mjs --dry-run   # no token: reads, probes, prints the plan
 //   node scripts/sanity/video-posters.mjs             # uploads posters + patches
 //   node scripts/sanity/video-posters.mjs --force     # redo items that already have them
+//                                                      (a swapped clip is redone without it)
 //   node scripts/sanity/video-posters.mjs --only zone-2
 //
 // Needs ffmpeg + ffprobe on the PATH. Token (write access): SANITY_TOKEN in
@@ -30,6 +31,11 @@ const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");
 const FORCE = args.includes("--force");
 const ONLY = args.includes("--only") ? args[args.indexOf("--only") + 1] : null;
+if (args.includes("--only") && (!ONLY || ONLY.startsWith("--") || !/^[a-z0-9-]+$/.test(ONLY))) {
+  // Without a slug the filter would drop out and every project be patched.
+  console.error("--only needs a project slug, e.g. --only zone-2");
+  process.exit(1);
+}
 
 function findToken() {
   if (process.env.SANITY_TOKEN) return process.env.SANITY_TOKEN;
@@ -65,7 +71,7 @@ async function query(groq) {
 }
 
 const docs = await query(
-  `*[_type == "project"${ONLY ? ` && slug.current == "${ONLY}"` : ""}]{ _id, "slug": slug.current, "videos": gallery[_type == "galleryVideo"]{ _key, video, poster, videoWidth, videoHeight } }`,
+  `*[_type == "project"${ONLY ? ` && slug.current == "${ONLY}"` : ""}]{ _id, "slug": slug.current, "videos": gallery[_type == "galleryVideo"]{ _key, video, poster, videoWidth, videoHeight, "posterFile": poster.asset->originalFilename } }`,
 );
 
 const tmp = mkdtempSync(join(tmpdir(), "video-posters-"));
@@ -104,7 +110,10 @@ for (const doc of docs) {
   for (const item of doc.videos ?? []) {
     const ref = item.video?.asset?._ref;
     if (!ref) continue;
-    if (!FORCE && item.videoWidth && item.videoHeight && item.poster?.asset) continue;
+    // Posters are uploaded as `<clip asset id>-poster.jpg`: one made for
+    // another clip means the clip was swapped since, so size and poster are redone.
+    const current = item.posterFile === `${ref}-poster.jpg`;
+    if (!FORCE && current && item.videoWidth && item.videoHeight) continue;
     const entry = probe(ref);
     const at = `gallery[_key=="${item._key}"]`;
     console.log(`${doc._id} (${doc.slug}) ${item._key}: ${entry.width}x${entry.height}, poster ${entry.jpg}`);
