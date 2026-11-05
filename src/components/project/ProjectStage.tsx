@@ -81,6 +81,8 @@ const DESK_GAP = 48;
 const DESK_MAX_H = 760;
 // Hold on the next project's cover before it opens.
 const AUTO_NEXT_MS = 1500;
+// Phone: how far a fresh swipe on the next project's card travels before it opens it.
+const SWIPE_NEXT_PX = 40;
 
 type DeskGrid = { col: number; gutter: number; h: number };
 /** Laptop grid in px (globals.css: 12 columns, --grid-margin, --grid-gutter) and the card height budget. */
@@ -97,6 +99,23 @@ const WHEEL_STEP = 40;
 const GESTURE_SILENCE_MS = 150;
 const REFLICK_MIN = 40;
 const REFLICK_MS = 350;
+
+/**
+ * A card's clip sits on its poster still, not on the <video>'s own `poster`:
+ * the moment a clip starts playing the browser drops that poster, and until
+ * the first frame has decoded the card showed its black box for a frame or
+ * two (Ali, 11-05: the flicker on every swipe to the next clip). Here the
+ * still is an image under the clip and the clip stays invisible until it has
+ * presented a frame, so a swipe goes still → moving picture with nothing between.
+ */
+function revealOnFirstFrame(video: HTMLVideoElement | null): (() => void) | undefined {
+  if (!video) return;
+  if (video.readyState >= 2) return;
+  video.style.opacity = "0";
+  return onFirstVideoFrame(video, () => {
+    video.style.opacity = "";
+  });
+}
 
 export default function ProjectStage({
   project,
@@ -172,16 +191,25 @@ export default function ProjectStage({
   // The cards' CSS settle transition would smooth (and delay) every frame
   // of the entrance, so it is off until the entrance is done.
   const [entering, setEntering] = useState(true);
+  // Mounted as the landing page of a project → project hand-off.
+  const [arrivedInPlace] = useState(() => isTransitioning && inPlace);
   useGSAP(
     () => {
       const root = rootRef.current;
-      if (hidden || !root) return;
+      if (!root) return;
       const pill = root.querySelectorAll("[data-stage-chrome='pill']");
       const film = root.querySelectorAll("[data-stage-chrome='film']");
+      // Project → project: the pill and the filmstrip were on screen a frame
+      // ago (the last page's). They stay up through the hand-off and only
+      // swap their contents, instead of vanishing with the old page and
+      // fading back in once the clone settles (Ali, 11-05: the blink when
+      // the next project takes over).
+      if (arrivedInPlace) gsap.set([...pill, ...film], { autoAlpha: 1, yPercent: 0 });
+      if (hidden) return;
       const cards = itemRefs.current.slice(1).filter((el): el is HTMLDivElement => Boolean(el));
       const rise = reduceMotion ? 0 : 40;
       const tl = gsap.timeline({ defaults: { duration: dur.text, ease: ease.out }, onComplete: () => setEntering(false) });
-      if (pill.length) tl.fromTo(pill, { yPercent: rise, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1 }, 0);
+      if (pill.length && !arrivedInPlace) tl.fromTo(pill, { yPercent: rise, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1 }, 0);
       if (cards.length) {
         // Phone: the neighbours rest at NEIGHBOUR_OPACITY behind card 1 and
         // the scroll loop owns their transform, so they only fade, to the
@@ -199,7 +227,7 @@ export default function ProjectStage({
           stagger,
         );
       }
-      if (film.length) tl.fromTo(film, { yPercent: rise, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1 }, 2 * stagger);
+      if (film.length && !arrivedInPlace) tl.fromTo(film, { yPercent: rise, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1 }, 2 * stagger);
     },
     { scope: rootRef, dependencies: [hidden] },
   );
@@ -564,6 +592,48 @@ export default function ProjectStage({
     return () => window.clearTimeout(t);
   }, [atPreview, scrolling, detailsOpen, hidden, onNavigateNext]);
 
+  // Phone: a swipe on the next project's card opens it (Ali, 11-05: at the
+  // end of the strip a swipe did nothing, only a tap or the hold moved on).
+  // Only a NEW swipe that starts with the strip already at its end and goes
+  // on leftwards counts: the swipe that brings the card in, and one back to
+  // this project's clips, scroll the strip as before. Mirrors the laptop's
+  // sideways-swipe rule in the wheel effect above.
+  useEffect(() => {
+    const strip = stripRef.current;
+    if (isDesktop || !strip || !hasPreview) return;
+    let start: { x: number; y: number } | null = null;
+    const atEnd = () => strip.scrollLeft + strip.clientWidth >= strip.scrollWidth - 2;
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      // posRef: the next project's card is the centred one, even while the
+      // strip is still settling from the swipe that brought it in.
+      start = e.touches.length === 1 && t && (atEnd() || posRef.current > last) && !gsap.isTweening(strip) ? { x: t.clientX, y: t.clientY } : null;
+    };
+    const onEnd = (e: TouchEvent) => {
+      const t = e.changedTouches[0];
+      const s = start;
+      start = null;
+      if (!s || !t || detailsOpenRef.current || hiddenRef.current) return;
+      const dx = t.clientX - s.x;
+      const dy = t.clientY - s.y;
+      if (dx > -SWIPE_NEXT_PX || Math.abs(dx) < Math.abs(dy)) return;
+      if (handedOffRef.current) return;
+      handedOffRef.current = true;
+      onNavigateNext?.();
+    };
+    const onCancel = () => {
+      start = null;
+    };
+    strip.addEventListener("touchstart", onStart, { passive: true });
+    strip.addEventListener("touchend", onEnd, { passive: true });
+    strip.addEventListener("touchcancel", onCancel, { passive: true });
+    return () => {
+      strip.removeEventListener("touchstart", onStart);
+      strip.removeEventListener("touchend", onEnd);
+      strip.removeEventListener("touchcancel", onCancel);
+    };
+  }, [isDesktop, hasPreview, onNavigateNext, last]);
+
   // A video first card reports ready on its first presented frame (see
   // firstFrame.ts): the clone covering it must not leave on a black frame.
   // A phones row as card 1 (the schema warns against it) has no single frame
@@ -652,7 +722,7 @@ export default function ProjectStage({
   return (
     <div
       ref={rootRef}
-      className={`fixed inset-x-0 bottom-0 top-[var(--header-height)] flex flex-col overflow-hidden bg-bg${hidden ? " opacity-0 pointer-events-none" : ""}`}
+      className={`fixed inset-x-0 bottom-0 top-[var(--header-height)] flex flex-col overflow-hidden bg-bg${hidden && !arrivedInPlace ? " opacity-0" : ""}${hidden ? " pointer-events-none" : ""}`}
     >
       {/* The name pill: the page's title and the one way into the text.
           Fixed height, so card 1 sits on the same y on every project (the
@@ -679,7 +749,7 @@ export default function ProjectStage({
       </div>
 
       {/* Strip, vertically centred in the remaining space */}
-      <div className="flex flex-1 items-center pb-[52px] desktop:pb-[72px]">
+      <div className={`flex flex-1 items-center pb-[52px] desktop:pb-[72px]${hidden && arrivedInPlace ? " opacity-0" : ""}`}>
         <div
           ref={stripRef}
           // A lone card is centred by the strip itself; with the next project's
@@ -787,15 +857,23 @@ export default function ProjectStage({
                   />
                 )}
                 {!isImage && i === 0 && adopted && <div ref={adoptHostRef} className="absolute inset-0" />}
-                {poster && !near && (
+                {poster && !(i === 0 && adopted) && (
                   <Image src={poster} unoptimized alt="" fill className="object-cover" sizes={LANDING_SIZES.stage} />
                 )}
                 {!isImage && item.video?.asset?._ref && near && !(i === 0 && adopted) && (
                   <video
-                    ref={i === 0 ? firstVideoRef : undefined}
+                    ref={(el) => {
+                      if (i === 0) firstVideoRef.current = el;
+                      // The still under the clip stays until the clip has
+                      // presented a frame of its own (see revealOnFirstFrame).
+                      const stop = poster ? revealOnFirstFrame(el) : undefined;
+                      return () => {
+                        stop?.();
+                        if (i === 0 && firstVideoRef.current === el) firstVideoRef.current = null;
+                      };
+                    }}
                     src={fileUrl(item.video.asset._ref)}
-                    poster={poster}
-                    className="h-full w-full object-cover"
+                    className="relative h-full w-full object-cover"
                     aria-label={`${project.title} — ${i + 1}`}
                     muted
                     loop
