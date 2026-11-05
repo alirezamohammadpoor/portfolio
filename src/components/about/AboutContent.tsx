@@ -11,7 +11,7 @@ import {
   useInlineAnimation,
 } from "@/hooks/useTextAnimation";
 import type { ABOUT_QUERY_RESULT } from "@/sanity/types";
-import { imageUrl } from "@/sanity/lib/image";
+import { hotspotPosition, imageUrl } from "@/sanity/lib/image";
 import { dur, ease, prefersReducedMotion, stagger } from "@/lib/motion";
 import dynamic from "next/dynamic";
 import CopyButton from "@/components/CopyButton";
@@ -116,6 +116,7 @@ export default function AboutContent({
               alt={heading ?? "Portrait"}
               fill
               className="object-cover"
+              style={{ objectPosition: hotspotPosition(portrait) }}
               sizes="100vw"
             />
           </div>
@@ -151,6 +152,7 @@ export default function AboutContent({
               alt={heading ?? "Portrait"}
               fill
               className="object-cover"
+              style={{ objectPosition: hotspotPosition(portrait) }}
               sizes="33vw"
             />
           </div>

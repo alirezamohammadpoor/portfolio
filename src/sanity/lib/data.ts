@@ -53,7 +53,9 @@ export async function getProject(slug: string, perspective: Perspective = "publi
 export async function getJournalPosts(perspective: Perspective = "published") {
   "use cache";
   cacheLife("max");
-  cacheTag("journalPost");
+  // The byline's project link joins relatedProject->{title, slug}: a renamed
+  // project must refresh the posts too.
+  cacheTag("journalPost", "project");
   const { data } = await sanityFetch({
     query: JOURNAL_POSTS_QUERY,
     perspective,
@@ -65,7 +67,7 @@ export async function getJournalPosts(perspective: Perspective = "published") {
 export async function getJournalPost(slug: string, perspective: Perspective = "published") {
   "use cache";
   cacheLife("max");
-  cacheTag("journalPost");
+  cacheTag("journalPost", "project");
   const { data } = await sanityFetch({
     query: JOURNAL_POST_BY_SLUG_QUERY,
     params: { slug },

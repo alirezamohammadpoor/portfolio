@@ -13,7 +13,7 @@ import type {
   JOURNAL_POST_BY_SLUG_QUERY_RESULT,
   JOURNAL_POSTS_QUERY_RESULT,
 } from "@/sanity/types";
-import { imageUrl } from "@/sanity/lib/image";
+import { hotspotPosition, imageUrl } from "@/sanity/lib/image";
 import { formatPostDate } from "@/lib/dates";
 import { portableTextComponents } from "@/components/portableText/components";
 import JournalCard from "./JournalCard";
@@ -96,13 +96,16 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
       >
         <div className="px-4 py-6 desktop:flex desktop:w-1/2 desktop:items-center desktop:px-6">
           <div>
-            <h1 ref={titleRef} className="text-primary text-[32px] leading-[40px] desktop:text-[48px] desktop:leading-[56px] font-normal">
+            {/* gsap-hidden: on a hard load the server text would paint, vanish
+                when hydration starts the entrance and come back; the hooks
+                show the block as they split it (3 s CSS fallback without JS). */}
+            <h1 ref={titleRef} className="gsap-hidden text-primary text-[32px] leading-[40px] desktop:text-[48px] desktop:leading-[56px] font-normal">
               {post.title}
             </h1>
             {post.excerpt && (
               <p
                 ref={excerptRef}
-                className="mt-4 text-sub desktop:text-body text-primary"
+                className="gsap-hidden mt-4 text-sub desktop:text-body text-primary"
               >
                 {post.excerpt}
               </p>
@@ -117,6 +120,17 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
                 <time dateTime={post.publishedAt}>
                   {formatPostDate(post.publishedAt)}
                 </time>
+                {post.relatedProject?.slug?.current && (
+                  <>
+                    {" · "}
+                    <Link
+                      href={`/project/${post.relatedProject.slug.current}`}
+                      className="underline underline-offset-2 decoration-primary"
+                    >
+                      {post.relatedProject.title ?? "Project"} →
+                    </Link>
+                  </>
+                )}
               </p>
             )}
           </div>
@@ -131,6 +145,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
               alt={post.coverImage.alt ?? post.title ?? ""}
               fill
               className="object-cover"
+              style={{ objectPosition: hotspotPosition(post.coverImage) }}
               sizes="(min-width: 75rem) 50vw, 100vw"
               priority
               fetchPriority="high"

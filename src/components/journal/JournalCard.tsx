@@ -1,7 +1,7 @@
 import { Link } from "@/lib/viewTransitions";
 import Image from "next/image";
 import type { JOURNAL_POSTS_QUERY_RESULT } from "@/sanity/types";
-import { imageUrl } from "@/sanity/lib/image";
+import { hotspotPosition, imageUrl } from "@/sanity/lib/image";
 import { formatPostDate } from "@/lib/dates";
 
 interface JournalCardProps {
@@ -18,6 +18,7 @@ export default function JournalCard({ post }: JournalCardProps) {
             alt={post.coverImage.alt ?? ""}
             fill
             className="object-cover"
+            style={{ objectPosition: hotspotPosition(post.coverImage) }}
             sizes="(min-width: 75rem) 33vw, 100vw"
           />
         </div>
