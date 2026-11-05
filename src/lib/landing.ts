@@ -5,23 +5,20 @@
  * rect across the route swap (ProjectPageClient.navigateNext), so the
  * preview block on the leaving page must already have the next page's
  * landing shape, and the slide must stop where that page's slot will be.
- * There are three landing shapes today:
+ * There are two landing shapes today:
  *
  * - chapters (a project with `chapters[]`, every breakpoint): a 16:10 box
  *   in the hero, eight columns on a laptop (which side per `heroLayout`
  *   or the slug hash), full width on a phone.
- * - gallery (laptop, no chapters): the first item of the right-hand
- *   gallery column, flush with the top of <main>.
- * - stage (phone, no chapters): the first card of the strip, centred
+ * - stage (no chapters, every breakpoint): the first card of the strip, centred
  *   in the viewport under the title block; its top depends on that layout,
  *   so there is nothing to slide to and the clone settles onto it instead.
  */
 
-export type LandingKind = "chapters" | "gallery" | "stage";
+export type LandingKind = "chapters" | "stage";
 
-export function landingKind(hasChapters: boolean | null | undefined, _isDesktop: boolean): LandingKind {
-  // Since 11-04 a gallery project is the stage on every breakpoint (the
-  // laptop gallery column is gone), so "gallery" no longer lands anywhere.
+export function landingKind(hasChapters: boolean | null | undefined): LandingKind {
+  // Since 11-04 a gallery project is the stage on every breakpoint.
   return hasChapters ? "chapters" : "stage";
 }
 
@@ -33,7 +30,6 @@ export function landingKind(hasChapters: boolean | null | undefined, _isDesktop:
  */
 export const LANDING_ASPECT: Record<LandingKind, number> = {
   chapters: 16 / 10,
-  gallery: 16 / 10,
   stage: 16 / 10,
 };
 
@@ -68,8 +64,6 @@ export function landingTop(kind: LandingKind, isDesktop: boolean): number | null
   switch (kind) {
     case "chapters":
       return mainTop + (isDesktop ? HERO_TOP.desktop : HERO_TOP.phone);
-    case "gallery":
-      return mainTop;
     case "stage":
       return null;
   }

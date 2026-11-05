@@ -19,8 +19,8 @@ const LANDING_SIZES = "(min-width: 75rem) 50vw, 100vw";
 /**
  * Give a project route a head start: prefetch its RSC payload and preload
  * its first gallery media, so the clone morph onto that page lands on a
- * painted box instead of a black one. Used by the home gallery for the
- * active slide and by the project page for the next project.
+ * painted box instead of a black one. Used by the project page for the
+ * next project.
  *
  * The image preload carries the same srcset and sizes next/image will
  * render for the landing item, so the browser picks the very URL it is

@@ -185,8 +185,6 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
         const videoEl = mediaEl as HTMLVideoElement | null;
         startTransition({
           mediaType: "video",
-          videoSrc: fileUrl(videoRef),
-          videoCurrentTime: videoEl?.currentTime ?? 0,
           sourceVideoElement: videoEl ?? undefined,
           sourceRect,
         });
@@ -338,7 +336,7 @@ interface CoverMediaProps {
 /**
  * The project's cover in a fixed-ratio box. A video plays only while it is
  * in view and keeps its position across visits (the home stays mounted but
- * hidden behind a project page, see MediaPanel for the long version).
+ * hidden behind a project page).
  */
 function CoverMedia({ project, aspect, priority = false }: CoverMediaProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);

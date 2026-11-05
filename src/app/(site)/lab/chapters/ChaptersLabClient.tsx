@@ -16,11 +16,9 @@ function variantFromHash(): MobileVariant {
 export default function ChaptersLabClient({
   project,
   nextProject,
-  prevProject,
 }: {
   project: Project;
   nextProject?: Project["nextProject"];
-  prevProject?: Project["prevProject"];
 }) {
   const [variant, setVariant] = useState<MobileVariant>("default");
   useEffect(() => {
@@ -34,7 +32,6 @@ export default function ChaptersLabClient({
       key={`lab-chapters-${variant}`}
       project={project}
       nextProject={nextProject}
-      prevProject={prevProject}
       mobileVariant={variant}
     />
   );

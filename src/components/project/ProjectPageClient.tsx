@@ -6,7 +6,6 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { usePageTransition } from "@/context/TransitionContext";
-import { rememberProject } from "@/lib/lastProject";
 import {
   useTitleAnimation,
   useBodyAnimation,
@@ -28,12 +27,11 @@ type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 interface ProjectPageClientProps {
   project: Project;
   nextProject?: Project["nextProject"];
-  prevProject?: Project["prevProject"];
   /** Lab only: phone layout exploration for the chapter page. */
   mobileVariant?: MobileVariant;
 }
 
-export default function ProjectPageClient({ project, nextProject, prevProject, mobileVariant }: ProjectPageClientProps) {
+export default function ProjectPageClient({ project, nextProject, mobileVariant }: ProjectPageClientProps) {
   const plainRouter = useRouter();
   const {
     isTransitioning: transitionRunning,
@@ -71,10 +69,6 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
   const previewRef = useRef<HTMLDivElement>(null);
 
   const nextSlug = nextProject?.slug?.current ?? undefined;
-
-  // Home opens on this project when the visitor goes back to it.
-  const slug = project.slug?.current;
-  useEffect(() => rememberProject(slug), [slug]);
 
   // Next project only, on arrival: its route and first media are ready long
   // before the reader reaches the end of the gallery. Previous gets nothing;
@@ -119,7 +113,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
     // the stage, whose card is centred by its own layout: the clone settles
     // onto it after the swap instead.
     const desktop = window.matchMedia(DESKTOP_QUERY).matches;
-    const slotTop = landingTop(landingKind(nextHasChapters, desktop), desktop);
+    const slotTop = landingTop(landingKind(nextHasChapters), desktop);
     if (!gallery || slotTop === null || !preview || prefersReducedMotion()) {
       swap();
       return;
@@ -138,16 +132,10 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
   const {
     galleryRef,
     firstImageRef,
-    nextTextRef,
     progressFillRef,
     pullRef,
-    gallery,
-    mobileProgressElRef,
-    footerWipeRef,
-    showMobileNav,
     onFirstReady,
   } = useGalleryScroll({
-    gallery: project.gallery ?? [],
     nextProjectSlug: nextSlug,
     isTransitioning,
     inPlace,

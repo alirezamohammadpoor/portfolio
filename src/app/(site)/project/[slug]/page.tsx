@@ -100,7 +100,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   return (
     <>
       <JsonLd data={creativeWorkLd} />
-      <ProjectPageClient key={slug} project={project} nextProject={project.nextProject} prevProject={project.prevProject} />
+      <ProjectPageClient key={slug} project={project} nextProject={project.nextProject} />
     </>
   );
 }

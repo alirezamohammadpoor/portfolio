@@ -25,8 +25,6 @@ export function cloneSourceFromElement(
     if (!allowLoadingVideo && (media.readyState < 2 || media.videoWidth === 0)) return null;
     return {
       mediaType: "video",
-      videoSrc: media.currentSrc || media.src,
-      videoCurrentTime: media.currentTime,
       sourceVideoElement: media,
       sourceRect,
     };

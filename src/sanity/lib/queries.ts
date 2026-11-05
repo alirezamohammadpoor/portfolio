@@ -118,8 +118,7 @@ export const PROJECTS_QUERY = defineQuery(`
     homeLayout,
     homeTextAlign,
     palette,
-    mediaBackground,
-    ${NEXT_PROJECT_MEDIA}
+    mediaBackground
   }
 `);
 
@@ -132,10 +131,6 @@ export const PROJECT_BY_SLUG_QUERY = defineQuery(`
     "nextProject": coalesce(
       *[_type == "project" && _id != ^._id && order > ^.order] | order(order asc) [0] { title, slug, heroLayout, "hasChapters": count(chapters) > 0, ${NEXT_PROJECT_MEDIA} },
       *[_type == "project" && _id != ^._id] | order(order asc) [0] { title, slug, heroLayout, "hasChapters": count(chapters) > 0, ${NEXT_PROJECT_MEDIA} }
-    ),
-    "prevProject": coalesce(
-      *[_type == "project" && _id != ^._id && order < ^.order] | order(order desc) [0] { title, slug },
-      *[_type == "project" && _id != ^._id] | order(order desc) [0] { title, slug }
     )
   }
 `);

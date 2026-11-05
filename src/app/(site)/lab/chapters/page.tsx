@@ -123,5 +123,5 @@ export default async function ChaptersLabPage() {
 
   const fixture: Project = { ...project, chapters: [...chapters, switcher] };
   // Phone layout exploration: /lab/chapters#offset or #stack (2026-10-29).
-  return <ChaptersLabClient project={fixture} nextProject={project.nextProject} prevProject={project.prevProject} />;
+  return <ChaptersLabClient project={fixture} nextProject={project.nextProject} />;
 }

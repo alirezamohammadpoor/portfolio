@@ -29,8 +29,7 @@ import NextProjectPreview from "@/components/project/NextProjectPreview";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
-import GalleryPhones from "@/components/project/GalleryPhones";
-import { PHONE_ASPECT } from "@/components/PhonesRow";
+import PhonesRow, { PHONE_ASPECT } from "@/components/PhonesRow";
 import MediaFrame from "@/components/MediaFrame";
 import { resolveFrame, resolveLandingFrame } from "@/lib/mediaFrame";
 import { LANDING_ASPECT, imageAspect, landingKind, videoAspect } from "@/lib/landing";
@@ -484,8 +483,8 @@ export default function ProjectStage({
                   aria-roledescription="slide"
                   aria-label={`${i + 1} of ${gallery.length}`}
                 >
-                  <GalleryPhones
-                    item={item}
+                  <PhonesRow
+                    slots={item.phones ?? []}
                     frame={phonesFrame}
                     title={project.title ?? "Project"}
                     active={Math.abs(i - index) <= 1}
@@ -592,7 +591,7 @@ export default function ProjectStage({
                 itemRefs.current[gallery.length] = el;
               }}
               className="relative shrink-0 snap-center will-change-transform"
-              style={isDesktop ? deskBox(LANDING_ASPECT[landingKind(nextProject.hasChapters, true)], gallery.length) : { width: ITEM_W, marginLeft: -OVERLAP }}
+              style={isDesktop ? deskBox(LANDING_ASPECT[landingKind(nextProject.hasChapters)], gallery.length) : { width: ITEM_W, marginLeft: -OVERLAP }}
               role="group"
               aria-roledescription="slide"
               aria-label="Next project"
@@ -603,7 +602,7 @@ export default function ProjectStage({
                 onNavigate={onNavigateNext!}
                 imageWidth={isDesktop ? 1600 : 900}
                 sizes={isDesktop ? "70vw" : "100vw"}
-                aspect={LANDING_ASPECT[landingKind(nextProject.hasChapters, isDesktop)]}
+                aspect={LANDING_ASPECT[landingKind(nextProject.hasChapters)]}
                 labelHidden={isDesktop}
               />
             </div>

@@ -11,7 +11,6 @@ import gsap from "gsap";
 import { CustomEase } from "gsap/CustomEase";
 
 export const EASE_OUT_CSS = "cubic-bezier(0.23, 1, 0.32, 1)";
-export const EASE_IN_OUT_CSS = "cubic-bezier(0.77, 0, 0.175, 1)";
 
 let registered = false;
 
@@ -75,5 +74,3 @@ export function maskOutText(root: HTMLElement | null): boolean {
   return true;
 }
 
-/** How long the route push waits for an exit to be mostly visible, ms. */
-export const EXIT_LEAD_MS = 180;

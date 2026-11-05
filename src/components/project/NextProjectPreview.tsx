@@ -17,8 +17,6 @@ interface NextProjectPreviewProps {
   /** Image width hint for the Sanity URL (desktop 1200, stage 900). */
   imageWidth?: number;
   sizes?: string;
-  className?: string;
-  style?: React.CSSProperties;
   /** The chapter page writes the next title beside the block itself. */
   labelHidden?: boolean;
   /** The box ratio: 4:3 on the gallery page, 16:10 on the chapter page (flush covers). */
@@ -95,8 +93,6 @@ export default function NextProjectPreview({
   onNavigate,
   imageWidth = 1200,
   sizes = "(min-width: 75rem) 50vw, 100vw",
-  className = "",
-  style,
   labelHidden = false,
   aspect = 4 / 3,
 }: NextProjectPreviewProps) {
@@ -112,8 +108,7 @@ export default function NextProjectPreview({
     <a
       href={`/project/${slug}`}
       aria-label={label}
-      className={`block ${className}`}
-      style={style}
+      className="block"
       onClick={(e) => {
         if (!isPlainLeftClick(e)) return;
         e.preventDefault();

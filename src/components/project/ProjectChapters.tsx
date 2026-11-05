@@ -44,7 +44,7 @@ import MediaFrame from "@/components/MediaFrame";
 import PhonesRow from "@/components/PhonesRow";
 import { resolveFrame, resolveLandingFrame, type ProjectFrameSource } from "@/lib/mediaFrame";
 import { isPlainLeftClick } from "@/lib/clicks";
-import { HERO_VARIANTS, LANDING_ASPECT, heroVariant, landingKind } from "@/lib/landing";
+import { HERO_VARIANTS, LANDING_ASPECT, heroVariant } from "@/lib/landing";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 export type ChapterBlock = NonNullable<Project["chapters"]>[number];
@@ -519,7 +519,7 @@ export default function ProjectChapters({
               </a>
             </h2>
           );
-          const preview = (kind: "chapters" | "gallery", sizes: string) => (
+          const preview = (kind: "chapters" | "stage", sizes: string) => (
             <NextProjectPreview
               nextProject={nextProject}
               previewRef={previewRef}
@@ -546,7 +546,7 @@ export default function ProjectChapters({
             >
               <div className="px-margin desktop:w-1/2">{title}</div>
               <div className="mt-4 px-margin desktop:mt-0 desktop:w-1/2">
-                {preview("gallery", "(min-width: 75rem) 50vw, 100vw")}
+                {preview("stage", "(min-width: 75rem) 50vw, 100vw")}
               </div>
             </section>
           );
