@@ -30,6 +30,12 @@ interface UseAnchoredMobileOverlayOptions {
   forceAbove?: boolean;
   /** Anchor on every breakpoint, not only mobile (for portaled popups). */
   anchorOnDesktop?: boolean;
+  /**
+   * Desktop only: while open, follow the trigger when the page scrolls
+   * (keeping the side it opened on) instead of closing. The host closes it
+   * when the pointer leaves. Touch keeps closing on scroll.
+   */
+  followOnScroll?: boolean;
 }
 
 export function useAnchoredMobileOverlay(
@@ -41,6 +47,7 @@ export function useAnchoredMobileOverlay(
     anchorPoint = null,
     forceAbove = false,
     anchorOnDesktop = false,
+    followOnScroll = false,
   }: UseAnchoredMobileOverlayOptions,
 ) {
   const isMobile = useIsMobile();
@@ -52,7 +59,7 @@ export function useAnchoredMobileOverlay(
     onCloseRef.current = onClose;
   }, [onClose]);
 
-  const measurePosition = useCallback(() => {
+  const measurePosition = useCallback((keep?: "above" | "below") => {
     const trigger = triggerRef.current;
     const popup = popupRef.current;
     if (!trigger || !popup) {
@@ -99,7 +106,12 @@ export function useAnchoredMobileOverlay(
     let top = aboveTop;
     let placement: "above" | "below" = "above";
 
-    if (forceAbove) {
+    if (keep) {
+      // Following a scroll: stay on the same side, no clamping, so the card
+      // moves with the phrase instead of flipping or sticking to an edge.
+      top = keep === "above" ? aboveTop : belowTop;
+      placement = keep;
+    } else if (forceAbove) {
       // Always place above, clamp to viewport top
       top = Math.max(TOP_PADDING, aboveTop);
     } else if (!fitsAbove && fitsBelow) {
@@ -153,7 +165,24 @@ export function useAnchoredMobileOverlay(
       }
     };
 
-    const handleDismiss = () => onCloseRef.current();
+    const follow = followOnScroll && !isMobile;
+    let side: "above" | "below" | undefined;
+    const handleDismiss = () => {
+      if (!follow) {
+        onCloseRef.current();
+        return;
+      }
+      if (!side) {
+        const p = popupRef.current?.getBoundingClientRect();
+        const t = triggerRef.current?.getBoundingClientRect();
+        side = p && t && p.top < t.top ? "above" : "below";
+      }
+      const next = measurePosition(side);
+      if (next) {
+        side = next.placement;
+        setPosition(next);
+      }
+    };
     const handleReposition = () => {
       const nextPosition = measurePosition();
       if (nextPosition) {
@@ -191,7 +220,7 @@ export function useAnchoredMobileOverlay(
       window.removeEventListener("orientationchange", handleReposition);
       window.visualViewport?.removeEventListener("resize", handleReposition);
     };
-  }, [visible, active, measurePosition, popupRef, triggerRef]);
+  }, [visible, active, measurePosition, popupRef, triggerRef, followOnScroll, isMobile]);
 
   return {
     isMobile,

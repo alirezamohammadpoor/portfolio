@@ -33,7 +33,7 @@ import GalleryPhones from "@/components/project/GalleryPhones";
 import { PHONE_ASPECT } from "@/components/PhonesRow";
 import MediaFrame from "@/components/MediaFrame";
 import { resolveFrame, resolveLandingFrame } from "@/lib/mediaFrame";
-import { LANDING_ASPECT, imageAspect, landingKind, videoAspect } from "@/lib/landing";
+import { LANDING_ASPECT, imageAspect, landingKind, storedVideoAspect, videoAspect } from "@/lib/landing";
 import ProjectDetailsOverlay from "@/components/project/ProjectDetailsOverlay";
 import GalleryProgress from "@/components/project/GalleryProgress";
 
@@ -69,11 +69,6 @@ const DESK_H = "min(760px, calc(100svh - var(--header-height) - 200px))";
 const DESK_GAP = 48;
 // Card height cap on laptop (Ali 11-04: raised from 640 so big screens keep 8 columns).
 const DESK_MAX_H = 760;
-// Vertical wheel → one card. Trackpad flings keep firing for a second, so
-// after a step the wheel stays locked until it has been quiet for a moment.
-const WHEEL_STEP = 40;
-const WHEEL_LOCK_MS = 450;
-const WHEEL_QUIET_MS = 140;
 // Hold on the next project's cover before it opens.
 const AUTO_NEXT_MS = 1500;
 
@@ -87,6 +82,11 @@ function measureDeskGrid(): DeskGrid {
   const vw = document.documentElement.clientWidth;
   return { col: (vw - 2 * margin - 11 * gutter) / 12, gutter, h: Math.min(DESK_MAX_H, window.innerHeight - header - 200) };
 }
+// Vertical wheel → one card per gesture (see the wheel effect).
+const WHEEL_STEP = 40;
+const GESTURE_SILENCE_MS = 150;
+const REFLICK_MIN = 40;
+const REFLICK_MS = 350;
 
 export default function ProjectStage({
   project,
@@ -119,42 +119,14 @@ export default function ProjectStage({
     firstVideoRef.current = adopted;
   }, [adopted, isTransitioning, project.title]);
   const [index, setIndex] = useState(0);
-  // The next project's cover is the centred card.
-  const [onPreview, setOnPreview] = useState(false);
-  // One hand-off per page: the wheel and the hold must not both start it.
-  const leavingRef = useRef(false);
-  // The hold only counts once the visitor has moved the strip themselves:
-  // browser back keeps this page mounted (Activity, effects re-run) still
-  // sitting on the cover, and must not bounce straight forward again.
-  const armedRef = useRef(false);
-  useEffect(() => {
-    leavingRef.current = false;
-    armedRef.current = false;
-    const arm = () => {
-      armedRef.current = true;
-    };
-    const root = rootRef.current;
-    window.addEventListener("wheel", arm, { passive: true });
-    window.addEventListener("keydown", arm);
-    root?.addEventListener("pointerdown", arm);
-    root?.addEventListener("touchstart", arm, { passive: true });
-    return () => {
-      window.removeEventListener("wheel", arm);
-      window.removeEventListener("keydown", arm);
-      root?.removeEventListener("pointerdown", arm);
-      root?.removeEventListener("touchstart", arm);
-    };
-  }, []);
+  // The next project's preview card is centred (it is not in `index`, which
+  // counts gallery clips only): the filmstrip hands over to the next pill.
+  const [atPreview, setAtPreview] = useState(false);
   // Video ratios as they report metadata (by item key); images carry theirs.
-  // An adopted element already knows its size, and so does the home cover the
-  // clone came from when it is the same file: card 1 takes its real ratio on
-  // the first render, so the clone is aimed at the box it will keep (otherwise
-  // a clip that is not 16:10 resized under the landed clone on metadata).
+  // An adopted element already knows its size.
   const [videoAspects, setVideoAspects] = useState<Record<string, number>>(() => {
     const first = gallery[0];
-    const src = first?._type === "galleryVideo" && first.video?.asset?._ref ? fileUrl(first.video.asset._ref) : undefined;
-    const sized = adopted ?? (isTransitioning ? adoptableVideo(sourceVideoElement, true, src) : null);
-    const known = sized && first?._type === "galleryVideo" ? videoAspect(sized) : null;
+    const known = adopted && first?._type === "galleryVideo" ? videoAspect(adopted) : null;
     return known && first?._key ? { [first._key]: known } : {};
   });
   const setVideoAspect = (key: string | undefined, aspect: number | null) => {
@@ -162,10 +134,10 @@ export default function ProjectStage({
     setVideoAspects((prev) => (prev[key] === aspect ? prev : { ...prev, [key]: aspect }));
   };
   const [reduceMotion, setReduceMotion] = useState(false);
-  // Laptop grid, re-measured on resize.
-  // Measured in the initialiser too: the home → project clone measures card 1
-  // in the page's own layout effect, which runs before a re-render from this
-  // component's effects would land, so the first render must already be snapped.
+  // Laptop grid, re-measured on resize. Measured in the initialiser too: the
+  // home → project clone measures card 1 in the page's own layout effect,
+  // which runs before a re-render from this component's effects would land,
+  // so the first render must already be snapped.
   const [grid, setGrid] = useState<DeskGrid | null>(() => (isDesktop ? measureDeskGrid() : null));
   useLayoutEffect(() => {
     if (!isDesktop) return;
@@ -297,8 +269,8 @@ export default function ProjectStage({
         el.style.zIndex = String(10 - Math.round(t * 5));
       });
       posRef.current = bestAll.i;
-      setOnPreview(bestAll.i > last);
       setIndex((prev) => (prev === best.i ? prev : best.i));
+      setAtPreview(bestAll.i > last);
     };
     let idle = 0;
     const settle = () => {
@@ -354,6 +326,10 @@ export default function ProjectStage({
 
   // Keyboard steps jump (Emil: never animate a keyboard action, it is
   // repeated too often); the wheel glides.
+  // Where a running glide is heading. The scroll handler moves posRef to the
+  // card nearest the centre on every frame, so mid-glide only this knows the
+  // target (a quick second swipe must go one past it, not repeat it).
+  const glideTargetRef = useRef<number | null>(null);
   const goTo = (i: number, instant = false) => {
     const strip = stripRef.current;
     const el = itemRefs.current[i];
@@ -361,6 +337,9 @@ export default function ProjectStage({
     const left = el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2;
     if (reduceMotion || instant) {
       gsap.killTweensOf(strip);
+      // A glide cut short never ran its onComplete: snap back on.
+      strip.style.scrollSnapType = "";
+      glideTargetRef.current = null;
       strip.scrollTo({ left, behavior: "auto" });
       return;
     }
@@ -368,6 +347,7 @@ export default function ProjectStage({
     // its own timing and stutters against snap). Snap is off while it runs,
     // and a new step retargets from wherever the strip is.
     strip.style.scrollSnapType = "none";
+    glideTargetRef.current = i;
     gsap.to(strip, {
       scrollLeft: left,
       duration: 0.6,
@@ -375,18 +355,39 @@ export default function ProjectStage({
       overwrite: true,
       onComplete: () => {
         strip.style.scrollSnapType = "";
+        glideTargetRef.current = null;
       },
     });
   };
   // One card forward or back; past the end (the preview, or the last card
   // when there is none) the next project takes over.
   const stepRef = useRef<(dir: 1 | -1, instant?: boolean) => void>(() => {});
+  const handedOffRef = useRef(false);
+  // The card nearest the strip's centre, read from the strip itself.
+  const nearest = () => {
+    const strip = stripRef.current;
+    if (!strip) return posRef.current;
+    const mid = strip.scrollLeft + strip.clientWidth / 2;
+    let best = { d: Infinity, i: posRef.current };
+    itemRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const d = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid);
+      if (d < best.d) best = { d, i };
+    });
+    return best.i;
+  };
   const step = (dir: 1 | -1, instant = false) => {
     const maxPos = hasPreview ? gallery.length : last;
-    const target = posRef.current + dir;
+    // Mid-glide the target is the truth; at rest the strip is (a page shown
+    // again after browser back may sit somewhere else than posRef says).
+    const strip = stripRef.current;
+    const from =
+      strip && gsap.isTweening(strip) && glideTargetRef.current !== null ? glideTargetRef.current : nearest();
+    const target = from + dir;
     if (target > maxPos) {
-      if (dir > 0 && onNavigateNext && nextSlug && !leavingRef.current) {
-        leavingRef.current = true;
+      // Once: a second flick on the way out must not start a second hand-off.
+      if (dir > 0 && onNavigateNext && nextSlug && !handedOffRef.current) {
+        handedOffRef.current = true;
         onNavigateNext();
       }
       return;
@@ -399,48 +400,94 @@ export default function ProjectStage({
     stepRef.current = step;
   });
 
+  // Shown again (browser back from the next project: this page stayed
+  // mounted hidden, parked on the next project's card). Come back on the last
+  // clip of this project, so the next swipe shows its own content again
+  // instead of leaving at once.
+  useEffect(() => {
+    const strip = stripRef.current;
+    if (!strip || !hasPreview) return;
+    const raf = requestAnimationFrame(() => {
+      if (nearest() <= last) return;
+      posRef.current = last;
+      goTo(last, true);
+    });
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Laptop: vertical wheel and arrow keys step the strip (a horizontal
   // trackpad swipe scrolls it natively, snapping on its own).
   useEffect(() => {
     if (!isDesktop) return;
+    // One gesture = one card, the rule the home gallery settled on after
+    // magnitude heuristics kept failing on real trackpads. A gesture is a
+    // stream of deltas (a drag, or a flick: a short ramp, then a decaying
+    // inertia tail of a second or more); it ends after GESTURE_SILENCE_MS of
+    // silence or on a direction change. The exception is a decisive second
+    // flick inside the tail: the stream has been falling and a real push
+    // (≥ REFLICK_MIN, at least 4x the tail's low point) arrives more than
+    // REFLICK_MS after the last step. Without it a quick double swipe lost
+    // its second half, which on the next project's card meant no hand-off.
+    // Times are the events' own (`timeStamp`): while a hand-off mounts the
+    // next page the tail queues and arrives in a burst, and handling time
+    // would read the wait as silence.
+    // It starts mid-gesture and consumed: the page may have just taken over
+    // from the previous project, and the rest of that swipe must not step it.
+    // Shown again (browser back keeps this page mounted hidden): it may hand off again.
+    handedOffRef.current = false;
+    let lastWheelAt = performance.now();
+    let lastDelta = 0;
+    let lastSign = 0;
+    let lastStepAt = -Infinity;
+    let consumed = true;
+    let decaying = false;
+    let trough = Infinity;
     let acc = 0;
-    let lockedUntil = 0;
-    // A sideways trackpad swipe scrolls the strip natively, which simply
-    // stops at the end. A fresh swipe that starts with the strip already at
-    // its end (not the tail of the one that got it there) hands off instead.
-    let lastWheel = 0;
-    let sideAtEnd = false;
-    let sideAcc = 0;
+    // A sideways swipe scrolls the strip natively (with snap). At its end
+    // there is nothing left to scroll, so a NEW sideways swipe there (not
+    // the one that brought the next project's card in) hands off, like a
+    // downward one.
+    let lastAxis: "x" | "y" | null = null;
+    let startedAtEnd = false;
+    const stripAtEnd = () => {
+      const strip = stripRef.current;
+      return !!strip && strip.scrollLeft + strip.clientWidth >= strip.scrollWidth - 2;
+    };
     const onWheel = (e: WheelEvent) => {
       if (detailsOpenRef.current) return;
-      const now = performance.now();
-      const fresh = now - lastWheel > WHEEL_QUIET_MS;
-      lastWheel = now;
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-        const strip = stripRef.current;
-        if (fresh) {
-          sideAcc = 0;
-          sideAtEnd = Boolean(strip && strip.scrollLeft >= strip.scrollWidth - strip.clientWidth - 2);
-        }
-        if (!sideAtEnd || now < lockedUntil) return;
-        sideAcc += e.deltaX;
-        if (sideAcc < WHEEL_STEP) return;
-        sideAcc = 0;
-        sideAtEnd = false;
-        lockedUntil = now + WHEEL_LOCK_MS;
-        stepRef.current(1);
-        return;
+      const axis = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? "x" : "y";
+      const delta = axis === "x" ? e.deltaX : e.deltaY;
+      const now = e.timeStamp;
+      const magnitude = Math.abs(delta);
+      const reflick =
+        decaying && magnitude >= REFLICK_MIN && magnitude > trough * 4 && now - lastStepAt > REFLICK_MS;
+      const newGesture =
+        now - lastWheelAt > GESTURE_SILENCE_MS ||
+        (lastAxis !== null && axis !== lastAxis) ||
+        (lastSign !== 0 && Math.sign(delta) !== lastSign) ||
+        reflick;
+      if (newGesture) {
+        consumed = false;
+        decaying = false;
+        trough = Infinity;
+        acc = 0;
+        startedAtEnd = axis === "x" && stripAtEnd();
+      } else if (magnitude < lastDelta) {
+        decaying = true;
+        trough = Math.min(trough, magnitude);
       }
-      if (now < lockedUntil) {
-        lockedUntil = Math.max(lockedUntil, now + WHEEL_QUIET_MS);
-        return;
-      }
-      acc += e.deltaY;
+      lastWheelAt = now;
+      lastDelta = magnitude;
+      lastAxis = axis;
+      if (delta !== 0) lastSign = Math.sign(delta);
+      if (consumed) return;
+      if (axis === "x" && (!startedAtEnd || delta <= 0)) return;
+      acc += delta;
       if (Math.abs(acc) < WHEEL_STEP) return;
-      const dir = acc > 0 ? 1 : -1;
-      acc = 0;
-      lockedUntil = now + WHEEL_LOCK_MS;
-      stepRef.current(dir);
+      consumed = true;
+      lastStepAt = now;
+      stepRef.current(acc > 0 ? 1 : -1);
     };
     const onKey = (e: KeyboardEvent) => {
       if (detailsOpenRef.current || e.defaultPrevented) return;
@@ -462,16 +509,22 @@ export default function ProjectStage({
 
   // Landing on the next project's cover opens it after a short hold (Ali,
   // 11-04: a scroll past the last clip felt stuck). The hold restarts on any
-  // movement, waits for the strip to settle, and stops while the text is open.
+  // movement, waits for the strip to settle, and stops while the text is
+  // open. It shares the wheel's once-only hand-off guard.
+  // Shown again after browser back (every breakpoint; the laptop wheel effect
+  // resets it as well): it may hand off again.
   useEffect(() => {
-    if (!onPreview || scrolling || detailsOpen || hidden || !onNavigateNext || !armedRef.current) return;
+    handedOffRef.current = false;
+  }, []);
+  useEffect(() => {
+    if (!atPreview || scrolling || detailsOpen || hidden || !onNavigateNext) return;
     const t = window.setTimeout(() => {
-      if (leavingRef.current) return;
-      leavingRef.current = true;
+      if (handedOffRef.current) return;
+      handedOffRef.current = true;
       onNavigateNext();
     }, AUTO_NEXT_MS);
     return () => window.clearTimeout(t);
-  }, [onPreview, scrolling, detailsOpen, hidden, onNavigateNext]);
+  }, [atPreview, scrolling, detailsOpen, hidden, onNavigateNext]);
 
   // A video first card reports ready on its first presented frame (see
   // ProjectGallery): the clone covering it must not leave on a black frame.
@@ -639,9 +692,19 @@ export default function ProjectStage({
               );
             }
             const isImage = item._type === "galleryImage";
-            const near = Math.abs(i - index) <= 1;
+            // Video budget: the centred card and two either side mount their
+            // <video> (paused on the first frame, only the centred one plays),
+            // so a quick swipe meets clips that are already loading.
+            const near = Math.abs(i - index) <= 2;
+            // The card's shape from Sanity (exact before anything loads),
+            // else from the clip once it reports, else the stage default.
             const aspect =
-              (isImage ? imageAspect(item.image) : videoAspects[item._key]) ?? LANDING_ASPECT.stage;
+              (isImage ? imageAspect(item.image) : (storedVideoAspect(item) ?? videoAspects[item._key])) ??
+              LANDING_ASPECT.stage;
+            // The clip's first frame as a still: what the card shows before
+            // its video mounts or has a frame, so no swipe meets a black card.
+            const poster =
+              !isImage && item.poster?.asset ? imageUrl(item.poster, isDesktop ? 1600 : 900) : undefined;
             // Card 1 is the landing media (the clone lands on it): a laptop-shaped
             // box, the clone landing on the media inside its background.
             const frame =
@@ -665,10 +728,14 @@ export default function ProjectStage({
                   />
                 )}
                 {!isImage && i === 0 && adopted && <div ref={adoptHostRef} className="absolute inset-0" />}
+                {poster && !near && (
+                  <Image src={poster} unoptimized alt="" fill className="object-cover" sizes={isDesktop ? "70vw" : "100vw"} />
+                )}
                 {!isImage && item.video?.asset?._ref && near && !(i === 0 && adopted) && (
                   <video
                     ref={i === 0 ? firstVideoRef : undefined}
                     src={fileUrl(item.video.asset._ref)}
+                    poster={poster}
                     className="h-full w-full object-cover"
                     aria-label={`${project.title} — ${i + 1}`}
                     muted
@@ -748,7 +815,6 @@ export default function ProjectStage({
                 imageWidth={isDesktop ? 1600 : 900}
                 sizes={isDesktop ? "70vw" : "100vw"}
                 aspect={LANDING_ASPECT[landingKind(nextProject.hasChapters, isDesktop)]}
-                labelHidden={isDesktop}
               />
             </div>
           )}
@@ -765,6 +831,7 @@ export default function ProjectStage({
         gallery={gallery}
         index={index}
         onEnd={onEnd}
+        atPreview={atPreview && hasPreview}
         nextProject={nextProject}
         title={project.title ?? "Project"}
         isDesktop={isDesktop}

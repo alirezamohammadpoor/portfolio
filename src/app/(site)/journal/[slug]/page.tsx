@@ -9,6 +9,7 @@ import {
 import { JOURNAL_POST_SLUGS_QUERY } from "@/sanity/lib/queries";
 
 import JournalPost from "@/components/journal/JournalPost";
+import HoverTrace from "@/components/journal/HoverTrace";
 import JsonLd from "@/components/seo/JsonLd";
 import { ogImageUrl } from "@/sanity/lib/image";
 import { SITE_URL as siteUrl, OPEN_GRAPH_BASE } from "@/lib/site";
@@ -106,6 +107,7 @@ export default async function JournalPostPage({
     <>
       <JsonLd data={blogPostingLd} />
       <JournalPost key={post._id} post={post} relatedPosts={post.relatedPosts ?? []} />
+      <HoverTrace />
     </>
   );
 }

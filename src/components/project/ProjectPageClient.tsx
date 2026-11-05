@@ -155,6 +155,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
     markTargetReady,
     mounted,
     navigateNext,
+    verticalPage: hasChapters,
   });
 
   // Shown again after leaving for the next project (browser back; Next keeps

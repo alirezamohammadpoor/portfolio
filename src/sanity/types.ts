@@ -301,6 +301,15 @@ export type Project = {
           _type: "file";
         };
         frame?: MediaFrame;
+        poster?: {
+          asset?: SanityImageAssetReference;
+          media?: unknown;
+          hotspot?: SanityImageHotspot;
+          crop?: SanityImageCrop;
+          _type: "image";
+        };
+        videoWidth?: number;
+        videoHeight?: number;
         _type: "galleryVideo";
         _key: string;
       }
@@ -870,6 +879,15 @@ export type PROJECTS_QUERY_RESULT = Array<{
           _type: "file";
         };
         frame?: MediaFrame;
+        poster?: {
+          asset?: SanityImageAssetReference;
+          media?: unknown;
+          hotspot?: SanityImageHotspot;
+          crop?: SanityImageCrop;
+          _type: "image";
+        };
+        videoWidth?: number;
+        videoHeight?: number;
         _type: "galleryVideo";
         _key: string;
       }
@@ -1040,6 +1058,15 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
           _type: "file";
         };
         frame?: MediaFrame;
+        poster?: {
+          asset?: SanityImageAssetReference;
+          media?: unknown;
+          hotspot?: SanityImageHotspot;
+          crop?: SanityImageCrop;
+          _type: "image";
+        };
+        videoWidth?: number;
+        videoHeight?: number;
         _type: "galleryVideo";
         _key: string;
       }
@@ -1331,6 +1358,15 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
             _type: "file";
           };
           frame?: MediaFrame;
+          poster?: {
+            asset?: SanityImageAssetReference;
+            media?: unknown;
+            hotspot?: SanityImageHotspot;
+            crop?: SanityImageCrop;
+            _type: "image";
+          };
+          videoWidth?: number;
+          videoHeight?: number;
           _type: "galleryVideo";
           _key: string;
         }
