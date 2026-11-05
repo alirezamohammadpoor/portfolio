@@ -404,7 +404,10 @@ export default function ProjectChapters({
   mobileVariant = "default",
 }: ProjectChaptersProps) {
   const chapters = project.chapters ?? [];
-  const landing = project.gallery?.[0] ?? null;
+  // The hero is the first still or clip: the home cover morphs onto it, and
+  // the query's firstMedia (the previous page's preview) skips phones rows
+  // the same way, so the two line up.
+  const landing = project.gallery?.find((item) => item._type !== "galleryPhones") ?? null;
   const mediaGate = hidden ? " opacity-0 pointer-events-none" : "";
   const journalSlug = project.caseStudy?.slug?.current;
 
@@ -428,7 +431,7 @@ export default function ProjectChapters({
             slotRef={firstImageRef}
             onReady={onFirstReady}
             sizes={LANDING_SIZES.chapters}
-            frame={landing && landing._type !== "galleryPhones" ? resolveLandingFrame(landing.frame, project) : undefined}
+            frame={landing ? resolveLandingFrame(landing.frame, project) : undefined}
           />
         </div>
         <div

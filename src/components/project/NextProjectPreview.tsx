@@ -59,21 +59,43 @@ function PreviewVideo({
       video.setAttribute("playsinline", "");
       video.setAttribute("autoplay", "");
       video.setAttribute("loop", "");
-      video.setAttribute("preload", "auto");
+      // Nothing is fetched until the block comes near the viewport (below):
+      // on a chapter page it sits at the very bottom, on the stage at the far
+      // end of the strip, and a decoder it may never reach is not kept running.
+      video.setAttribute("preload", "none");
       video.muted = true;
       if (poster) video.poster = poster;
       video.src = src;
       host.appendChild(video);
     }
-    // iOS Safari treats preload as a hint and may not fetch until asked; a
-    // preview that is still black when tapped cannot be carried as the clone.
-    if (video.readyState < 2) video.load();
-    const p = video.play();
-    if (p && typeof p.catch === "function") p.catch(() => {});
+    const el = video;
+    let asked = false;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) {
+          el.pause();
+          return;
+        }
+        // iOS Safari treats preload as a hint and may not fetch until asked; a
+        // preview that is still black when tapped cannot be carried as the
+        // clone. Asked once: load() restarts a fetch that is under way.
+        if (el.readyState < 2 && !asked) {
+          asked = true;
+          el.preload = "auto";
+          el.load();
+        }
+        const p = el.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      },
+      // One viewport ahead, so the clip has a card or a screen's scroll to load.
+      { rootMargin: "100%" },
+    );
+    io.observe(host);
     return () => {
+      io.disconnect();
       // Only ours to pause while it is still here; once carried away by the
       // transition it belongs to the clone and then to the landing page.
-      if (video && video.parentElement === host) video.pause();
+      if (el.parentElement === host) el.pause();
     };
   }, [src, poster]);
   return (
