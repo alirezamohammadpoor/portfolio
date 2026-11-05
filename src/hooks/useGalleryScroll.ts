@@ -22,7 +22,7 @@ interface UseGalleryScrollOptions {
   isTransitioning: boolean;
   /** Arrived in place (project → project): the clone does not move. */
   inPlace: boolean;
-  animateClone: (rect: Rect) => void;
+  animateClone: (rect: Rect, element?: HTMLElement | null) => void;
   /** Gallery item 1 has decoded: the clone may be removed once it lands. */
   markTargetReady: () => void;
   /** Threshold passed at the bottom: run the in-place next-project transition. */
@@ -202,7 +202,7 @@ export function useGalleryScroll({
         return;
       }
       const rect = el.getBoundingClientRect();
-      animateClone({ top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+      animateClone({ top: rect.top, left: rect.left, width: rect.width, height: rect.height }, el);
     });
   }, [animateClone]);
 

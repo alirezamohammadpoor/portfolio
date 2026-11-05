@@ -37,6 +37,7 @@ export default function TransitionOverlay() {
     sourceVideoElement,
     sourceRect,
     targetRect,
+    targetElement,
     targetReady,
     inPlace,
     revealContent,
@@ -181,6 +182,47 @@ export default function TransitionOverlay() {
       const proxy = { p: 0 };
       let revealed = false;
 
+      // The landing rect was measured as soon as the card had a layout. A
+      // video card is a 16:10 placeholder until its metadata arrives, and on
+      // the phone a neighbour's late ratio moves card 1 too, so by the time
+      // the morph lands the card may sit elsewhere. Measured again here: a
+      // short settle from where the clone is onto where the card is now, so
+      // the media does not jump when the clone goes. Nothing changes when the
+      // card kept its box.
+      const land = () => {
+        const el = targetElement;
+        const r = el?.isConnected ? el.getBoundingClientRect() : null;
+        const moved =
+          r &&
+          (Math.abs(r.left - targetRect.left) > 1 ||
+            Math.abs(r.top - targetRect.top) > 1 ||
+            Math.abs(r.width - targetRect.width) > 1 ||
+            Math.abs(r.height - targetRect.height) > 1);
+        if (!r || !moved) {
+          setLanded(true);
+          return;
+        }
+        const dx2 = r.left - sourceRect.left;
+        const dy2 = r.top - sourceRect.top;
+        const sx2 = r.width / Math.max(sourceRect.width, 1);
+        const sy2 = r.height / Math.max(sourceRect.height, 1);
+        const q = { p: 0 };
+        gsap.to(q, {
+          p: 1,
+          duration: dur.ui,
+          ease: ease.out,
+          onUpdate: () => {
+            const p = q.p;
+            const wx = sx + (sx2 - sx) * p;
+            const wy = sy + (sy2 - sy) * p;
+            const k = Math.max(wx, wy);
+            setWin(`translate3d(${dx + (dx2 - dx) * p}px, ${dy + (dy2 - dy) * p}px, 0) scale(${wx}, ${wy})`);
+            setMedia(`scale(${k / wx}, ${k / wy})`);
+          },
+          onComplete: () => setLanded(true),
+        });
+      };
+
       gsap.to(proxy, {
         p: 1,
         duration: settle ? dur.ui : dur.page,
@@ -197,7 +239,7 @@ export default function TransitionOverlay() {
             revealContent();
           }
         },
-        onComplete: () => setLanded(true),
+        onComplete: land,
       });
     },
     { dependencies: [targetKey, inPlace, clearTransition, revealContent] },
