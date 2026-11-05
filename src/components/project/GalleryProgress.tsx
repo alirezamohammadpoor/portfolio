@@ -38,6 +38,9 @@ export default function GalleryProgress(props: Props) {
 
 function thumbSrc(item: GalleryItem): { image?: string; video?: string } {
   if (item._type === "galleryImage" && item.image?.asset) return { image: imageUrl(item.image, 160) };
+  // A video's poster (its first frame, from Sanity) is a 160 px image; the
+  // clip itself is only the fallback, a metadata fetch per thumb.
+  if (item._type === "galleryVideo" && item.poster?.asset) return { image: imageUrl(item.poster, 160) };
   if (item._type === "galleryVideo" && item.video?.asset?._ref) return { video: fileUrl(item.video.asset._ref) };
   if (item._type === "galleryPhones") {
     const slot = item.phones?.find((p) => p.type === "image" && p.image?.asset) ?? item.phones?.[0];

@@ -33,7 +33,7 @@ import GalleryPhones from "@/components/project/GalleryPhones";
 import { PHONE_ASPECT } from "@/components/PhonesRow";
 import MediaFrame from "@/components/MediaFrame";
 import { resolveFrame, resolveLandingFrame } from "@/lib/mediaFrame";
-import { LANDING_ASPECT, imageAspect, landingKind, videoAspect } from "@/lib/landing";
+import { LANDING_ASPECT, imageAspect, landingKind, storedVideoAspect, videoAspect } from "@/lib/landing";
 import ProjectDetailsOverlay from "@/components/project/ProjectDetailsOverlay";
 import GalleryProgress from "@/components/project/GalleryProgress";
 
@@ -556,9 +556,19 @@ export default function ProjectStage({
               );
             }
             const isImage = item._type === "galleryImage";
-            const near = Math.abs(i - index) <= 1;
+            // Video budget: the centred card and two either side mount their
+            // <video> (paused on the first frame, only the centred one plays),
+            // so a quick swipe meets clips that are already loading.
+            const near = Math.abs(i - index) <= 2;
+            // The card's shape from Sanity (exact before anything loads),
+            // else from the clip once it reports, else the stage default.
             const aspect =
-              (isImage ? imageAspect(item.image) : videoAspects[item._key]) ?? LANDING_ASPECT.stage;
+              (isImage ? imageAspect(item.image) : (storedVideoAspect(item) ?? videoAspects[item._key])) ??
+              LANDING_ASPECT.stage;
+            // The clip's first frame as a still: what the card shows before
+            // its video mounts or has a frame, so no swipe meets a black card.
+            const poster =
+              !isImage && item.poster?.asset ? imageUrl(item.poster, isDesktop ? 1600 : 900) : undefined;
             // Card 1 is the landing media (the clone lands on it): a laptop-shaped
             // box, the clone landing on the media inside its background.
             const frame =
@@ -582,10 +592,14 @@ export default function ProjectStage({
                   />
                 )}
                 {!isImage && i === 0 && adopted && <div ref={adoptHostRef} className="absolute inset-0" />}
+                {poster && !near && (
+                  <Image src={poster} alt="" fill className="object-cover" sizes={isDesktop ? "70vw" : "100vw"} />
+                )}
                 {!isImage && item.video?.asset?._ref && near && !(i === 0 && adopted) && (
                   <video
                     ref={i === 0 ? firstVideoRef : undefined}
                     src={fileUrl(item.video.asset._ref)}
+                    poster={poster}
                     className="h-full w-full object-cover"
                     aria-label={`${project.title} — ${i + 1}`}
                     muted
