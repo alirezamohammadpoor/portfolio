@@ -19,9 +19,10 @@
 
 export type LandingKind = "chapters" | "gallery" | "stage";
 
-export function landingKind(hasChapters: boolean | null | undefined, isDesktop: boolean): LandingKind {
-  if (hasChapters) return "chapters";
-  return isDesktop ? "gallery" : "stage";
+export function landingKind(hasChapters: boolean | null | undefined, _isDesktop: boolean): LandingKind {
+  // Since 11-04 a gallery project is the stage on every breakpoint (the
+  // laptop gallery column is gone), so "gallery" no longer lands anywhere.
+  return hasChapters ? "chapters" : "stage";
 }
 
 /**

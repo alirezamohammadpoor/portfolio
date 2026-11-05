@@ -16,7 +16,7 @@ export type PhoneSlot = {
   image?: ({ asset?: unknown } & object) | null;
 };
 
-const PHONE_ASPECT = 390 / 844;
+export const PHONE_ASPECT = 390 / 844;
 
 /**
  * One to three phone screens side by side, each a still or a silent clip at

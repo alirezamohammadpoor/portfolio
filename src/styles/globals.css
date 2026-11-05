@@ -6,12 +6,21 @@
 
   --color-bg: #f7f7f7;
   --color-primary: #1a1a1a;
-  --color-secondary: #999999;
+  --color-secondary: #8f8f8f;
   --color-tertiary: #e2e2e2;
   --color-pistachio: #bedcaa;
   --color-pomegranate: #c0392b;
   --color-lightpistachio: #d8eacc;
   --color-spotify: #1db954;
+
+  /* Frost (11-04): translucent fill + backdrop blur for UI that floats over
+     the gallery. Strong is the full-page details overlay (page grey); soft is
+     the pills on top (pistachio). Use the frost-strong / frost-soft
+     utilities below, which pair each fill with its blur. */
+  --color-frost-strong: rgb(247 247 247 / 0.88);
+  --color-frost-soft: rgb(190 220 170 / 0.65);
+  --blur-frost-strong: 40px;
+  --blur-frost-soft: 20px;
 
   --text-display: 3.5rem;
   --text-display--line-height: 4rem;
@@ -88,6 +97,8 @@
   html {
     background-color: var(--color-bg);
     color: var(--color-primary);
+    /* No grey flash on tap: every control has its own :active feedback. */
+    -webkit-tap-highlight-color: transparent;
   }
 
   body {
@@ -383,5 +394,32 @@ html[data-custom-clone] ::view-transition-new(root) {
   ::view-transition-old(root),
   ::view-transition-new(root) {
     animation: none;
+  }
+}
+
+/* Frost surfaces: fill and blur travel together so they can't drift apart. */
+@utility frost-strong {
+  background-color: var(--color-frost-strong);
+  -webkit-backdrop-filter: blur(var(--blur-frost-strong));
+  backdrop-filter: blur(var(--blur-frost-strong));
+}
+
+@utility frost-soft {
+  background-color: var(--color-frost-soft);
+  -webkit-backdrop-filter: blur(var(--blur-frost-soft));
+  backdrop-filter: blur(var(--blur-frost-soft));
+}
+
+/* Reduced transparency: the frost turns solid, no blur. */
+@media (prefers-reduced-transparency: reduce) {
+  .frost-strong {
+    background-color: var(--color-bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .frost-soft {
+    background-color: rgb(190 220 170);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
   }
 }
