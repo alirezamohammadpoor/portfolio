@@ -51,38 +51,6 @@ export type Poster = {
   _type: "image";
 };
 
-export type Media = {
-  type?: "image" | "video" | "phones";
-  phones?: Array<{
-    type?: "image" | "video";
-    image?: PhoneSlotImage;
-    video?: Video;
-    poster?: Poster;
-    _type: "phoneSlot";
-    _key: string;
-  }>;
-  image?: {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    _type: "image";
-  };
-  video?: {
-    asset?: SanityFileAssetReference;
-    media?: unknown;
-    _type: "file";
-  };
-  poster?: {
-    asset?: SanityImageAssetReference;
-    media?: unknown;
-    hotspot?: SanityImageHotspot;
-    crop?: SanityImageCrop;
-    _type: "image";
-  };
-  frame?: MediaFrame;
-};
-
 export type MediaFrame = {
   _type: "mediaFrame";
   colour?: "default" | "none" | "1" | "2" | "3" | "4";
@@ -350,7 +318,37 @@ export type Project = {
           _type: "block";
           _key: string;
         }>;
-        media?: Media;
+        media?: {
+          type?: "image" | "video" | "phones";
+          phones?: Array<{
+            type?: "image" | "video";
+            image?: PhoneSlotImage;
+            video?: Video;
+            poster?: Poster;
+            _type: "phoneSlot";
+            _key: string;
+          }>;
+          image?: {
+            asset?: SanityImageAssetReference;
+            media?: unknown;
+            hotspot?: SanityImageHotspot;
+            crop?: SanityImageCrop;
+            _type: "image";
+          };
+          video?: {
+            asset?: SanityFileAssetReference;
+            media?: unknown;
+            _type: "file";
+          };
+          poster?: {
+            asset?: SanityImageAssetReference;
+            media?: unknown;
+            hotspot?: SanityImageHotspot;
+            crop?: SanityImageCrop;
+            _type: "image";
+          };
+          frame?: MediaFrame;
+        };
         caption?: string;
         layout?: "full" | "wide-left" | "wide-right" | "beside";
         side?: "left" | "right";
@@ -385,7 +383,29 @@ export type Project = {
           metric?: string;
           result?: string;
           decision?: string;
-          media?: Media;
+          media?: {
+            type?: "image" | "video";
+            image?: {
+              asset?: SanityImageAssetReference;
+              media?: unknown;
+              hotspot?: SanityImageHotspot;
+              crop?: SanityImageCrop;
+              _type: "image";
+            };
+            video?: {
+              asset?: SanityFileAssetReference;
+              media?: unknown;
+              _type: "file";
+            };
+            poster?: {
+              asset?: SanityImageAssetReference;
+              media?: unknown;
+              hotspot?: SanityImageHotspot;
+              crop?: SanityImageCrop;
+              _type: "image";
+            };
+            frame?: MediaFrame;
+          };
           caption?: string;
           _type: "abTest";
           _key: string;
@@ -727,7 +747,6 @@ export type AllSanitySchemaTypes =
   | SanityFileAssetReference
   | Video
   | Poster
-  | Media
   | MediaFrame
   | About
   | SanityImageCrop
@@ -1157,7 +1176,7 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
           decision: string | null;
           caption: string | null;
           media: {
-            type: "image" | "phones" | "video" | null;
+            type: "image" | "video" | null;
             video: {
               asset?: SanityFileAssetReference;
               media?: unknown;
@@ -1200,42 +1219,7 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
               crop?: SanityImageCrop;
               _type: "image";
             } | null;
-            phones: Array<{
-              _key: string;
-              type: "image" | "video" | null;
-              video: Video | null;
-              poster: Poster | null;
-              image: {
-                asset: {
-                  _id: string;
-                  _type: "sanity.imageAsset";
-                  _createdAt: string;
-                  _updatedAt: string;
-                  _rev: string;
-                  originalFilename?: string;
-                  label?: string;
-                  title?: string;
-                  description?: string;
-                  altText?: string;
-                  sha1hash?: string;
-                  extension?: string;
-                  mimeType?: string;
-                  size?: number;
-                  assetId?: string;
-                  uploadId?: string;
-                  path?: string;
-                  url?: string;
-                  metadata: {
-                    dimensions: SanityImageDimensions | null;
-                  } | null;
-                  source?: SanityAssetSourceData;
-                } | null;
-                media?: unknown;
-                hotspot?: SanityImageHotspot;
-                crop?: SanityImageCrop;
-                _type: "image";
-              } | null;
-            }> | null;
+            phones: null;
             frame: MediaFrame | null;
           } | null;
         }> | null;

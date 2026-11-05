@@ -20,15 +20,13 @@ import ProjectStage from "@/components/project/ProjectStage";
 import { DESKTOP_QUERY, useIsDesktop } from "@/hooks/useIsDesktop";
 import ScrollProgress from "@/components/project/ScrollProgress";
 import ProjectTextShell from "@/components/project/ProjectTextShell";
-import ProjectChapters, { type MobileVariant } from "@/components/project/ProjectChapters";
+import ProjectChapters from "@/components/project/ProjectChapters";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
 interface ProjectPageClientProps {
   project: Project;
   nextProject?: Project["nextProject"];
-  /** Lab only: phone layout exploration for the chapter page. */
-  mobileVariant?: MobileVariant;
 }
 
 /**
@@ -45,7 +43,7 @@ export default function ProjectPageClient(props: ProjectPageClientProps) {
   return <ProjectPageView key={bfcacheId} {...props} />;
 }
 
-function ProjectPageView({ project, nextProject, mobileVariant }: ProjectPageClientProps) {
+function ProjectPageView({ project, nextProject }: ProjectPageClientProps) {
   const plainRouter = useRouter();
   const {
     isTransitioning: transitionRunning,
@@ -238,7 +236,6 @@ function ProjectPageView({ project, nextProject, mobileVariant }: ProjectPageCli
           nextProject={nextProject}
           previewRef={previewRef}
           onNavigateNext={nextSlug ? navigateNext : undefined}
-          mobileVariant={mobileVariant}
         />
         {!skip && (
           <ScrollProgress

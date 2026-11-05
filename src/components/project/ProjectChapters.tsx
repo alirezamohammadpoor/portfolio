@@ -53,14 +53,6 @@ export type TestSwitcher = Extract<ChapterBlock, { _type: "testSwitcher" }>;
 export type AbTest = NonNullable<TestSwitcher["tests"]>[number];
 type ChapterMediaValue = Chapter["media"];
 
-/**
- * Phone layout (lab exploration, 2026-10-29). "default" = one column, media
- * full width. "offset" = big title across the 4 columns, text indented one
- * column, media alternating 3-column left/right, phone frames narrow.
- * "stack" = display-size title, 18/28 text, media centred at ~70 % width.
- */
-export type MobileVariant = "default" | "offset" | "stack";
-const MobileVariantContext = createContext<MobileVariant>("default");
 /** The project's brand colours and default media background, for chapter media. */
 const FrameSourceContext = createContext<ProjectFrameSource>(null);
 
@@ -83,7 +75,6 @@ interface ProjectChaptersProps {
   nextProject?: NextProject | null;
   previewRef?: RefObject<HTMLDivElement | null>;
   onNavigateNext?: () => void;
-  mobileVariant?: MobileVariant;
 }
 
 // Lanes (laptop, 12 columns): the title lane is cols 1-3, the reading lane
@@ -119,34 +110,22 @@ function layoutOf(chapter: Chapter): Layout {
 
 const readingText = "text-body desktop:text-lead text-primary [&>p]:my-0 [&>p+p]:mt-3";
 
-// Phone columns per variant (laptop classes are unchanged by the variant).
+// Phone: one column, the media at full width under the text.
 const PHONE = {
-  default: {
-    title: "col-span-4 text-h3",
-    body: "col-span-4 mt-3 text-body",
-    media: (_layout: MediaWidth, _i: number) => "col-span-4 mt-4",
-    beside: "col-span-4 mt-4",
-    frame: "col-span-4 mt-4",
-    frameBox: "h-[70dvh]",
-  },
-  offset: {
-    title: "col-span-4 text-h2",
-    body: "col-start-2 col-end-5 mt-4 text-body",
-    media: (layout: MediaWidth, i: number) =>
-      layout === "full" ? "col-span-4 mt-6" : (layout === "wide-right" || i % 2) ? "col-start-2 col-end-5 mt-6" : "col-start-1 col-end-4 mt-6",
-    beside: "col-start-1 col-end-4 mt-6",
-    frame: "col-start-1 col-end-4 mt-6",
-    frameBox: "h-[60dvh]",
-  },
-  stack: {
-    title: "col-span-4 text-h1",
-    body: "col-span-4 mt-5 text-lead",
-    media: (_layout: MediaWidth, _i: number) => "col-span-4 mt-8",
-    beside: "col-span-4 mt-8",
-    frame: "col-span-4 mt-8 flex flex-col items-center",
-    frameBox: "h-[65dvh]",
-  },
+  title: "col-span-4 text-h3",
+  body: "col-span-4 mt-3 text-body",
+  media: "col-span-4 mt-4",
+  frameBox: "h-[70dvh]",
 } as const;
+
+/** Whether a chapter or test media carries an asset to show. */
+function hasMediaAsset(media: ChapterMediaValue): boolean {
+  if (!media) return false;
+  if (media.type === "video") return Boolean(media.video?.asset?._ref);
+  if (media.type === "image") return Boolean(media.image?.asset);
+  if (media.type === "phones") return (media.phones ?? []).length > 0;
+  return false;
+}
 
 function ChapterMedia({
   media,
@@ -233,7 +212,6 @@ function Caption({ text }: { text: string | null | undefined }) {
 }
 
 function ChapterSection({ chapter, index, hidden }: { chapter: Chapter; index: number; hidden: boolean }) {
-  const phone = PHONE[useContext(MobileVariantContext)];
   const title = chapter.title ?? `Chapter ${index + 1}`;
   const text = Array.isArray(chapter.text) && chapter.text.length > 0 ? (chapter.text as PortableTextBlock[]) : null;
   const body = text ? (
@@ -250,11 +228,11 @@ function ChapterSection({ chapter, index, hidden }: { chapter: Chapter; index: n
         <div
           className={`col-span-4 ${left ? "desktop:col-start-8 desktop:col-end-13" : "desktop:col-start-1 desktop:col-end-6"} desktop:row-start-1`}
         >
-          <h2 className={`${phone.title} desktop:text-h3 text-primary`}>{title}</h2>
+          <h2 className={`${PHONE.title} desktop:text-h3 text-primary`}>{title}</h2>
           <div className="mt-3 desktop:mt-6">{body}</div>
         </div>
         <div
-          className={`${phone.beside} desktop:col-auto desktop:mt-0 ${left ? "desktop:col-start-1 desktop:col-end-7" : "desktop:col-start-7 desktop:col-end-13"} desktop:row-start-1`}
+          className={`${PHONE.media} desktop:col-auto desktop:mt-0 ${left ? "desktop:col-start-1 desktop:col-end-7" : "desktop:col-start-7 desktop:col-end-13"} desktop:row-start-1`}
         >
           <ChapterMedia media={chapter.media} title={title} hidden={hidden} sizes="(min-width: 75rem) 50vw, 100vw" />
           <Caption text={chapter.caption} />
@@ -266,9 +244,9 @@ function ChapterSection({ chapter, index, hidden }: { chapter: Chapter; index: n
   const sizes = layout === "full" ? "(min-width: 75rem) 100vw, 100vw" : "(min-width: 75rem) 60vw, 100vw";
   return (
     <section className="grid-site px-margin py-6 desktop:py-12" aria-label={title}>
-      <h2 className={`${phone.title} desktop:col-start-1 desktop:col-end-4 desktop:text-h3 text-primary`}>{title}</h2>
-      <div className={`${phone.body} desktop:col-start-5 desktop:col-end-10 desktop:mt-0 desktop:text-lead`}>{body}</div>
-      <div className={`${phone.media(layout, index)} desktop:col-auto desktop:mt-8 ${MEDIA_ROWS[layout]}`}>
+      <h2 className={`${PHONE.title} desktop:col-start-1 desktop:col-end-4 desktop:text-h3 text-primary`}>{title}</h2>
+      <div className={`${PHONE.body} desktop:col-start-5 desktop:col-end-10 desktop:mt-0 desktop:text-lead`}>{body}</div>
+      <div className={`${PHONE.media} desktop:col-auto desktop:mt-8 ${MEDIA_ROWS[layout]}`}>
         <ChapterMedia media={chapter.media} title={title} hidden={hidden} sizes={sizes} />
         <Caption text={chapter.caption} />
       </div>
@@ -301,7 +279,6 @@ function TestStory({ test }: { test: AbTest }) {
 function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: boolean }) {
   const tests = (block.tests ?? []).filter((t) => t.label || t.title);
   const [active, setActive] = useState(0);
-  const phone = PHONE[useContext(MobileVariantContext)];
   const current = Math.min(active, tests.length - 1);
   if (!tests.length) return null;
   const sectionTitle = block.title ?? "Tests";
@@ -314,7 +291,7 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
   return (
     <section className="grid-site px-margin py-6 desktop:py-12" aria-label={sectionTitle}>
       {block.title && (
-        <h2 className={`${phone.title} desktop:col-start-1 desktop:col-end-10 desktop:text-h3 text-primary mb-6 desktop:mb-8`}>
+        <h2 className={`${PHONE.title} desktop:col-start-1 desktop:col-end-10 desktop:text-h3 text-primary mb-6 desktop:mb-8`}>
           {block.title}
         </h2>
       )}
@@ -365,23 +342,29 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
           );
         })}
       </div>
-      {/* Media row: one phone-shaped box (390:844) shared by every test, so the swap never shifts the page. */}
-      <div className={`${phone.frame} desktop:col-auto desktop:mt-8 desktop:block ${MEDIA_ROWS["wide-left"]} grid`}>
-        {tests.map((t, i) => (
-          <div key={t._key} className={`${stacked}${gate(i)}`} aria-hidden={i !== current}>
-            <div className={`aspect-[390/844] ${phone.frameBox} desktop:h-[min(720px,80dvh)]`}>
-              <ChapterMedia
-                media={t.media}
-                title={t.title ?? t.label ?? "Test"}
-                hidden={hidden || i !== current}
-                fit="frame"
-                sizes="(min-width: 75rem) 40vw, 100vw"
-              />
+      {/* Media row: one phone-shaped box (390:844) shared by every test, so
+          the swap never shifts the page. A test without an asset draws no box
+          (its caption alone), and without any media the row is left out. */}
+      {tests.some((t) => hasMediaAsset(t.media) || t.caption) && (
+        <div className={`${PHONE.media} desktop:col-auto desktop:mt-8 desktop:block ${MEDIA_ROWS["wide-left"]} grid`}>
+          {tests.map((t, i) => (
+            <div key={t._key} className={`${stacked}${gate(i)}`} aria-hidden={i !== current}>
+              {hasMediaAsset(t.media) && (
+                <div className={`aspect-[390/844] ${PHONE.frameBox} desktop:h-[min(720px,80dvh)]`}>
+                  <ChapterMedia
+                    media={t.media}
+                    title={t.title ?? t.label ?? "Test"}
+                    hidden={hidden || i !== current}
+                    fit="frame"
+                    sizes="(min-width: 75rem) 40vw, 100vw"
+                  />
+                </div>
+              )}
+              <Caption text={t.caption} />
             </div>
-            <Caption text={t.caption} />
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -401,7 +384,6 @@ export default function ProjectChapters({
   nextProject,
   previewRef,
   onNavigateNext,
-  mobileVariant = "default",
 }: ProjectChaptersProps) {
   const chapters = project.chapters ?? [];
   // The hero is the first still or clip: the home cover morphs onto it, and
@@ -416,7 +398,6 @@ export default function ProjectChapters({
   const nextHero = HERO_VARIANTS[heroVariant(nextProject?.slug?.current ?? "", nextProject?.heroLayout)];
 
   return (
-    <MobileVariantContext.Provider value={mobileVariant}>
     <FrameSourceContext.Provider value={project}>
     <div ref={galleryRef} data-project-gallery className="pb-10">
       {/* Hero */}
@@ -556,6 +537,5 @@ export default function ProjectChapters({
       </div>
     </div>
     </FrameSourceContext.Provider>
-    </MobileVariantContext.Provider>
   );
 }
