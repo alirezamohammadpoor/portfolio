@@ -4,7 +4,8 @@
 // jumps back without input (the arrival lock snapping it to the top), when
 // the bar stays more than 1 % off the native scroll ratio for longer than a
 // re-measure, or when it is full before the bottom. SLOW=1 throttles the
-// network with the cache off, like a cold dev server.
+// network with the cache off, like a cold dev server. A stage page (no
+// chapters) has no bar and does not scroll the document: it is skipped.
 //
 //   BASE=http://localhost:3100 node scripts/probes/scroll-progress.mjs
 //   CHROMIUM=/opt/pw-browsers/chromium SLOW=1 node scripts/probes/scroll-progress.mjs   # cloud container
@@ -26,6 +27,14 @@ for (const slug of slugs) {
   }
   await page.goto(`${base}/project/${slug}`, { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(1500);
+  const hasBar = await page.evaluate(() =>
+    [...document.querySelectorAll("div")].some((d) => d.style.getPropertyValue("--p") !== ""),
+  );
+  if (!hasBar) {
+    console.log(`skip ${slug}: no scroll bar (stage page)`);
+    await ctx.close();
+    continue;
+  }
   await page.evaluate(() => {
     window.__trace = [];
     const tick = () => {

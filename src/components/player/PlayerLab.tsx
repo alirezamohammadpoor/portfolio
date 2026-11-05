@@ -34,7 +34,7 @@ export default function PlayerLab({ masters, journal }: { masters: Clip[]; journ
   const pill = "inline-flex h-9 items-center rounded-full px-4 text-sub uppercase font-medium text-primary transition-colors active:scale-[0.97]";
 
   return (
-    <main className="px-margin pb-24 pt-[calc(var(--header-height)+24px)]">
+    <div className="px-margin pb-24 pt-6">
       <header className="mb-8 flex flex-wrap items-center gap-2">
         <h1 className="mr-4 text-h3">Player lab</h1>
         {ALTS.map((x, i) => (
@@ -96,6 +96,6 @@ export default function PlayerLab({ masters, journal }: { masters: Clip[]; journ
           </div>
         </section>
       )}
-    </main>
+    </div>
   );
 }

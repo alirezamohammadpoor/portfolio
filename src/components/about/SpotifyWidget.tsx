@@ -233,7 +233,7 @@ export default function SpotifyWidget() {
 
   if (isLoading && !data) {
     return (
-      <div className="flex w-full animate-pulse items-center gap-2.5 rounded-full bg-pistachio px-2.5 py-2">
+      <div className="flex w-full animate-pulse motion-reduce:animate-none items-center gap-2.5 rounded-full bg-pistachio px-2.5 py-2">
         <div className="size-8 rounded-lg bg-primary/10" />
         <div className="flex flex-1 flex-col gap-1">
           <div className="h-3 w-20 rounded bg-primary/10" />
@@ -293,7 +293,7 @@ export default function SpotifyWidget() {
           }}
         >
           {isActive && (
-            <span className="size-1 animate-pulse rounded-full bg-spotify" />
+            <span className="size-1 animate-pulse motion-reduce:animate-none rounded-full bg-spotify" />
           )}
           <span
             className={`font-mono text-sub ${isActive ? "text-spotify" : "text-primary/50"}`}

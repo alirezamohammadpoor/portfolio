@@ -7,6 +7,7 @@ import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
 import { useGSAP } from "@gsap/react";
 import { ReactLenis, useLenis } from "lenis/react";
 import type { LenisRef } from "lenis/react";
+import type Lenis from "lenis";
 import { useEffect, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { registerMotion } from "@/lib/motion";
@@ -17,6 +18,28 @@ gsap.ticker.lagSmoothing(0);
 
 function ScrollTriggerSync() {
   useLenis(() => ScrollTrigger.update());
+  return null;
+}
+
+// Lenis reads the option per wheel event, so it is changed in place and
+// ReactLenis is not re-created.
+function setSmoothWheel(lenis: Lenis, on: boolean) {
+  lenis.options.smoothWheel = on;
+}
+
+// Reduced motion: the wheel scrolls natively instead of through the lerp.
+// The hook hands over the instance once it exists; a ref read at mount
+// would still be empty.
+function ReducedMotionSync() {
+  const lenis = useLenis();
+  useEffect(() => {
+    if (!lenis) return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const apply = () => setSmoothWheel(lenis, !mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, [lenis]);
   return null;
 }
 
@@ -52,6 +75,7 @@ export default function GsapProvider({ children }: { children: ReactNode }) {
       options={{ lerp: 0.06, smoothWheel: true }}
     >
       <ScrollTriggerSync />
+      <ReducedMotionSync />
       {children}
     </ReactLenis>
   );

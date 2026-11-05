@@ -89,7 +89,7 @@ export default function CopyButton({
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
         aria-label={`Copy ${label.toLowerCase()}`}
-        className={`relative inline-flex items-center justify-center border-0 m-0 p-0 bg-transparent appearance-none transition-transform duration-150 ease-out active:scale-[0.97] ${className}`}
+        className={`relative inline-flex items-center justify-center border-0 m-0 px-0 pt-0 bg-transparent appearance-none transition-transform duration-150 ease-out active:scale-[0.97] ${className}`}
       >
         {/* Spacer sized to the longer label so the mobile swap doesn't
             reflow siblings. */}

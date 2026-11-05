@@ -17,14 +17,14 @@ It writes DRAFTS only (drafts.<id>, built from an existing draft when there
 is one). The live site is untouched until you publish in the Studio, which
 should happen after the background code is merged.
 
-  python3 sweep-flush-backgrounds.py --dry-run   # no token, no writes: prints the plan
+  python3 sweep-flush-backgrounds.py --dry-run   # no writes: prints the plan (reads drafts when a token is found)
   python3 sweep-flush-backgrounds.py             # uploads + writes drafts
   python3 sweep-flush-backgrounds.py --only zone-2 [--dry-run]   # one project first
 
 Token: SANITY_API_READ_TOKEN (write-capable) from
 ~/Developer/portfolio-layout/.env.local, or SANITY_TOKEN in the environment.
 """
-import json, os, re, secrets, sys, urllib.parse, urllib.request
+import copy, json, os, re, secrets, sys, urllib.parse, urllib.request
 from pathlib import Path
 
 PROJECT, DATASET = "v3d28bxo", "production"
@@ -41,13 +41,16 @@ PANEL_HEX = "#1a1a1a"  # bg-primary, what the "black" phones panel drew
 def token():
     if os.environ.get("SANITY_TOKEN"):
         return os.environ["SANITY_TOKEN"]
-    for line in ENV.read_text().splitlines():
-        if line.startswith("SANITY_API_READ_TOKEN="):
-            return line.split("=", 1)[1].strip().strip("'\"")
+    if ENV.exists():
+        for line in ENV.read_text().splitlines():
+            if line.startswith("SANITY_API_READ_TOKEN="):
+                return line.split("=", 1)[1].strip().strip("'\"")
+    if DRY:
+        return None  # the plan is computed from the published documents
     sys.exit(f"no token: set SANITY_TOKEN or add SANITY_API_READ_TOKEN to {ENV}")
 
 
-TOKEN = None if DRY else token()
+TOKEN = token()
 
 
 def req(url, data=None, ctype=None, method=None):
@@ -118,6 +121,8 @@ def migrate_media(media, log):
             frame.update(image=image, imageOpacity=55)
         media["frame"] = frame
         log.append(f"  phones panel {panel!r} -> frame hex {PANEL_HEX}{' + image 55%' if 'image' in frame else ''}")
+    else:
+        log.append(f"  legacy panel {panel!r} dropped (frame already set or not a phones row)")
 
 
 def sweep(doc, files):
@@ -153,17 +158,23 @@ def sweep(doc, files):
             ref = node["asset"].get("_ref")
             fname = files.get(ref)
             path = flush_file(slug, fname) if fname else None
-            if path:
-                node["asset"] = {"_type": "reference", "_ref": upload(path, "files", "video/mp4")}
-                log.append(f"  {fname} -> {path.relative_to(FLUSH)}")
+            # Already the flush clip (a previous run uploaded it): nothing to do.
+            if path and fname != path.name:
+                new = upload(path, "files", "video/mp4")
+                if new != ref:
+                    node["asset"] = {"_type": "reference", "_ref": new}
+                    log.append(f"  {fname} -> {path.relative_to(FLUSH)}")
     walk(doc, swap)
 
     # 3. backdrop fields -> frame
     backdrop = doc.pop("homeBackdrop", None)
     if backdrop and backdrop.get("asset"):
         cover = doc.setdefault("coverMedia", {})
-        cover.setdefault("frame", {"_type": "mediaFrame", "colour": "none", "image": backdrop, "imageOpacity": 60, "fit": "auto"})
-        log.append("  homeBackdrop -> coverMedia.frame (image 60%)")
+        if cover.get("frame"):
+            log.append("  homeBackdrop dropped (coverMedia.frame already set)")
+        else:
+            cover["frame"] = {"_type": "mediaFrame", "colour": "none", "image": backdrop, "imageOpacity": 60, "fit": "auto"}
+            log.append("  homeBackdrop -> coverMedia.frame (image 60%)")
     for ch in doc.get("chapters") or []:
         if ch.get("media"):
             migrate_media(ch["media"], log)
@@ -182,6 +193,8 @@ def main():
             sys.exit(f"no project with slug {ONLY!r}")
     assets = query('*[_type=="sanity.fileAsset"]{_id, originalFilename}')
     files = {a["_id"]: a.get("originalFilename") or "" for a in assets}
+    if TOKEN is None:
+        print("no token: drafts not consulted, the plan is computed from the published documents\n")
     mutations = []
     for p in projects:
         pid = p["_id"]
@@ -193,10 +206,16 @@ def main():
         for k in ("_rev", "_createdAt", "_updatedAt"):
             doc.pop(k, None)
         doc["_id"] = f"drafts.{pid}"
+        before = copy.deepcopy(doc)
         log = sweep(doc, files)
+        # Only a document that differs from its source is written, so a
+        # re-run neither re-logs nor rewrites a draft that is already done.
+        changed = doc != before
+        if changed and not log:
+            log.append("  legacy fields unset")
         print(f"{doc['slug']['current']} ({'from draft' if draft else 'from published'}): {len(log)} changes")
         print("\n".join(log) if log else "  nothing to do")
-        if log:
+        if changed:
             mutations.append({"createOrReplace": doc})
     if DRY:
         print(f"\nDRY RUN: {len(uploaded)} uploads, {len(mutations)} drafts would be written.")
