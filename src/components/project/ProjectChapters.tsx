@@ -346,7 +346,7 @@ function TestSwitcherSection({ block, hidden }: { block: TestSwitcher; hidden: b
           the swap never shifts the page. A test without an asset draws no box
           (its caption alone), and without any media the row is left out. */}
       {tests.some((t) => hasMediaAsset(t.media) || t.caption) && (
-        <div className={`${PHONE.media} desktop:col-auto desktop:mt-8 desktop:block ${MEDIA_ROWS["wide-left"]} grid`}>
+        <div className={`${PHONE.media} desktop:mt-8 ${MEDIA_ROWS["wide-left"]} grid`}>
           {tests.map((t, i) => (
             <div key={t._key} className={`${stacked}${gate(i)}`} aria-hidden={i !== current}>
               {hasMediaAsset(t.media) && (

@@ -221,9 +221,24 @@ export function useGalleryScroll({
         animateClone({ top: r.top, left: r.left, width: r.width, height: r.height });
       });
       ro.observe(el);
+      // The strip too: on the phone it is as tall as its tallest card and
+      // sits vertically centred, so a neighbour reporting its ratio moves
+      // card 1 without resizing it, and a padding change shifts it sideways.
+      const strip = el.closest<HTMLElement>("[data-stage-strip]") ?? el.parentElement;
+      if (strip) ro.observe(strip);
       retargetRef.current = ro;
     });
   }, [animateClone]);
+
+  // Left mid-transition (a header link during the morph): the observer must
+  // not outlive the page and aim the clone at a detached card.
+  useEffect(
+    () => () => {
+      retargetRef.current?.disconnect();
+      retargetRef.current = null;
+    },
+    [],
+  );
 
   const onFirstReady = useCallback(() => {
     fireAnimateClone();

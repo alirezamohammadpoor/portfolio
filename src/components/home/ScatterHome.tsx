@@ -19,7 +19,7 @@ import { getIntroState, useIntroState } from "@/lib/intro";
 import { getReelState } from "@/lib/reel";
 import HomeReel from "./HomeReel";
 import { FrameBackground, backgroundStyle } from "@/components/MediaFrame";
-import { resolveFrame, type ResolvedFrame } from "@/lib/mediaFrame";
+import { hasSizeOverride, resolveCoverFrame, type ResolvedFrame } from "@/lib/mediaFrame";
 
 type Project = PROJECTS_QUERY_RESULT[number];
 
@@ -207,12 +207,11 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
           const href = `/project/${project.slug?.current}`;
           // The cover's background (Sanity: the cover's own, else the project
           // default). The recording stays flush; the page draws what is behind it.
-          const frame = resolveFrame(project.coverMedia?.frame, project, "landscape");
+          const frame = resolveCoverFrame(project.coverMedia?.frame, project);
           const backdrop = frame.background ? frame : null;
-          // Sanity's size override is only read through the resolved frame
-          // (clamped to 20–100, else the preset); here it just says whether
-          // the editor set one, which replaces the row preset's own width.
-          const coverSized = project.coverMedia?.frame?.size != null;
+          // A size the editor set (and the frame honours) replaces the row
+          // preset's own width; the value itself is read from the frame.
+          const coverSized = hasSizeOverride(project.coverMedia?.frame);
           const label = (
             <div
               className={`mt-4 desktop:mt-0 ${preset.under ? "desktop:col-start-1 desktop:col-end-4 desktop:row-start-2 desktop:mt-6" : `desktop:row-start-1 ${preset.label} ${ALIGN[align]}`}`}
@@ -334,7 +333,7 @@ function Backdrop({
 function coverSizes(project: Project, index: number): string {
   const layout = isLayout(project.homeLayout) ? project.homeLayout : CYCLE[index % CYCLE.length];
   if (!PRESETS[layout].under) return "(min-width: 75rem) 66vw, 100vw";
-  const backdrop = Boolean(resolveFrame(project.coverMedia?.frame, project, "landscape").background);
+  const backdrop = Boolean(resolveCoverFrame(project.coverMedia?.frame, project).background);
   return backdrop ? "(min-width: 75rem) 66vw, 88vw" : "(min-width: 75rem) 84vw, 100vw";
 }
 

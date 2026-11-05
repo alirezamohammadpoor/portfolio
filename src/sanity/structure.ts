@@ -21,6 +21,8 @@ export const structure: StructureResolver = (S) =>
       ...S.documentTypeListItems().filter((item) => !SINGLETON_TYPES.includes(item.getId() ?? '')),
       S.divider(),
       ...SINGLETONS.map((s) =>
-        S.listItem().title(s.title).id(s.type).child(S.document().schemaType(s.type).documentId(s.id)),
+        // The item's id is the document's: an edit intent (global search, a
+        // reference's "open") resolves to the pane by it.
+        S.listItem().title(s.title).id(s.id).schemaType(s.type).child(S.document().schemaType(s.type).documentId(s.id)),
       ),
     ])

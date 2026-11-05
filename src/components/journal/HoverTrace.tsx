@@ -66,7 +66,7 @@ export default function HoverTrace() {
       const l = lenisRef.current;
       const open = [...document.querySelectorAll(PREVIEW)]
         .filter((el) => el.getAttribute("aria-expanded") === "true")
-        .map((el) => (el.getAttribute("aria-label") ?? "").slice(9, 40));
+        .map((el) => (el.getAttribute("data-preview-label") ?? "").slice(0, 31));
       const card = [...document.querySelectorAll("video")]
         .map((v) => v.closest(".fixed"))
         .find((el) => el && getComputedStyle(el).opacity !== "0");
@@ -108,7 +108,7 @@ export default function HoverTrace() {
     // Link positions in page coordinates, so a replay can check the layout matches.
     document.querySelectorAll(PREVIEW).forEach((el) => {
       const r = el.getBoundingClientRect();
-      rows.current.push([0, "link", (el.getAttribute("aria-label") ?? "").slice(9, 40), Math.round(r.left), Math.round(r.top + window.scrollY), Math.round(r.width), Math.round(r.height)]);
+      rows.current.push([0, "link", (el.getAttribute("data-preview-label") ?? "").slice(0, 31), Math.round(r.left), Math.round(r.top + window.scrollY), Math.round(r.width), Math.round(r.height)]);
     });
     setCount(rows.current.length);
     setRecording(true);

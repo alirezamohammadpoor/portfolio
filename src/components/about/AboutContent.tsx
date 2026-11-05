@@ -11,7 +11,7 @@ import {
   useInlineAnimation,
 } from "@/hooks/useTextAnimation";
 import type { ABOUT_QUERY_RESULT } from "@/sanity/types";
-import { hotspotPosition, imageUrl } from "@/sanity/lib/image";
+import { cropImageUrl } from "@/sanity/lib/image";
 import { dur, ease, prefersReducedMotion, stagger } from "@/lib/motion";
 import dynamic from "next/dynamic";
 import CopyButton from "@/components/CopyButton";
@@ -111,12 +111,12 @@ export default function AboutContent({
             ref={portraitMobileRef}
             className="gsap-hidden relative mt-6 aspect-[3/4] w-full overflow-hidden bg-tertiary desktop:hidden"
           >
+            {/* Cut to the box's 3:4 around the editor's hotspot by the CDN. */}
             <Image
-              src={imageUrl(portrait, 780)}
+              src={cropImageUrl(portrait, 780, 1040)}
               alt={heading ?? "Portrait"}
               fill
               className="object-cover"
-              style={{ objectPosition: hotspotPosition(portrait) }}
               sizes="100vw"
             />
           </div>
@@ -148,11 +148,10 @@ export default function AboutContent({
         >
           <div className="relative aspect-[3/4] w-full overflow-hidden bg-tertiary">
             <Image
-              src={imageUrl(portrait, 780)}
+              src={cropImageUrl(portrait, 780, 1040)}
               alt={heading ?? "Portrait"}
               fill
               className="object-cover"
-              style={{ objectPosition: hotspotPosition(portrait) }}
               sizes="33vw"
             />
           </div>

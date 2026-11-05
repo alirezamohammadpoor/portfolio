@@ -293,7 +293,10 @@ const brush: Variant = (tl, name, ctx) => {
   });
   // No hold of its own: the move below holds HOLD after the last stroke, so
   // the name leaves at the reel's `write` beat (REEL_NAME_MOVE_AT) and the
-  // dive lands `afterName` later, as lib/reel.ts documents.
+  // dive lands `afterName` later, as lib/reel.ts documents. The callback
+  // above pauses the timeline from inside its own render; GSAP then resumes
+  // with the next callback at the same time (the plain-name swap), so the
+  // swap still runs after the writing, not under the canvas.
 };
 
 interface HomeIntroProps {

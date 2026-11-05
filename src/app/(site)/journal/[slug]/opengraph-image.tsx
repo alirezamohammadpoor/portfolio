@@ -7,9 +7,9 @@ export const alt = "Ali Reza Mohammad Poor — Journal";
 export const size = OG_SIZE;
 export const contentType = "image/png";
 
-// The post's cover fills the right third of the card, cut around its hotspot;
-// a post without one keeps the text-only card. Rendered at 2x for sharp text
-// next to it on retina previews.
+// The post's cover fills the right third of the card, cut around its hotspot
+// and served as a JPEG (Satori decodes no WebP or AVIF); a post without one
+// keeps the text-only card.
 const COVER_W = 440;
 
 export default async function JournalOgImage({
@@ -23,7 +23,7 @@ export default async function JournalOgImage({
 
   const title = post?.title ?? "Journal";
   const excerpt = post?.excerpt ?? "";
-  const cover = post?.coverImage?.asset ? cropImageUrl(post.coverImage, COVER_W * 2, OG_SIZE.height * 2) : null;
+  const cover = post?.coverImage?.asset ? cropImageUrl(post.coverImage, COVER_W, OG_SIZE.height, "jpg") : null;
 
   return ogResponse(
     (
@@ -72,10 +72,9 @@ export default async function JournalOgImage({
                 fontWeight: 500,
                 letterSpacing: "-0.03em",
                 lineHeight: 1.05,
-                display: "-webkit-box",
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
+                // Satori's own clamp (the -webkit-box one is ignored there).
+                display: "block",
+                lineClamp: 3,
               }}
             >
               {title}
@@ -87,10 +86,8 @@ export default async function JournalOgImage({
                   color: palette.secondary,
                   letterSpacing: "-0.01em",
                   lineHeight: 1.3,
-                  display: "-webkit-box",
-                  WebkitLineClamp: 3,
-                  WebkitBoxOrient: "vertical",
-                  overflow: "hidden",
+                  display: "block",
+                  lineClamp: cover ? 2 : 3,
                 }}
               >
                 {excerpt}

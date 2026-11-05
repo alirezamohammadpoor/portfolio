@@ -46,13 +46,13 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
     () => {
       if (!bylineRef.current) return;
       const reduced = prefersReducedMotion();
-      gsap.from(bylineRef.current, {
-        autoAlpha: 0,
-        y: reduced ? 0 : 12,
-        duration: 0.8,
-        delay: 0.1 + 2 * stagger,
-        ease: ease.out,
-      });
+      // fromTo: the byline is pre-hidden (gsap-hidden) like the title, so a
+      // hard load does not paint it alone and pull it back at hydration.
+      gsap.fromTo(
+        bylineRef.current,
+        { autoAlpha: 0, y: reduced ? 0 : 12 },
+        { autoAlpha: 1, y: 0, duration: 0.8, delay: 0.1 + 2 * stagger, ease: ease.out },
+      );
     },
     { scope: heroRef },
   );
@@ -111,7 +111,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
               </p>
             )}
             {post.publishedAt && (
-              <p ref={bylineRef} className="mt-6 text-sub text-primary">
+              <p ref={bylineRef} className="gsap-hidden mt-6 text-sub text-primary">
                 By{" "}
                 <Link href="/about" className="underline underline-offset-2 decoration-primary">
                   Ali Reza Mohammad Poor

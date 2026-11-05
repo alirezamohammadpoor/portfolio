@@ -347,7 +347,6 @@ export default function RichPreview({
             inert={!visible}
             onPointerEnter={isMobile ? undefined : onCardEnter}
             onPointerLeave={isMobile ? undefined : hideSoon}
-            onBlur={handleFocusOut}
             className={`fixed z-50 transition-[opacity,transform] duration-300 ease-[var(--ease-out)] ${
               showPopup
                 ? "pointer-events-auto translate-y-0 opacity-100"

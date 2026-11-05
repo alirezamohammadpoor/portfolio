@@ -27,15 +27,24 @@ export const imageUrl = (
 /**
  * A crop to exactly `width` × `height`: with both set, the builder cuts the
  * image around its hotspot (inside the editor's crop) to the target ratio.
+ * `format` forces the served format: the share cards need a JPEG (Satori
+ * decodes no WebP or AVIF upload, and the social crawlers read JPEG/PNG).
  */
-export const cropImageUrl = (source: SanityImageSource, width: number, height: number): string =>
-  urlFor(source).width(width).height(height).quality(85).url();
+export const cropImageUrl = (
+  source: SanityImageSource,
+  width: number,
+  height: number,
+  format?: "jpg" | "png",
+): string => {
+  const b = urlFor(source).width(width).height(height).quality(85);
+  return (format ? b.format(format) : b).url();
+};
 
 /**
- * OpenGraph image URL — fixed 1200x630 with quality 85, the standard
+ * OpenGraph image URL — fixed 1200x630 JPEG with quality 85, the standard
  * og:image dimensions used in route-level generateMetadata.
  */
-export const ogImageUrl = (source: SanityImageSource): string => cropImageUrl(source, 1200, 630);
+export const ogImageUrl = (source: SanityImageSource): string => cropImageUrl(source, 1200, 630, "jpg");
 
 type HotspotImage = {
   hotspot?: { x?: number; y?: number } | null;
@@ -43,11 +52,13 @@ type HotspotImage = {
 } | null | undefined;
 
 /**
- * `object-position` for an object-cover <Image> of a Sanity image: the
- * editor's hotspot, as a point of the served file (the builder already cuts
- * the editor's crop out of it, so the hotspot is re-based inside that crop).
- * A box of another ratio then keeps the face where the Studio preview shows
- * it instead of the middle of the image. Undefined without a hotspot.
+ * `object-position` for an object-cover <Image> of a Sanity image whose box
+ * ratio is not fixed (the post hero): the editor's hotspot as a point of the
+ * served file (the builder already cuts the editor's crop out of it, so the
+ * hotspot is re-based inside that crop). CSS lines the hotspot's x % up with
+ * the box's x %, which keeps a face in frame; the Studio centres it, so the
+ * framing is close, not identical. A fixed-ratio box gets `cropImageUrl`
+ * instead, where the CDN centres the hotspot itself. Undefined without one.
  */
 export function hotspotPosition(img: HotspotImage): string | undefined {
   const h = img?.hotspot;

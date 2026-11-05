@@ -62,10 +62,9 @@ export default async function ProjectOgImage({
               fontWeight: 500,
               letterSpacing: "-0.03em",
               lineHeight: 1.05,
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
+              // Satori's own clamp (the -webkit-box one is ignored there).
+              display: "block",
+              lineClamp: 2,
             }}
           >
             {title}
@@ -77,10 +76,8 @@ export default async function ProjectOgImage({
                 color: palette.secondary,
                 letterSpacing: "-0.01em",
                 lineHeight: 1.3,
-                display: "-webkit-box",
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden",
+                display: "block",
+                lineClamp: 3,
               }}
             >
               {description}

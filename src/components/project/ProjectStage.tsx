@@ -65,9 +65,10 @@ const ITEM_W = "calc(100vw - 2 * var(--grid-margin))";
 // Phone: the band a card may fill, the viewport less the header, the pill
 // row (h-14), the room kept under the strip for the filmstrip (pb-[52px])
 // and the strip's own padding (py-6). A tall clip, a 4:5 phone frame or a
-// lone phone screen gets narrower instead of running under the filmstrip;
-// snap-center keeps a narrower card centred and the depth loop reads each
-// card's own offsetWidth.
+// lone phone screen gets narrower instead of running under the filmstrip.
+// snap-center centres a narrower card between its neighbours; the first and
+// the last card get there through the strip's side padding (the layout
+// effect below), and the depth loop reads each card's own offsetWidth.
 const PHONE_BAND = "calc(100svh - var(--header-height) - 56px - 52px - 48px)";
 /** A phone card's width: the full column width unless the band bounds it. */
 const phoneCardWidth = (boxAspect: number, gapsPx = 0) =>
@@ -113,7 +114,7 @@ export default function ProjectStage({
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const firstVideoRef = useRef<HTMLVideoElement | null>(null);
   // Project → project: card 1 takes the live <video> the clone carries when
-  // it is the same file (see ProjectGallery / adoptVideo.ts).
+  // it is the same file (see adoptVideo.ts).
   const { isTransitioning, inPlace, sourceVideoElement } = usePageTransition();
   const [adopted] = useState(() => {
     const first = gallery[0];
@@ -312,14 +313,20 @@ export default function ProjectStage({
       window.removeEventListener("resize", measure);
       cancelAnimationFrame(raf);
       clearTimeout(idle);
+      // A settle the cleared timer owed: otherwise the flag would stay up
+      // until the next gesture, with the re-centring below skipped meanwhile.
+      scrollingRef.current = false;
+      setScrolling(false);
     };
   }, [gallery.length, reduceMotion, last, isDesktop]);
 
-  // Laptop: the strip's side padding centres the first and the last card
-  // (their widths follow their media, which may report its size late).
+  // The strip's side padding centres the first and the last card (their
+  // widths follow their media, which may report its size late). On the phone
+  // the server-rendered padding is the grid margin: right for a full-width
+  // card, only the first paint for a narrower one.
   useLayoutEffect(() => {
     const strip = stripRef.current;
-    if (!isDesktop || !strip) return;
+    if (!strip) return;
     const apply = () => {
       const kids = itemRefs.current.filter((el): el is HTMLDivElement => Boolean(el));
       const first = kids[0];
@@ -333,6 +340,8 @@ export default function ProjectStage({
       // snap the browser settles the strip itself when the gesture ends.
       if (gsap.isTweening(strip) || scrollingRef.current) return;
       const current = itemRefs.current[posRef.current];
+      // This write scrolls too (the flag goes up until the strip settles), so
+      // a second change in the same breath is left to the snap.
       if (current) strip.scrollLeft = current.offsetLeft - (strip.clientWidth - current.offsetWidth) / 2;
     };
     apply();
@@ -556,7 +565,7 @@ export default function ProjectStage({
   }, [atPreview, scrolling, detailsOpen, hidden, onNavigateNext]);
 
   // A video first card reports ready on its first presented frame (see
-  // ProjectGallery): the clone covering it must not leave on a black frame.
+  // firstFrame.ts): the clone covering it must not leave on a black frame.
   // A phones row as card 1 (the schema warns against it) has no single frame
   // to wait for: its height comes from the screens' ratio, so the clone may
   // land on it at once instead of leaving the page hidden.
@@ -678,6 +687,7 @@ export default function ProjectStage({
           className={`flex w-full ${isDesktop ? "items-center" : "items-start"} overflow-x-auto py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${single && !hasPreview ? "justify-center" : "snap-x snap-mandatory"}`}
           style={isDesktop ? undefined : { scrollPaddingInline: "var(--grid-margin)", paddingInline: "var(--grid-margin)" }}
           data-lenis-prevent
+          data-stage-strip
           role="region"
           aria-roledescription="carousel"
           aria-label={`${project.title} gallery, ${gallery.length} items`}
@@ -778,7 +788,7 @@ export default function ProjectStage({
                 )}
                 {!isImage && i === 0 && adopted && <div ref={adoptHostRef} className="absolute inset-0" />}
                 {poster && !near && (
-                  <Image src={poster} unoptimized alt="" fill className="object-cover" sizes={isDesktop ? "70vw" : "100vw"} />
+                  <Image src={poster} unoptimized alt="" fill className="object-cover" sizes={LANDING_SIZES.stage} />
                 )}
                 {!isImage && item.video?.asset?._ref && near && !(i === 0 && adopted) && (
                   <video

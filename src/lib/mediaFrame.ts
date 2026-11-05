@@ -51,6 +51,20 @@ function background(input: FrameInput, project: ProjectFrameSource): ResolvedFra
   return { colour, image, imageOpacity: (input.imageOpacity ?? 60) / 100 };
 }
 
+/** Whether the editor set a size the frame will honour (the 20–100 range the Studio validates). */
+export function hasSizeOverride(frame: FrameInput): boolean {
+  return typeof frame?.size === "number" && frame.size >= 20 && frame.size <= 100;
+}
+
+/**
+ * The home cover's frame: its background and size, never a fit. The cover is
+ * drawn 16:10 on every row, the Studio hides Fit for it, and a fit saved
+ * before it was hidden must not change the cover's default width.
+ */
+export function resolveCoverFrame(frame: FrameInput, project: ProjectFrameSource): ResolvedFrame {
+  return resolveFrame(frame ? { ...frame, fit: null } : frame, project, "landscape");
+}
+
 export function resolveFrame(frame: FrameInput, project: ProjectFrameSource, kind: MediaKind): ResolvedFrame {
   // An item left on "Project default" (or never touched) takes the project's background.
   const own = frame && frame.colour && frame.colour !== "default" ? frame : null;

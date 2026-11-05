@@ -17,6 +17,7 @@ import { cloneSourceFromElement } from "@/lib/cloneSource";
 import { LANDING_SIZES, landingKind, landingTop } from "@/lib/landing";
 import { usePrefetchProject } from "@/hooks/usePrefetchProject";
 import ProjectStage from "@/components/project/ProjectStage";
+import { warmPreviewVideo } from "@/components/project/NextProjectPreview";
 import { DESKTOP_QUERY, useIsDesktop } from "@/hooks/useIsDesktop";
 import ScrollProgress from "@/components/project/ScrollProgress";
 import ProjectTextShell from "@/components/project/ProjectTextShell";
@@ -104,6 +105,7 @@ function ProjectPageView({ project, nextProject }: ProjectPageClientProps) {
     if (!nextSlug) return;
     const href = `/project/${nextSlug}`;
     const preview = previewRef.current;
+    warmPreviewVideo(preview);
     if (!cloneSourceFromElement(preview, { allowLoadingVideo: true })) {
       plainRouter.push(href);
       return;

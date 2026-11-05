@@ -81,10 +81,20 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
 
       let finishing = false;
       // The last wheel event's time: a trackpad flick keeps sending its
-      // inertia tail for up to a second after the skip.
+      // inertia tail for up to a second after the skip. The reel's end
+      // re-renders the stage away (this effect's cleanup runs) while that
+      // tail is still coming, so the listener outlives the effect when Lenis
+      // is waiting on it and wake() removes it instead.
       let lastWheelAt = -Infinity;
-      let wakeTimer = 0;
-      offs.push(() => window.clearTimeout(wakeTimer));
+      let waking = false;
+      const wheelOpts = { passive: true, capture: true } as const;
+      const onWheelAt = () => {
+        lastWheelAt = performance.now();
+      };
+      window.addEventListener("wheel", onWheelAt, wheelOpts);
+      offs.push(() => {
+        if (!waking) window.removeEventListener("wheel", onWheelAt, wheelOpts);
+      });
       function finish() {
         if (getReelState() !== "playing" || finishing) return;
         finishing = true;
@@ -103,12 +113,14 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
         // would scroll the page off the top the reel lands on.
         const wake = () => {
           if (performance.now() - lastWheelAt < WHEEL_SILENCE_MS) {
-            wakeTimer = window.setTimeout(wake, WHEEL_SILENCE_MS);
+            window.setTimeout(wake, WHEEL_SILENCE_MS);
             return;
           }
+          window.removeEventListener("wheel", onWheelAt, wheelOpts);
           lenisRef.current?.start();
         };
         const done = () => {
+          waking = true;
           setReelState("done");
           ScrollTrigger.refresh();
           wake();
@@ -130,11 +142,6 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
       }
       if (!scrubbing) {
         const opts = { passive: true, capture: true } as const;
-        const onWheel = () => {
-          lastWheelAt = performance.now();
-        };
-        window.addEventListener("wheel", onWheel, opts);
-        offs.push(() => window.removeEventListener("wheel", onWheel, opts));
         for (const type of ["wheel", "touchstart", "keydown", "pointerdown"] as const) {
           window.addEventListener(type, onInput, opts);
           offs.push(() => window.removeEventListener(type, onInput, opts));

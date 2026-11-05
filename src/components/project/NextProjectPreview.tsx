@@ -52,12 +52,12 @@ function PreviewVideo({
       video.className = "h-full w-full object-cover";
       video.setAttribute("aria-hidden", "true");
       // Content attributes, not only IDL properties: Safari's autoplay policy
-      // and its "fetch on autoplay" behaviour read the markup state, and the
-      // `muted` property does not reflect to the attribute. This is the
-      // element React used to render, built by hand.
+      // reads the markup state, and the `muted` property does not reflect to
+      // the attribute. This is the element React used to render, built by
+      // hand. No `autoplay`: with it every browser fetches at once whatever
+      // `preload` says; the observer below starts playback instead.
       video.setAttribute("muted", "");
       video.setAttribute("playsinline", "");
-      video.setAttribute("autoplay", "");
       video.setAttribute("loop", "");
       // Nothing is fetched until the block comes near the viewport (below):
       // on a chapter page it sits at the very bottom, on the stage at the far
@@ -70,8 +70,17 @@ function PreviewVideo({
     }
     const el = video;
     let asked = false;
+    // On the stage the block sits in the horizontal strip: measured against
+    // the viewport it would count as hidden until it scrolls into the strip's
+    // clip, so the strip is the root there and the margin is one strip-width
+    // sideways. On a chapter page it is in the page flow, one screen ahead.
+    const strip = host.closest<HTMLElement>("[data-stage-strip]");
     const io = new IntersectionObserver(
-      ([entry]) => {
+      (entries) => {
+        const entry = entries[entries.length - 1];
+        // Once carried away by the transition the clip is the clone's, then
+        // the landing page's: this page going hidden must not pause it.
+        if (el.parentElement !== host) return;
         if (!entry?.isIntersecting) {
           el.pause();
           return;
@@ -87,8 +96,8 @@ function PreviewVideo({
         const p = el.play();
         if (p && typeof p.catch === "function") p.catch(() => {});
       },
-      // One viewport ahead, so the clip has a card or a screen's scroll to load.
-      { rootMargin: "100%" },
+      // One card or one screen ahead, so the clip has that scroll to load.
+      strip ? { root: strip, rootMargin: "0px 100%" } : { rootMargin: "100%" },
     );
     io.observe(host);
     return () => {
@@ -109,6 +118,21 @@ function PreviewVideo({
       style={{ aspectRatio: aspect }}
     />
   );
+}
+
+/**
+ * Nudges the preview's clip before it is carried away: a clip that is still
+ * loading lands as a black card. Asked on the gesture itself, iOS fetches
+ * where it ignored the preload hint; a fetch already under way is left
+ * alone (load() would restart it).
+ */
+export function warmPreviewVideo(host: HTMLElement | null): void {
+  const video = host?.querySelector("video");
+  if (!video || video.readyState >= 2 || video.networkState === HTMLMediaElement.NETWORK_LOADING) return;
+  video.preload = "auto";
+  video.load();
+  const p = video.play();
+  if (p && typeof p.catch === "function") p.catch(() => {});
 }
 
 /**

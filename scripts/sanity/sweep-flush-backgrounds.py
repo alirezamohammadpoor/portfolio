@@ -21,8 +21,9 @@ should happen after the background code is merged.
   python3 sweep-flush-backgrounds.py             # uploads + writes drafts
   python3 sweep-flush-backgrounds.py --only zone-2 [--dry-run]   # one project first
 
-Token: SANITY_API_READ_TOKEN (write-capable) from
-~/Developer/portfolio-layout/.env.local, or SANITY_TOKEN in the environment.
+Token: SANITY_TOKEN (an Editor token of its own), in the environment or in
+~/Developer/portfolio-layout/.env.local; SANITY_API_READ_TOKEN is never read.
+Without it a dry run plans from the published documents only.
 """
 import copy, json, os, re, secrets, sys, urllib.parse, urllib.request
 from pathlib import Path

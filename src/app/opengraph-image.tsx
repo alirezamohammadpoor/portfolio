@@ -50,7 +50,7 @@ export default function OpengraphImage() {
           </div>
           <div
             style={{
-              fontSize: 40,
+              fontSize: 36,
               color: palette.secondary,
               letterSpacing: "-0.01em",
             }}
