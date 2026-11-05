@@ -6,7 +6,6 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { usePageTransition } from "@/context/TransitionContext";
-import { rememberProject } from "@/lib/lastProject";
 import {
   useTitleAnimation,
   useBodyAnimation,
@@ -15,25 +14,37 @@ import {
 import { useGalleryScroll } from "@/hooks/useGalleryScroll";
 import { dur, ease, maskOutText, prefersReducedMotion, stagger } from "@/lib/motion";
 import { cloneSourceFromElement } from "@/lib/cloneSource";
-import { landingKind, landingTop } from "@/lib/landing";
+import { LANDING_SIZES, landingKind, landingTop } from "@/lib/landing";
 import { usePrefetchProject } from "@/hooks/usePrefetchProject";
 import ProjectStage from "@/components/project/ProjectStage";
+import { warmPreviewVideo } from "@/components/project/NextProjectPreview";
 import { DESKTOP_QUERY, useIsDesktop } from "@/hooks/useIsDesktop";
 import ScrollProgress from "@/components/project/ScrollProgress";
 import ProjectTextShell from "@/components/project/ProjectTextShell";
-import ProjectChapters, { type MobileVariant } from "@/components/project/ProjectChapters";
+import ProjectChapters from "@/components/project/ProjectChapters";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
 interface ProjectPageClientProps {
   project: Project;
   nextProject?: Project["nextProject"];
-  prevProject?: Project["prevProject"];
-  /** Lab only: phone layout exploration for the chapter page. */
-  mobileVariant?: MobileVariant;
 }
 
-export default function ProjectPageClient({ project, nextProject, prevProject, mobileVariant }: ProjectPageClientProps) {
+/**
+ * Next keeps a left page mounted hidden (Activity) and shows the same
+ * instance again on a push to its route, not only on back/forward. The
+ * page tree below reads the running transition at mount (landingId, the
+ * arrival refs in useGalleryScroll), so a re-shown instance could never
+ * claim the clone aimed at it: the cover would stay fixed on screen. Keyed
+ * on bfcacheId it mounts fresh on every push (the path that works) and is
+ * still restored as it was on browser back/forward.
+ */
+export default function ProjectPageClient(props: ProjectPageClientProps) {
+  const { bfcacheId } = useRouter();
+  return <ProjectPageView key={bfcacheId} {...props} />;
+}
+
+function ProjectPageView({ project, nextProject }: ProjectPageClientProps) {
   const plainRouter = useRouter();
   const {
     isTransitioning: transitionRunning,
@@ -72,14 +83,10 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
 
   const nextSlug = nextProject?.slug?.current ?? undefined;
 
-  // Home opens on this project when the visitor goes back to it.
-  const slug = project.slug?.current;
-  useEffect(() => rememberProject(slug), [slug]);
-
   // Next project only, on arrival: its route and first media are ready long
   // before the reader reaches the end of the gallery. Previous gets nothing;
   // back navigation is cheap already.
-  usePrefetchProject(nextSlug, nextProject?.firstMedia);
+  usePrefetchProject(nextSlug, nextProject?.firstMedia, LANDING_SIZES[landingKind(nextProject?.hasChapters)]);
 
   // Project → project reads as one page: the gallery column carries the
   // preview block up into the first-item slot (the same move the reader has
@@ -98,6 +105,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
     if (!nextSlug) return;
     const href = `/project/${nextSlug}`;
     const preview = previewRef.current;
+    warmPreviewVideo(preview);
     if (!cloneSourceFromElement(preview, { allowLoadingVideo: true })) {
       plainRouter.push(href);
       return;
@@ -119,7 +127,7 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
     // the stage, whose card is centred by its own layout: the clone settles
     // onto it after the swap instead.
     const desktop = window.matchMedia(DESKTOP_QUERY).matches;
-    const slotTop = landingTop(landingKind(nextHasChapters, desktop), desktop);
+    const slotTop = landingTop(landingKind(nextHasChapters), desktop);
     if (!gallery || slotTop === null || !preview || prefersReducedMotion()) {
       swap();
       return;
@@ -138,17 +146,15 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
   const {
     galleryRef,
     firstImageRef,
-    nextTextRef,
     progressFillRef,
     pullRef,
-    gallery,
-    mobileProgressElRef,
-    footerWipeRef,
-    showMobileNav,
     onFirstReady,
   } = useGalleryScroll({
-    gallery: project.gallery ?? [],
-    nextProjectSlug: nextSlug,
+    // The wheel pull past the bottom edge belongs to the scrolling chapter
+    // page. The stage never scrolls (fixed), so there it would start on the
+    // first wheel tick and hand off after a few trackpad flicks, whatever
+    // card is centred; the stage has its own stepper and end-of-strip hand-off.
+    nextProjectSlug: hasChapters ? nextSlug : undefined,
     isTransitioning,
     inPlace,
     animateClone,
@@ -232,7 +238,6 @@ export default function ProjectPageClient({ project, nextProject, prevProject, m
           nextProject={nextProject}
           previewRef={previewRef}
           onNavigateNext={nextSlug ? navigateNext : undefined}
-          mobileVariant={mobileVariant}
         />
         {!skip && (
           <ScrollProgress

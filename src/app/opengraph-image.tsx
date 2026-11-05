@@ -50,12 +50,12 @@ export default function OpengraphImage() {
           </div>
           <div
             style={{
-              fontSize: 40,
+              fontSize: 36,
               color: palette.secondary,
               letterSpacing: "-0.01em",
             }}
           >
-            Full-stack developer &amp; creative technologist
+            Frontend developer at the intersection of product and design
           </div>
         </div>
 

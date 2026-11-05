@@ -49,7 +49,13 @@ export default function PhonesRow({
     <div
       key={slot._key ?? i}
       className={`relative overflow-hidden bg-tertiary/40 ${PHONE_RADIUS} ${frame.background ? "flex-none" : "min-w-0 flex-1"}`}
-      style={frame.background ? { height: `${size}%`, aspectRatio: PHONE_ASPECT } : { aspectRatio: PHONE_ASPECT }}
+      style={
+        frame.background
+          ? { height: `${size}%`, aspectRatio: PHONE_ASPECT }
+          : // A lone screen on the page would take the whole row and tower over
+            // the viewport: it is held to about 70 % of the viewport's height.
+            { aspectRatio: PHONE_ASPECT, maxWidth: list.length === 1 ? `calc(70svh * ${PHONE_ASPECT.toFixed(4)})` : undefined }
+      }
     >
       {slot.type === "video" && slot.video?.asset?._ref ? (
         <InlineClip

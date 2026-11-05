@@ -9,6 +9,7 @@ import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
 import MediaFrame from "@/components/MediaFrame";
 import type { ResolvedFrame } from "@/lib/mediaFrame";
+import { LANDING_SIZES } from "@/lib/landing";
 
 type GalleryItem = NonNullable<NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["gallery"]>[number];
 
@@ -31,7 +32,7 @@ interface LandingMediaProps {
  * project's preview, which carries its live <video> over, see adoptVideo.ts)
  * lands here unchanged.
  */
-export default function LandingMedia({ item, title, slotRef, onReady, sizes = "(min-width: 75rem) 50vw, 100vw", frame }: LandingMediaProps) {
+export default function LandingMedia({ item, title, slotRef, onReady, sizes = LANDING_SIZES.chapters, frame }: LandingMediaProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { isTransitioning, inPlace, sourceVideoElement } = usePageTransition();
   const src = item?._type === "galleryVideo" && item.video?.asset?._ref ? fileUrl(item.video.asset._ref) : undefined;
@@ -44,6 +45,12 @@ export default function LandingMedia({ item, title, slotRef, onReady, sizes = "(
     mountAdoptedVideo(host, adopted, `${title} — 1`);
     videoRef.current = adopted;
   }, [adopted, isTransitioning, title]);
+
+  // Hidden (Next keeps a left page mounted, display: none does not pause
+  // media) the clip stops looping; the play effect below picks it up again
+  // when the page is shown. A layout cleanup, because the ref is still set
+  // when it runs, and the adopted element's ref is set by hand.
+  useLayoutEffect(() => () => videoRef.current?.pause(), []);
 
   // A video reports ready on its first presented frame, so the clone never
   // leaves while it still paints black. An adopted element is that frame.

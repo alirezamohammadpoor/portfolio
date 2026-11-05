@@ -12,9 +12,16 @@ const REVALIDATABLE_TYPES = new Set([
 
 export async function POST(req: NextRequest) {
   try {
+    const secret = process.env.SANITY_WEBHOOK_SECRET;
+    if (!secret) {
+      // Without the secret every delivery would read as a bad signature
+      // (401) and nothing would say why.
+      console.error("SANITY_WEBHOOK_SECRET is not set: the Sanity webhook cannot revalidate");
+      return new NextResponse("Webhook secret not configured", { status: 500 });
+    }
     const { isValidSignature, body } = await parseBody<{
       _type: string;
-    }>(req, process.env.SANITY_WEBHOOK_SECRET);
+    }>(req, secret);
 
     if (!isValidSignature) {
       return new NextResponse("Invalid signature", { status: 401 });

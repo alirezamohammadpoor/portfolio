@@ -14,7 +14,10 @@ interface AnimationOptions {
 }
 
 /**
- * Animate heading text — chars drop in from above.
+ * Animate heading text — chars drop in from above. The block itself may be
+ * pre-hidden with `gsap-hidden` (a hard load would otherwise paint the
+ * server text and pull it back when the split starts): it is shown as it is
+ * split, with the chars already above their masks.
  */
 export function useTitleAnimation(
   ref: RefObject<HTMLElement | null>,
@@ -33,14 +36,18 @@ export function useTitleAnimation(
         autoSplit: true,
         mask: "chars",
         charsClass: "char",
-        aria: "none",
-        onSplit: (self) =>
-          gsap.from(self.chars, {
+        // The heading keeps its text as an aria-label and the chars are
+        // aria-hidden, so it is not read letter by letter.
+        aria: "auto",
+        onSplit: (self) => {
+          gsap.set(ref.current, { autoAlpha: 1 });
+          return gsap.from(self.chars, {
             duration,
             yPercent: -120,
             ease: ease.out,
             delay,
-          }),
+          });
+        },
       });
     },
     { scope, dependencies: [skip, ...dependencies] },
@@ -48,7 +55,8 @@ export function useTitleAnimation(
 }
 
 /**
- * Animate body text — lines slide up.
+ * Animate body text — lines slide up. Shows a `gsap-hidden` block as it is
+ * split, like useTitleAnimation.
  */
 export function useBodyAnimation(
   ref: RefObject<HTMLElement | null>,
@@ -68,13 +76,15 @@ export function useBodyAnimation(
         mask: "lines",
         linesClass: "line",
         aria: "none",
-        onSplit: (self) =>
-          gsap.from(self.lines, {
+        onSplit: (self) => {
+          gsap.set(ref.current, { autoAlpha: 1 });
+          return gsap.from(self.lines, {
             duration,
             yPercent: 105,
             ease: ease.out,
             delay,
-          }),
+          });
+        },
       });
     },
     { scope, dependencies: [skip, ...dependencies] },

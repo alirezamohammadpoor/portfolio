@@ -117,6 +117,9 @@ export const mediaFrame = defineType({
       title: "Fit",
       description: "Auto: a phone recording stands centred in a 4:5 box with rounded corners (on its background or the page); a laptop recording sits inset on its background, or flush when there is none.",
       type: "string",
+      // The home draws the cover 16:10 on its background whatever this says,
+      // so the cover's frame (path coverMedia.frame.fit) does not offer it.
+      hidden: ({ path }) => path[0] === "coverMedia",
       options: {
         list: [
           { title: "Auto", value: "auto" },
@@ -132,7 +135,7 @@ export const mediaFrame = defineType({
     defineField({
       name: "size",
       title: "Size override (%)",
-      description: "How big the media is on its background: width for a laptop recording, height for a phone. Leave empty for the preset (laptop 84, phone 88).",
+      description: "How big the media is on its background: width for a laptop recording (and for the home cover), height for a phone. Leave empty for the preset (laptop and cover 84, phone 88).",
       type: "number",
       validation: (rule) => rule.min(20).max(100),
     }),

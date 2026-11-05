@@ -1,7 +1,7 @@
 import { Link } from "@/lib/viewTransitions";
 import Image from "next/image";
 import type { JOURNAL_POSTS_QUERY_RESULT } from "@/sanity/types";
-import { imageUrl } from "@/sanity/lib/image";
+import { cropImageUrl } from "@/sanity/lib/image";
 import { formatPostDate } from "@/lib/dates";
 
 interface JournalCardProps {
@@ -13,9 +13,10 @@ export default function JournalCard({ post }: JournalCardProps) {
     <Link href={`/journal/${post.slug?.current}`} className="flex h-full flex-col">
       {post.coverImage?.asset && (
         <div className="relative aspect-[4/5] w-full overflow-hidden bg-tertiary">
+          {/* Cut to the box's 4:5 around the editor's hotspot by the CDN. */}
           <Image
-            src={imageUrl(post.coverImage, 800)}
-            alt={post.title ?? ""}
+            src={cropImageUrl(post.coverImage, 800, 1000)}
+            alt={post.coverImage.alt ?? ""}
             fill
             className="object-cover"
             sizes="(min-width: 75rem) 33vw, 100vw"

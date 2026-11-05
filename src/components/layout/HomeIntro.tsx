@@ -10,6 +10,8 @@ import { PERSIAN_NAME } from "@/lib/name";
 
 /** Seconds the finished name holds in the centre before it moves. */
 const HOLD = 0.5;
+/** Longest wait for the Persian font before the brush writes anyway. */
+const FONT_WAIT_MS = 800;
 const BASE_CLASS = "intro-name invisible text-primary will-change-transform";
 
 interface VariantCtx {
@@ -261,20 +263,40 @@ function handwrite(c: Canvas, onDone: () => void) {
 
 const brush: Variant = (tl, name, ctx) => {
   let canvas: Canvas | null = null;
-  ctx.onCleanup(() => canvas?.remove());
+  let dead = false;
+  ctx.onCleanup(() => {
+    dead = true;
+    canvas?.remove();
+  });
   tl.add(() => {
     tl.pause();
-    const c = makeCanvas(name, false);
-    canvas = c;
-    const writing = handwrite(c, () => {
-      c.remove();
-      canvas = null;
-      gsap.set(name, { autoAlpha: 1 });
-      tl.play();
+    // The strokes are drawn for the glyph cells of the font in use, so the
+    // canvas waits for Parastoo (already loaded on all but a cold, slow
+    // link), capped so a missing font never holds the intro.
+    name.classList.add("parastoo-font");
+    const loaded = document.fonts
+      .load(`1em ${getComputedStyle(name).fontFamily}`)
+      .then(() => undefined, () => undefined);
+    const cap = new Promise<void>((resolve) => window.setTimeout(resolve, FONT_WAIT_MS));
+    Promise.race([loaded, cap]).then(() => {
+      if (dead) return;
+      const c = makeCanvas(name, false);
+      canvas = c;
+      const writing = handwrite(c, () => {
+        c.remove();
+        canvas = null;
+        gsap.set(name, { autoAlpha: 1 });
+        tl.play();
+      });
+      ctx.track(writing);
     });
-    ctx.track(writing);
   });
-  tl.add(() => {}, `+=${HOLD}`);
+  // No hold of its own: the move below holds HOLD after the last stroke, so
+  // the name leaves at the reel's `write` beat (REEL_NAME_MOVE_AT) and the
+  // dive lands `afterName` later, as lib/reel.ts documents. The callback
+  // above pauses the timeline from inside its own render; GSAP then resumes
+  // with the next callback at the same time (the plain-name swap), so the
+  // swap still runs after the writing, not under the canvas.
 };
 
 interface HomeIntroProps {

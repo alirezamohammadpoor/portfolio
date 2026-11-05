@@ -15,6 +15,9 @@
 /.next/
 /out/
 
+# probe screenshots (scripts/player-states.mjs)
+/scripts/out/
+
 # production
 /build
 /dist

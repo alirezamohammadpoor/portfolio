@@ -13,12 +13,14 @@ import { useLenis } from "lenis/react";
 
 type Row = (string | number | boolean | null)[];
 
-const PREVIEW = '[role=button][aria-label^="Preview"]';
+// A preview phrase, by the label it carries for this tracer (its accessible
+// name is its own text; the card is the labelled dialog it controls).
+const PREVIEW = "[role=button][data-preview-label]";
 
 function where(target: EventTarget | null): string {
   if (!(target instanceof Element)) return "-";
   const mark = target.closest(PREVIEW);
-  if (mark) return "link:" + (mark.getAttribute("aria-label") ?? "").slice(9, 40);
+  if (mark) return "link:" + (mark.getAttribute("data-preview-label") ?? "").slice(0, 31);
   if (target.closest("video")?.closest(".fixed") || target.closest("[data-preview-card]")) return "card";
   return target.tagName.toLowerCase();
 }
@@ -64,7 +66,7 @@ export default function HoverTrace() {
       const l = lenisRef.current;
       const open = [...document.querySelectorAll(PREVIEW)]
         .filter((el) => el.getAttribute("aria-expanded") === "true")
-        .map((el) => (el.getAttribute("aria-label") ?? "").slice(9, 40));
+        .map((el) => (el.getAttribute("data-preview-label") ?? "").slice(0, 31));
       const card = [...document.querySelectorAll("video")]
         .map((v) => v.closest(".fixed"))
         .find((el) => el && getComputedStyle(el).opacity !== "0");
@@ -106,7 +108,7 @@ export default function HoverTrace() {
     // Link positions in page coordinates, so a replay can check the layout matches.
     document.querySelectorAll(PREVIEW).forEach((el) => {
       const r = el.getBoundingClientRect();
-      rows.current.push([0, "link", (el.getAttribute("aria-label") ?? "").slice(9, 40), Math.round(r.left), Math.round(r.top + window.scrollY), Math.round(r.width), Math.round(r.height)]);
+      rows.current.push([0, "link", (el.getAttribute("data-preview-label") ?? "").slice(0, 31), Math.round(r.left), Math.round(r.top + window.scrollY), Math.round(r.width), Math.round(r.height)]);
     });
     setCount(rows.current.length);
     setRecording(true);

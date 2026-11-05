@@ -32,8 +32,8 @@ await page.waitForTimeout(500);
 // the pointer: over a link, to the same relative spot on that link here;
 // elsewhere, by the vertical shift of the links.
 const links = rows.filter((r) => r[1] === "link");
-const here = await page.$$eval('[role=button][aria-label^="Preview"]', (els) =>
-  els.map((el) => { const r = el.getBoundingClientRect(); return [(el.getAttribute("aria-label") ?? "").slice(9, 40), r.left, r.top + window.scrollY, r.width, r.height]; }));
+const here = await page.$$eval("[role=button][data-preview-label]", (els) =>
+  els.map((el) => { const r = el.getBoundingClientRect(); return [(el.getAttribute("data-preview-label") ?? "").slice(0, 31), r.left, r.top + window.scrollY, r.width, r.height]; }));
 const map = new Map();
 for (const [, , label, x, y, w, h] of links) {
   const m = here.find((e) => e[0] === label);
@@ -56,7 +56,7 @@ await page.evaluate(() => {
   window.__t0 = performance.now();
   new MutationObserver((ms) => ms.forEach((m) => {
     const el = m.target;
-    window.__log.push([performance.now() - window.__t0, el.getAttribute("aria-expanded") === "true" ? "open" : "close", (el.getAttribute("aria-label") ?? "").slice(9, 40)]);
+    window.__log.push([performance.now() - window.__t0, el.getAttribute("aria-expanded") === "true" ? "open" : "close", (el.getAttribute("data-preview-label") ?? "").slice(0, 31)]);
   })).observe(document.body, { subtree: true, attributeFilter: ["aria-expanded"] });
 });
 

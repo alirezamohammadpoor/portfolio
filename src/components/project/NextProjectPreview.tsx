@@ -17,8 +17,6 @@ interface NextProjectPreviewProps {
   /** Image width hint for the Sanity URL (desktop 1200, stage 900). */
   imageWidth?: number;
   sizes?: string;
-  className?: string;
-  style?: React.CSSProperties;
   /** The box ratio: 4:3 on the gallery page, 16:10 on the chapter page (flush covers). */
   aspect?: number;
 }
@@ -54,28 +52,59 @@ function PreviewVideo({
       video.className = "h-full w-full object-cover";
       video.setAttribute("aria-hidden", "true");
       // Content attributes, not only IDL properties: Safari's autoplay policy
-      // and its "fetch on autoplay" behaviour read the markup state, and the
-      // `muted` property does not reflect to the attribute. This is the
-      // element React used to render, built by hand.
+      // reads the markup state, and the `muted` property does not reflect to
+      // the attribute. This is the element React used to render, built by
+      // hand. No `autoplay`: with it every browser fetches at once whatever
+      // `preload` says; the observer below starts playback instead.
       video.setAttribute("muted", "");
       video.setAttribute("playsinline", "");
-      video.setAttribute("autoplay", "");
       video.setAttribute("loop", "");
-      video.setAttribute("preload", "auto");
+      // Nothing is fetched until the block comes near the viewport (below):
+      // on a chapter page it sits at the very bottom, on the stage at the far
+      // end of the strip, and a decoder it may never reach is not kept running.
+      video.setAttribute("preload", "none");
       video.muted = true;
       if (poster) video.poster = poster;
       video.src = src;
       host.appendChild(video);
     }
-    // iOS Safari treats preload as a hint and may not fetch until asked; a
-    // preview that is still black when tapped cannot be carried as the clone.
-    if (video.readyState < 2) video.load();
-    const p = video.play();
-    if (p && typeof p.catch === "function") p.catch(() => {});
+    const el = video;
+    let asked = false;
+    // On the stage the block sits in the horizontal strip: measured against
+    // the viewport it would count as hidden until it scrolls into the strip's
+    // clip, so the strip is the root there and the margin is one strip-width
+    // sideways. On a chapter page it is in the page flow, one screen ahead.
+    const strip = host.closest<HTMLElement>("[data-stage-strip]");
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[entries.length - 1];
+        // Once carried away by the transition the clip is the clone's, then
+        // the landing page's: this page going hidden must not pause it.
+        if (el.parentElement !== host) return;
+        if (!entry?.isIntersecting) {
+          el.pause();
+          return;
+        }
+        // iOS Safari treats preload as a hint and may not fetch until asked; a
+        // preview that is still black when tapped cannot be carried as the
+        // clone. Asked once: load() restarts a fetch that is under way.
+        if (el.readyState < 2 && !asked) {
+          asked = true;
+          el.preload = "auto";
+          el.load();
+        }
+        const p = el.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      },
+      // One card or one screen ahead, so the clip has that scroll to load.
+      strip ? { root: strip, rootMargin: "0px 100%" } : { rootMargin: "100%" },
+    );
+    io.observe(host);
     return () => {
+      io.disconnect();
       // Only ours to pause while it is still here; once carried away by the
       // transition it belongs to the clone and then to the landing page.
-      if (video && video.parentElement === host) video.pause();
+      if (el.parentElement === host) el.pause();
     };
   }, [src, poster]);
   return (
@@ -92,6 +121,21 @@ function PreviewVideo({
 }
 
 /**
+ * Nudges the preview's clip before it is carried away: a clip that is still
+ * loading lands as a black card. Asked on the gesture itself, iOS fetches
+ * where it ignored the preload hint; a fetch already under way is left
+ * alone (load() would restart it).
+ */
+export function warmPreviewVideo(host: HTMLElement | null): void {
+  const video = host?.querySelector("video");
+  if (!video || video.readyState >= 2 || video.networkState === HTMLMediaElement.NETWORK_LOADING) return;
+  video.preload = "auto";
+  video.load();
+  const p = video.play();
+  if (p && typeof p.catch === "function") p.catch(() => {});
+}
+
+/**
  * The next project's first gallery media at the end of the current gallery.
  * Looks like one more gallery item (4:3, object-cover) because it is the
  * morph source for the project → project transition: scrolling or tapping
@@ -104,8 +148,6 @@ export default function NextProjectPreview({
   onNavigate,
   imageWidth = 1200,
   sizes = "(min-width: 75rem) 50vw, 100vw",
-  className = "",
-  style,
   aspect = 4 / 3,
 }: NextProjectPreviewProps) {
   const slug = nextProject.slug?.current;
@@ -121,8 +163,7 @@ export default function NextProjectPreview({
     <a
       href={`/project/${slug}`}
       aria-label={label}
-      className={`block ${className}`}
-      style={style}
+      className="block"
       onClick={(e) => {
         if (!isPlainLeftClick(e)) return;
         e.preventDefault();

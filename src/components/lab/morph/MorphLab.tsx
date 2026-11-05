@@ -78,13 +78,13 @@ function Solo({ sceneKey }: { sceneKey: string }) {
 export default function MorphLab({ solo }: { solo?: string }) {
   if (solo) return <Solo sceneKey={solo} />;
   return (
-    <main className="px-4 pb-24 pt-24 desktop:px-6">
+    <div className="px-4 pb-24 pt-24 desktop:px-6">
       <h1 className="mb-8 text-[32px] leading-10">Stronger tests: today to design</h1>
       <div className="grid grid-cols-2 gap-x-4 gap-y-12 desktop:grid-cols-6">
         {SCENES.map((s, i) => (
           <Player key={s.key} index={i} />
         ))}
       </div>
-    </main>
+    </div>
   );
 }

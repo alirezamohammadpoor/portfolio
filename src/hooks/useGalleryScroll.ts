@@ -1,17 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useLenis } from "lenis/react";
 import type Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
-import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { lockScroll, unlockScroll } from "@/hooks/useScrollLock";
 import { DESKTOP_QUERY } from "@/hooks/useIsDesktop";
 import { dur, ease, prefersReducedMotion } from "@/lib/motion";
-
-type ProjectGalleryItems = NonNullable<NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>["gallery"]>;
 
 interface Rect {
   top: number;
@@ -21,7 +18,6 @@ interface Rect {
 }
 
 interface UseGalleryScrollOptions {
-  gallery: ProjectGalleryItems;
   nextProjectSlug: string | undefined;
   isTransitioning: boolean;
   /** Arrived in place (project → project): the clone does not move. */
@@ -66,40 +62,10 @@ const UNLOCK_INERTIA_CAP_MS = 1500;
 const PULL_MAX = 48;
 const PULL_SCALE = 1200;
 
-export const NEXT_THRESHOLD = THRESHOLD;
 const BOTTOM_EDGE_PX = 10;
 
-// Shared animation helpers
-function animateClipReveal(el: HTMLElement | null, progress: number) {
-  if (!el) return;
-  gsap.to(el, {
-    clipPath: `inset(0 ${100 - progress * 105}% 0 0)`,
-    duration: 0.4,
-    ease: "power2.out",
-    overwrite: true,
-  });
-}
-
-function toggleVisibility(
-  el: HTMLElement | null,
-  show: boolean,
-  wasShowing: React.RefObject<boolean>,
-) {
-  if (!el) return;
-  if (show && !wasShowing.current) {
-    gsap.to(el, { autoAlpha: 1, duration: 0.2 });
-    wasShowing.current = true;
-  } else if (!show && wasShowing.current) {
-    gsap.to(el, { autoAlpha: 0, duration: 0.2 });
-    wasShowing.current = false;
-  }
-}
-
-// Only the next project has a wheel gesture. Previous keeps its explicit
-// link in the footer: there is no preview to morph from, and the old root
-// slide was the one transition left outside the clone vocabulary.
+// Only the next project has a wheel gesture.
 export function useGalleryScroll({
-  gallery,
   nextProjectSlug,
   isTransitioning,
   inPlace,
@@ -109,28 +75,19 @@ export function useGalleryScroll({
   mounted,
   verticalPage,
 }: UseGalleryScrollOptions) {
-  const scrollProgressElRef = useRef<HTMLElement>(null);
-  const mobileProgressElRef = useRef<HTMLElement>(null);
   const galleryRef = useRef<HTMLDivElement>(null);
   const firstImageRef = useRef<HTMLDivElement>(null);
-  const nextTextWrapperRef = useRef<HTMLDivElement>(null);
-  const nextTextRef = useRef<HTMLDivElement>(null);
   const progressFillRef = useRef<HTMLElement>(null);
   const pullRef = useRef<HTMLElement>(null);
   const hasNavigated = useRef(false);
-  const footerWipeRef = useRef<HTMLDivElement>(null);
 
   const bottomAcc = useRef(0);
-  const wasShowingBottom = useRef(false);
   const lenisRef = useRef<Lenis | null>(null);
   const isReady = useRef(false);
 
   // Read once at mount: whether this page is the landing side of the clone.
   const arrivedByCloneRef = useRef(isTransitioning);
   const arrivedInPlaceRef = useRef(isTransitioning && inPlace);
-
-  const [showMobileNav, setShowMobileNav] = useState(false);
-  const showMobileNavRef = useRef(false);
 
   useLenis((lenis) => {
     lenisRef.current = lenis;
@@ -146,9 +103,12 @@ export function useGalleryScroll({
   useEffect(() => {
     const isDesktop = window.matchMedia(DESKTOP_QUERY).matches;
     const arrived = arrivedByCloneRef.current;
-    setTimeout(() => {
-      if (nextTextWrapperRef.current) gsap.set(nextTextWrapperRef.current, { autoAlpha: 0 });
-    }, 0);
+    // Shown again after a threshold navigation (browser back; Next keeps the
+    // page mounted hidden and runs the effects again): the accumulator and
+    // the pull bar are still where the hand-off left them, so the first
+    // wheel tick would navigate again. Both start from zero on every show.
+    bottomAcc.current = 0;
+    if (pullRef.current) gsap.set(pullRef.current, { "--pull": 0, overwrite: true });
     if (!isDesktop || !arrived) {
       isReady.current = true;
       hasNavigated.current = false;
@@ -191,6 +151,11 @@ export function useGalleryScroll({
       unlocked = true;
       isReady.current = true;
       hasNavigated.current = false;
+      // From here on the page behaves like a direct load: shown again later
+      // (browser back) it must not replay the arrival lock and the reset to
+      // the top, which would throw the reader off their reading position.
+      arrivedByCloneRef.current = false;
+      arrivedInPlaceRef.current = false;
       window.scrollTo(0, 0);
       lenisRef.current?.start();
       lenisRef.current?.scrollTo(0, { immediate: true });
@@ -215,7 +180,10 @@ export function useGalleryScroll({
       // Always release the global lock on unmount. Without this, if the user
       // navigates away before the timer fires (common on mobile where taps
       // happen within 2s), the lock persists forever and scroll stays frozen
-      // on every subsequent page.
+      // on every subsequent page. Lenis is one instance for the whole site:
+      // left stopped here (a header link or Back during the lock window) the
+      // next page could not scroll at all until a reload.
+      if (!unlocked) lenisRef.current?.start();
       unlockScroll();
     };
   }, []);
@@ -253,9 +221,24 @@ export function useGalleryScroll({
         animateClone({ top: r.top, left: r.left, width: r.width, height: r.height });
       });
       ro.observe(el);
+      // The strip too: on the phone it is as tall as its tallest card and
+      // sits vertically centred, so a neighbour reporting its ratio moves
+      // card 1 without resizing it, and a padding change shifts it sideways.
+      const strip = el.closest<HTMLElement>("[data-stage-strip]") ?? el.parentElement;
+      if (strip) ro.observe(strip);
       retargetRef.current = ro;
     });
   }, [animateClone]);
+
+  // Left mid-transition (a header link during the morph): the observer must
+  // not outlive the page and aim the clone at a detached card.
+  useEffect(
+    () => () => {
+      retargetRef.current?.disconnect();
+      retargetRef.current = null;
+    },
+    [],
+  );
 
   const onFirstReady = useCallback(() => {
     fireAnimateClone();
@@ -309,21 +292,7 @@ export function useGalleryScroll({
         start: 0,
         end: "max",
         onUpdate: (self) => {
-          const val = Math.round(self.progress * 100);
-          if (scrollProgressElRef.current) scrollProgressElRef.current.textContent = String(val);
-          if (mobileProgressElRef.current) mobileProgressElRef.current.textContent = String(val);
           if (progressFillRef.current) progressFillRef.current.style.setProperty("--p", self.progress.toFixed(4));
-
-          if (!isReady.current) return;
-
-          if (val >= 90) toggleVisibility(nextTextWrapperRef.current, true, wasShowingBottom);
-
-          // Mobile nav row — only setState when value changes
-          const shouldShow = val >= 95;
-          if (shouldShow !== showMobileNavRef.current) {
-            showMobileNavRef.current = shouldShow;
-            setShowMobileNav(shouldShow);
-          }
         },
       });
 
@@ -337,11 +306,12 @@ export function useGalleryScroll({
 
   const isAtBottom = useCallback(() => {
     const lenis = lenisRef.current;
-    return lenis ? lenis.scroll >= lenis.limit - BOTTOM_EDGE_PX : false;
+    // A page that cannot scroll (the fixed stage: limit ≈ 0) has no bottom
+    // edge to pull from.
+    return lenis ? lenis.limit > BOTTOM_EDGE_PX && lenis.scroll >= lenis.limit - BOTTOM_EDGE_PX : false;
   }, []);
 
   const updateBottomVisuals = useCallback((progress: number) => {
-    animateClipReveal(nextTextRef.current, progress);
     if (pullRef.current) {
       gsap.to(pullRef.current, {
         "--pull": Math.min(1, Math.max(0, progress)),
@@ -350,8 +320,6 @@ export function useGalleryScroll({
         overwrite: true,
       });
     }
-    animateClipReveal(footerWipeRef.current, progress);
-    toggleVisibility(nextTextWrapperRef.current, progress > 0, wasShowingBottom);
   }, []);
 
   // Wheel accumulation at the bottom edge — desktop only
@@ -387,21 +355,26 @@ export function useGalleryScroll({
     };
 
     window.addEventListener("wheel", onWheel, { passive: false });
-    return () => window.removeEventListener("wheel", onWheel);
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      // The threshold stopped Lenis and took the global lock for the
+      // hand-off. When this page is left they are given back: on a clone
+      // hand-off the landing page locks again in the same commit (React runs
+      // the leaving page's cleanups before the landing page's mount effects),
+      // so the in-place morph keeps its lock; on a plain push (nothing to
+      // clone) the next page is no longer frozen.
+      if (hasNavigated.current) {
+        lenisRef.current?.start();
+        unlockScroll();
+      }
+    };
   }, [isTransitioning, verticalPage, nextProjectSlug, navigateNext, isAtBottom, updateBottomVisuals]);
 
   return {
     galleryRef,
     firstImageRef,
-    nextTextWrapperRef,
-    nextTextRef,
     progressFillRef,
     pullRef,
-    gallery,
-    scrollProgressElRef,
-    mobileProgressElRef,
-    footerWipeRef,
-    showMobileNav,
     onFirstReady,
   };
 }

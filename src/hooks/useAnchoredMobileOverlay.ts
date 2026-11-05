@@ -137,6 +137,10 @@ export function useAnchoredMobileOverlay(
     return { top, left, caretLeft, placement };
   }, [anchorPoint, forceAbove, popupRef, triggerRef]);
 
+  // Activity hides a page with the popup still mounted and its callers'
+  // timers cleared; close it so it does not come back on browser back.
+  useLayoutEffect(() => () => onCloseRef.current(), []);
+
   useLayoutEffect(() => {
     if (!visible || !active) {
       setPosition(null);
@@ -196,6 +200,9 @@ export function useAnchoredMobileOverlay(
       document.addEventListener("mousedown", handleOutsideTap);
     }, 150);
 
+    // A scroll closes the popup, or (followOnScroll, pointer) moves it with
+    // the phrase: Lenis keeps emitting scroll events for about a second
+    // after the wheel stops, which would close a card the moment it opens.
     window.addEventListener("scroll", handleDismiss, { passive: true, capture: true });
     window.addEventListener("resize", handleReposition);
     window.addEventListener("orientationchange", handleReposition);

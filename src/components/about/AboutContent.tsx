@@ -11,7 +11,7 @@ import {
   useInlineAnimation,
 } from "@/hooks/useTextAnimation";
 import type { ABOUT_QUERY_RESULT } from "@/sanity/types";
-import { imageUrl } from "@/sanity/lib/image";
+import { cropImageUrl } from "@/sanity/lib/image";
 import { dur, ease, prefersReducedMotion, stagger } from "@/lib/motion";
 import dynamic from "next/dynamic";
 import CopyButton from "@/components/CopyButton";
@@ -59,7 +59,7 @@ export default function AboutContent({
       const targets = [
         portraitMobileRef.current,
         portraitDesktopRef.current,
-      ].filter((el) => el && getComputedStyle(el).display !== "none");
+      ].filter((el): el is HTMLDivElement => el !== null);
       const reduced = prefersReducedMotion();
       if (targets.length) {
         // A nudge and a fade, not a full-width slide.
@@ -109,10 +109,11 @@ export default function AboutContent({
         {portrait?.asset && (
           <div
             ref={portraitMobileRef}
-            className="invisible relative mt-6 aspect-[3/4] w-full overflow-hidden bg-tertiary desktop:hidden"
+            className="gsap-hidden relative mt-6 aspect-[3/4] w-full overflow-hidden bg-tertiary desktop:hidden"
           >
+            {/* Cut to the box's 3:4 around the editor's hotspot by the CDN. */}
             <Image
-              src={imageUrl(portrait, 780)}
+              src={cropImageUrl(portrait, 780, 1040)}
               alt={heading ?? "Portrait"}
               fill
               className="object-cover"
@@ -134,7 +135,7 @@ export default function AboutContent({
           {email && <CopyButton value={email} label="Email" />}
         </div>
 
-        <div ref={spotifyRef} className="mt-6 max-w-[400px] invisible">
+        <div ref={spotifyRef} className="mt-6 max-w-[400px] gsap-hidden">
           <SpotifyWidget />
         </div>
       </div>
@@ -143,11 +144,11 @@ export default function AboutContent({
       {portrait?.asset && (
         <div
           ref={portraitDesktopRef}
-          className="invisible hidden desktop:flex desktop:w-1/3 desktop:items-center desktop:justify-center"
+          className="gsap-hidden hidden desktop:flex desktop:w-1/3 desktop:items-center desktop:justify-center"
         >
           <div className="relative aspect-[3/4] w-full overflow-hidden bg-tertiary">
             <Image
-              src={imageUrl(portrait, 780)}
+              src={cropImageUrl(portrait, 780, 1040)}
               alt={heading ?? "Portrait"}
               fill
               className="object-cover"

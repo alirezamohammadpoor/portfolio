@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import type { MouseEvent, PointerEvent } from "react";
+import { useState, useRef, useEffect, useCallback, useId } from "react";
+import type { FocusEvent, MouseEvent, PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -19,6 +19,7 @@ interface RichPreviewProps {
 
 // Grace period when the pointer travels from the phrase to the popup.
 const LEAVE_MS = 150;
+const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 // Hover intent: the pointer has to rest on the phrase this long before the
 // card opens, so passing over a link on the way somewhere else does nothing.
 const OPEN_MS = 120;
@@ -75,12 +76,52 @@ export default function RichPreview({
   const lastPosition = useRef<{ top: number; left: number } | null>(null);
   const triggerRef = useRef<HTMLSpanElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
+  const cardId = useId();
+  // Set while focus is moved back to the phrase by script, so the focus
+  // handler does not reopen the card that Escape just closed.
+  const restoringFocus = useRef(false);
+  // Enter/Space opened the card: move focus into it once it is in the DOM.
+  const focusCardOnOpen = useRef(false);
 
   const close = useCallback(() => {
     setVisible(false);
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
     if (openTimer.current) clearTimeout(openTimer.current);
   }, []);
+
+  const focusIntoCard = useCallback(() => {
+    const first = popupRef.current?.querySelector<HTMLElement>(FOCUSABLE);
+    if (!first) return false;
+    first.focus();
+    return true;
+  }, []);
+
+  const restoreFocus = useCallback(() => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+    restoringFocus.current = true;
+    trigger.focus();
+    restoringFocus.current = false;
+  }, []);
+
+  // Escape closes the card; focus that was inside it goes back to the phrase.
+  useEffect(() => {
+    if (!visible) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      const inCard = popupRef.current?.contains(document.activeElement) ?? false;
+      close();
+      if (inCard) restoreFocus();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [visible, close, restoreFocus]);
+
+  useEffect(() => {
+    if (!visible || !focusCardOnOpen.current) return;
+    focusCardOnOpen.current = false;
+    focusIntoCard();
+  }, [visible, focusIntoCard]);
 
   const { isMobile, position, placement, caretLeft, ready } =
     useAnchoredMobileOverlay(triggerRef, popupRef, {
@@ -201,6 +242,22 @@ export default function RichPreview({
     show();
   };
 
+  const handleFocus = () => {
+    if (restoringFocus.current) return;
+    show();
+  };
+
+  // Focus events inside the portaled card reach this handler too (React
+  // bubbles through portals). Close only when focus lands outside both the
+  // phrase and the card; with no destination (a tap on plain text) the
+  // outside-tap handler decides on touch.
+  const handleFocusOut = (e: FocusEvent<HTMLElement>) => {
+    const next = e.relatedTarget as Node | null;
+    if (next && (triggerRef.current?.contains(next) || popupRef.current?.contains(next))) return;
+    if (!next && isMobile) return;
+    close();
+  };
+
   useEffect(
     () => () => {
       if (leaveTimer.current) clearTimeout(leaveTimer.current);
@@ -275,14 +332,17 @@ export default function RichPreview({
   return (
     <span
       className="relative inline"
-      onFocus={isMobile ? undefined : show}
-      onBlur={isMobile ? undefined : hideSoon}
+      onFocus={isMobile ? undefined : handleFocus}
+      onBlur={handleFocusOut}
     >
       {mounted &&
         typeof document !== "undefined" &&
         createPortal(
           <div
             ref={popupRef}
+            id={cardId}
+            role="dialog"
+            aria-label={label ? `Preview: ${label}` : "Preview"}
             aria-hidden={!visible || undefined}
             inert={!visible}
             onPointerEnter={isMobile ? undefined : onCardEnter}
@@ -309,14 +369,23 @@ export default function RichPreview({
         onPointerLeave={isMobile ? undefined : hideSoon}
         role="button"
         tabIndex={0}
-        aria-label={label ? `Preview: ${label}` : "Show preview"}
+        data-preview-label={label ?? ""}
+        aria-haspopup="dialog"
         aria-expanded={visible}
+        aria-controls={mounted ? cardId : undefined}
         onClick={handleClick}
         onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            handleClick(e as unknown as MouseEvent<HTMLSpanElement>);
+          if (e.key !== "Enter" && e.key !== " ") return;
+          e.preventDefault();
+          // Enter goes into the preview (focus may have opened it already);
+          // Escape closes it. With nothing to focus inside, toggle instead.
+          if (visible) {
+            if (!focusIntoCard()) close();
+            return;
           }
+          setAnchorPoint(null);
+          focusCardOnOpen.current = true;
+          show();
         }}
         className="cursor-pointer"
       >

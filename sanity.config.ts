@@ -8,19 +8,30 @@ import {presentationTool, defineDocuments, defineLocations} from 'sanity/present
 
 import {apiVersion, dataset, projectId} from './src/sanity/env'
 import {schema} from './src/sanity/schemaTypes'
-import {structure} from './src/sanity/structure'
+import {SINGLETON_TYPES, structure} from './src/sanity/structure'
 
 export default defineConfig({
   basePath: '/studio',
   projectId,
   dataset,
   schema,
+  document: {
+    // Singletons (see structure.ts): not offered by the global create
+    // button, and never duplicated, deleted or unpublished from their pane.
+    newDocumentOptions: (prev, {creationContext}) =>
+      creationContext.type === 'global' ? prev.filter((t) => !SINGLETON_TYPES.includes(t.templateId)) : prev,
+    actions: (prev, {schemaType}) =>
+      SINGLETON_TYPES.includes(schemaType)
+        ? prev.filter(({action}) => !['duplicate', 'delete', 'unpublish'].includes(action ?? ''))
+        : prev,
+  },
   plugins: [
     structureTool({structure}),
     presentationTool({
       previewUrl: {
         previewMode: {
           enable: '/api/draft-mode/enable',
+          disable: '/api/draft-mode/disable',
         },
       },
       resolve: {

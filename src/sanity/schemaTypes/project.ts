@@ -27,7 +27,7 @@ const chapterTextField = defineField({
                 name: "href",
                 title: "URL",
                 type: "url",
-                validation: (rule) => rule.uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
+                validation: (rule) => rule.required().uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
               }),
             ],
           },
@@ -68,59 +68,69 @@ const phoneSlotFields = [
   }),
 ];
 
-const chapterMediaField = defineField({
-  name: "media",
-  title: "Media",
-  type: "object",
-  fields: [
-    defineField({
-      name: "type",
-      title: "Type",
-      type: "string",
-      options: {
-        list: [
-          { title: "Image", value: "image" },
-          { title: "Video", value: "video" },
-          { title: "Phones (one to three screens)", value: "phones" },
-        ],
-        layout: "radio",
-      },
-      initialValue: "video",
-      validation: (rule) => rule.required(),
-    }),
-    defineField({
-      name: "phones",
-      title: "Screens",
-      description: "One to three phone screens side by side, each a still or a clip. Record at the phone's own ratio (390×844 or 1080×2340), flush, no device frame.",
-      type: "array",
-      of: [{ type: "object", name: "phoneSlot", fields: phoneSlotFields, preview: { select: { type: "type" }, prepare: ({ type }) => ({ title: type === "image" ? "Still" : "Clip" }) } }],
-      validation: (rule) => rule.max(3),
-      hidden: ({ parent }) => parent?.type !== "phones",
-    }),
-    defineField({
-      name: "image",
-      title: "Image",
-      type: "image",
-      options: { hotspot: true },
-      hidden: ({ parent }) => parent?.type !== "image",
-    }),
-    defineField({
-      name: "video",
-      title: "Video",
-      type: "file",
-      options: { accept: "video/*" },
-      hidden: ({ parent }) => parent?.type !== "video",
-    }),
-    defineField({
-      name: "poster",
-      title: "Poster",
-      type: "image",
-      description: "First frame of the video, shown until it loads.",
-      hidden: ({ parent }) => parent?.type !== "video",
-    }),
-    defineField({ name: "frame", title: "Background", type: "mediaFrame" }),
-  ],
-});
+// A chapter's media: a still, a clip or a phones row, on a background. A
+// test in the switcher fills one phone-shaped box, so its media has no
+// phones option (`mediaField({ phones: false })`).
+function mediaField({ phones }: { phones: boolean }) {
+  const types = [
+    { title: "Image", value: "image" },
+    { title: "Video", value: "video" },
+    ...(phones ? [{ title: "Phones (one to three screens)", value: "phones" }] : []),
+  ];
+  return defineField({
+    name: "media",
+    title: "Media",
+    type: "object",
+    fields: [
+      defineField({
+        name: "type",
+        title: "Type",
+        type: "string",
+        options: { list: types, layout: "radio" },
+        initialValue: "video",
+        validation: (rule) => rule.required(),
+      }),
+      ...(phones
+        ? [
+            defineField({
+              name: "phones",
+              title: "Screens",
+              description: "One to three phone screens side by side, each a still or a clip. Record at the phone's own ratio (390×844 or 1080×2340), flush, no device frame.",
+              type: "array",
+              of: [{ type: "object", name: "phoneSlot", fields: phoneSlotFields, preview: { select: { type: "type" }, prepare: ({ type }) => ({ title: type === "image" ? "Still" : "Clip" }) } }],
+              validation: (rule) => rule.max(3),
+              hidden: ({ parent }) => parent?.type !== "phones",
+            }),
+          ]
+        : []),
+      defineField({
+        name: "image",
+        title: "Image",
+        type: "image",
+        options: { hotspot: true },
+        hidden: ({ parent }) => parent?.type !== "image",
+      }),
+      defineField({
+        name: "video",
+        title: "Video",
+        type: "file",
+        options: { accept: "video/*" },
+        hidden: ({ parent }) => parent?.type !== "video",
+      }),
+      defineField({
+        name: "poster",
+        title: "Poster",
+        type: "image",
+        description: "First frame of the video, shown until it loads.",
+        hidden: ({ parent }) => parent?.type !== "video",
+      }),
+      defineField({ name: "frame", title: "Background", type: "mediaFrame" }),
+    ],
+  });
+}
+
+const chapterMediaField = mediaField({ phones: true });
+const abTestMediaField = mediaField({ phones: false });
 
 const chapterCaptionField = defineField({
   name: "caption",
@@ -173,7 +183,7 @@ export const project = defineType({
                     title: "URL",
                     type: "url",
                     validation: (rule) =>
-                      rule.uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
+                      rule.required().uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
                   }),
                 ],
               },
@@ -205,7 +215,7 @@ export const project = defineType({
                     title: "Video URL",
                     type: "url",
                     description:
-                      "Direct URL to video file. Leave empty if using an image.",
+                      "Direct URL to an mp4/webm file (e.g. a Sanity file asset). Page links such as YouTube do not play. Leave empty if using an image.",
                   }),
                   defineField({
                     name: "image",
@@ -214,6 +224,14 @@ export const project = defineType({
                     options: { hotspot: true },
                     description:
                       "Image to show in the preview. Used if no video URL is provided.",
+                    fields: [
+                      defineField({
+                        name: "alt",
+                        title: "Alt text",
+                        type: "string",
+                        description: "Describe the image for screen readers.",
+                      }),
+                    ],
                   }),
                   defineField({
                     name: "url",
@@ -233,7 +251,19 @@ export const project = defineType({
             ],
           },
         },
-        { type: "image", options: { hotspot: true } },
+        {
+          type: "image",
+          options: { hotspot: true },
+          fields: [
+            defineField({
+              name: "alt",
+              title: "Alt text",
+              type: "string",
+              description: "Describe the image for screen readers and search engines.",
+              validation: (rule) => rule.required().warning("Add alt text for accessibility."),
+            }),
+          ],
+        },
       ],
     }),
     defineField({
@@ -263,7 +293,7 @@ export const project = defineType({
     defineField({
       name: "coverMedia",
       title: "Cover Media",
-      description: "Cover on the home and the first frame of the morph. Export flush: laptop recordings 16:10 (1920×1200), phone recordings 4:5 (1080×1350), no bars.",
+      description: "Cover on the home and the first frame of the morph, drawn 16:10 on every row. Export flush at 16:10 (1920×1200), no bars; a phone recording goes in the gallery, not here.",
       type: "object",
       fields: [
         defineField({
@@ -330,8 +360,10 @@ export const project = defineType({
     defineField({
       name: "heroLayout",
       title: "Project page opener",
-      description: "Which side the landing media takes on the project page. Leave empty to alternate per project.",
+      description:
+        "Which side the landing media takes on the project page. Leave empty to alternate per project. Case-study (chapter) projects only: the gallery page has no opener.",
       type: "string",
+      hidden: ({ document }) => !(Array.isArray(document?.chapters) && document.chapters.length > 0),
       options: {
         layout: "radio",
         direction: "horizontal",
@@ -344,8 +376,15 @@ export const project = defineType({
     defineField({
       name: "gallery",
       title: "Gallery",
-      description: "Mixed images, videos and phone pairs shown in the project page gallery. Drag to reorder.",
+      description:
+        "Mixed images, videos and phone pairs shown in the project page gallery. Drag to reorder. The first item opens the page: the home cover morphs onto it, so make it an image or a video, not phones.",
       type: "array",
+      validation: (rule) =>
+        rule.custom((items) =>
+          Array.isArray(items) && items[0] && (items[0] as { _type?: string })._type === "galleryPhones"
+            ? "The first item opens the page (the home cover morphs onto it): make it an image or a video."
+            : true,
+        ),
       of: [
         {
           type: "object",
@@ -562,7 +601,7 @@ export const project = defineType({
                       type: "string",
                       description: "Ship, kill, iterate or still running, with the date.",
                     }),
-                    chapterMediaField,
+                    abTestMediaField,
                     chapterCaptionField,
                   ],
                   preview: {

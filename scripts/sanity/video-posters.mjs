@@ -16,9 +16,10 @@
 //                                                      (a swapped clip is redone without it)
 //   node scripts/sanity/video-posters.mjs --only zone-2
 //
-// Needs ffmpeg + ffprobe on the PATH. Token (write access): SANITY_TOKEN in
-// the environment, or SANITY_TOKEN / SANITY_API_READ_TOKEN in ./.env.local or
-// ~/Developer/portfolio-layout/.env.local.
+// Needs ffmpeg + ffprobe on the PATH. Token (write access): SANITY_TOKEN, an
+// Editor token of its own, in the environment or in ./.env.local or
+// ~/Developer/portfolio-layout/.env.local. The app's SANITY_API_READ_TOKEN is
+// a Viewer token and is not read here.
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
@@ -48,8 +49,7 @@ function findToken() {
         .filter(Boolean)
         .map((m) => [m[1], m[2]]),
     );
-    const token = env.SANITY_TOKEN || env.SANITY_API_READ_TOKEN;
-    if (token) return token;
+    if (env.SANITY_TOKEN) return env.SANITY_TOKEN;
   }
   return null;
 }

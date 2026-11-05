@@ -5,23 +5,20 @@
  * rect across the route swap (ProjectPageClient.navigateNext), so the
  * preview block on the leaving page must already have the next page's
  * landing shape, and the slide must stop where that page's slot will be.
- * There are three landing shapes today:
+ * There are two landing shapes today:
  *
  * - chapters (a project with `chapters[]`, every breakpoint): a 16:10 box
  *   in the hero, eight columns on a laptop (which side per `heroLayout`
  *   or the slug hash), full width on a phone.
- * - gallery (laptop, no chapters): the first item of the right-hand
- *   gallery column, flush with the top of <main>.
- * - stage (phone, no chapters): the first card of the strip, centred
+ * - stage (no chapters, every breakpoint): the first card of the strip, centred
  *   in the viewport under the title block; its top depends on that layout,
  *   so there is nothing to slide to and the clone settles onto it instead.
  */
 
-export type LandingKind = "chapters" | "gallery" | "stage";
+export type LandingKind = "chapters" | "stage";
 
-export function landingKind(hasChapters: boolean | null | undefined, _isDesktop: boolean): LandingKind {
-  // Since 11-04 a gallery project is the stage on every breakpoint (the
-  // laptop gallery column is gone), so "gallery" no longer lands anywhere.
+export function landingKind(hasChapters: boolean | null | undefined): LandingKind {
+  // Since 11-04 a gallery project is the stage on every breakpoint.
   return hasChapters ? "chapters" : "stage";
 }
 
@@ -33,8 +30,18 @@ export function landingKind(hasChapters: boolean | null | undefined, _isDesktop:
  */
 export const LANDING_ASPECT: Record<LandingKind, number> = {
   chapters: 16 / 10,
-  gallery: 16 / 10,
   stage: 16 / 10,
+};
+
+/**
+ * The landing media's `sizes` per page kind: the chapter hero's eight
+ * columns, the stage's centred card (ProjectStage deskBox). The next-project
+ * preload, the preview image that gets cloned and the landing image all use
+ * it, so the three resolve to one URL and one download.
+ */
+export const LANDING_SIZES: Record<LandingKind, string> = {
+  chapters: "(min-width: 75rem) 66vw, 100vw",
+  stage: "(min-width: 75rem) 70vw, 100vw",
 };
 
 /** Width / height of a Sanity image with dimensions metadata, else null. */
@@ -69,12 +76,13 @@ export function landingTop(kind: LandingKind, isDesktop: boolean): number | null
   if (typeof document === "undefined") return null;
   const main = document.querySelector("main");
   if (!main) return null;
-  const mainTop = main.getBoundingClientRect().top + window.scrollY;
+  // The content box: <main> carries the header's height as padding (the
+  // layout's pt-[var(--header-height)]), and the hero sits below it.
+  const mainTop =
+    main.getBoundingClientRect().top + window.scrollY + (parseFloat(getComputedStyle(main).paddingTop) || 0);
   switch (kind) {
     case "chapters":
       return mainTop + (isDesktop ? HERO_TOP.desktop : HERO_TOP.phone);
-    case "gallery":
-      return mainTop;
     case "stage":
       return null;
   }

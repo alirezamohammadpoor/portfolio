@@ -13,12 +13,13 @@ import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { usePageTransition } from "@/context/TransitionContext";
 import { dur, ease, prefersReducedMotion, stagger } from "@/lib/motion";
 import { isPlainLeftClick } from "@/lib/clicks";
+import { cloneSourceFromElement } from "@/lib/cloneSource";
 import { restoreVideoPosition, saveVideoPosition } from "@/lib/videoPosition";
 import { getIntroState, useIntroState } from "@/lib/intro";
 import { getReelState } from "@/lib/reel";
 import HomeReel from "./HomeReel";
 import { FrameBackground, backgroundStyle } from "@/components/MediaFrame";
-import { resolveFrame, type ResolvedFrame } from "@/lib/mediaFrame";
+import { hasSizeOverride, resolveCoverFrame, type ResolvedFrame } from "@/lib/mediaFrame";
 
 type Project = PROJECTS_QUERY_RESULT[number];
 
@@ -167,38 +168,29 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLAnchorElement>, project: Project) => {
       const coverMedia = project.coverMedia;
-      const image = coverMedia?.type === "image" && coverMedia.image?.asset ? coverMedia.image : null;
-      const videoRef =
-        coverMedia?.type === "video" && coverMedia.video?.asset?._ref ? coverMedia.video.asset._ref : null;
-      if (!image && !videoRef) return;
+      const hasCover =
+        (coverMedia?.type === "image" && Boolean(coverMedia.image?.asset)) ||
+        (coverMedia?.type === "video" && Boolean(coverMedia.video?.asset?._ref));
+      if (!hasCover || !project.slug?.current) return;
       if (!isPlainLeftClick(e)) return;
+      // The morph starts from the painted cover of the clicked row (the
+      // cover itself or the title beside it), never from a source built by
+      // hand: a video without a decoded frame or an image URL the page never
+      // loaded would run it on an empty canvas. Index rows sit outside
+      // [data-row] and take the root slide, like a project without a cover.
+      const row = e.currentTarget.closest<HTMLElement>("[data-row]");
+      const source = cloneSourceFromElement(row?.querySelector<HTMLElement>("[data-cover]") ?? null);
+      if (!source) return;
       e.preventDefault();
-
-      const mediaEl = e.currentTarget.querySelector("img, video");
-      const rect = (mediaEl ?? e.currentTarget).getBoundingClientRect();
-      const sourceRect = { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
-      const href = `/project/${project.slug?.current}`;
-
-      if (image) {
-        startTransition({ mediaType: "image", imageUrl: imageUrl(image, 1200), sourceRect });
-      } else if (videoRef) {
-        const videoEl = mediaEl as HTMLVideoElement | null;
-        startTransition({
-          mediaType: "video",
-          videoSrc: fileUrl(videoRef),
-          videoCurrentTime: videoEl?.currentTime ?? 0,
-          sourceVideoElement: videoEl ?? undefined,
-          sourceRect,
-        });
-      }
-      router.push(href);
+      startTransition(source);
+      router.push(`/project/${project.slug.current}`);
     },
     [router, startTransition],
   );
 
   return (
     <div ref={rootRef} className="px-margin pb-24 desktop:pb-40">
-      <HomeReel projects={projects} pageRef={rootRef} />
+      <HomeReel projects={projects} pageRef={rootRef} coverSizes={projects.map(coverSizes)} />
       {/* Opening statement, cols 1-7 on the laptop. */}
       <section className="pt-8 desktop:grid desktop:grid-cols-12 desktop:gap-4 desktop:pt-12">
         <h2 data-statement className="text-h2 desktop:col-start-1 desktop:col-end-8 desktop:text-h1">
@@ -215,9 +207,11 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
           const href = `/project/${project.slug?.current}`;
           // The cover's background (Sanity: the cover's own, else the project
           // default). The recording stays flush; the page draws what is behind it.
-          const frame = resolveFrame(project.coverMedia?.frame, project, "landscape");
+          const frame = resolveCoverFrame(project.coverMedia?.frame, project);
           const backdrop = frame.background ? frame : null;
-          const coverSize = project.coverMedia?.frame?.size ?? null;
+          // A size the editor set (and the frame honours) replaces the row
+          // preset's own width; the value itself is read from the frame.
+          const coverSized = hasSizeOverride(project.coverMedia?.frame);
           const label = (
             <div
               className={`mt-4 desktop:mt-0 ${preset.under ? "desktop:col-start-1 desktop:col-end-4 desktop:row-start-2 desktop:mt-6" : `desktop:row-start-1 ${preset.label} ${ALIGN[align]}`}`}
@@ -242,10 +236,10 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
                     onClick={(e) => handleClick(e, project)}
                     // Cover width on its background: the preset (84 %, or 66 % of a
                     // full width row on the laptop) unless Sanity overrides it.
-                    className={`block ${preset.under && !coverSize ? "w-[88%] desktop:w-[66%]" : ""}`}
-                    style={preset.under && !coverSize ? undefined : { width: `${coverSize ?? backdrop.size}%` }}
+                    className={`block ${preset.under && !coverSized ? "w-[88%] desktop:w-[66%]" : ""}`}
+                    style={preset.under && !coverSized ? undefined : { width: `${backdrop.size}%` }}
                   >
-                    <CoverMedia project={project} aspect={preset.aspect} priority={index === 0} />
+                    <CoverMedia project={project} aspect={preset.aspect} priority={index === 0} sizes={coverSizes(project, index)} />
                   </Link>
                 </Backdrop>
               ) : (
@@ -256,7 +250,7 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
                   data-reveal
                   className={`block desktop:row-start-1 ${preset.under ? "desktop:col-start-2 desktop:col-end-12" : preset.media}`}
                 >
-                  <CoverMedia project={project} aspect={preset.aspect} priority={index === 0} />
+                  <CoverMedia project={project} aspect={preset.aspect} priority={index === 0} sizes={coverSizes(project, index)} />
                 </Link>
               )}
               {label}
@@ -329,18 +323,33 @@ function Backdrop({
   );
 }
 
+/**
+ * The cover's `sizes` for its row: the showcase row without a backdrop
+ * spans ten columns (~84vw on a laptop), one with a backdrop keeps two
+ * thirds of the row (88% on a phone); every other row sits in at most eight
+ * columns. The entry reel's heroes use the same string (HomeReel), so a hero
+ * image and its cover resolve to one file.
+ */
+function coverSizes(project: Project, index: number): string {
+  const layout = isLayout(project.homeLayout) ? project.homeLayout : CYCLE[index % CYCLE.length];
+  if (!PRESETS[layout].under) return "(min-width: 75rem) 66vw, 100vw";
+  const backdrop = Boolean(resolveCoverFrame(project.coverMedia?.frame, project).background);
+  return backdrop ? "(min-width: 75rem) 66vw, 88vw" : "(min-width: 75rem) 84vw, 100vw";
+}
+
 interface CoverMediaProps {
   project: Project;
   aspect: string;
   priority?: boolean;
+  sizes: string;
 }
 
 /**
  * The project's cover in a fixed-ratio box. A video plays only while it is
  * in view and keeps its position across visits (the home stays mounted but
- * hidden behind a project page, see MediaPanel for the long version).
+ * hidden behind a project page).
  */
-function CoverMedia({ project, aspect, priority = false }: CoverMediaProps) {
+function CoverMedia({ project, aspect, priority = false, sizes }: CoverMediaProps) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const coverMedia = project.coverMedia;
   const title = project.title ?? "";
@@ -393,7 +402,7 @@ function CoverMedia({ project, aspect, priority = false }: CoverMediaProps) {
           alt={title}
           fill
           className="object-cover"
-          sizes="(min-width: 75rem) 66vw, 100vw"
+          sizes={sizes}
           priority={priority}
         />
       </div>

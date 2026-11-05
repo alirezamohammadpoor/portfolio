@@ -31,6 +31,15 @@ export const journalPost = defineType({
       of: [
         {
           type: "block",
+          // Only the styles JournalPost renders (h1 is the post title; quotes
+          // are their own block below).
+          styles: [
+            { title: "Normal", value: "normal" },
+            { title: "Heading 2", value: "h2" },
+            { title: "Heading 3", value: "h3" },
+            { title: "Heading 4", value: "h4" },
+            { title: "Heading 5", value: "h5" },
+          ],
           marks: {
             annotations: [
               {
@@ -43,7 +52,7 @@ export const journalPost = defineType({
                     title: "URL",
                     type: "url",
                     validation: (rule) =>
-                      rule.uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
+                      rule.required().uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
                   }),
                 ],
               },
@@ -75,7 +84,7 @@ export const journalPost = defineType({
                     title: "Video URL",
                     type: "url",
                     description:
-                      "Direct URL to video file (Sanity media library, YouTube, etc.). Leave empty if using an image.",
+                      "Direct URL to an mp4/webm file (e.g. a Sanity file asset). Page links such as YouTube do not play. Leave empty if using an image.",
                   }),
                   defineField({
                     name: "image",
@@ -83,6 +92,14 @@ export const journalPost = defineType({
                     type: "image",
                     options: { hotspot: true },
                     description: "Image to show in the preview. Used if no video URL is provided.",
+                    fields: [
+                      defineField({
+                        name: "alt",
+                        title: "Alt text",
+                        type: "string",
+                        description: "Describe the image for screen readers.",
+                      }),
+                    ],
                   }),
                   defineField({
                     name: "url",
@@ -102,7 +119,19 @@ export const journalPost = defineType({
             ],
           },
         },
-        { type: "image", options: { hotspot: true } },
+        {
+          type: "image",
+          options: { hotspot: true },
+          fields: [
+            defineField({
+              name: "alt",
+              title: "Alt text",
+              type: "string",
+              description: "Describe the image for screen readers and search engines.",
+              validation: (rule) => rule.required().warning("Add alt text for accessibility."),
+            }),
+          ],
+        },
         {
           type: "object",
           name: "videoBlock",
@@ -181,7 +210,7 @@ export const journalPost = defineType({
                             title: "URL",
                             type: "url",
                             validation: (rule) =>
-                              rule.uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
+                              rule.required().uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
                           }),
                         ],
                       },
@@ -213,7 +242,7 @@ export const journalPost = defineType({
                             title: "Video URL",
                             type: "url",
                             description:
-                              "Direct URL to video file (Sanity media library, YouTube, etc.). Leave empty if using an image.",
+                              "Direct URL to an mp4/webm file (e.g. a Sanity file asset). Page links such as YouTube do not play. Leave empty if using an image.",
                           }),
                           defineField({
                             name: "image",
@@ -221,6 +250,14 @@ export const journalPost = defineType({
                             type: "image",
                             options: { hotspot: true },
                             description: "Image to show in the preview. Used if no video URL is provided.",
+                            fields: [
+                              defineField({
+                                name: "alt",
+                                title: "Alt text",
+                                type: "string",
+                                description: "Describe the image for screen readers.",
+                              }),
+                            ],
                           }),
                           defineField({
                             name: "url",
@@ -269,7 +306,7 @@ export const journalPost = defineType({
                             title: "URL",
                             type: "url",
                             validation: (rule) =>
-                              rule.uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
+                              rule.required().uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
                           }),
                         ],
                       },
@@ -284,7 +321,7 @@ export const journalPost = defineType({
                             title: "Video URL",
                             type: "url",
                             description:
-                              "Direct URL to video file (Sanity media library, YouTube, etc.). Leave empty if using an image.",
+                              "Direct URL to an mp4/webm file (e.g. a Sanity file asset). Page links such as YouTube do not play. Leave empty if using an image.",
                           }),
                           defineField({
                             name: "image",
@@ -292,6 +329,14 @@ export const journalPost = defineType({
                             type: "image",
                             options: { hotspot: true },
                             description: "Image to show in the preview. Used if no video URL is provided.",
+                            fields: [
+                              defineField({
+                                name: "alt",
+                                title: "Alt text",
+                                type: "string",
+                                description: "Describe the image for screen readers.",
+                              }),
+                            ],
                           }),
                           defineField({
                             name: "url",
@@ -368,7 +413,7 @@ export const journalPost = defineType({
       title: "SEO",
       type: "object",
       description:
-        "Overrides for search engines and social sharing. If empty, falls back to the post title, excerpt and cover image.",
+        "Overrides for search engines and social sharing. If empty, falls back to the post title, excerpt and the auto-generated share image.",
       options: { collapsible: true, collapsed: true },
       fields: [
         defineField({

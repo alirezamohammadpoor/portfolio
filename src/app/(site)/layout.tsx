@@ -12,8 +12,13 @@ import { getAbout } from "@/sanity/lib/data";
 import JsonLd from "@/components/seo/JsonLd";
 import "@/styles/globals.css";
 
-import { SITE_URL as siteUrl } from "@/lib/site";
+import { SITE_URL as siteUrl, OPEN_GRAPH_BASE, SITE_OG_IMAGE } from "@/lib/site";
 
+// Only what every page shares. The home's canonical, URL and titles live on
+// its own page (src/app/(site)/page.tsx): set here they were inherited by
+// every page that does not override them, so the lab pages pointed their
+// canonical at the home. Twitter is the card type alone, so each page's
+// card fills from its own openGraph instead of the home's titles.
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -21,24 +26,14 @@ export const metadata: Metadata = {
     template: "%s | Ali Reza Mohammad Poor",
   },
   description:
-    "Portfolio of Ali Reza Mohammad Poor — Full-stack developer and creative technologist.",
-  alternates: {
-    canonical: "/",
-  },
+    "Portfolio of Ali Reza Mohammad Poor, frontend developer at the intersection of product and design.",
   openGraph: {
+    ...OPEN_GRAPH_BASE,
     type: "website",
-    siteName: "Ali Reza Mohammad Poor",
-    locale: "en_US",
-    url: "/",
-    title: "Ali Reza Mohammad Poor | Developer",
-    description:
-      "Portfolio of Ali Reza Mohammad Poor — Full-stack developer and creative technologist.",
+    images: [SITE_OG_IMAGE],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ali Reza Mohammad Poor | Developer",
-    description:
-      "Portfolio of Ali Reza Mohammad Poor — Full-stack developer and creative technologist.",
   },
 };
 
@@ -58,7 +53,7 @@ export default async function SiteLayout({
     "@type": "Person",
     name: "Ali Reza Mohammad Poor",
     url: siteUrl,
-    jobTitle: "Full-stack developer and creative technologist",
+    jobTitle: "Frontend developer",
     ...(sameAs.length > 0 && { sameAs }),
   };
 

@@ -223,10 +223,17 @@ export default function SpotifyWidget() {
   const [hovered, setHovered] = useState(false);
   const canHover = typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const timeLabel = useTimeLabel(data, cachedAt);
+  // The label is computed at render; re-render once a minute so it keeps
+  // counting while the poll finds nothing new.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((n) => n + 1), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   if (isLoading && !data) {
     return (
-      <div className="flex w-full animate-pulse items-center gap-2.5 rounded-full bg-pistachio px-2.5 py-2">
+      <div className="flex w-full animate-pulse motion-reduce:animate-none items-center gap-2.5 rounded-full bg-pistachio px-2.5 py-2">
         <div className="size-8 rounded-lg bg-primary/10" />
         <div className="flex flex-1 flex-col gap-1">
           <div className="h-3 w-20 rounded bg-primary/10" />
@@ -258,6 +265,8 @@ export default function SpotifyWidget() {
               fill
               className="object-cover"
               sizes="32px"
+              // Spotify CDN art: the Sanity loader passes it through unchanged.
+              unoptimized
             />
           )}
         </div>
@@ -284,7 +293,7 @@ export default function SpotifyWidget() {
           }}
         >
           {isActive && (
-            <span className="size-1 animate-pulse rounded-full bg-spotify" />
+            <span className="size-1 animate-pulse motion-reduce:animate-none rounded-full bg-spotify" />
           )}
           <span
             className={`font-mono text-sub ${isActive ? "text-spotify" : "text-primary/50"}`}

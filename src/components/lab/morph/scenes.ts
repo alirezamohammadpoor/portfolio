@@ -271,15 +271,5 @@ const kitFull: Scene = {
   poster: [{ still: t5Upgraded, x: 0, y: 0 }],
 };
 
-/** Ali 10-30: the kit test plays the whole flow; the block-only cut is kept for reference. */
+/** Ali 10-30: the kit test plays the whole flow (kitFull builds on the block-only cut, kitBlock). */
 export const SCENES: Scene[] = [badge, delivery, soldout, similar, kitFull];
-export const EXTRA_SCENES: Scene[] = [kitBlock];
-
-/** One scene per A/B test, for use on its own (e.g. the switcher's media slot). */
-export const SCENE_BY_KEY: Record<"badge" | "delivery" | "soldout" | "similar" | "kit", Scene> = {
-  badge,
-  delivery,
-  soldout,
-  similar,
-  kit: kitFull,
-};

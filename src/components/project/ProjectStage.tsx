@@ -29,11 +29,10 @@ import NextProjectPreview from "@/components/project/NextProjectPreview";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
-import GalleryPhones from "@/components/project/GalleryPhones";
-import { PHONE_ASPECT } from "@/components/PhonesRow";
+import PhonesRow, { PHONE_ASPECT } from "@/components/PhonesRow";
 import MediaFrame from "@/components/MediaFrame";
 import { resolveFrame, resolveLandingFrame } from "@/lib/mediaFrame";
-import { LANDING_ASPECT, imageAspect, landingKind, storedVideoAspect, videoAspect } from "@/lib/landing";
+import { LANDING_ASPECT, LANDING_SIZES, imageAspect, landingKind, storedVideoAspect, videoAspect } from "@/lib/landing";
 import ProjectDetailsOverlay from "@/components/project/ProjectDetailsOverlay";
 import GalleryProgress from "@/components/project/GalleryProgress";
 
@@ -63,6 +62,17 @@ const NEIGHBOUR_SCALE = 0.92;
 const NEIGHBOUR_OPACITY = 0.6;
 const SETTLE_MS = 200;
 const ITEM_W = "calc(100vw - 2 * var(--grid-margin))";
+// Phone: the band a card may fill, the viewport less the header, the pill
+// row (h-14), the room kept under the strip for the filmstrip (pb-[52px])
+// and the strip's own padding (py-6). A tall clip, a 4:5 phone frame or a
+// lone phone screen gets narrower instead of running under the filmstrip.
+// snap-center centres a narrower card between its neighbours; the first and
+// the last card get there through the strip's side padding (the layout
+// effect below), and the depth loop reads each card's own offsetWidth.
+const PHONE_BAND = "calc(100svh - var(--header-height) - 56px - 52px - 48px)";
+/** A phone card's width: the full column width unless the band bounds it. */
+const phoneCardWidth = (boxAspect: number, gapsPx = 0) =>
+  `min(${ITEM_W}, calc(${PHONE_BAND} * ${boxAspect.toFixed(4)} + ${gapsPx}px))`;
 // Laptop: one height for every card (Figma "Gallery · laptop alternatives",
 // 11-04: 640 at 1440×900), the width follows each card's ratio.
 const DESK_H = "min(760px, calc(100svh - var(--header-height) - 200px))";
@@ -104,7 +114,7 @@ export default function ProjectStage({
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const firstVideoRef = useRef<HTMLVideoElement | null>(null);
   // Project → project: card 1 takes the live <video> the clone carries when
-  // it is the same file (see ProjectGallery / adoptVideo.ts).
+  // it is the same file (see adoptVideo.ts).
   const { isTransitioning, inPlace, sourceVideoElement } = usePageTransition();
   const [adopted] = useState(() => {
     const first = gallery[0];
@@ -198,10 +208,16 @@ export default function ProjectStage({
   useLayoutEffect(() => {
     detailsOpenRef.current = detailsOpen;
   }, [detailsOpen]);
+  const hiddenRef = useRef(hidden);
+  useLayoutEffect(() => {
+    hiddenRef.current = hidden;
+  }, [hidden]);
   const closeDetails = useCallback(() => setDetailsOpen(false), []);
   // While the finger is down the cards track scroll 1:1 (no CSS transition
   // fighting the per-frame transform); the 200 ms settle applies once idle.
   const [scrolling, setScrolling] = useState(false);
+  // The same, readable from the layout effects without a re-render.
+  const scrollingRef = useRef(false);
   const last = gallery.length - 1;
   const single = gallery.length <= 1;
   // Centred card including the next project's preview (index stops at the
@@ -275,11 +291,13 @@ export default function ProjectStage({
     let idle = 0;
     const settle = () => {
       measure();
+      scrollingRef.current = false;
       setScrolling(false);
     };
     const onScroll = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(measure);
+      scrollingRef.current = true;
       setScrolling(true);
       // Safari has no scrollend: treat 120 ms of silence as idle.
       clearTimeout(idle);
@@ -295,14 +313,20 @@ export default function ProjectStage({
       window.removeEventListener("resize", measure);
       cancelAnimationFrame(raf);
       clearTimeout(idle);
+      // A settle the cleared timer owed: otherwise the flag would stay up
+      // until the next gesture, with the re-centring below skipped meanwhile.
+      scrollingRef.current = false;
+      setScrolling(false);
     };
   }, [gallery.length, reduceMotion, last, isDesktop]);
 
-  // Laptop: the strip's side padding centres the first and the last card
-  // (their widths follow their media, which may report its size late).
+  // The strip's side padding centres the first and the last card (their
+  // widths follow their media, which may report its size late). On the phone
+  // the server-rendered padding is the grid margin: right for a full-width
+  // card, only the first paint for a narrower one.
   useLayoutEffect(() => {
     const strip = stripRef.current;
-    if (!isDesktop || !strip) return;
+    if (!strip) return;
     const apply = () => {
       const kids = itemRefs.current.filter((el): el is HTMLDivElement => Boolean(el));
       const first = kids[0];
@@ -310,7 +334,14 @@ export default function ProjectStage({
       if (!first || !lastEl) return;
       strip.style.paddingLeft = `${Math.max(0, (strip.clientWidth - first.offsetWidth) / 2)}px`;
       strip.style.paddingRight = `${Math.max(0, (strip.clientWidth - lastEl.offsetWidth) / 2)}px`;
+      // Re-centring is for a layout change at rest (a resize, a clip
+      // reporting its ratio). Mid-motion it would yank a glide or a native
+      // swipe onto the card that was nearest a frame ago; with mandatory
+      // snap the browser settles the strip itself when the gesture ends.
+      if (gsap.isTweening(strip) || scrollingRef.current) return;
       const current = itemRefs.current[posRef.current];
+      // This write scrolls too (the flag goes up until the strip settles), so
+      // a second change in the same breath is left to the snap.
       if (current) strip.scrollLeft = current.offsetLeft - (strip.clientWidth - current.offsetWidth) / 2;
     };
     apply();
@@ -336,8 +367,8 @@ export default function ProjectStage({
     if (!strip || !el) return;
     const left = el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2;
     if (reduceMotion || instant) {
+      // A glide cut short never runs its onComplete: snap is given back here.
       gsap.killTweensOf(strip);
-      // A glide cut short never ran its onComplete: snap back on.
       strip.style.scrollSnapType = "";
       glideTargetRef.current = null;
       strip.scrollTo({ left, behavior: "auto" });
@@ -455,7 +486,8 @@ export default function ProjectStage({
       return !!strip && strip.scrollLeft + strip.clientWidth >= strip.scrollWidth - 2;
     };
     const onWheel = (e: WheelEvent) => {
-      if (detailsOpenRef.current) return;
+      // ctrl+wheel is the browser's zoom.
+      if (detailsOpenRef.current || e.ctrlKey) return;
       const axis = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? "x" : "y";
       const delta = axis === "x" ? e.deltaX : e.deltaY;
       const now = e.timeStamp;
@@ -481,6 +513,12 @@ export default function ProjectStage({
       lastDelta = magnitude;
       lastAxis = axis;
       if (delta !== 0) lastSign = Math.sign(delta);
+      // Under the arriving clone the stage must not move: the clone's
+      // landing rect was measured on card 1. The whole gesture is spent.
+      if (hiddenRef.current) {
+        consumed = true;
+        return;
+      }
       if (consumed) return;
       if (axis === "x" && (!startedAtEnd || delta <= 0)) return;
       acc += delta;
@@ -490,7 +528,7 @@ export default function ProjectStage({
       stepRef.current(acc > 0 ? 1 : -1);
     };
     const onKey = (e: KeyboardEvent) => {
-      if (detailsOpenRef.current || e.defaultPrevented) return;
+      if (detailsOpenRef.current || hiddenRef.current || e.defaultPrevented) return;
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
       const fwd = e.key === "ArrowRight" || e.key === "ArrowDown" || e.key === "PageDown";
@@ -527,44 +565,57 @@ export default function ProjectStage({
   }, [atPreview, scrolling, detailsOpen, hidden, onNavigateNext]);
 
   // A video first card reports ready on its first presented frame (see
-  // ProjectGallery): the clone covering it must not leave on a black frame.
+  // firstFrame.ts): the clone covering it must not leave on a black frame.
+  // A phones row as card 1 (the schema warns against it) has no single frame
+  // to wait for: its height comes from the screens' ratio, so the clone may
+  // land on it at once instead of leaving the page hidden.
+  const firstIsPhones = gallery[0]?._type === "galleryPhones";
   useEffect(() => {
     if (!onFirstReady) return;
-    if (adopted) {
+    if (adopted || firstIsPhones) {
       onFirstReady();
       return;
     }
     const first = firstVideoRef.current;
     if (!first) return;
     return onFirstVideoFrame(first, onFirstReady);
-  }, [onFirstReady, adopted]);
+  }, [onFirstReady, adopted, firstIsPhones]);
 
   // The details overlay covers the strip with a 40 px backdrop blur: a clip
   // playing under it repaints that blur every frame, so it pauses while the
   // text is open and picks up again on close.
   useEffect(() => {
-    const v = itemRefs.current[index]?.querySelector("video");
-    if (!v) return;
-    if (detailsOpen) v.pause();
-    else {
-      const p = v.play();
-      if (p && typeof p.catch === "function") p.catch(() => {});
-    }
+    const videos = itemRefs.current[index]?.querySelectorAll("video");
+    if (!videos?.length) return;
+    videos.forEach((v) => {
+      if (detailsOpen) v.pause();
+      else {
+        const p = v.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      }
+    });
   }, [detailsOpen, index]);
 
   // Video budget: only the centred card plays; neighbours sit paused on their
-  // first frame; everything else is unmounted (see `near` below).
+  // first frame; everything else is unmounted (see `near` below). A phones
+  // row holds up to three clips, so every <video> of a card counts.
   useEffect(() => {
     itemRefs.current.forEach((el, i) => {
-      const v = el?.querySelector("video");
-      if (!v) return;
-      if (i === index) {
-        const p = v.play();
-        if (p && typeof p.catch === "function") p.catch(() => {});
-      } else {
-        v.pause();
-      }
+      el?.querySelectorAll("video").forEach((v) => {
+        if (i === index) {
+          const p = v.play();
+          if (p && typeof p.catch === "function") p.catch(() => {});
+        } else {
+          v.pause();
+        }
+      });
     });
+    // Left hidden (Next keeps the page mounted; display: none does not pause
+    // media) the centred clip stops looping. Captured here: the item refs are
+    // nulled before this cleanup runs on a hide. Querying at cleanup time
+    // also catches an element adopted into card 1 after this ran.
+    const current = itemRefs.current[index];
+    return () => current?.querySelectorAll("video").forEach((v) => v.pause());
   }, [index]);
 
   const onEnd = index >= last && Boolean(nextSlug && onNavigateNext);
@@ -614,7 +665,7 @@ export default function ProjectStage({
           aria-expanded={detailsOpen}
           aria-controls="project-details"
           onClick={() => setDetailsOpen((o) => !o)}
-          className="frost-soft invisible inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center gap-2 rounded-full px-4 text-body text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97]"
+          className="frost-soft invisible inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] cursor-pointer items-center gap-2 rounded-full px-4 text-body text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97]"
         >
           <span className="truncate">{project.title}</span>
           <span
@@ -631,9 +682,12 @@ export default function ProjectStage({
       <div className="flex flex-1 items-center pb-[52px] desktop:pb-[72px]">
         <div
           ref={stripRef}
-          className={`flex w-full ${isDesktop ? "items-center" : "items-start"} overflow-x-auto py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${single ? "justify-center" : "snap-x snap-mandatory"}`}
+          // A lone card is centred by the strip itself; with the next project's
+          // preview beside it the two overflow, so they snap like any strip.
+          className={`flex w-full ${isDesktop ? "items-center" : "items-start"} overflow-x-auto py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${single && !hasPreview ? "justify-center" : "snap-x snap-mandatory"}`}
           style={isDesktop ? undefined : { scrollPaddingInline: "var(--grid-margin)", paddingInline: "var(--grid-margin)" }}
           data-lenis-prevent
+          data-stage-strip
           role="region"
           aria-roledescription="carousel"
           aria-label={`${project.title} gallery, ${gallery.length} items`}
@@ -665,13 +719,18 @@ export default function ProjectStage({
                   key={item._key}
                   ref={(el) => {
                     itemRefs.current[i] = el;
+                    if (i === 0 && firstCardRef) firstCardRef.current = el;
                   }}
-                  className="relative shrink-0 snap-center will-change-transform"
+                  className={`relative shrink-0 snap-center ${isDesktop ? "" : "will-change-transform"}`}
                   style={
                     isDesktop
                       ? phonesBox
                       : {
-                          width: ITEM_W,
+                          // Screens on the page: the row's ratio at the phone's
+                          // 8 px gaps (PhonesRow); a background makes it a 16:10 panel.
+                          width: phonesFrame.background
+                            ? phoneCardWidth(16 / 10)
+                            : phoneCardWidth(screens * PHONE_ASPECT, (screens - 1) * 8),
                           marginLeft: i === 0 ? 0 : -OVERLAP,
                           transition:
                             reduceMotion || scrolling || entering ? "none" : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}`,
@@ -681,8 +740,8 @@ export default function ProjectStage({
                   aria-roledescription="slide"
                   aria-label={`${i + 1} of ${gallery.length}`}
                 >
-                  <GalleryPhones
-                    item={item}
+                  <PhonesRow
+                    slots={item.phones ?? []}
                     frame={phonesFrame}
                     title={project.title ?? "Project"}
                     active={Math.abs(i - index) <= 1}
@@ -722,14 +781,14 @@ export default function ProjectStage({
                     alt={`${project.title} — ${i + 1}`}
                     fill
                     className="object-cover"
-                    sizes={isDesktop ? "70vw" : "100vw"}
+                    sizes={LANDING_SIZES.stage}
                     priority={i === 0}
                     onLoad={i === 0 ? onFirstReady : undefined}
                   />
                 )}
                 {!isImage && i === 0 && adopted && <div ref={adoptHostRef} className="absolute inset-0" />}
                 {poster && !near && (
-                  <Image src={poster} unoptimized alt="" fill className="object-cover" sizes={isDesktop ? "70vw" : "100vw"} />
+                  <Image src={poster} unoptimized alt="" fill className="object-cover" sizes={LANDING_SIZES.stage} />
                 )}
                 {!isImage && item.video?.asset?._ref && near && !(i === 0 && adopted) && (
                   <video
@@ -755,12 +814,14 @@ export default function ProjectStage({
                   itemRefs.current[i] = el;
                   if (i === 0 && firstCardRef && !framed) firstCardRef.current = el;
                 }}
-                className={`relative shrink-0 snap-center overflow-hidden will-change-transform ${framed ? "" : "bg-black"}`}
+                // The depth transforms run per frame on the phone only; the
+                // laptop strip is flat, so no card needs its own layer there.
+                className={`relative shrink-0 snap-center overflow-hidden ${isDesktop ? "" : "will-change-transform"} ${framed ? "" : "bg-black"}`}
                 style={{
                   ...(isDesktop
                     ? deskBox(boxAspect, i)
                     : {
-                        width: ITEM_W,
+                        width: phoneCardWidth(boxAspect),
                         aspectRatio: framed ? undefined : aspect,
                         marginLeft: i === 0 ? 0 : -OVERLAP,
                       }),
@@ -780,7 +841,7 @@ export default function ProjectStage({
                     frame={framed}
                     mediaAspect={aspect}
                     boxClassName="bg-black"
-                    sizes={isDesktop ? "70vw" : "100vw"}
+                    sizes={LANDING_SIZES.stage}
                     mediaRef={
                       i === 0 && firstCardRef
                         ? (el: HTMLDivElement | null) => {
@@ -803,7 +864,7 @@ export default function ProjectStage({
                 itemRefs.current[gallery.length] = el;
               }}
               className="relative shrink-0 snap-center will-change-transform"
-              style={isDesktop ? deskBox(LANDING_ASPECT[landingKind(nextProject.hasChapters, true)], gallery.length) : { width: ITEM_W, marginLeft: -OVERLAP }}
+              style={isDesktop ? deskBox(LANDING_ASPECT[landingKind(nextProject.hasChapters)], gallery.length) : { width: ITEM_W, marginLeft: -OVERLAP }}
               role="group"
               aria-roledescription="slide"
               aria-label="Next project"
@@ -813,8 +874,8 @@ export default function ProjectStage({
                 previewRef={previewRef}
                 onNavigate={onNavigateNext!}
                 imageWidth={isDesktop ? 1600 : 900}
-                sizes={isDesktop ? "70vw" : "100vw"}
-                aspect={LANDING_ASPECT[landingKind(nextProject.hasChapters, isDesktop)]}
+                sizes={LANDING_SIZES[landingKind(nextProject.hasChapters)]}
+                aspect={LANDING_ASPECT[landingKind(nextProject.hasChapters)]}
               />
             </div>
           )}

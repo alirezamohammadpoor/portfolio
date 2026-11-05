@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   experimental: {
     optimizePackageImports: ["gsap", "lenis", "@sanity/client", "next-sanity"],
+    // Two root layouts ((site), (studio)) leave no layout to compose a 404
+    // from, so an unmatched URL got Next's default page: see
+    // src/app/global-not-found.tsx.
+    globalNotFound: true,
   },
   images: {
     // Sanity's CDN does the resizing; see src/sanity/lib/imageLoader.ts.

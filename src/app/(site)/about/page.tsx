@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { draftMode } from "next/headers";
-import { getAbout, getAboutDraft } from "@/sanity/lib/data";
+import { getAbout } from "@/sanity/lib/data";
 import AboutContent from "@/components/about/AboutContent";
-import { OPEN_GRAPH_BASE } from "@/lib/site";
+import { OPEN_GRAPH_BASE, SITE_OG_IMAGE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "About",
@@ -16,12 +16,13 @@ export const metadata: Metadata = {
     title: "About",
     description:
       "Ali Reza Mohammad Poor — Frontend Developer specializing in eCommerce.",
+    images: [SITE_OG_IMAGE],
   },
 };
 
 export default async function AboutPage() {
   const { isEnabled: isDraft } = await draftMode();
-  const about = isDraft ? await getAboutDraft() : await getAbout();
+  const about = await getAbout(isDraft ? "drafts" : "published");
 
   return (
     <div>

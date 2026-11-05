@@ -29,27 +29,62 @@ export default function ProjectDetailsOverlay({
   onClose: () => void;
   reduceMotion: boolean;
 }) {
+  const rootRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const description =
     Array.isArray(project.fullDescription) && project.fullDescription.length > 0
       ? (project.fullDescription as PortableTextBlock[])
       : null;
 
+  // A modal dialog for the keyboard: focus moves to Close on open, Tab
+  // cycles inside the text, Escape closes, and focus goes back to the pill
+  // that opened it on close (or wherever it was, on unmount).
   useEffect(() => {
     if (!open) return;
+    const root = rootRef.current;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !root) return;
+      const focusables = Array.from(
+        root.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'),
+      );
+      if (!focusables.length) {
+        e.preventDefault();
+        return;
+      }
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !root.contains(active))) {
+        e.preventDefault();
+        last.focus({ preventScroll: true });
+      } else if (!e.shiftKey && (active === last || !root.contains(active))) {
+        e.preventDefault();
+        first.focus({ preventScroll: true });
+      }
     };
     window.addEventListener("keydown", onKey);
     closeRef.current?.focus({ preventScroll: true });
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      const active = document.activeElement;
+      if (opener && opener.isConnected && (!active || active === document.body || root?.contains(active))) {
+        opener.focus({ preventScroll: true });
+      }
+    };
   }, [open, onClose]);
 
   // One beat (choreograph): the frost and the text arrive together in
   // 240 ms, the text rising 8 px; closing is faster (160 ms) and all at once,
-  // a plain fade. Reduced motion keeps the fade, drops the rise.
+  // a plain fade. Reduced motion keeps the fade, drops the rise. Visibility
+  // flips at once on open (a transitioning element is still hidden when
+  // focus moves to Close) and after the fade on close.
   const ms = open ? 240 : 160;
-  const fade = `opacity ${ms}ms ${EASE_OUT_CSS}, visibility ${ms}ms`;
+  const fade = `opacity ${ms}ms ${EASE_OUT_CSS}, visibility 0s${open ? "" : ` linear ${ms}ms`}`;
   // On close the text only fades; it drops back to its start offset once
   // it is invisible (the delayed 0 s transform), ready for the next open.
   const lift = open
@@ -58,6 +93,7 @@ export default function ProjectDetailsOverlay({
 
   return (
     <div
+      ref={rootRef}
       id="project-details"
       role="dialog"
       aria-modal="true"
@@ -117,7 +153,7 @@ export default function ProjectDetailsOverlay({
         type="button"
         onClick={onClose}
         tabIndex={open ? 0 : -1}
-        className="frost-soft absolute bottom-8 left-1/2 inline-flex h-9 -translate-x-1/2 items-center rounded-full px-4 text-sub uppercase font-medium text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97]"
+        className="frost-soft absolute bottom-8 left-1/2 inline-flex h-9 -translate-x-1/2 cursor-pointer items-center rounded-full px-4 text-sub uppercase font-medium text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97]"
       >
         Close
       </button>

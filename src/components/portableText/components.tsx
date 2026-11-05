@@ -17,16 +17,20 @@ export const portableTextComponents = {
     }: {
       value?: { href?: string };
       children: React.ReactNode;
-    }) => (
-      <a
-        href={value?.href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="link-highlight border-b border-primary"
-      >
-        {children}
-      </a>
-    ),
+    }) => {
+      // A link whose URL was left empty is plain text, not a dead link.
+      if (!value?.href) return <>{children}</>;
+      return (
+        <a
+          href={value.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="link-highlight border-b border-primary"
+        >
+          {children}
+        </a>
+      );
+    },
     glossary: ({
       value,
       children,
