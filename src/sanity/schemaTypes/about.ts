@@ -14,7 +14,9 @@ export const about = defineType({
       name: "bio",
       title: "Bio",
       type: "array",
-      of: [{ type: "block" }],
+      // Paragraphs only: the page renders the bio without list or heading
+      // styles, and animates its <p>s.
+      of: [{ type: "block", styles: [{ title: "Normal", value: "normal" }], lists: [] }],
     }),
     defineField({
       name: "portrait",

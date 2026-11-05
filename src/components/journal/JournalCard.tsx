@@ -15,7 +15,7 @@ export default function JournalCard({ post }: JournalCardProps) {
         <div className="relative aspect-[4/5] w-full overflow-hidden bg-tertiary">
           <Image
             src={imageUrl(post.coverImage, 800)}
-            alt={post.title ?? ""}
+            alt={post.coverImage.alt ?? ""}
             fill
             className="object-cover"
             sizes="(min-width: 75rem) 33vw, 100vw"

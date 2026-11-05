@@ -99,6 +99,7 @@ export default async function JournalPostPage({
     },
     url: canonicalUrl,
     keywords: Array.isArray(post.tags) ? post.tags.join(", ") : undefined,
+    image: post.coverImage?.asset ? ogImageUrl(post.coverImage) : undefined,
   };
 
   return (

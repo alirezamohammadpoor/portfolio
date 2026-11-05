@@ -27,7 +27,7 @@ const chapterTextField = defineField({
                 name: "href",
                 title: "URL",
                 type: "url",
-                validation: (rule) => rule.uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
+                validation: (rule) => rule.required().uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
               }),
             ],
           },
@@ -173,7 +173,7 @@ export const project = defineType({
                     title: "URL",
                     type: "url",
                     validation: (rule) =>
-                      rule.uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
+                      rule.required().uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
                   }),
                 ],
               },
@@ -205,7 +205,7 @@ export const project = defineType({
                     title: "Video URL",
                     type: "url",
                     description:
-                      "Direct URL to video file. Leave empty if using an image.",
+                      "Direct URL to an mp4/webm file (e.g. a Sanity file asset). Page links such as YouTube do not play. Leave empty if using an image.",
                   }),
                   defineField({
                     name: "image",
@@ -214,6 +214,14 @@ export const project = defineType({
                     options: { hotspot: true },
                     description:
                       "Image to show in the preview. Used if no video URL is provided.",
+                    fields: [
+                      defineField({
+                        name: "alt",
+                        title: "Alt text",
+                        type: "string",
+                        description: "Describe the image for screen readers.",
+                      }),
+                    ],
                   }),
                   defineField({
                     name: "url",
@@ -233,7 +241,19 @@ export const project = defineType({
             ],
           },
         },
-        { type: "image", options: { hotspot: true } },
+        {
+          type: "image",
+          options: { hotspot: true },
+          fields: [
+            defineField({
+              name: "alt",
+              title: "Alt text",
+              type: "string",
+              description: "Describe the image for screen readers and search engines.",
+              validation: (rule) => rule.required().warning("Add alt text for accessibility."),
+            }),
+          ],
+        },
       ],
     }),
     defineField({
@@ -330,8 +350,10 @@ export const project = defineType({
     defineField({
       name: "heroLayout",
       title: "Project page opener",
-      description: "Which side the landing media takes on the project page. Leave empty to alternate per project.",
+      description:
+        "Which side the landing media takes on the project page. Leave empty to alternate per project. Case-study (chapter) projects only: the gallery page has no opener.",
       type: "string",
+      hidden: ({ document }) => !(Array.isArray(document?.chapters) && document.chapters.length > 0),
       options: {
         layout: "radio",
         direction: "horizontal",
@@ -344,8 +366,15 @@ export const project = defineType({
     defineField({
       name: "gallery",
       title: "Gallery",
-      description: "Mixed images, videos and phone pairs shown in the project page gallery. Drag to reorder.",
+      description:
+        "Mixed images, videos and phone pairs shown in the project page gallery. Drag to reorder. The first item opens the page: the home cover morphs onto it, so make it an image or a video, not phones.",
       type: "array",
+      validation: (rule) =>
+        rule.custom((items) =>
+          Array.isArray(items) && items[0] && (items[0] as { _type?: string })._type === "galleryPhones"
+            ? "The first item opens the page (the home cover morphs onto it): make it an image or a video."
+            : true,
+        ),
       of: [
         {
           type: "object",
