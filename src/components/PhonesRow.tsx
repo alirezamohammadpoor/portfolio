@@ -34,12 +34,19 @@ export default function PhonesRow({
   title,
   active,
   sizes,
+  once,
+  replay,
+  onEndedChange,
 }: {
   slots: PhoneSlot[];
   frame: ResolvedFrame;
   title: string;
   active: boolean;
   sizes: string;
+  /** An A/B test row: clips play once and hold (see InlineClip). */
+  once?: boolean;
+  replay?: number;
+  onEndedChange?: (ended: boolean) => void;
 }) {
   const list = slots.slice(0, 3);
   if (list.length === 0) return null;
@@ -63,6 +70,9 @@ export default function PhonesRow({
           poster={slot.poster?.asset ? imageUrl(slot.poster as SanityImage, 800) : undefined}
           label={`${title}, screen ${i + 1}`}
           active={active}
+          once={once}
+          replay={replay}
+          onEndedChange={onEndedChange}
           className="absolute inset-0 h-full w-full object-cover object-top"
         />
       ) : slot.type === "image" && slot.image?.asset ? (

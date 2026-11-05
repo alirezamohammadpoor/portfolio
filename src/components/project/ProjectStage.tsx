@@ -71,11 +71,23 @@ const ITEM_W = "calc(100vw - 2 * var(--grid-margin))";
 // effect below), and the depth loop reads each card's own offsetWidth.
 const PHONE_BAND = "calc(100svh - var(--header-height) - 56px - 52px - 48px)";
 /** A phone card's width: the full column width unless the band bounds it. */
-const phoneCardWidth = (boxAspect: number, gapsPx = 0) =>
-  `min(${ITEM_W}, calc(${PHONE_BAND} * ${boxAspect.toFixed(4)} + ${gapsPx}px))`;
+const phoneCardWidth = (boxAspect: number, gapsPx = 0, band = PHONE_BAND) =>
+  `min(${ITEM_W}, calc(${band} * ${boxAspect.toFixed(4)} + ${gapsPx}px))`;
+// An A/B test clip (Sanity testName) carries the test pill above the
+// filmstrip (Figma "Stronger · test pill · 11-05"), so its screen gives up
+// the pill's room: 36 px pill, 10 px over the filmstrip, 12 px clear of the
+// card on either side of the centred strip. At 390×664 that is a ~170 px wide
+// phone, about one screen of a two-phone row.
+const TEST_PHONE_BAND = `calc(${PHONE_BAND} - 102px)`;
 // Laptop: one height for every card (Figma "Gallery · laptop alternatives",
 // 11-04: 640 at 1440×900), the width follows each card's ratio.
 const DESK_H = "min(760px, calc(100svh - var(--header-height) - 200px))";
+// With A/B tests on the page every laptop card keeps the test pill's room
+// too (one height across the page): the pill's top sits 131 px above the
+// bottom, the card's bottom must stay 12 px above it (stage pb 72 + strip
+// py 24 around a centred card), 70 px more than the plain budget.
+const DESK_TESTS_ROOM = 70;
+const DESK_H_TESTS = `min(760px, calc(100svh - var(--header-height) - ${200 + DESK_TESTS_ROOM}px))`;
 const DESK_GAP = 48;
 // Card height cap on laptop (Ali 11-04: raised from 640 so big screens keep 8 columns).
 const DESK_MAX_H = 760;
@@ -84,13 +96,13 @@ const AUTO_NEXT_MS = 1500;
 
 type DeskGrid = { col: number; gutter: number; h: number };
 /** Laptop grid in px (globals.css: 12 columns, --grid-margin, --grid-gutter) and the card height budget. */
-function measureDeskGrid(): DeskGrid {
+function measureDeskGrid(room = 0): DeskGrid {
   const cs = getComputedStyle(document.documentElement);
   const margin = parseFloat(cs.getPropertyValue("--grid-margin")) || 24;
   const gutter = parseFloat(cs.getPropertyValue("--grid-gutter")) || 16;
   const header = parseFloat(cs.getPropertyValue("--header-height")) || 40;
   const vw = document.documentElement.clientWidth;
-  return { col: (vw - 2 * margin - 11 * gutter) / 12, gutter, h: Math.min(DESK_MAX_H, window.innerHeight - header - 200) };
+  return { col: (vw - 2 * margin - 11 * gutter) / 12, gutter, h: Math.min(DESK_MAX_H, window.innerHeight - header - 200 - room) };
 }
 // Vertical wheel → one card per gesture (see the wheel effect).
 const WHEEL_STEP = 40;
@@ -129,6 +141,14 @@ export default function ProjectStage({
     firstVideoRef.current = adopted;
   }, [adopted, isTransitioning, project.title]);
   const [index, setIndex] = useState(0);
+  // A/B test clips (Sanity testName on a phones row): the pill above the
+  // filmstrip names the centred one and replays it; cards make its room.
+  const hasTests = gallery.some((g) => g._type === "galleryPhones" && Boolean(g.testName));
+  const deskRoom = hasTests ? DESK_TESTS_ROOM : 0;
+  const deskH = hasTests ? DESK_H_TESTS : DESK_H;
+  const [replay, setReplay] = useState(0);
+  // Key of the test clip holding its last frame (the pill's icon brightens).
+  const [endedKey, setEndedKey] = useState<string | null>(null);
   // The next project's preview card is centred (it is not in `index`, which
   // counts gallery clips only): the filmstrip hands over to the next pill.
   const [atPreview, setAtPreview] = useState(false);
@@ -148,17 +168,17 @@ export default function ProjectStage({
   // home → project clone measures card 1 in the page's own layout effect,
   // which runs before a re-render from this component's effects would land,
   // so the first render must already be snapped.
-  const [grid, setGrid] = useState<DeskGrid | null>(() => (isDesktop ? measureDeskGrid() : null));
+  const [grid, setGrid] = useState<DeskGrid | null>(() => (isDesktop ? measureDeskGrid(deskRoom) : null));
   useLayoutEffect(() => {
     if (!isDesktop) return;
     const measure = () => {
-      const g = measureDeskGrid();
+      const g = measureDeskGrid(deskRoom);
       setGrid((prev) => (prev && prev.col === g.col && prev.gutter === g.gutter && prev.h === g.h ? prev : g));
     };
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [isDesktop]);
+  }, [isDesktop, deskRoom]);
 
   // Entrance (Ali, 11-04: nothing moves until the morph is done). The stage
   // stays hidden while the home → project clone is in flight and `hidden`
@@ -590,6 +610,10 @@ export default function ProjectStage({
     videos.forEach((v) => {
       if (detailsOpen) v.pause();
       else {
+        // An A/B test clip (InlineClip `once`) holding its last frame (or
+        // resting there under reduced motion) stays; one paused mid-film by
+        // the overlay (a replay) carries on.
+        if (v.dataset.once && (v.ended || v.currentTime >= v.duration - 0.1)) return;
         const p = v.play();
         if (p && typeof p.catch === "function") p.catch(() => {});
       }
@@ -602,6 +626,8 @@ export default function ProjectStage({
   useEffect(() => {
     itemRefs.current.forEach((el, i) => {
       el?.querySelectorAll("video").forEach((v) => {
+        // A/B test clips run themselves (play once from the start when centred).
+        if (v.dataset.once) return;
         if (i === index) {
           const p = v.play();
           if (p && typeof p.catch === "function") p.catch(() => {});
@@ -619,6 +645,7 @@ export default function ProjectStage({
   }, [index]);
 
   const onEnd = index >= last && Boolean(nextSlug && onNavigateNext);
+  const current = gallery[index];
   // Desktop card box (Ali, 11-04: "use the columns"): the widest even
   // column span that fits the card height at the box's ratio, so the
   // centred card starts and ends on the 12-column grid (an even span
@@ -632,7 +659,7 @@ export default function ProjectStage({
     return span(n);
   };
   const deskBox = (boxAspect: number, i: number) => {
-    if (!grid) return { height: DESK_H, aspectRatio: boxAspect, marginLeft: i === 0 ? 0 : DESK_GAP };
+    if (!grid) return { height: deskH, aspectRatio: boxAspect, marginLeft: i === 0 ? 0 : DESK_GAP };
     const width = snapWidth(grid.h * boxAspect);
     return { width, height: width / boxAspect, marginLeft: i === 0 ? 0 : DESK_GAP };
   };
@@ -641,11 +668,15 @@ export default function ProjectStage({
     const gaps = (screens - 1) * 16;
     if (!grid)
       return {
-        height: DESK_H,
-        width: `calc(${DESK_H} * ${(screens * PHONE_ASPECT).toFixed(4)} + ${gaps}px)`,
+        height: deskH,
+        width: `calc(${deskH} * ${(screens * PHONE_ASPECT).toFixed(4)} + ${gaps}px)`,
         marginLeft: i === 0 ? 0 : DESK_GAP,
       };
-    const width = snapWidth(grid.h * screens * PHONE_ASPECT + gaps);
+    const natural = grid.h * screens * PHONE_ASPECT + gaps;
+    // The snap never goes under two columns; a lone phone on a short laptop
+    // (1280×720) would then outgrow the height budget and run into the test
+    // pill, so with tests on the page it keeps its natural width instead.
+    const width = hasTests ? Math.min(snapWidth(natural), natural) : snapWidth(natural);
     return { width, height: (width - gaps) / (screens * PHONE_ASPECT), marginLeft: i === 0 ? 0 : DESK_GAP };
   };
 
@@ -730,7 +761,7 @@ export default function ProjectStage({
                           // 8 px gaps (PhonesRow); a background makes it a 16:10 panel.
                           width: phonesFrame.background
                             ? phoneCardWidth(16 / 10)
-                            : phoneCardWidth(screens * PHONE_ASPECT, (screens - 1) * 8),
+                            : phoneCardWidth(screens * PHONE_ASPECT, (screens - 1) * 8, item.testName ? TEST_PHONE_BAND : PHONE_BAND),
                           marginLeft: i === 0 ? 0 : -OVERLAP,
                           transition:
                             reduceMotion || scrolling || entering ? "none" : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}`,
@@ -744,8 +775,12 @@ export default function ProjectStage({
                     slots={item.phones ?? []}
                     frame={phonesFrame}
                     title={project.title ?? "Project"}
-                    active={Math.abs(i - index) <= 1}
+                    // A test plays only while centred, from its first frame.
+                    active={item.testName ? i === index : Math.abs(i - index) <= 1}
                     sizes="50vw"
+                    once={Boolean(item.testName)}
+                    replay={replay}
+                    onEndedChange={(ended) => setEndedKey((k) => (ended ? item._key : k === item._key ? null : k))}
                   />
                 </div>
               );
@@ -893,6 +928,9 @@ export default function ProjectStage({
         index={index}
         onEnd={onEnd}
         atPreview={atPreview && hasPreview}
+        testName={!atPreview && current?._type === "galleryPhones" ? (current.testName ?? null) : null}
+        testEnded={Boolean(current && endedKey === current._key)}
+        onReplay={() => setReplay((r) => r + 1)}
         nextProject={nextProject}
         title={project.title ?? "Project"}
         isDesktop={isDesktop}

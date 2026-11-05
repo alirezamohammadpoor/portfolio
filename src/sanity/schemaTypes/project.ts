@@ -457,10 +457,19 @@ export const project = defineType({
               validation: (rule) => rule.required().min(1).max(3),
             }),
             defineField({ name: "frame", title: "Background", type: "mediaFrame" }),
+            defineField({
+              name: "testName",
+              title: "A/B test",
+              type: "string",
+              description:
+                "The test this clip shows, e.g. Bestseller badge. When set, the clip plays once each time it is centred and holds on its last frame (the design), and a pill above the filmstrip reads \"A/B test – <name>\" with a replay button.",
+            }),
           ],
           preview: {
-            select: { phones: "phones" },
-            prepare: ({ phones }) => ({ title: `Phones (${Array.isArray(phones) ? phones.length : 0})` }),
+            select: { phones: "phones", testName: "testName" },
+            prepare: ({ phones, testName }) => ({
+              title: testName ? `A/B test – ${testName}` : `Phones (${Array.isArray(phones) ? phones.length : 0})`,
+            }),
           },
         },
       ],

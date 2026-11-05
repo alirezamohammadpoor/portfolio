@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useState } from "react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { EASE_OUT_CSS } from "@/lib/motion";
@@ -15,6 +16,11 @@ type Props = {
   onEnd: boolean;
   /** The next project's preview card is centred: the row hands over to the pill. */
   atPreview: boolean;
+  /** The centred clip's A/B test (Sanity testName), or null: the test pill above the row. */
+  testName?: string | null;
+  /** The centred test clip holds its last frame: the replay icon brightens. */
+  testEnded?: boolean;
+  onReplay?: () => void;
   nextProject: NextProject;
   title: string;
   isDesktop: boolean;
@@ -57,7 +63,11 @@ function Thumb({ src, label }: { src: { image?: string; video?: string }; label:
   return null;
 }
 
-function Filmstrip({ gallery, index, onEnd, atPreview, nextProject, title, isDesktop, reduceMotion, onSelect, onNavigateNext }: Props) {
+function Filmstrip({ gallery, index, onEnd, atPreview, testName, testEnded, onReplay, nextProject, title, isDesktop, reduceMotion, onSelect, onNavigateNext }: Props) {
+  // The pill keeps the last test's name while it fades out.
+  const [shownTest, setShownTest] = useState(testName ?? null);
+  if (testName && testName !== shownTest) setShownTest(testName);
+  const showTest = Boolean(testName && onReplay);
   const next = nextProject?.firstMedia as GalleryItem | null | undefined;
   const nextSrc = next ? thumbSrc(next) : {};
   const hasNext = Boolean(nextProject?.slug?.current && onNavigateNext);
@@ -112,6 +122,47 @@ function Filmstrip({ gallery, index, onEnd, atPreview, nextProject, title, isDes
             </button>
           )}
         </div>
+        {/* The test pill (Figma "Stronger · test pill · 11-05"): with an A/B
+            test clip centred, a pill floats above the row naming the test,
+            the replay icon in the round slot where the next pill shows its
+            cover. Dim while the clip plays, full once it holds the design;
+            a tap plays it again. */}
+        {shownTest && onReplay && (
+          <button
+            type="button"
+            onClick={onReplay}
+            tabIndex={showTest ? 0 : -1}
+            aria-hidden={!showTest}
+            aria-label={`Replay A/B test: ${shownTest}`}
+            className={`frost-soft absolute left-1/2 inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center gap-2 rounded-full pr-4 pl-1 text-body whitespace-nowrap text-primary select-none active:scale-[0.97] ${showTest ? "cursor-pointer" : "pointer-events-none"}`}
+            style={{
+              bottom: isDesktop ? "calc(100% + 12px)" : "calc(100% + 10px)",
+              translate: "-50% 0",
+              opacity: showTest ? 1 : 0,
+              scale: showTest || reduceMotion ? "1" : "0.96",
+              transition: reduceMotion ? "none" : `opacity ${ease}, scale ${ease}`,
+            }}
+          >
+            <span className="inline-flex h-7 w-11 shrink-0 items-center justify-center rounded-full bg-tertiary">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                style={{ opacity: testEnded ? 1 : 0.45, transition: reduceMotion ? "none" : `opacity ${ease}` }}
+              >
+                <path d="M3 12a9 9 0 1 0 3-6.7" />
+                <path d="M3 4v5h5" />
+              </svg>
+            </span>
+            <span className="truncate">A/B test – {shownTest}</span>
+          </button>
+        )}
         {/* The hand-over (Figma "Next project · layout · 11-05", Ali picked
             A): with the next project's card centred the row gives way to one
             pill on the same axis as the name pill, its cover as a round
