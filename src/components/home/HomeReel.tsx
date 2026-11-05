@@ -24,7 +24,7 @@ import {
 
 type Project = PROJECTS_QUERY_RESULT[number];
 
-/** Longest wait for the first cover's frame before the reel gives up. */
+/** Longest wait for the first cover's frame before the entry starts anyway. */
 const READY_TIMEOUT = 1200;
 
 interface HomeReelProps {
@@ -145,12 +145,12 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
         offs.push(() => window.clearTimeout(id));
       });
 
-      Promise.race([ready, timeout]).then((ok) => {
+      // A slow first cover no longer cancels the entry (Ali 11-05: no scatter
+      // on the phone, where the first frame took longer than the wait): the
+      // name writes on an empty page for the first second anyway, and the
+      // covers keep loading behind their placeholder colour.
+      Promise.race([ready, timeout]).then(() => {
         if (cancelled) return;
-        if (!ok) {
-          setReelState("off");
-          return;
-        }
         window.scrollTo(0, 0);
         const rects = covers.map((cover) => {
           const r = cover.getBoundingClientRect();
@@ -189,7 +189,7 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
         <div ref={worldRef} className="invisible absolute left-0 top-0 will-change-transform">
           {projects.map((project, i) => (
             <div key={project._id} data-hero className="absolute left-0 top-0 overflow-hidden bg-tertiary will-change-transform">
-              <HeroMedia project={project} eager={i < 2} sizes={coverSizes[i] ?? "(min-width: 75rem) 66vw, 100vw"} />
+              <HeroMedia project={project} sizes={coverSizes[i] ?? "(min-width: 75rem) 66vw, 100vw"} />
             </div>
           ))}
         </div>
@@ -336,7 +336,7 @@ function scatterTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: H
   });
 }
 
-function HeroMedia({ project, eager, sizes }: { project: Project; eager: boolean; sizes: string }) {
+function HeroMedia({ project, sizes }: { project: Project; sizes: string }) {
   const coverMedia = project.coverMedia;
   if (coverMedia?.type === "video" && coverMedia.video?.asset?._ref) {
     return (
@@ -347,7 +347,7 @@ function HeroMedia({ project, eager, sizes }: { project: Project; eager: boolean
         loop
         playsInline
         autoPlay
-        preload={eager ? "auto" : "metadata"}
+        preload="auto"
       />
     );
   }

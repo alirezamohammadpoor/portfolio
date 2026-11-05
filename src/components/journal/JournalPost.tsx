@@ -162,7 +162,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
             {relatedPosts.map((relatedPost) => (
               <div
                 key={relatedPost._id}
-                className="min-w-[280px] max-w-[400px] shrink-0 snap-start"
+                className="w-full max-w-[400px] shrink-0 snap-start"
               >
                 <JournalCard post={relatedPost} />
               </div>

@@ -143,9 +143,18 @@ function handwrite(c: Canvas, onDone: () => void) {
   const X = oy + 0.42 * h;
   const B = oy + 0.68 * h;
   const D = oy + 0.92 * h;
+  // WebKit (Safari, every iOS browser) reports the extents of RTL SVG text
+  // mirrored: the first character comes back at the left end, so the pen
+  // wrote left to right on the phone (Ali 11-05). Flip them back across
+  // the text's span when the first character sits left of the last.
+  const count = c.text.getNumberOfChars();
+  const extents = Array.from({ length: count }, (_, i) => c.text.getExtentOfChar(i));
+  const spanLeft = Math.min(...extents.map((e) => e.x));
+  const spanRight = Math.max(...extents.map((e) => e.x + e.width));
+  const mirrored = count > 1 && extents[0].x < extents[count - 1].x;
   const cell = (i: number) => {
-    const e = c.text.getExtentOfChar(i);
-    const right = e.x + e.width;
+    const e = extents[i];
+    const right = mirrored ? spanLeft + spanRight - e.x : e.x + e.width;
     return (u: number, y: number) => `${(right - u * e.width).toFixed(1)} ${y.toFixed(1)}`;
   };
   const [ain, lam, ye, re, zad, alef] = [0, 1, 2, 3, 4, 5].map(cell);
