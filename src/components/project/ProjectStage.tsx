@@ -346,31 +346,46 @@ export default function ProjectStage({
     let decaying = false;
     let trough = Infinity;
     let acc = 0;
+    // A sideways swipe scrolls the strip natively (with snap). At its end
+    // there is nothing left to scroll, so a NEW sideways swipe there (not
+    // the one that brought the next project's card in) hands off, like a
+    // downward one.
+    let lastAxis: "x" | "y" | null = null;
+    let startedAtEnd = false;
+    const stripAtEnd = () => {
+      const strip = stripRef.current;
+      return !!strip && strip.scrollLeft + strip.clientWidth >= strip.scrollWidth - 2;
+    };
     const onWheel = (e: WheelEvent) => {
       if (detailsOpenRef.current) return;
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      const axis = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? "x" : "y";
+      const delta = axis === "x" ? e.deltaX : e.deltaY;
       const now = e.timeStamp;
-      const magnitude = Math.abs(e.deltaY);
+      const magnitude = Math.abs(delta);
       const reflick =
         decaying && magnitude >= REFLICK_MIN && magnitude > trough * 4 && now - lastStepAt > REFLICK_MS;
       const newGesture =
         now - lastWheelAt > GESTURE_SILENCE_MS ||
-        (lastSign !== 0 && Math.sign(e.deltaY) !== lastSign) ||
+        (lastAxis !== null && axis !== lastAxis) ||
+        (lastSign !== 0 && Math.sign(delta) !== lastSign) ||
         reflick;
       if (newGesture) {
         consumed = false;
         decaying = false;
         trough = Infinity;
         acc = 0;
+        startedAtEnd = axis === "x" && stripAtEnd();
       } else if (magnitude < lastDelta) {
         decaying = true;
         trough = Math.min(trough, magnitude);
       }
       lastWheelAt = now;
       lastDelta = magnitude;
-      if (e.deltaY !== 0) lastSign = Math.sign(e.deltaY);
+      lastAxis = axis;
+      if (delta !== 0) lastSign = Math.sign(delta);
       if (consumed) return;
-      acc += e.deltaY;
+      if (axis === "x" && (!startedAtEnd || delta <= 0)) return;
+      acc += delta;
       if (Math.abs(acc) < WHEEL_STEP) return;
       consumed = true;
       lastStepAt = now;

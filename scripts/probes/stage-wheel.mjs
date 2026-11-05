@@ -80,5 +80,36 @@ for (const [label, deltas] of Object.entries(shapes)) {
   }
   console.log(`double swipe: ${steps.join(" → ")}`);
 }
+// Sideways: the strip scrolls natively, and on its end a NEW sideways swipe
+// hands off; the swipe that arrives there and a leftwards one do not.
+{
+  const send = async (deltaX) => {
+    clock = Math.max(clock, Date.now() / 1000) + 0.016;
+    await cdp.send("Input.dispatchMouseEvent", { type: "mouseWheel", x: 720, y: 450, deltaX, deltaY: 0, timestamp: clock });
+    const ahead = clock * 1000 - Date.now();
+    if (ahead > 0) await new Promise((r) => setTimeout(r, ahead));
+  };
+  const toEnd = () =>
+    page.evaluate(() => {
+      const strip = document.querySelector('[aria-roledescription="slide"]').parentElement;
+      strip.scrollTo({ left: strip.scrollWidth });
+    });
+  const swipe = shapes.flick;
+  const cases = [
+    ["fresh sideways swipe at the end", true, async () => { await toEnd(); await page.waitForTimeout(800); for (const v of swipe) await send(v); }],
+    ["sideways swipe that arrives at the end", false, async () => { for (const [i, v] of swipe.entries()) { if (i === 6) await toEnd(); await send(v); } }],
+    ["leftwards swipe at the end", false, async () => { await toEnd(); await page.waitForTimeout(800); for (const v of swipe) await send(-v); }],
+  ];
+  for (const [label, leaves, run] of cases) {
+    await page.goto(`${base}/project/${slug}`, { waitUntil: "load" });
+    await page.waitForTimeout(2500);
+    await run();
+    await page.waitForTimeout(2500);
+    const left = !page.url().endsWith(`/project/${slug}`);
+    const ok = left === leaves;
+    if (!ok) failed = true;
+    console.log(`${label}: ${left ? "handed off" : "stayed"}${ok ? "" : " FAIL"}`);
+  }
+}
 await browser.close();
 process.exit(failed ? 1 : 0);
