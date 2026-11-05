@@ -104,6 +104,9 @@ export default function ProjectStage({
     firstVideoRef.current = adopted;
   }, [adopted, isTransitioning, project.title]);
   const [index, setIndex] = useState(0);
+  // The next project's preview card is centred (it is not in `index`, which
+  // counts gallery clips only): the filmstrip hands over to the next pill.
+  const [atPreview, setAtPreview] = useState(false);
   // Video ratios as they report metadata (by item key); images carry theirs.
   // An adopted element already knows its size.
   const [videoAspects, setVideoAspects] = useState<Record<string, number>>(() => {
@@ -212,6 +215,7 @@ export default function ProjectStage({
       });
       posRef.current = bestAll.i;
       setIndex((prev) => (prev === best.i ? prev : best.i));
+      setAtPreview(bestAll.i > last);
     };
     let idle = 0;
     const settle = () => {
@@ -604,7 +608,6 @@ export default function ProjectStage({
                 imageWidth={isDesktop ? 1600 : 900}
                 sizes={isDesktop ? "70vw" : "100vw"}
                 aspect={LANDING_ASPECT[landingKind(nextProject.hasChapters, isDesktop)]}
-                labelHidden={isDesktop}
               />
             </div>
           )}
@@ -621,6 +624,7 @@ export default function ProjectStage({
         gallery={gallery}
         index={index}
         onEnd={onEnd}
+        atPreview={atPreview && hasPreview}
         nextProject={nextProject}
         title={project.title ?? "Project"}
         isDesktop={isDesktop}

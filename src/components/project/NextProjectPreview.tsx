@@ -19,8 +19,6 @@ interface NextProjectPreviewProps {
   sizes?: string;
   className?: string;
   style?: React.CSSProperties;
-  /** The chapter page writes the next title beside the block itself. */
-  labelHidden?: boolean;
   /** The box ratio: 4:3 on the gallery page, 16:10 on the chapter page (flush covers). */
   aspect?: number;
 }
@@ -97,7 +95,6 @@ export default function NextProjectPreview({
   sizes = "(min-width: 75rem) 50vw, 100vw",
   className = "",
   style,
-  labelHidden = false,
   aspect = 4 / 3,
 }: NextProjectPreviewProps) {
   const slug = nextProject.slug?.current;
@@ -106,7 +103,7 @@ export default function NextProjectPreview({
 
   const isImage = media._type === "galleryImage";
   const videoSrc = !isImage && media.video?.asset?._ref ? fileUrl(media.video.asset._ref) : null;
-  const label = `Next project — ${nextProject.title ?? ""}`;
+  const label = `Next project – ${nextProject.title ?? ""}`;
 
   return (
     <a
@@ -140,7 +137,6 @@ export default function NextProjectPreview({
           )}
         </div>
       )}
-      {!labelHidden && <p className="mt-2 text-sub uppercase text-primary">{label}</p>}
     </a>
   );
 }

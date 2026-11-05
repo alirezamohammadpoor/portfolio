@@ -526,7 +526,6 @@ export default function ProjectChapters({
               onNavigate={onNavigateNext}
               sizes={sizes}
               aspect={LANDING_ASPECT[kind]}
-              labelHidden
             />
           );
           return nextProject.hasChapters ? (
