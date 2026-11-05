@@ -26,18 +26,18 @@ export default function JournalCard({ post }: JournalCardProps) {
       <p className="mt-4 text-sub desktop:text-body text-primary">
         {post.excerpt}
       </p>
-      <div className="mt-auto flex items-center justify-between pt-6">
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-2 pt-6">
         {post.publishedAt && (
           <span className="text-sub desktop:text-body text-primary">
             {formatPostDate(post.publishedAt)}
           </span>
         )}
         {post.tags && post.tags.length > 0 && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {post.tags.slice(0, 2).map((tag) => (
               <span
                 key={tag}
-                className="rounded-full bg-pistachio px-3 py-1 text-sub text-primary uppercase"
+                className="whitespace-nowrap rounded-full bg-pistachio px-3 py-1 text-sub text-primary uppercase"
               >
                 {tag}
               </span>
