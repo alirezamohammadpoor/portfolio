@@ -59,6 +59,12 @@ export interface VideoPlayerProps {
   hasAudio?: boolean;
   /** Autoplay (muted) when in view. */
   autoplay?: boolean;
+  /**
+   * False while the host hides the player but keeps it mounted (the journal
+   * popup between hovers): pauses it and holds autoplay, so reopening
+   * continues from the same frame without a reload.
+   */
+  active?: boolean;
   /** Width in CSS px for fixed layouts; omit for fill. */
   width?: number;
   /** How the frame fills a fixed box: letterbox (default) or crop. */
@@ -116,6 +122,7 @@ export default function VideoPlayer({
   loop = true,
   hasAudio,
   autoplay = true,
+  active = true,
   width,
   fit = "contain",
   className = "",
@@ -135,6 +142,7 @@ export default function VideoPlayer({
   const rafRef = useRef(0);
   const userPausedRef = useRef(false);
   const inViewRef = useRef(false);
+  const activeRef = useRef(active);
   const wasPlayingRef = useRef(false);
 
   const [playing, setPlaying] = useState(false);
@@ -303,7 +311,7 @@ export default function VideoPlayer({
       ([e]) => {
         inViewRef.current = e.isIntersecting;
         if (e.isIntersecting) {
-          if (autoplay && !reduced && !userPausedRef.current && v.paused) play();
+          if (autoplay && activeRef.current && !reduced && !userPausedRef.current && v.paused) play();
         } else if (!v.paused) {
           v.pause();
         }
@@ -312,7 +320,7 @@ export default function VideoPlayer({
     );
     io.observe(el);
     const onVis = () => {
-      if (document.visibilityState === "visible" && inViewRef.current && autoplay && !reduced && !userPausedRef.current && v.paused) play();
+      if (document.visibilityState === "visible" && inViewRef.current && activeRef.current && autoplay && !reduced && !userPausedRef.current && v.paused) play();
     };
     document.addEventListener("visibilitychange", onVis);
     return () => {
@@ -320,6 +328,18 @@ export default function VideoPlayer({
       document.removeEventListener("visibilitychange", onVis);
     };
   }, [autoplay, play, reduced]);
+
+  /* host shows / hides a mounted player */
+  useEffect(() => {
+    activeRef.current = active;
+    const v = videoRef.current;
+    if (!v) return;
+    if (!active) {
+      if (!v.paused) v.pause();
+    } else if (autoplay && inViewRef.current && !reduced && !userPausedRef.current && v.paused) {
+      play();
+    }
+  }, [active, autoplay, play, reduced]);
 
   const togglePlay = () => {
     const v = videoRef.current;

@@ -17,16 +17,16 @@ interface RichPreviewProps {
   children: React.ReactNode;
 }
 
-// How long the fade-out runs before the player is unmounted.
-const FADE_MS = 300;
 // Grace period when the pointer travels from the phrase to the popup.
 const LEAVE_MS = 150;
 
 /**
  * Pop-up preview on a phrase in a journal post. The card is portaled to
  * <body>: the mark sits inside a <p>, and the shared VideoPlayer renders
- * block elements, which a <p> cannot contain. The player only mounts while
- * the card is open, so hidden previews never fetch or autoplay.
+ * block elements, which a <p> cannot contain. The player mounts on the first
+ * open, so previews nobody opens never fetch, and then stays mounted (paused,
+ * hidden) between hovers: unmounting made Safari refetch the file on every
+ * re-hover, flashing an empty box and losing the position.
  */
 export default function RichPreview({
   videoUrl,
@@ -64,15 +64,9 @@ export default function RichPreview({
       anchorOnDesktop: true,
     });
 
-  // Keep the card in the DOM through the fade-out, then drop the player.
   // Mounting happens in `show` (same commit as `visible`), so the anchoring
   // hook can measure the card in its layout effect; an effect here would
   // mount it one commit too late and leave the card unpositioned.
-  useEffect(() => {
-    if (visible) return;
-    const t = setTimeout(() => setMounted(false), FADE_MS);
-    return () => clearTimeout(t);
-  }, [visible]);
 
   useGSAP(
     () => {
@@ -149,6 +143,7 @@ export default function RichPreview({
             linkUrl={url}
             aspect="16/9"
             fit="cover"
+            active={visible}
             trackId={label}
             className="rounded-none"
           />
@@ -214,6 +209,8 @@ export default function RichPreview({
         createPortal(
           <div
             ref={popupRef}
+            aria-hidden={!visible || undefined}
+            inert={!visible}
             onMouseEnter={isMobile ? undefined : show}
             onMouseLeave={isMobile ? undefined : hideSoon}
             className={`fixed z-50 transition-[opacity,transform] duration-300 ease-[var(--ease-out)] ${
