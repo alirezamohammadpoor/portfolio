@@ -62,5 +62,23 @@ for (const [label, deltas] of Object.entries(shapes)) {
   }
   console.log(`${label}: ${steps.join(" → ")}`);
 }
+// Two flicks, the second one 600 ms into the first one's inertia tail (a
+// quick double swipe): two cards, or the last card and then the hand-off.
+{
+  await page.goto(`${base}/project/${slug}`, { waitUntil: "load" });
+  await page.waitForTimeout(2500);
+  const steps = [];
+  for (let k = 0; k < 3; k++) {
+    const [p0, i0, n0] = await pos();
+    const tail = decay(0.95);
+    await gesture([4, 8, 14, 24, 40, 60, 80, 100, ...tail.slice(0, 32), 30, 60, 90, 110, ...decay(0.9)]);
+    await page.waitForTimeout(700);
+    const [p1, i1] = await pos();
+    const ok = p0 === p1 ? i1 === i0 + 2 : i0 >= n0 - 2 && i1 === 0;
+    if (!ok) failed = true;
+    steps.push(`${p1}:${i1}${ok ? "" : " FAIL"}`);
+  }
+  console.log(`double swipe: ${steps.join(" → ")}`);
+}
 await browser.close();
 process.exit(failed ? 1 : 0);

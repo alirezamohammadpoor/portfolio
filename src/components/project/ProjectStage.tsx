@@ -67,11 +67,11 @@ const ITEM_W = "calc(100vw - 2 * var(--grid-margin))";
 // 11-04: 640 at 1440×900), the width follows each card's ratio.
 const DESK_H = "min(640px, calc(100svh - var(--header-height) - 200px))";
 const DESK_GAP = 48;
-// Vertical wheel → one card. Trackpad flings keep firing for a second, so
-// after a step the wheel stays locked until it has been quiet for a moment.
+// Vertical wheel → one card per gesture (see the wheel effect).
 const WHEEL_STEP = 40;
-const WHEEL_LOCK_MS = 450;
-const WHEEL_QUIET_MS = 140;
+const GESTURE_SILENCE_MS = 150;
+const REFLICK_MIN = 40;
+const REFLICK_MS = 350;
 
 export default function ProjectStage({
   project,
@@ -298,11 +298,16 @@ export default function ProjectStage({
   // One card forward or back; past the end (the preview, or the last card
   // when there is none) the next project takes over.
   const stepRef = useRef<(dir: 1 | -1, instant?: boolean) => void>(() => {});
+  const handedOffRef = useRef(false);
   const step = (dir: 1 | -1, instant = false) => {
     const maxPos = hasPreview ? gallery.length : last;
     const target = posRef.current + dir;
     if (target > maxPos) {
-      if (dir > 0 && onNavigateNext && nextSlug) onNavigateNext();
+      // Once: a second flick on the way out must not start a second hand-off.
+      if (dir > 0 && onNavigateNext && nextSlug && !handedOffRef.current) {
+        handedOffRef.current = true;
+        onNavigateNext();
+      }
       return;
     }
     if (target < 0) return;
@@ -317,30 +322,59 @@ export default function ProjectStage({
   // trackpad swipe scrolls it natively, snapping on its own).
   useEffect(() => {
     if (!isDesktop) return;
+    // One gesture = one card, the rule the home gallery settled on after
+    // magnitude heuristics kept failing on real trackpads. A gesture is a
+    // stream of deltas (a drag, or a flick: a short ramp, then a decaying
+    // inertia tail of a second or more); it ends after GESTURE_SILENCE_MS of
+    // silence or on a direction change. The exception is a decisive second
+    // flick inside the tail: the stream has been falling and a real push
+    // (≥ REFLICK_MIN, at least 4x the tail's low point) arrives more than
+    // REFLICK_MS after the last step. Without it a quick double swipe lost
+    // its second half, which on the next project's card meant no hand-off.
+    // Times are the events' own (`timeStamp`): while a hand-off mounts the
+    // next page the tail queues and arrives in a burst, and handling time
+    // would read the wait as silence.
+    // It starts mid-gesture and consumed: the page may have just taken over
+    // from the previous project, and the rest of that swipe must not step it.
+    // Shown again (browser back keeps this page mounted hidden): it may hand off again.
+    handedOffRef.current = false;
+    let lastWheelAt = performance.now();
+    let lastDelta = 0;
+    let lastSign = 0;
+    let lastStepAt = -Infinity;
+    let consumed = true;
+    let decaying = false;
+    let trough = Infinity;
     let acc = 0;
-    // Starts locked: the page may have just taken over from the previous
-    // project mid-gesture, and the rest of that swipe's inertia must not
-    // step this strip. Each event inside the lock extends it, so it opens
-    // once the wheel has been quiet; a direct load loses nothing.
-    let lockedUntil = performance.now() + WHEEL_QUIET_MS;
     const onWheel = (e: WheelEvent) => {
       if (detailsOpenRef.current) return;
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
-      // When the event was made, not when it is handled: while the main
-      // thread is busy (a hand-off mounting the next page) the tail queues
-      // up and arrives in a burst, and handling time would read the wait as
-      // a quiet wheel and open the lock in the middle of the same swipe.
       const now = e.timeStamp;
-      if (now < lockedUntil) {
-        lockedUntil = Math.max(lockedUntil, now + WHEEL_QUIET_MS);
-        return;
+      const magnitude = Math.abs(e.deltaY);
+      const reflick =
+        decaying && magnitude >= REFLICK_MIN && magnitude > trough * 4 && now - lastStepAt > REFLICK_MS;
+      const newGesture =
+        now - lastWheelAt > GESTURE_SILENCE_MS ||
+        (lastSign !== 0 && Math.sign(e.deltaY) !== lastSign) ||
+        reflick;
+      if (newGesture) {
+        consumed = false;
+        decaying = false;
+        trough = Infinity;
+        acc = 0;
+      } else if (magnitude < lastDelta) {
+        decaying = true;
+        trough = Math.min(trough, magnitude);
       }
+      lastWheelAt = now;
+      lastDelta = magnitude;
+      if (e.deltaY !== 0) lastSign = Math.sign(e.deltaY);
+      if (consumed) return;
       acc += e.deltaY;
       if (Math.abs(acc) < WHEEL_STEP) return;
-      const dir = acc > 0 ? 1 : -1;
-      acc = 0;
-      lockedUntil = now + WHEEL_LOCK_MS;
-      stepRef.current(dir);
+      consumed = true;
+      lastStepAt = now;
+      stepRef.current(acc > 0 ? 1 : -1);
     };
     const onKey = (e: KeyboardEvent) => {
       if (detailsOpenRef.current || e.defaultPrevented) return;
