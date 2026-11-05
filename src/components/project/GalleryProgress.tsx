@@ -13,6 +13,8 @@ type Props = {
   gallery: GalleryItem[];
   index: number;
   onEnd: boolean;
+  /** The next project's preview card is centred: the row hands over to the pill. */
+  atPreview: boolean;
   nextProject: NextProject;
   title: string;
   isDesktop: boolean;
@@ -24,8 +26,9 @@ type Props = {
 /**
  * The gallery's progress (Figma "Gallery · progress ideas", 11-04, Ali picked
  * F): a filmstrip of tiny thumbnails at the bottom centre, the current one
- * outlined, the next project's cover last with its name once you reach the
- * last clip. Every thumbnail jumps to its clip; the last one hands off.
+ * outlined, the next project's cover last. Every thumbnail jumps to its
+ * clip; the last one hands off, and so does the pill that replaces the row
+ * once the next project's card is centred.
  */
 export default function GalleryProgress(props: Props) {
   return <Filmstrip {...props} />;
@@ -33,6 +36,9 @@ export default function GalleryProgress(props: Props) {
 
 function thumbSrc(item: GalleryItem): { image?: string; video?: string } {
   if (item._type === "galleryImage" && item.image?.asset) return { image: imageUrl(item.image, 160) };
+  // A video's poster (its first frame, from Sanity) is a 160 px image; the
+  // clip itself is only the fallback, a metadata fetch per thumb.
+  if (item._type === "galleryVideo" && item.poster?.asset) return { image: imageUrl(item.poster, 160) };
   if (item._type === "galleryVideo" && item.video?.asset?._ref) return { video: fileUrl(item.video.asset._ref) };
   if (item._type === "galleryPhones") {
     const slot = item.phones?.find((p) => p.type === "image" && p.image?.asset) ?? item.phones?.[0];
@@ -51,60 +57,84 @@ function Thumb({ src, label }: { src: { image?: string; video?: string }; label:
   return null;
 }
 
-function Filmstrip({ gallery, index, onEnd, nextProject, title, isDesktop, reduceMotion, onSelect, onNavigateNext }: Props) {
-  const w = isDesktop ? 56 : 40;
-  const h = isDesktop ? 35 : 25;
+function Filmstrip({ gallery, index, onEnd, atPreview, nextProject, title, isDesktop, reduceMotion, onSelect, onNavigateNext }: Props) {
   const next = nextProject?.firstMedia as GalleryItem | null | undefined;
   const nextSrc = next ? thumbSrc(next) : {};
-  const fade = reduceMotion ? "none" : `opacity 200ms ${EASE_OUT_CSS}`;
+  const hasNext = Boolean(nextProject?.slug?.current && onNavigateNext);
+  const ease = `200ms ${EASE_OUT_CSS}`;
+  // Thumb size: 56×35 on laptop. On a phone 40×25 at most, smaller when the
+  // row would run past the page margins (every thumb plus the next cover,
+  // 6 px gaps and the 8 px before the cover).
+  const shown = (gallery.length > 1 ? gallery.length : 0) + (hasNext ? 1 : 0);
+  const thumbW = isDesktop
+    ? "56px"
+    : `min(40px, calc((100vw - 2 * var(--grid-margin) - ${hasNext ? 8 : 0}px - ${Math.max(0, shown - 1) * 6}px) / ${Math.max(1, shown)}))`;
+  const thumbBox = { width: thumbW, aspectRatio: "56 / 35" };
+  const handOver = atPreview && hasNext;
   return (
     <div className="absolute inset-x-0 bottom-0 z-30 flex justify-center px-margin pb-11 desktop:pb-12">
-      <div className="flex items-center gap-1.5 desktop:gap-2">
-        {gallery.length > 1 &&
-          gallery.map((item, i) => (
-            <button
-              key={item._key}
-              type="button"
-              onClick={() => onSelect(i)}
-              aria-label={`${title}, ${i + 1} of ${gallery.length}`}
-              aria-current={i === index ? "true" : undefined}
-              className="relative shrink-0 cursor-pointer overflow-hidden rounded-[2px] bg-tertiary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.96]"
-              style={{
-                width: w,
-                height: h,
-                opacity: i === index ? 1 : 0.6,
-                outline: i === index ? "1.5px solid var(--color-primary)" : "1.5px solid transparent",
-                outlineOffset: 1.5,
-                transition: reduceMotion ? "none" : `opacity 200ms ${EASE_OUT_CSS}, outline-color 200ms ${EASE_OUT_CSS}`,
-              }}
-            >
-              <Thumb src={thumbSrc(item)} label="" />
-            </button>
-          ))}
-        {nextProject?.slug?.current && onNavigateNext && (
-          <div className="relative ml-2 flex flex-col items-center desktop:ml-3">
+      <div className="relative">
+        <div
+          className="flex items-center gap-1.5 desktop:gap-2"
+          aria-hidden={handOver || undefined}
+          inert={handOver || undefined}
+          style={{ opacity: handOver ? 0 : 1, transition: reduceMotion ? "none" : `opacity ${ease}` }}
+        >
+          {gallery.length > 1 &&
+            gallery.map((item, i) => (
+              <button
+                key={item._key}
+                type="button"
+                onClick={() => onSelect(i)}
+                aria-label={`${title}, ${i + 1} of ${gallery.length}`}
+                aria-current={i === index ? "true" : undefined}
+                className="relative shrink-0 cursor-pointer overflow-hidden rounded-[2px] bg-tertiary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.96]"
+                style={{
+                  ...thumbBox,
+                  opacity: i === index ? 1 : 0.6,
+                  outline: i === index ? "1.5px solid var(--color-primary)" : "1.5px solid transparent",
+                  outlineOffset: 1.5,
+                  transition: reduceMotion ? "none" : `opacity ${ease}, outline-color ${ease}`,
+                }}
+              >
+                <Thumb src={thumbSrc(item)} label="" />
+              </button>
+            ))}
+          {hasNext && (
             <button
               type="button"
               onClick={onNavigateNext}
-              aria-label={`Next project: ${nextProject.title}`}
-              className="relative shrink-0 cursor-pointer overflow-hidden rounded-[2px] bg-tertiary active:scale-[0.96]"
-              style={{ width: w, height: h, opacity: onEnd ? 1 : 0.6, transition: fade }}
+              aria-label={`Next project: ${nextProject?.title}`}
+              className="relative ml-2 shrink-0 cursor-pointer overflow-hidden rounded-[2px] bg-tertiary active:scale-[0.96] desktop:ml-3"
+              style={{ ...thumbBox, opacity: onEnd ? 1 : 0.6, transition: reduceMotion ? "none" : `opacity ${ease}` }}
             >
               <Thumb src={nextSrc} label="" />
             </button>
-            {/* The hand-off as a pistachio frost pill, like the name pill
-                (Ali, 11-04), once the last clip is centred. */}
-            <button
-              type="button"
-              onClick={onNavigateNext}
-              tabIndex={onEnd ? 0 : -1}
-              aria-hidden={!onEnd}
-              className={`frost-soft absolute top-full right-0 mt-2 inline-flex desktop:right-auto h-7 items-center whitespace-nowrap rounded-full px-3 text-sub text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97] ${onEnd ? "cursor-pointer" : "pointer-events-none"}`}
-              style={{ opacity: onEnd ? 1 : 0, transition: reduceMotion ? "none" : `opacity 200ms ${EASE_OUT_CSS}, scale 160ms ${EASE_OUT_CSS}` }}
-            >
-              Next – {nextProject.title}
-            </button>
-          </div>
+          )}
+        </div>
+        {/* The hand-over (Figma "Next project · layout · 11-05", Ali picked
+            A): with the next project's card centred the row gives way to one
+            pill on the same axis as the name pill, its cover as a round
+            thumb, then its name. */}
+        {hasNext && (
+          <button
+            type="button"
+            onClick={onNavigateNext}
+            tabIndex={handOver ? 0 : -1}
+            aria-hidden={!handOver}
+            className={`frost-soft absolute top-1/2 left-1/2 inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center gap-2 rounded-full pr-4 pl-1 text-body whitespace-nowrap text-primary select-none ${handOver ? "cursor-pointer" : "pointer-events-none"}`}
+            style={{
+              translate: "-50% -50%",
+              opacity: handOver ? 1 : 0,
+              scale: handOver || reduceMotion ? "1" : "0.96",
+              transition: reduceMotion ? "none" : `opacity ${ease}, scale ${ease}`,
+            }}
+          >
+            <span className="relative h-7 w-11 shrink-0 overflow-hidden rounded-full bg-tertiary">
+              <Thumb src={nextSrc} label="" />
+            </span>
+            <span className="truncate">Next project – {nextProject?.title}</span>
+          </button>
         )}
       </div>
     </div>

@@ -12,8 +12,9 @@
  * Behaviour (see docs in /video-player/audit.md):
  * - Autoplays muted when ≥50% in view, pauses out of view. Reduced motion:
  *   never autoplays; shows the first frame with a play button.
- * - Sound control exists only when the file has an audio track (prop or
- *   detection); the project masters are silent, the journal clips are not.
+ * - Sound control shows unless the file is known to be silent: the hasAudio
+ *   prop, or Firefox's mozHasAudio. Safari and Chromium can only prove that a
+ *   track exists (early reads come back empty), so they never hide it.
  * - Progress is written straight to the DOM from rAF; React state only
  *   changes on play/pause/mute/ended/scrub-start/scrub-end.
  * - Scrub: pointer drag on the tracker, arrow keys ±5 s, Home/End.
@@ -58,6 +59,12 @@ export interface VideoPlayerProps {
   hasAudio?: boolean;
   /** Autoplay (muted) when in view. */
   autoplay?: boolean;
+  /**
+   * False while the host hides the player but keeps it mounted (the journal
+   * popup between hovers): pauses it and holds autoplay, so reopening
+   * continues from the same frame without a reload.
+   */
+  active?: boolean;
   /** Width in CSS px for fixed layouts; omit for fill. */
   width?: number;
   /** How the frame fills a fixed box: letterbox (default) or crop. */
@@ -115,6 +122,7 @@ export default function VideoPlayer({
   loop = true,
   hasAudio,
   autoplay = true,
+  active = true,
   width,
   fit = "contain",
   className = "",
@@ -134,6 +142,7 @@ export default function VideoPlayer({
   const rafRef = useRef(0);
   const userPausedRef = useRef(false);
   const inViewRef = useRef(false);
+  const activeRef = useRef(active);
   const wasPlayingRef = useRef(false);
 
   const [playing, setPlaying] = useState(false);
@@ -243,8 +252,13 @@ export default function VideoPlayer({
         audioTracks?: { length: number };
       };
       if (typeof anyV.mozHasAudio === "boolean") setAudioDetected(anyV.mozHasAudio);
-      else if (anyV.audioTracks) setAudioDetected(anyV.audioTracks.length > 0);
-      else if (typeof anyV.webkitAudioDecodedByteCount === "number") {
+      else if (anyV.audioTracks) {
+        // Safari: AVFoundation fills the list asynchronously, and on iPhone
+        // it can still be empty at loadedmetadata for a clip WITH sound, so
+        // an empty list proves nothing. Only a track is a verdict; one added
+        // later arrives through `addtrack` below.
+        if (anyV.audioTracks.length > 0) setAudioDetected(true);
+      } else if (typeof anyV.webkitAudioDecodedByteCount === "number") {
         // Chromium: the counter only moves once audio frames decode, and a
         // muted element may never decode any, so 0 proves nothing. Only a
         // positive count is a verdict; otherwise the control stays.
@@ -271,6 +285,8 @@ export default function VideoPlayer({
     v.addEventListener("volumechange", onVol);
     v.addEventListener("loadedmetadata", onMeta);
     v.addEventListener("timeupdate", onTime);
+    const tracks = (v as HTMLVideoElement & { audioTracks?: EventTarget }).audioTracks;
+    tracks?.addEventListener?.("addtrack", detect);
     if (v.readyState >= 1) onMeta();
     // Already playing when (re)attached: keep the tracker moving.
     if (!v.paused) {
@@ -284,6 +300,7 @@ export default function VideoPlayer({
       v.removeEventListener("volumechange", onVol);
       v.removeEventListener("loadedmetadata", onMeta);
       v.removeEventListener("timeupdate", onTime);
+      tracks?.removeEventListener?.("addtrack", detect);
       // Activity hides the page with the element still mounted: stop the
       // clip (and its sound) and record where it stopped. The `pause` event
       // is dispatched after the listener is gone, so set `playing` here.
@@ -303,7 +320,7 @@ export default function VideoPlayer({
       ([e]) => {
         inViewRef.current = e.isIntersecting;
         if (e.isIntersecting) {
-          if (autoplay && !reduced && !userPausedRef.current && v.paused) play();
+          if (autoplay && activeRef.current && !reduced && !userPausedRef.current && v.paused) play();
         } else if (!v.paused) {
           v.pause();
         }
@@ -312,7 +329,7 @@ export default function VideoPlayer({
     );
     io.observe(el);
     const onVis = () => {
-      if (document.visibilityState === "visible" && inViewRef.current && autoplay && !reduced && !userPausedRef.current && v.paused) play();
+      if (document.visibilityState === "visible" && inViewRef.current && activeRef.current && autoplay && !reduced && !userPausedRef.current && v.paused) play();
     };
     document.addEventListener("visibilitychange", onVis);
     return () => {
@@ -320,6 +337,18 @@ export default function VideoPlayer({
       document.removeEventListener("visibilitychange", onVis);
     };
   }, [autoplay, play, reduced]);
+
+  /* host shows / hides a mounted player */
+  useEffect(() => {
+    activeRef.current = active;
+    const v = videoRef.current;
+    if (!v) return;
+    if (!active) {
+      if (!v.paused) v.pause();
+    } else if (autoplay && inViewRef.current && !reduced && !userPausedRef.current && v.paused) {
+      play();
+    }
+  }, [active, autoplay, play, reduced]);
 
   const togglePlay = () => {
     const v = videoRef.current;

@@ -28,6 +28,13 @@ interface UseGalleryScrollOptions {
   /** Threshold passed at the bottom: run the in-place next-project transition. */
   navigateNext: () => void;
   /**
+   * The page scrolls vertically (the chapter page). The gallery stage is a
+   * fixed, unscrollable page with its own wheel steps: it is always "at the
+   * bottom", so the bottom pull would add up every wheel event there and hand
+   * off to the next project from any card.
+   */
+  verticalPage: boolean;
+  /**
    * The page tree is in the DOM (the client renders a text shell on the
    * first pass). The progress trigger needs the gallery element, so it is
    * created once this flips; on a direct load nothing else re-runs it.
@@ -66,6 +73,7 @@ export function useGalleryScroll({
   markTargetReady,
   navigateNext,
   mounted,
+  verticalPage,
 }: UseGalleryScrollOptions) {
   const galleryRef = useRef<HTMLDivElement>(null);
   const firstImageRef = useRef<HTMLDivElement>(null);
@@ -288,7 +296,7 @@ export function useGalleryScroll({
 
   // Wheel accumulation at the bottom edge — desktop only
   useEffect(() => {
-    if (isTransitioning) return;
+    if (isTransitioning || !verticalPage) return;
     if (!window.matchMedia(DESKTOP_QUERY).matches) return;
 
     const onWheel = (e: WheelEvent) => {
@@ -332,7 +340,7 @@ export function useGalleryScroll({
         unlockScroll();
       }
     };
-  }, [isTransitioning, nextProjectSlug, navigateNext, isAtBottom, updateBottomVisuals]);
+  }, [isTransitioning, verticalPage, nextProjectSlug, navigateNext, isAtBottom, updateBottomVisuals]);
 
   return {
     galleryRef,

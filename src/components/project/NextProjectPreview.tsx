@@ -17,8 +17,6 @@ interface NextProjectPreviewProps {
   /** Image width hint for the Sanity URL (desktop 1200, stage 900). */
   imageWidth?: number;
   sizes?: string;
-  /** The chapter page writes the next title beside the block itself. */
-  labelHidden?: boolean;
   /** The box ratio: 4:3 on the gallery page, 16:10 on the chapter page (flush covers). */
   aspect?: number;
 }
@@ -33,7 +31,17 @@ interface NextProjectPreviewProps {
  * back the preview box would stay empty. Owning it here, each time the page
  * shows (effects run again on return) a missing element is simply re-created.
  */
-function PreviewVideo({ src, hostRef, aspect }: { src: string; hostRef?: RefObject<HTMLDivElement | null>; aspect: number }) {
+function PreviewVideo({
+  src,
+  poster,
+  hostRef,
+  aspect,
+}: {
+  src: string;
+  poster?: string;
+  hostRef?: RefObject<HTMLDivElement | null>;
+  aspect: number;
+}) {
   const localRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const host = localRef.current;
@@ -53,6 +61,7 @@ function PreviewVideo({ src, hostRef, aspect }: { src: string; hostRef?: RefObje
       video.setAttribute("loop", "");
       video.setAttribute("preload", "auto");
       video.muted = true;
+      if (poster) video.poster = poster;
       video.src = src;
       host.appendChild(video);
     }
@@ -66,7 +75,7 @@ function PreviewVideo({ src, hostRef, aspect }: { src: string; hostRef?: RefObje
       // transition it belongs to the clone and then to the landing page.
       if (video && video.parentElement === host) video.pause();
     };
-  }, [src]);
+  }, [src, poster]);
   return (
     <div
       ref={(el) => {
@@ -93,7 +102,6 @@ export default function NextProjectPreview({
   onNavigate,
   imageWidth = 1200,
   sizes = "(min-width: 75rem) 50vw, 100vw",
-  labelHidden = false,
   aspect = 4 / 3,
 }: NextProjectPreviewProps) {
   const slug = nextProject.slug?.current;
@@ -102,7 +110,8 @@ export default function NextProjectPreview({
 
   const isImage = media._type === "galleryImage";
   const videoSrc = !isImage && media.video?.asset?._ref ? fileUrl(media.video.asset._ref) : null;
-  const label = `Next project — ${nextProject.title ?? ""}`;
+  const poster = !isImage && media.poster?.asset ? imageUrl(media.poster, imageWidth) : undefined;
+  const label = `Next project – ${nextProject.title ?? ""}`;
 
   return (
     <a
@@ -116,7 +125,7 @@ export default function NextProjectPreview({
       }}
     >
       {videoSrc ? (
-        <PreviewVideo src={videoSrc} hostRef={previewRef} aspect={aspect} />
+        <PreviewVideo src={videoSrc} poster={poster} hostRef={previewRef} aspect={aspect} />
       ) : (
         <div
           ref={previewRef}
@@ -135,7 +144,6 @@ export default function NextProjectPreview({
           )}
         </div>
       )}
-      {!labelHidden && <p className="mt-2 text-sub uppercase text-primary">{label}</p>}
     </a>
   );
 }

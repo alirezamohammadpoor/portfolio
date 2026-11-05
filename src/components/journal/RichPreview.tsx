@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useId } from "react";
-import type { FocusEvent, MouseEvent } from "react";
+import type { FocusEvent, MouseEvent, PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -17,17 +17,40 @@ interface RichPreviewProps {
   children: React.ReactNode;
 }
 
-// How long the fade-out runs before the player is unmounted.
-const FADE_MS = 300;
 // Grace period when the pointer travels from the phrase to the popup.
 const LEAVE_MS = 150;
 const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
+// Hover intent: the pointer has to rest on the phrase this long before the
+// card opens, so passing over a link on the way somewhere else does nothing.
+const OPEN_MS = 120;
+// Desktop card: full width when it fits, narrower when neither side of the
+// phrase has room for it (the card used to clamp on top of the phrase).
+const CARD_MAX = 600;
+const CARD_MIN = 360;
+// Caption row + control bar + caret gap + viewport padding, generous for a
+// title that wraps to three lines.
+const CARD_CHROME = 150;
+// Where the pointer last was, updated after React's handlers run (window,
+// bubble phase). Chrome sends pointermoves while the page scrolls under a
+// still pointer; those repeat this position with zero movement.
+let lastPointer: { x: number; y: number } | null = null;
+if (typeof window !== "undefined") {
+  window.addEventListener(
+    "pointermove",
+    (e) => {
+      lastPointer = { x: e.clientX, y: e.clientY };
+    },
+    { passive: true },
+  );
+}
 
 /**
  * Pop-up preview on a phrase in a journal post. The card is portaled to
  * <body>: the mark sits inside a <p>, and the shared VideoPlayer renders
- * block elements, which a <p> cannot contain. The player only mounts while
- * the card is open, so hidden previews never fetch or autoplay.
+ * block elements, which a <p> cannot contain. The player mounts on the first
+ * open, so previews nobody opens never fetch, and then stays mounted (paused,
+ * hidden) between hovers: unmounting made Safari refetch the file on every
+ * re-hover, flashing an empty box and losing the position.
  */
 export default function RichPreview({
   videoUrl,
@@ -46,6 +69,8 @@ export default function RichPreview({
     y: number;
   } | null>(null);
   const leaveTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  const openTimer = useRef<ReturnType<typeof setTimeout>>(null);
+  const [cardWidth, setCardWidth] = useState(CARD_MAX);
   // Last measured position, kept through the fade-out (the hook clears it
   // the moment `visible` drops).
   const lastPosition = useRef<{ top: number; left: number } | null>(null);
@@ -61,6 +86,7 @@ export default function RichPreview({
   const close = useCallback(() => {
     setVisible(false);
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    if (openTimer.current) clearTimeout(openTimer.current);
   }, []);
 
   const focusIntoCard = useCallback(() => {
@@ -103,17 +129,12 @@ export default function RichPreview({
       onClose: close,
       anchorPoint,
       anchorOnDesktop: true,
+      followOnScroll: true,
     });
 
-  // Keep the card in the DOM through the fade-out, then drop the player.
   // Mounting happens in `show` (same commit as `visible`), so the anchoring
   // hook can measure the card in its layout effect; an effect here would
   // mount it one commit too late and leave the card unpositioned.
-  useEffect(() => {
-    if (visible) return;
-    const t = setTimeout(() => setMounted(false), FADE_MS);
-    return () => clearTimeout(t);
-  }, [visible]);
 
   useGSAP(
     () => {
@@ -155,11 +176,59 @@ export default function RichPreview({
 
   const show = () => {
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
+    if (openTimer.current) clearTimeout(openTimer.current);
+    if (!visible) {
+      // Fit the 16:9 card into the roomier side of the phrase.
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (rect) {
+        const room = Math.max(rect.top, window.innerHeight - rect.bottom) - CARD_CHROME;
+        setCardWidth(Math.round(Math.max(CARD_MIN, Math.min(CARD_MAX, (room * 16) / 9))));
+      }
+    }
     setMounted(true);
     setVisible(true);
   };
 
+  /*
+   * Desktop hover, as states (11-05 spec, from a real trackpad trace):
+   *   idle    → intent   a pointer move over the phrase that actually moved
+   *                      the pointer. A phrase sliding under a still pointer
+   *                      (Lenis glides ~2 s after the wheel) is not a hover.
+   *   intent  → open     after OPEN_MS, whether or not the page is moving.
+   *   intent  → idle     pointer leaves the phrase first.
+   *   open    → closing  pointer leaves phrase and card; scrolling alone
+   *                      does not close it, the card follows the phrase.
+   *   closing → open     pointer back on the phrase or the card in time.
+   *   closing → idle     after LEAVE_MS.
+   */
+  const onPhraseMove = (e: PointerEvent<HTMLSpanElement>) => {
+    if (e.pointerType !== "mouse" || isMobile) return;
+    if (visible) {
+      if (leaveTimer.current) clearTimeout(leaveTimer.current); // closing → open
+      return;
+    }
+    if (openTimer.current) return; // already in intent
+    const still =
+      e.movementX === 0 &&
+      e.movementY === 0 &&
+      lastPointer !== null &&
+      lastPointer.x === e.clientX &&
+      lastPointer.y === e.clientY;
+    if (still) return; // the page moved, not the pointer
+    openTimer.current = setTimeout(() => {
+      openTimer.current = null;
+      show();
+    }, OPEN_MS);
+  };
+
+  const onCardEnter = (e: PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "mouse" || !visible) return;
+    if (leaveTimer.current) clearTimeout(leaveTimer.current);
+  };
+
   const hideSoon = () => {
+    if (openTimer.current) clearTimeout(openTimer.current);
+    openTimer.current = null;
     if (leaveTimer.current) clearTimeout(leaveTimer.current);
     leaveTimer.current = setTimeout(() => setVisible(false), LEAVE_MS);
   };
@@ -192,6 +261,7 @@ export default function RichPreview({
   useEffect(
     () => () => {
       if (leaveTimer.current) clearTimeout(leaveTimer.current);
+      if (openTimer.current) clearTimeout(openTimer.current);
     },
     [],
   );
@@ -206,6 +276,7 @@ export default function RichPreview({
             linkUrl={url}
             aspect="16/9"
             fit="cover"
+            active={visible}
             trackId={label}
             className="rounded-none"
           />
@@ -256,13 +327,11 @@ export default function RichPreview({
   if (position) lastPosition.current = { top: position.top, left: position.left };
   const place = position ?? lastPosition.current;
   const showPopup = visible && ready;
-  const width = isMobile ? "min(420px, calc(100vw - 32px))" : 600;
+  const width = isMobile ? "min(420px, calc(100vw - 32px))" : cardWidth;
 
   return (
     <span
       className="relative inline"
-      onMouseEnter={isMobile ? undefined : show}
-      onMouseLeave={isMobile ? undefined : hideSoon}
       onFocus={isMobile ? undefined : handleFocus}
       onBlur={handleFocusOut}
     >
@@ -274,8 +343,10 @@ export default function RichPreview({
             id={cardId}
             role="dialog"
             aria-label={label ? `Preview: ${label}` : "Preview"}
-            onMouseEnter={isMobile ? undefined : show}
-            onMouseLeave={isMobile ? undefined : hideSoon}
+            aria-hidden={!visible || undefined}
+            inert={!visible}
+            onPointerEnter={isMobile ? undefined : onCardEnter}
+            onPointerLeave={isMobile ? undefined : hideSoon}
             onBlur={handleFocusOut}
             className={`fixed z-50 transition-[opacity,transform] duration-300 ease-[var(--ease-out)] ${
               showPopup
@@ -295,8 +366,11 @@ export default function RichPreview({
 
       <span
         ref={triggerRef}
+        onPointerMove={onPhraseMove}
+        onPointerLeave={isMobile ? undefined : hideSoon}
         role="button"
         tabIndex={0}
+        data-preview-label={label ?? ""}
         aria-haspopup="dialog"
         aria-expanded={visible}
         aria-controls={mounted ? cardId : undefined}
