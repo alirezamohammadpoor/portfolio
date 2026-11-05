@@ -2,6 +2,7 @@ import type { PortableTextBlock } from "next-sanity";
 import { PortableText } from "next-sanity";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { portableTextComponents } from "@/components/portableText/components";
+import { showsChapters } from "@/lib/landing";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -17,8 +18,8 @@ export default function ProjectTextShell({ project }: { project: Project }) {
   const description = Array.isArray(project.fullDescription) && project.fullDescription.length > 0
     ? (project.fullDescription as PortableTextBlock[])
     : null;
-  const chapters = project.chapters ?? [];
-  const hasChapters = chapters.length > 0;
+  const hasChapters = showsChapters(project.chapters);
+  const chapters = hasChapters ? project.chapters ?? [] : [];
   const links = (
     <>
       {project.siteUrl && (

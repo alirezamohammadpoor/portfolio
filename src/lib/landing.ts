@@ -17,9 +17,21 @@
 
 export type LandingKind = "chapters" | "stage";
 
+/**
+ * The chapter page is parked: every project renders as a gallery project,
+ * even one that still carries `chapters[]` in Sanity. Flip to true to bring
+ * it back; the content and components are untouched.
+ */
+export const CHAPTER_PAGE = false;
+
+/** Whether a project renders the chapter page. */
+export function showsChapters(chapters: readonly unknown[] | null | undefined): boolean {
+  return CHAPTER_PAGE && (chapters?.length ?? 0) > 0;
+}
+
 export function landingKind(hasChapters: boolean | null | undefined): LandingKind {
   // Since 11-04 a gallery project is the stage on every breakpoint.
-  return hasChapters ? "chapters" : "stage";
+  return CHAPTER_PAGE && hasChapters ? "chapters" : "stage";
 }
 
 /**
