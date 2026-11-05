@@ -12,13 +12,9 @@ import { dur, ease } from "@/lib/motion";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { holdIntro, releaseIntro } from "@/lib/intro";
 import {
-  REEL_BEAT as BEAT,
-  REEL_PULL_BACK_AT,
   SCATTER_BEAT,
-  scatterStartsAt,
   getReelState,
   reelScrubMode,
-  reelVariant,
   setReelState,
   skipReel,
   useReelState,
@@ -28,8 +24,6 @@ type Project = PROJECTS_QUERY_RESULT[number];
 
 /** Longest wait for the first cover's frame before the reel gives up. */
 const READY_TIMEOUT = 1200;
-/** Breathing room around the home at the overview. */
-const MAP_FILL = 0.86;
 
 interface HomeReelProps {
   projects: PROJECTS_QUERY_RESULT;
@@ -38,15 +32,15 @@ interface HomeReelProps {
 }
 
 /**
- * Entry reel: every project's cover passes full bleed, quicker and quicker,
- * then the view pulls back until the whole home fits on screen, the covers
- * sliding from their stacked slots into their places on the page, and dives
- * into the top. The last frame is the page itself, so the stage just fades.
+ * Home entry: while the name is written every project's cover flies out of
+ * the middle onto one field, the field holds, and the view dives into the
+ * first project (see scatterTimeline). The last frame is the page itself, so
+ * the stage just fades.
  *
  * The stage is a fixed layer outside <main> (which is hidden until the name
- * lands) and only moves transforms and clip paths: nothing on the page lays
- * out twice. Each hero is a box the size of its cover on the page, scaled up
- * and clipped to the viewport for the reel, so the landing is pixel exact.
+ * lands) and only moves transforms: nothing on the page lays out twice. Each
+ * hero is a box the size of its cover on the page, so the landing is pixel
+ * exact.
  */
 export default function HomeReel({ projects, pageRef }: HomeReelProps) {
   const reel = useReelState();
@@ -75,7 +69,6 @@ export default function HomeReel({ projects, pageRef }: HomeReelProps) {
         return;
       }
       const scrubbing = reelScrubMode();
-      const variant = reelVariant();
       let cancelled = false;
       let tl: gsap.core.Timeline | null = null;
       const offs: (() => void)[] = [];
@@ -97,7 +90,7 @@ export default function HomeReel({ projects, pageRef }: HomeReelProps) {
           ScrollTrigger.refresh();
         };
         if (cancelled || !stage) return done();
-        gsap.to(stage, { autoAlpha: 0, duration: variant === "scatter" ? SCATTER_BEAT.handOver : BEAT.handOver, ease: ease.out, onComplete: done });
+        gsap.to(stage, { autoAlpha: 0, duration: SCATTER_BEAT.handOver, ease: ease.out, onComplete: done });
       }
 
       function onInput() {
@@ -146,12 +139,7 @@ export default function HomeReel({ projects, pageRef }: HomeReelProps) {
           return { x: r.left, y: r.top + window.scrollY, w: r.width, h: r.height };
         });
         tl = gsap.timeline({ paused: true, onComplete: scrubbing ? undefined : finish });
-        if (variant === "scatter") {
-          // Keeps the name black over the scatter (globals.css).
-          document.documentElement.dataset.reelVariant = "scatter";
-          scatterTimeline(tl, heroes, world, rects);
-        }
-        else reelTimeline(tl, heroes, world, rects);
+        scatterTimeline(tl, heroes, world, rects);
 
         lenisRef.current?.stop();
         holdIntro();
@@ -199,56 +187,7 @@ interface Rect {
 }
 
 /**
- * The cover reel: heroes stacked full bleed in a column of screens pass
- * upward, quicker and quicker, the last one eases in and holds, then the
- * view pulls back to the whole home as the heroes slide into their slots,
- * holds, and dives into the top.
- */
-function reelTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: HTMLElement, rects: Rect[]) {
-  const VW = window.innerWidth;
-  const VH = window.innerHeight;
-  const n = heroes.length;
-  const H = Math.max(...rects.map((r) => r.y + r.h)) + 48;
-  heroes.forEach((hero, i) => {
-    const { x, y, w, h } = rects[i];
-    // Stacked: scaled up to cover the viewport, clipped to it, in slot i of
-    // a column of screens.
-    const k = Math.max(VW / w, VH / h);
-    const insetX = Math.max(0, (w - VW / k) / 2);
-    const insetY = Math.max(0, (h - VH / k) / 2);
-    gsap.set(hero, {
-      left: x,
-      top: y,
-      width: w,
-      height: h,
-      transformOrigin: "50% 50%",
-      x: VW / 2 - (x + w / 2),
-      y: i * VH + VH / 2 - (y + h / 2),
-      scale: k,
-      clipPath: `inset(${insetY}px ${insetX}px)`,
-    });
-  });
-  const s = Math.min(1, (VH * MAP_FILL) / H);
-  gsap.set(world, { transformOrigin: "0 0", x: 0, y: 0, scale: 1, autoAlpha: 1 });
-
-  const bottom = -(n - 1) * VH;
-  // Speeding up to the second-last project, then the last one decelerates
-  // in and holds before the pull back.
-  tl.to(world, { y: bottom + VH, duration: BEAT.reel, ease: BEAT.reelEase }, BEAT.hold);
-  tl.to(world, { y: bottom, duration: BEAT.stop, ease: "power1.out" });
-  const outAt = REEL_PULL_BACK_AT;
-  tl.to(world, { x: (VW - VW * s) / 2, y: (VH - H * s) / 2, scale: s, duration: BEAT.out, ease: ease.inOut }, outAt);
-  tl.to(
-    heroes,
-    { x: 0, y: 0, scale: 1, clipPath: "inset(0px 0px)", duration: BEAT.out, ease: ease.inOut, stagger: BEAT.stagger },
-    outAt,
-  );
-  const diveAt = outAt + BEAT.out + BEAT.stagger * (n - 1) + BEAT.map;
-  tl.to(world, { x: 0, y: 0, scale: 1, duration: BEAT.dive, ease: ease.inOut }, diveAt);
-}
-
-/**
- * Field spots for the scatter variant: left, top and width of each cover as
+ * Field spots: left, top and width of each cover as
  * fractions of the field. Laptop: the six-tile composition of /lab/scatter
  * fitted to one screen (a 16:10 field inside the viewport, under the
  * header). Phone: a zigzag down the whole screen, left and right columns apart.
@@ -274,11 +213,11 @@ const SCATTER_PHONE = [
 ];
 
 /**
- * The scatter experiment: the name is written on an empty stage; as it
- * leaves for the header every cover flies out of the middle to its spot on
- * one field, the field holds with a slow drift, then the view dives into
- * the first project, which grows into its own slot at the top of the home
- * while the rest of the field passes out of frame. The camera is the world
+ * The entry's timeline: while the name is being written every cover flies
+ * out of the middle to its spot on one field, the field holds with a slow
+ * drift once the name has reached the header, then the view dives into the
+ * first project, which grows into its own slot at the top of the home while
+ * the rest of the field drifts out of frame. The camera is the world
  * transform, so the first cover lands pixel exact and the page takes over.
  */
 function scatterTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: HTMLElement, rects: Rect[]) {
@@ -319,7 +258,7 @@ function scatterTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: H
   });
   gsap.set(world, { transformOrigin: "0 0", x: 0, y: 0, scale: 1, autoAlpha: 1 });
 
-  const at = scatterStartsAt();
+  const at = SCATTER_BEAT.start;
   // Out of the middle, first project first, each to its spot.
   heroes.forEach((hero, i) => {
     const { x, y, scale } = spread[i];

@@ -1,19 +1,16 @@
 /**
- * Home entry reel state (script: /mnt/project-files/home-reel/script.md).
- * On the first fresh load of the home in a browser session the inline gate
- * script in the site layout marks `<html data-reel="pending">` next to the
- * intro's mark. The reel then waits for its first cover to show a frame,
- * plays under the handwritten name and hands over to the page; the intro
- * holds back its "done" until the reel has landed (src/lib/intro.ts).
+ * Home entry state. On the first fresh load of the home in a browser session
+ * the inline gate script in the site layout marks `<html data-reel="pending">`
+ * next to the intro's mark. The entry waits for its first cover to show a
+ * frame, then plays with the handwritten name (Ali 11-05, "scatter early";
+ * replaced the cover reel of PR #46): while the name is being written every
+ * project flies out of the middle onto one field, the name leaves for the
+ * header, and the view dives into the first project, landing on its slot at
+ * the top of the home. The intro holds back its "done" until the entry has
+ * landed (src/lib/intro.ts).
  *
- * `?reel` in the URL forces it on any load; `?reel=scrub` keeps it paused
- * under a slider for tuning the beats.
- *
- * Experiment (Ali 11-04): `?reel=scatter` plays the scatter variant instead:
- * the name is written on an empty page and, as it leaves for the header,
- * every project scatters out from the middle onto one field, holds, and the
- * view dives into the first one. `?reel=scatter&scrub` scrubs it;
- * `&early` scatters behind the name while it is still being written.
+ * `?reel` in the URL forces it on any load; `?reel=scrub` (or `&scrub`)
+ * keeps it paused under a slider for tuning the beats.
  */
 
 import { useSyncExternalStore } from "react";
@@ -24,50 +21,13 @@ export type ReelState = "off" | "waiting" | "playing" | "done";
 
 const SESSION_KEY = "home-reel";
 
-/**
- * Beats, seconds (script: /mnt/project-files/home-reel/script.md). The name
- * starts writing at 0 and leaves for the header as the pull back starts.
- * Ali 10-30: the first cut (hold 0.9, reel 1.8 on power2.in) went too fast.
- */
-export const REEL_BEAT = {
-  /** The first project holds full bleed while the name starts. */
-  hold: 0.6,
-  /** The other heroes pass upward, each quicker than the last, up to the
-   *  second-last project (quadratic ease-in). */
-  reel: 3.0,
-  reelEase: "power1.in",
-  /** Soft stop (Ali 11-02, over a rubber band; the hard hit into the pull
-   *  back was too sharp): the last project decelerates in, power1.out
-   *  leaving at the speed power1.in arrived with, and holds. */
-  stop: 0.75,
-  stopHold: 0.3,
-  /** Pull back to the whole home while the heroes slide into their slots. */
-  out: 0.9,
-  /** Top-to-bottom offset between the heroes' slides. */
-  stagger: 0.03,
-  /** The whole home, small and still. Ali 10-30: slow the ending a bit. */
-  map: 0.8,
-  /** Dive into the top of the page. */
-  dive: 1.1,
-  /** Crossfade from the stage to the page's own covers. */
-  handOver: 0.3,
-};
-
-/** When the pull back starts: the name leaves for the header then. */
-export const REEL_PULL_BACK_AT = REEL_BEAT.hold + REEL_BEAT.reel + REEL_BEAT.stop + REEL_BEAT.stopHold;
-
-export type ReelVariant = "reel" | "scatter";
-
-/** Which entry plays: the cover reel (default) or the scatter experiment. */
-export function reelVariant(): ReelVariant {
-  if (typeof location === "undefined") return "reel";
-  return new URLSearchParams(location.search).get("reel") === "scatter" ? "scatter" : "reel";
-}
-
-/** Beats of the scatter variant, seconds. */
+/** Beats, seconds. The name starts writing at 0. */
 export const SCATTER_BEAT = {
-  /** The name is written alone on the empty page (≈2.6 s writing plus its
-   *  0.5 s hold); the scatter starts as it leaves for the header. */
+  /** The covers leave the middle behind the name while it is still being
+   *  written (Ali 11-04: earlier than the name's move). */
+  start: 1.0,
+  /** The name leaves the middle for the header: ≈2.6 s writing plus its
+   *  0.5 s hold. */
   write: 3.1,
   /** Every cover flies out from the middle to its place on the field. */
   scatter: 1.1,
@@ -78,27 +38,15 @@ export const SCATTER_BEAT = {
   /** Dive into the first project: it grows into its slot at the top of the
    *  home while the rest of the field drifts out of frame and fades. */
   dive: 1.4,
-  /** `&early` (Ali 11-04): the covers scatter out behind the name while it
-   *  is still being written, from this point. */
-  earlyStart: 1.0,
   /** Earliest dive after the name has landed in the header. */
   afterName: 0.3,
-  /** Crossfade from the stage to the page: longer than the reel's, the
-   *  page's second row fades up here. */
+  /** Crossfade from the stage to the page; the page's second row fades up
+   *  here. */
   handOver: 0.5,
 };
 
-/** When the covers leave the middle: as the name moves, or with `&early`
- *  while it is still writing. */
-export function scatterStartsAt() {
-  const early = typeof location !== "undefined" && new URLSearchParams(location.search).has("early");
-  return early ? SCATTER_BEAT.earlyStart : SCATTER_BEAT.write;
-}
-
-/** When the name leaves the middle for the header, by variant. */
-export function reelNameMoveAt() {
-  return reelVariant() === "scatter" ? SCATTER_BEAT.write : REEL_PULL_BACK_AT;
-}
+/** When the name leaves the middle for the header. */
+export const REEL_NAME_MOVE_AT = SCATTER_BEAT.write;
 
 let state: ReelState =
   typeof document !== "undefined" && document.documentElement.dataset.reel === "pending"
