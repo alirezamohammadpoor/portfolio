@@ -1,9 +1,9 @@
-import { ImageResponse } from "next/og";
 import { getProject } from "@/sanity/lib/data";
 import { palette } from "@/lib/palette";
+import { OG_SIZE, ogResponse } from "@/lib/og";
 
 export const alt = "Ali Reza Mohammad Poor — Project";
-export const size = { width: 1200, height: 630 };
+export const size = OG_SIZE;
 export const contentType = "image/png";
 
 export default async function ProjectOgImage({
@@ -21,7 +21,7 @@ export default async function ProjectOgImage({
     ? project.techStack.slice(0, 6)
     : [];
 
-  return new ImageResponse(
+  return ogResponse(
     (
       <div
         style={{
@@ -102,6 +102,6 @@ export default async function ProjectOgImage({
         </div>
       </div>
     ),
-    size,
+    "project",
   );
 }

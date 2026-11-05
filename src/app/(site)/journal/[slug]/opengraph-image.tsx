@@ -1,9 +1,9 @@
-import { ImageResponse } from "next/og";
 import { getJournalPost } from "@/sanity/lib/data";
 import { palette } from "@/lib/palette";
+import { OG_SIZE, ogResponse } from "@/lib/og";
 
 export const alt = "Ali Reza Mohammad Poor — Journal";
-export const size = { width: 1200, height: 630 };
+export const size = OG_SIZE;
 export const contentType = "image/png";
 
 export default async function JournalOgImage({
@@ -18,7 +18,7 @@ export default async function JournalOgImage({
   const title = post?.title ?? "Journal";
   const excerpt = post?.excerpt ?? "";
 
-  return new ImageResponse(
+  return ogResponse(
     (
       <div
         style={{
@@ -96,6 +96,6 @@ export default async function JournalOgImage({
         </div>
       </div>
     ),
-    size,
+    "journal",
   );
 }

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { draftMode } from "next/headers";
 import { getJournalPage, getJournalPosts } from "@/sanity/lib/data";
 import JournalContent from "@/components/journal/JournalContent";
-import { OPEN_GRAPH_BASE } from "@/lib/site";
+import { OPEN_GRAPH_BASE, SITE_OG_IMAGE } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Journal",
@@ -16,6 +16,7 @@ export const metadata: Metadata = {
     title: "Journal",
     description:
       "Insights and case studies from recent projects.",
+    images: [SITE_OG_IMAGE],
   },
 };
 

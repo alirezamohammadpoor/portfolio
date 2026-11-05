@@ -15,3 +15,16 @@ export const OPEN_GRAPH_BASE = {
   siteName: SITE_NAME,
   locale: "en_US",
 } as const;
+
+/**
+ * The site-wide share image (src/app/opengraph-image.tsx), for pages that
+ * have no image of their own. Never put it in OPEN_GRAPH_BASE: the project
+ * and journal pages spread that, and an `images` key there would hide the
+ * per-page image their own routes generate.
+ */
+export const SITE_OG_IMAGE = {
+  url: "/opengraph-image",
+  width: 1200,
+  height: 630,
+  alt: "Ali Reza Mohammad Poor — Developer",
+} as const;
