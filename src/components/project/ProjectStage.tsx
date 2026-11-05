@@ -299,9 +299,26 @@ export default function ProjectStage({
   // when there is none) the next project takes over.
   const stepRef = useRef<(dir: 1 | -1, instant?: boolean) => void>(() => {});
   const handedOffRef = useRef(false);
+  // The card nearest the strip's centre, read from the strip itself.
+  const nearest = () => {
+    const strip = stripRef.current;
+    if (!strip) return posRef.current;
+    const mid = strip.scrollLeft + strip.clientWidth / 2;
+    let best = { d: Infinity, i: posRef.current };
+    itemRefs.current.forEach((el, i) => {
+      if (!el) return;
+      const d = Math.abs(el.offsetLeft + el.offsetWidth / 2 - mid);
+      if (d < best.d) best = { d, i };
+    });
+    return best.i;
+  };
   const step = (dir: 1 | -1, instant = false) => {
     const maxPos = hasPreview ? gallery.length : last;
-    const target = posRef.current + dir;
+    // Mid-glide the target is the truth; at rest the strip is (a page shown
+    // again after browser back may sit somewhere else than posRef says).
+    const strip = stripRef.current;
+    const from = strip && !gsap.isTweening(strip) ? nearest() : posRef.current;
+    const target = from + dir;
     if (target > maxPos) {
       // Once: a second flick on the way out must not start a second hand-off.
       if (dir > 0 && onNavigateNext && nextSlug && !handedOffRef.current) {
@@ -317,6 +334,22 @@ export default function ProjectStage({
   useLayoutEffect(() => {
     stepRef.current = step;
   });
+
+  // Shown again (browser back from the next project: this page stayed
+  // mounted hidden, parked on the next project's card). Come back on the last
+  // clip of this project, so the next swipe shows its own content again
+  // instead of leaving at once.
+  useEffect(() => {
+    const strip = stripRef.current;
+    if (!strip || !hasPreview) return;
+    const raf = requestAnimationFrame(() => {
+      if (nearest() <= last) return;
+      posRef.current = last;
+      goTo(last, true);
+    });
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Laptop: vertical wheel and arrow keys step the strip (a horizontal
   // trackpad swipe scrolls it natively, snapping on its own).
