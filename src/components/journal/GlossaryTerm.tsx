@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useId } from "react";
 import type { MouseEvent } from "react";
 import { createPortal } from "react-dom";
 import gsap from "gsap";
@@ -24,6 +24,7 @@ export default function GlossaryTerm({
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
   const triggerRef = useRef<HTMLSpanElement>(null);
   const popupRef = useRef<HTMLSpanElement>(null);
+  const explanationId = useId();
 
   const close = useCallback(() => {
     setVisible(false);
@@ -124,6 +125,7 @@ export default function GlossaryTerm({
                 )}
 
                 <span
+                  id={explanationId}
                   className="block rounded-2xl bg-pistachio px-4 py-2 text-left text-sub text-primary whitespace-normal"
                   style={{
                     maxWidth: "min(320px, calc(100vw - 32px))",
@@ -148,10 +150,19 @@ export default function GlossaryTerm({
           ref={triggerRef}
           role="button"
           tabIndex={0}
-          aria-label={`Definition: ${explanation}`}
+          aria-describedby={visible ? explanationId : undefined}
           aria-expanded={visible}
           onClick={handleClick}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(e as unknown as MouseEvent<HTMLSpanElement>); } }}
+          onKeyDown={(e) => {
+            if (e.key === "Escape" && visible) {
+              close();
+              return;
+            }
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handleClick(e as unknown as MouseEvent<HTMLSpanElement>);
+            }
+          }}
           className="cursor-pointer"
         >
           {children}
@@ -164,11 +175,15 @@ export default function GlossaryTerm({
     <span className="relative inline">
       <span
         ref={popupRef}
+        aria-hidden="true"
         className={`pointer-events-none fixed bottom-auto left-1/2 top-1/2 z-50 mb-0 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.33,1,0.68,1)] desktop:absolute desktop:bottom-full desktop:top-auto desktop:-translate-x-1/2 desktop:translate-y-0 ${
           visible ? "opacity-100" : "opacity-0 desktop:translate-y-1"
         }`}
       >
-        <span className="w-max max-w-[300px] rounded-2xl bg-pistachio px-4 py-2 text-left text-sub text-primary whitespace-normal">
+        <span
+          id={explanationId}
+          className="w-max max-w-[300px] rounded-2xl bg-pistachio px-4 py-2 text-left text-sub text-primary whitespace-normal"
+        >
           {explanation}
         </span>
         <span className="hidden size-0 border-x-[6px] border-x-transparent border-t-[6px] border-t-pistachio desktop:block" />
@@ -178,10 +193,19 @@ export default function GlossaryTerm({
         ref={triggerRef}
         role="button"
         tabIndex={0}
-        aria-label={`Definition: ${explanation}`}
+        aria-describedby={explanationId}
         aria-expanded={visible}
         onClick={handleClick}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(e as unknown as MouseEvent<HTMLSpanElement>); } }}
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && visible) {
+            close();
+            return;
+          }
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleClick(e as unknown as MouseEvent<HTMLSpanElement>);
+          }
+        }}
         onMouseEnter={() => setVisible(true)}
         onMouseLeave={() => {
           setVisible(false);

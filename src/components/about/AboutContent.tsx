@@ -59,7 +59,7 @@ export default function AboutContent({
       const targets = [
         portraitMobileRef.current,
         portraitDesktopRef.current,
-      ].filter((el) => el && getComputedStyle(el).display !== "none");
+      ].filter((el): el is HTMLDivElement => el !== null);
       const reduced = prefersReducedMotion();
       if (targets.length) {
         // A nudge and a fade, not a full-width slide.
@@ -109,7 +109,7 @@ export default function AboutContent({
         {portrait?.asset && (
           <div
             ref={portraitMobileRef}
-            className="invisible relative mt-6 aspect-[3/4] w-full overflow-hidden bg-tertiary desktop:hidden"
+            className="gsap-hidden relative mt-6 aspect-[3/4] w-full overflow-hidden bg-tertiary desktop:hidden"
           >
             <Image
               src={imageUrl(portrait, 780)}
@@ -134,7 +134,7 @@ export default function AboutContent({
           {email && <CopyButton value={email} label="Email" />}
         </div>
 
-        <div ref={spotifyRef} className="mt-6 max-w-[400px] invisible">
+        <div ref={spotifyRef} className="mt-6 max-w-[400px] gsap-hidden">
           <SpotifyWidget />
         </div>
       </div>
@@ -143,7 +143,7 @@ export default function AboutContent({
       {portrait?.asset && (
         <div
           ref={portraitDesktopRef}
-          className="invisible hidden desktop:flex desktop:w-1/3 desktop:items-center desktop:justify-center"
+          className="gsap-hidden hidden desktop:flex desktop:w-1/3 desktop:items-center desktop:justify-center"
         >
           <div className="relative aspect-[3/4] w-full overflow-hidden bg-tertiary">
             <Image

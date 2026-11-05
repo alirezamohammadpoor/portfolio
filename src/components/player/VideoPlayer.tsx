@@ -199,7 +199,11 @@ export default function VideoPlayer({
     if (!v) return;
     const p = v.play();
     if (p && typeof p.catch === "function") {
-      p.then(() => setBlocked(false)).catch(() => {
+      p.then(() => setBlocked(false)).catch((err: unknown) => {
+        // A pause() that interrupts a pending play() rejects with AbortError.
+        // That is not an autoplay block, and the `pause` event already
+        // clears `playing`.
+        if ((err as { name?: string } | null)?.name === "AbortError") return;
         setBlocked(true);
         setPlaying(false);
       });
@@ -278,8 +282,13 @@ export default function VideoPlayer({
       v.removeEventListener("pause", onPause);
       v.removeEventListener("ended", onEnded);
       v.removeEventListener("volumechange", onVol);
-        v.removeEventListener("loadedmetadata", onMeta);
+      v.removeEventListener("loadedmetadata", onMeta);
       v.removeEventListener("timeupdate", onTime);
+      // Activity hides the page with the element still mounted: stop the
+      // clip (and its sound) and record where it stopped. The `pause` event
+      // is dispatched after the listener is gone, so set `playing` here.
+      v.pause();
+      setPlaying(false);
       stopLoop();
       saveVideoPosition(v, src);
     };

@@ -124,7 +124,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
         {post.coverImage?.asset && (
           <div
             ref={imageRef}
-            className="invisible relative aspect-[3/4] w-full shrink-0 overflow-hidden bg-tertiary desktop:aspect-auto desktop:w-1/2"
+            className="gsap-hidden relative aspect-[3/4] w-full shrink-0 overflow-hidden bg-tertiary desktop:aspect-auto desktop:w-1/2"
           >
             <Image
               src={imageUrl(post.coverImage, 1400)}
@@ -143,7 +143,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
         {post.body && (
           <div
             ref={bodyRef}
-            className="invisible text-sub desktop:text-body text-primary space-y-4 mx-auto max-w-[75ch] [&>h2]:mt-12 [&>h3]:mt-10 [&>h4]:mt-8 [&_h2]:text-[32px] [&_h2]:leading-[40px] desktop:[&_h2]:text-[40px] desktop:[&_h2]:leading-[48px] [&_h3]:text-[24px] [&_h3]:leading-[32px] desktop:[&_h3]:text-[32px] desktop:[&_h3]:leading-[40px] [&_h4]:text-[16px] [&_h4]:leading-[24px] desktop:[&_h4]:text-[24px] desktop:[&_h4]:leading-[32px] [&_h5]:text-[14px] [&_h5]:leading-[20px] desktop:[&_h5]:text-[20px] desktop:[&_h5]:leading-[28px] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+            className="gsap-hidden text-sub desktop:text-body text-primary space-y-4 mx-auto max-w-[75ch] [&>h2]:mt-12 [&>h3]:mt-10 [&>h4]:mt-8 [&_h2]:text-[32px] [&_h2]:leading-[40px] desktop:[&_h2]:text-[40px] desktop:[&_h2]:leading-[48px] [&_h3]:text-[24px] [&_h3]:leading-[32px] desktop:[&_h3]:text-[32px] desktop:[&_h3]:leading-[40px] [&_h4]:text-[16px] [&_h4]:leading-[24px] desktop:[&_h4]:text-[24px] desktop:[&_h4]:leading-[32px] [&_h5]:text-[14px] [&_h5]:leading-[20px] desktop:[&_h5]:text-[20px] desktop:[&_h5]:leading-[28px] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
           >
             <PortableText
               value={post.body as PortableTextBlock[]}
@@ -155,7 +155,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
       {relatedPosts.length > 0 && (
         <section
           ref={carouselRef}
-          className="invisible mx-auto desktop:max-w-[50vw] mt-16 pb-8 px-4 desktop:px-6"
+          className="gsap-hidden mx-auto desktop:max-w-[50vw] mt-16 pb-8 px-4 desktop:px-6"
         >
           <h2 className="uppercase text-sub desktop:text-body">More posts</h2>
           <div className="mt-4 flex gap-2 overflow-x-auto snap-x snap-mandatory">

@@ -125,6 +125,10 @@ export function useAnchoredMobileOverlay(
     return { top, left, caretLeft, placement };
   }, [anchorPoint, forceAbove, popupRef, triggerRef]);
 
+  // Activity hides a page with the popup still mounted and its callers'
+  // timers cleared; close it so it does not come back on browser back.
+  useLayoutEffect(() => () => onCloseRef.current(), []);
+
   useLayoutEffect(() => {
     if (!visible || !active) {
       setPosition(null);
@@ -167,7 +171,12 @@ export function useAnchoredMobileOverlay(
       document.addEventListener("mousedown", handleOutsideTap);
     }, 150);
 
-    window.addEventListener("scroll", handleDismiss, { passive: true, capture: true });
+    // Touch: a scroll dismisses the popup. Pointer: Lenis keeps emitting
+    // scroll events for about a second after the wheel stops, which would
+    // close a card the moment it opens, so the card follows the phrase
+    // instead and the pointer leaving it closes it.
+    const onScroll = isMobile ? handleDismiss : handleReposition;
+    window.addEventListener("scroll", onScroll, { passive: true, capture: true });
     window.addEventListener("resize", handleReposition);
     window.addEventListener("orientationchange", handleReposition);
     window.visualViewport?.addEventListener("resize", handleReposition);
@@ -186,12 +195,12 @@ export function useAnchoredMobileOverlay(
       ro?.disconnect();
       document.removeEventListener("touchstart", handleOutsideTap);
       document.removeEventListener("mousedown", handleOutsideTap);
-      window.removeEventListener("scroll", handleDismiss, { capture: true } as EventListenerOptions);
+      window.removeEventListener("scroll", onScroll, { capture: true } as EventListenerOptions);
       window.removeEventListener("resize", handleReposition);
       window.removeEventListener("orientationchange", handleReposition);
       window.visualViewport?.removeEventListener("resize", handleReposition);
     };
-  }, [visible, active, measurePosition, popupRef, triggerRef]);
+  }, [visible, active, isMobile, measurePosition, popupRef, triggerRef]);
 
   return {
     isMobile,

@@ -223,6 +223,13 @@ export default function SpotifyWidget() {
   const [hovered, setHovered] = useState(false);
   const canHover = typeof window !== "undefined" && window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const timeLabel = useTimeLabel(data, cachedAt);
+  // The label is computed at render; re-render once a minute so it keeps
+  // counting while the poll finds nothing new.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((n) => n + 1), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   if (isLoading && !data) {
     return (
@@ -258,6 +265,8 @@ export default function SpotifyWidget() {
               fill
               className="object-cover"
               sizes="32px"
+              // Spotify CDN art: the Sanity loader passes it through unchanged.
+              unoptimized
             />
           )}
         </div>

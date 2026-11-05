@@ -4,6 +4,7 @@ import { useRef } from "react";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { useTitleAnimation, useBodyAnimation } from "@/hooks/useTextAnimation";
+import { prefersReducedMotion } from "@/lib/motion";
 import type { JOURNAL_POSTS_QUERY_RESULT } from "@/sanity/types";
 import JournalCard from "./JournalCard";
 
@@ -29,10 +30,11 @@ export default function JournalContent({
       if (!gridRef.current) return;
       const cards = gridRef.current.querySelectorAll(":scope > a");
       if (!cards.length) return;
+      const reduced = prefersReducedMotion();
 
       gsap.fromTo(
         cards,
-        { yPercent: 40, autoAlpha: 0 },
+        { yPercent: reduced ? 0 : 40, autoAlpha: 0 },
         {
           yPercent: 0,
           autoAlpha: 1,

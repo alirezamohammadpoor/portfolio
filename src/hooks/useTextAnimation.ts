@@ -33,7 +33,9 @@ export function useTitleAnimation(
         autoSplit: true,
         mask: "chars",
         charsClass: "char",
-        aria: "none",
+        // The heading keeps its text as an aria-label and the chars are
+        // aria-hidden, so it is not read letter by letter.
+        aria: "auto",
         onSplit: (self) =>
           gsap.from(self.chars, {
             duration,
