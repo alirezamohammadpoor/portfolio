@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "portless portfolio next dev --turbopack",
+    "dev:plain": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
@@ -32,6 +33,8 @@
     "@types/react-dom": "19.2.4",
     "eslint": "^9.39.5",
     "eslint-config-next": "16.3.0",
+    "playwright": "^1.63.0",
+    "portless": "^0.16.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.2.0",
     "typescript": "^5.9.3"

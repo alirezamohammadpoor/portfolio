@@ -39,15 +39,17 @@ PANEL_HEX = "#1a1a1a"  # bg-primary, what the "black" phones panel drew
 
 
 def token():
+    # A write token of its own (SANITY_TOKEN, an Editor token): the app's
+    # SANITY_API_READ_TOKEN is a Viewer token and stays one.
     if os.environ.get("SANITY_TOKEN"):
         return os.environ["SANITY_TOKEN"]
     if ENV.exists():
         for line in ENV.read_text().splitlines():
-            if line.startswith("SANITY_API_READ_TOKEN="):
+            if line.startswith("SANITY_TOKEN="):
                 return line.split("=", 1)[1].strip().strip("'\"")
     if DRY:
         return None  # the plan is computed from the published documents
-    sys.exit(f"no token: set SANITY_TOKEN or add SANITY_API_READ_TOKEN to {ENV}")
+    sys.exit(f"no token: set SANITY_TOKEN (an Editor token) in the environment or in {ENV}")
 
 
 TOKEN = token()
