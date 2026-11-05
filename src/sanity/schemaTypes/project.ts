@@ -379,6 +379,26 @@ export const project = defineType({
               validation: (rule) => rule.required(),
             }),
             defineField({ name: "frame", title: "Background", type: "mediaFrame" }),
+            defineField({
+              name: "poster",
+              title: "Poster",
+              type: "image",
+              description:
+                "The clip's first frame, shown until the clip has loaded. Filled in by scripts/sanity/video-posters.mjs; run it again after replacing the clip.",
+            }),
+            defineField({
+              name: "videoWidth",
+              title: "Clip width",
+              type: "number",
+              readOnly: true,
+              description: "Pixels, read from the clip by scripts/sanity/video-posters.mjs, so the card has its shape before the clip loads.",
+            }),
+            defineField({
+              name: "videoHeight",
+              title: "Clip height",
+              type: "number",
+              readOnly: true,
+            }),
           ],
           preview: {
             prepare: () => ({ title: "Video" }),

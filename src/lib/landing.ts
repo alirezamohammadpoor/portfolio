@@ -45,6 +45,11 @@ export function imageAspect(
   return d?.width && d?.height ? d.width / d.height : null;
 }
 
+/** Width / height stored on a gallery video in Sanity (video-posters.mjs), else null. */
+export function storedVideoAspect(item: { videoWidth?: number | null; videoHeight?: number | null } | null | undefined): number | null {
+  return item?.videoWidth && item.videoHeight ? item.videoWidth / item.videoHeight : null;
+}
+
 /** Width / height of a video element once it knows its size, else null. */
 export function videoAspect(video: HTMLVideoElement | null | undefined): number | null {
   return video?.videoWidth && video.videoHeight ? video.videoWidth / video.videoHeight : null;

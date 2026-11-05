@@ -330,7 +330,6 @@ export default function ProjectGallery({
                   onNavigate={onNavigateNext}
                   sizes="(min-width: 75rem) 66vw, 100vw"
                   aspect={LANDING_ASPECT.chapters}
-                  labelHidden
                 />
               </div>
             </div>
@@ -342,7 +341,6 @@ export default function ProjectGallery({
               previewRef={previewRef}
               onNavigate={onNavigateNext}
               aspect={LANDING_ASPECT.gallery}
-              labelHidden
             />
           </div>
         )
