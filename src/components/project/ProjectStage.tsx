@@ -780,7 +780,7 @@ export default function ProjectStage({
       </div>
 
       {/* Strip, vertically centred in the remaining space */}
-      <div className={`flex flex-1 items-center pb-[52px] desktop:pb-[72px]${hidden && arrivedInPlace ? " opacity-0" : ""}`}>
+      <div className={`flex flex-1 items-center pb-[52px] desktop:pb-[72px] ${hidden && arrivedInPlace ? "opacity-0" : ""}`}>
         <div
           ref={stripRef}
           // A lone card is centred by the strip itself; with the next project's
