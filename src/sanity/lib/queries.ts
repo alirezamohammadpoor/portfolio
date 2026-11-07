@@ -132,13 +132,22 @@ export const PROJECTS_QUERY = defineQuery(`
 // so a project sharing its `order` with another, or without one, is still
 // somebody's next project instead of being skipped.
 const NEXT_PROJECT_FIELDS = `title, slug, heroLayout, "hasChapters": count(chapters) > 0, ${NEXT_PROJECT_MEDIA}`;
+// allProjects: every project in the chain's order, for the project switcher
+// (the index button on the filmstrip): name, slug and the first card's still,
+// the media a switcher cover morphs onto.
 export const PROJECT_BY_SLUG_QUERY = defineQuery(`
   *[_type == "project" && slug.current == $slug][0] {
     ${PROJECT_FIELDS},
     "nextProject": coalesce(
       *[_type == "project" && _id != ^._id && (coalesce(order, 1e9) > coalesce(^.order, 1e9) || (coalesce(order, 1e9) == coalesce(^.order, 1e9) && _id > ^._id))] | order(coalesce(order, 1e9) asc, _id asc) [0] { ${NEXT_PROJECT_FIELDS} },
       *[_type == "project" && _id != ^._id] | order(coalesce(order, 1e9) asc, _id asc) [0] { ${NEXT_PROJECT_FIELDS} }
-    )
+    ),
+    "allProjects": *[_type == "project" && defined(slug.current)] | order(coalesce(order, 1e9) asc, _id asc) {
+      _id,
+      title,
+      slug,
+      "first": gallery[0]{ _type, poster, image, "phone": phones[0]{ poster, image } }
+    }
   }
 `);
 
