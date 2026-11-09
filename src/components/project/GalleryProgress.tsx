@@ -5,6 +5,7 @@ import { useState } from "react";
 import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { EASE_OUT_CSS } from "@/lib/motion";
+import { GridIcon, ROUND_BUTTON } from "@/components/project/ProjectSwitcher";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 type GalleryItem = NonNullable<Project["gallery"]>[number];
@@ -27,6 +28,9 @@ type Props = {
   reduceMotion: boolean;
   onSelect: (i: number) => void;
   onNavigateNext?: () => void;
+  /** Opens every project (ProjectSwitcher): the round button leading the row. */
+  onOpenIndex?: () => void;
+  indexOpen?: boolean;
 };
 
 /**
@@ -63,7 +67,7 @@ function Thumb({ src, label }: { src: { image?: string; video?: string }; label:
   return null;
 }
 
-function Filmstrip({ gallery, index, onEnd, atPreview, testName, testEnded, onReplay, nextProject, title, isDesktop, reduceMotion, onSelect, onNavigateNext }: Props) {
+function Filmstrip({ gallery, index, onEnd, atPreview, testName, testEnded, onReplay, nextProject, title, isDesktop, reduceMotion, onSelect, onNavigateNext, onOpenIndex, indexOpen }: Props) {
   // The pill keeps the last test's name while it fades out.
   const [shownTest, setShownTest] = useState(testName ?? null);
   if (testName && testName !== shownTest) setShownTest(testName);
@@ -74,11 +78,12 @@ function Filmstrip({ gallery, index, onEnd, atPreview, testName, testEnded, onRe
   const ease = `200ms ${EASE_OUT_CSS}`;
   // Thumb size: 56×35 on laptop. On a phone 40×25 at most, smaller when the
   // row would run past the page margins (every thumb plus the next cover,
-  // 6 px gaps and the 8 px before the cover).
+  // 6 px gaps and the 8 px before the cover, and the index button with
+  // its 8 px when there is one).
   const shown = (gallery.length > 1 ? gallery.length : 0) + (hasNext ? 1 : 0);
   const thumbW = isDesktop
     ? "56px"
-    : `min(40px, calc((100vw - 2 * var(--grid-margin) - ${hasNext ? 8 : 0}px - ${Math.max(0, shown - 1) * 6}px) / ${Math.max(1, shown)}))`;
+    : `min(40px, calc((100vw - 2 * var(--grid-margin) - ${hasNext ? 8 : 0}px - ${onOpenIndex ? 44 : 0}px - ${Math.max(0, shown - 1) * 6}px) / ${Math.max(1, shown)}))`;
   const thumbBox = { width: thumbW, aspectRatio: "56 / 35" };
   const handOver = atPreview && hasNext;
   return (
@@ -90,6 +95,18 @@ function Filmstrip({ gallery, index, onEnd, atPreview, testName, testEnded, onRe
           inert={handOver || undefined}
           style={{ opacity: handOver ? 0 : 1, transition: reduceMotion ? "none" : `opacity ${ease}` }}
         >
+          {onOpenIndex && (
+            <button
+              type="button"
+              onClick={onOpenIndex}
+              aria-label="All projects"
+              aria-haspopup="dialog"
+              aria-expanded={indexOpen ?? false}
+              className={`${ROUND_BUTTON} mr-0.5 desktop:mr-1`}
+            >
+              <GridIcon />
+            </button>
+          )}
           {gallery.length > 1 &&
             gallery.map((item, i) => (
               <button

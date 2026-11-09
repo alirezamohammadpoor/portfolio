@@ -35,6 +35,7 @@ import { resolveFrame, resolveLandingFrame } from "@/lib/mediaFrame";
 import { LANDING_ASPECT, LANDING_SIZES, imageAspect, landingKind, storedVideoAspect, videoAspect } from "@/lib/landing";
 import ProjectDetailsOverlay from "@/components/project/ProjectDetailsOverlay";
 import GalleryProgress from "@/components/project/GalleryProgress";
+import ProjectSwitcher from "@/components/project/ProjectSwitcher";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -52,6 +53,8 @@ interface ProjectStageProps {
   onNavigateNext?: () => void;
   /** Laptop layout: equal-height cards, flat neighbours, wheel steps. */
   isDesktop?: boolean;
+  /** Open any project from the switcher, morphing from `media` when it can. */
+  onNavigateTo?: (slug: string, media: HTMLElement | null) => void;
 }
 
 // Motion spec (phase 2). Reference: Swiper coverflow demo at 390 px —
@@ -137,9 +140,11 @@ export default function ProjectStage({
   previewRef,
   onNavigateNext,
   isDesktop = false,
+  onNavigateTo,
 }: ProjectStageProps) {
   const gallery = project.gallery ?? [];
   const nextProject = project.nextProject;
+  const allProjects = project.allProjects ?? [];
   const hasPreview = Boolean(nextProject?.firstMedia && nextProject?.slug?.current && onNavigateNext);
   const stripRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -252,10 +257,16 @@ export default function ProjectStage({
     { scope: rootRef, dependencies: [hidden] },
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
+  // Every project (ProjectSwitcher, the index button on the filmstrip).
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+  const closeSwitcher = useCallback(() => setSwitcherOpen(false), []);
+  // Either overlay covers the strip: no wheel, keys, swipes or auto-advance
+  // under it, and the centred clip pauses.
+  const covered = detailsOpen || switcherOpen;
   const detailsOpenRef = useRef(false);
   useLayoutEffect(() => {
-    detailsOpenRef.current = detailsOpen;
-  }, [detailsOpen]);
+    detailsOpenRef.current = covered;
+  }, [covered]);
   const hiddenRef = useRef(hidden);
   useLayoutEffect(() => {
     hiddenRef.current = hidden;
@@ -603,14 +614,14 @@ export default function ProjectStage({
     handedOffRef.current = false;
   }, []);
   useEffect(() => {
-    if (!atPreview || scrolling || detailsOpen || hidden || !onNavigateNext) return;
+    if (!atPreview || scrolling || covered || hidden || !onNavigateNext) return;
     const t = window.setTimeout(() => {
       if (handedOffRef.current) return;
       handedOffRef.current = true;
       onNavigateNext();
     }, AUTO_NEXT_MS);
     return () => window.clearTimeout(t);
-  }, [atPreview, scrolling, detailsOpen, hidden, onNavigateNext]);
+  }, [atPreview, scrolling, covered, hidden, onNavigateNext]);
 
   // Phone: a swipe on the next project's card opens it (Ali, 11-05: at the
   // end of the strip a swipe did nothing, only a tap or the hold moved on).
@@ -678,7 +689,7 @@ export default function ProjectStage({
     const videos = itemRefs.current[index]?.querySelectorAll("video");
     if (!videos?.length) return;
     videos.forEach((v) => {
-      if (detailsOpen) v.pause();
+      if (covered) v.pause();
       else {
         // An A/B test clip (InlineClip `once`) holding its last frame (or
         // resting there under reduced motion) stays; one paused mid-film by
@@ -688,7 +699,7 @@ export default function ProjectStage({
         if (p && typeof p.catch === "function") p.catch(() => {});
       }
     });
-  }, [detailsOpen, index]);
+  }, [covered, index]);
 
   // Video budget: only the centred card plays; neighbours sit paused on their
   // first frame; everything else is unmounted (see `near` below). A phones
@@ -765,7 +776,10 @@ export default function ProjectStage({
           data-stage-chrome="pill"
           aria-expanded={detailsOpen}
           aria-controls="project-details"
-          onClick={() => setDetailsOpen((o) => !o)}
+          onClick={() => {
+            setSwitcherOpen(false);
+            setDetailsOpen((o) => !o);
+          }}
           className="frost-soft invisible inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] cursor-pointer items-center gap-2 rounded-full px-4 text-body text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97]"
         >
           <span className="truncate">{project.title}</span>
@@ -1018,9 +1032,27 @@ export default function ProjectStage({
           goTo(i);
         }}
         onNavigateNext={nextSlug ? onNavigateNext : undefined}
+        onOpenIndex={allProjects.length > 1 ? () => {
+          setDetailsOpen(false);
+          setSwitcherOpen(true);
+        } : undefined}
+        indexOpen={switcherOpen}
       />
 
       <ProjectDetailsOverlay project={project} open={detailsOpen} onClose={closeDetails} reduceMotion={reduceMotion} />
+      {allProjects.length > 1 && (
+        <ProjectSwitcher
+          projects={allProjects}
+          currentSlug={project.slug?.current}
+          open={switcherOpen}
+          onClose={closeSwitcher}
+          onPick={(slug, media) => {
+            if (onNavigateTo) onNavigateTo(slug, media);
+          }}
+          isDesktop={isDesktop}
+          reduceMotion={reduceMotion}
+        />
+      )}
     </div>
   );
 }

@@ -143,6 +143,18 @@ function ProjectPageView({ project, nextProject }: ProjectPageClientProps) {
     });
   }, [nextSlug, nextHasChapters, plainRouter, startTransition]);
 
+  // Any project from the switcher: the picked cover is that project's first
+  // card, so it morphs in place onto the page it opens, like the next pill.
+  const navigateTo = useCallback(
+    (slug: string, media: HTMLElement | null) => {
+      const href = `/project/${slug}`;
+      const source = prefersReducedMotion() ? null : cloneSourceFromElement(media);
+      if (source) startTransition({ ...source, inPlace: true });
+      plainRouter.push(href);
+    },
+    [plainRouter, startTransition],
+  );
+
   const {
     galleryRef,
     firstImageRef,
@@ -262,6 +274,7 @@ function ProjectPageView({ project, nextProject }: ProjectPageClientProps) {
       onFirstReady={onFirstReady}
       previewRef={previewRef}
       onNavigateNext={nextSlug ? navigateNext : undefined}
+      onNavigateTo={navigateTo}
       isDesktop={isDesktop}
     />
   );
