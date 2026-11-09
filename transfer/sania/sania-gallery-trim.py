@@ -84,9 +84,9 @@ UP = {
     "C5": ("file-e354bee4fc2fc00d28a5735a034b37b4b9670a75-mp4", "image-3eba5a218d36d7efaf7abebf8f735d2e9680ab0a-1920x1200-jpg"),
 }
 
-base = get(f"drafts.{DOC}")
+base = get(f"drafts.{DOC}") or get(DOC)  # the 14:45 gallery was published at 14:55
 if not base:
-    sys.exit(f"drafts.{DOC} not found (expected the 14:45 draft)")
+    sys.exit(f"{DOC} not found")
 print(f"base: {base['_id']} (rev {base.get('_rev')}), gallery {len(base.get('gallery') or [])} items")
 UP["C6"] = clip("C6")
 UP["C3c"] = clip("C3c")
