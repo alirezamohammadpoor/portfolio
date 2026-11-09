@@ -293,6 +293,7 @@ export type Project = {
           _key: string;
         }>;
         frame?: MediaFrame;
+        testName?: string;
         _type: "galleryPhones";
         _key: string;
       }
@@ -1011,6 +1012,7 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
           _key: string;
         }>;
         frame?: MediaFrame;
+        testName?: string;
         _type: "galleryPhones";
         _key: string;
       }
