@@ -35,6 +35,7 @@ import { resolveFrame, resolveLandingFrame } from "@/lib/mediaFrame";
 import { LANDING_ASPECT, LANDING_SIZES, imageAspect, landingKind, storedVideoAspect, videoAspect } from "@/lib/landing";
 import ProjectDetailsOverlay from "@/components/project/ProjectDetailsOverlay";
 import GalleryProgress from "@/components/project/GalleryProgress";
+import TestReplay from "@/components/project/TestReplay";
 import ProjectSwitcher from "@/components/project/ProjectSwitcher";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
@@ -76,21 +77,9 @@ const PHONE_BAND = "calc(100svh - var(--header-height) - 56px - 52px - 48px)";
 /** A phone card's width: the full column width unless the band bounds it. */
 const phoneCardWidth = (boxAspect: number, gapsPx = 0, band = PHONE_BAND) =>
   `min(${ITEM_W}, calc(${band} * ${boxAspect.toFixed(4)} + ${gapsPx}px))`;
-// An A/B test clip (Sanity testName) carries the test pill above the
-// filmstrip (Figma "Stronger · test pill · 11-05"), so its screen gives up
-// the pill's room: 36 px pill, 10 px over the filmstrip, 12 px clear of the
-// card on either side of the centred strip. At 390×664 that is a ~170 px wide
-// phone, about one screen of a two-phone row.
-const TEST_PHONE_BAND = `calc(${PHONE_BAND} - 102px)`;
 // Laptop: one height for every card (Figma "Gallery · laptop alternatives",
 // 11-04: 640 at 1440×900), the width follows each card's ratio.
 const DESK_H = "min(760px, calc(100svh - var(--header-height) - 200px))";
-// With A/B tests on the page every laptop card keeps the test pill's room
-// too (one height across the page): the pill's top sits 131 px above the
-// bottom, the card's bottom must stay 12 px above it (stage pb 72 + strip
-// py 24 around a centred card), 70 px more than the plain budget.
-const DESK_TESTS_ROOM = 70;
-const DESK_H_TESTS = `min(760px, calc(100svh - var(--header-height) - ${200 + DESK_TESTS_ROOM}px))`;
 const DESK_GAP = 48;
 // Card height cap on laptop (Ali 11-04: raised from 640 so big screens keep 8 columns).
 const DESK_MAX_H = 760;
@@ -101,13 +90,13 @@ const SWIPE_NEXT_PX = 40;
 
 type DeskGrid = { col: number; gutter: number; h: number };
 /** Laptop grid in px (globals.css: 12 columns, --grid-margin, --grid-gutter) and the card height budget. */
-function measureDeskGrid(room = 0): DeskGrid {
+function measureDeskGrid(): DeskGrid {
   const cs = getComputedStyle(document.documentElement);
   const margin = parseFloat(cs.getPropertyValue("--grid-margin")) || 24;
   const gutter = parseFloat(cs.getPropertyValue("--grid-gutter")) || 16;
   const header = parseFloat(cs.getPropertyValue("--header-height")) || 40;
   const vw = document.documentElement.clientWidth;
-  return { col: (vw - 2 * margin - 11 * gutter) / 12, gutter, h: Math.min(DESK_MAX_H, window.innerHeight - header - 200 - room) };
+  return { col: (vw - 2 * margin - 11 * gutter) / 12, gutter, h: Math.min(DESK_MAX_H, window.innerHeight - header - 200) };
 }
 // Vertical wheel → one card per gesture (see the wheel effect).
 const WHEEL_STEP = 40;
@@ -165,17 +154,16 @@ export default function ProjectStage({
     firstVideoRef.current = adopted;
   }, [adopted, isTransitioning, project.title]);
   const [index, setIndex] = useState(0);
-  // A/B test clips (Sanity testName on a phones row): the pill above the
-  // filmstrip names the centred one and replays it; cards make its room.
+  // A/B test clips (Sanity testName on a phones row): the name pill names
+  // the centred one and carries its replay slot (TestReplay).
   const hasTests = gallery.some((g) => g._type === "galleryPhones" && Boolean(g.testName));
-  const deskRoom = hasTests ? DESK_TESTS_ROOM : 0;
-  const deskH = hasTests ? DESK_H_TESTS : DESK_H;
   const [replay, setReplay] = useState(0);
   // Key of the test clip holding its last frame (the pill's icon brightens).
   const [endedKey, setEndedKey] = useState<string | null>(null);
   // The next project's preview card is centred (it is not in `index`, which
   // counts gallery clips only): the filmstrip hands over to the next pill.
   const [atPreview, setAtPreview] = useState(false);
+  const current = gallery[index];
   // Video ratios as they report metadata (by item key); images carry theirs.
   // An adopted element already knows its size.
   const [videoAspects, setVideoAspects] = useState<Record<string, number>>(() => {
@@ -192,17 +180,17 @@ export default function ProjectStage({
   // home → project clone measures card 1 in the page's own layout effect,
   // which runs before a re-render from this component's effects would land,
   // so the first render must already be snapped.
-  const [grid, setGrid] = useState<DeskGrid | null>(() => (isDesktop ? measureDeskGrid(deskRoom) : null));
+  const [grid, setGrid] = useState<DeskGrid | null>(() => (isDesktop ? measureDeskGrid() : null));
   useLayoutEffect(() => {
     if (!isDesktop) return;
     const measure = () => {
-      const g = measureDeskGrid(deskRoom);
+      const g = measureDeskGrid();
       setGrid((prev) => (prev && prev.col === g.col && prev.gutter === g.gutter && prev.h === g.h ? prev : g));
     };
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [isDesktop, deskRoom]);
+  }, [isDesktop]);
 
   // Entrance (Ali, 11-04: nothing moves until the morph is done). The stage
   // stays hidden while the home → project clone is in flight and `hidden`
@@ -260,6 +248,11 @@ export default function ProjectStage({
   // Every project (ProjectSwitcher, the index button on the filmstrip).
   const [switcherOpen, setSwitcherOpen] = useState(false);
   const closeSwitcher = useCallback(() => setSwitcherOpen(false), []);
+  // The centred clip's A/B test, named in the name pill; the pill reads as
+  // the project again over the details or the switcher and on the next
+  // project's card.
+  const testName =
+    !atPreview && !detailsOpen && !switcherOpen && current?._type === "galleryPhones" ? (current.testName ?? null) : null;
   // Either overlay covers the strip: no wheel, keys, swipes or auto-advance
   // under it, and the centred clip pauses.
   const covered = detailsOpen || switcherOpen;
@@ -726,7 +719,6 @@ export default function ProjectStage({
   }, [index]);
 
   const onEnd = index >= last && Boolean(nextSlug && onNavigateNext);
-  const current = gallery[index];
   // Desktop card box (Ali, 11-04: "use the columns"): the widest even
   // column span that fits the card height at the box's ratio, so the
   // centred card starts and ends on the 12-column grid (an even span
@@ -740,7 +732,7 @@ export default function ProjectStage({
     return span(n);
   };
   const deskBox = (boxAspect: number, i: number) => {
-    if (!grid) return { height: deskH, aspectRatio: boxAspect, marginLeft: i === 0 ? 0 : DESK_GAP };
+    if (!grid) return { height: DESK_H, aspectRatio: boxAspect, marginLeft: i === 0 ? 0 : DESK_GAP };
     const width = snapWidth(grid.h * boxAspect);
     return { width, height: width / boxAspect, marginLeft: i === 0 ? 0 : DESK_GAP };
   };
@@ -749,8 +741,8 @@ export default function ProjectStage({
     const gaps = (screens - 1) * 16;
     if (!grid)
       return {
-        height: deskH,
-        width: `calc(${deskH} * ${(screens * PHONE_ASPECT).toFixed(4)} + ${gaps}px)`,
+        height: DESK_H,
+        width: `calc(${DESK_H} * ${(screens * PHONE_ASPECT).toFixed(4)} + ${gaps}px)`,
         marginLeft: i === 0 ? 0 : DESK_GAP,
       };
     const natural = grid.h * screens * PHONE_ASPECT + gaps;
@@ -771,26 +763,57 @@ export default function ProjectStage({
           project → project clone lands on the previous page's y). */}
       <h1 className="sr-only">{project.title}</h1>
       <div className="relative z-50 flex h-14 shrink-0 items-start justify-center pt-2">
-        <button
-          type="button"
+        {/* With an A/B test centred (Figma "Test pill · placement · 11-09",
+            Ali picked C + R3) the pill carries it: the replay slot on the
+            left, the test's name after the title. A phone has room for one,
+            so there the test's name stands in for the title. */}
+        <div
           data-stage-chrome="pill"
-          aria-expanded={detailsOpen}
-          aria-controls="project-details"
-          onClick={() => {
-            setSwitcherOpen(false);
-            setDetailsOpen((o) => !o);
-          }}
-          className="frost-soft invisible inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] cursor-pointer items-center gap-2 rounded-full px-4 text-body text-primary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97]"
+          className={`frost-soft invisible inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center rounded-full text-body text-primary ${testName ? "pl-1" : ""}`}
         >
-          <span className="truncate">{project.title}</span>
-          <span
-            aria-hidden="true"
-            className="shrink-0 text-[0.5rem]"
-            style={{ transform: detailsOpen ? "rotate(180deg)" : "none", transition: reduceMotion ? "none" : `transform 200ms ${EASE_OUT_CSS}` }}
+          {testName && (
+            <TestReplay
+              key={current?._key}
+              name={testName}
+              ended={Boolean(current && endedKey === current._key)}
+              reduceMotion={reduceMotion}
+              getVideo={() => itemRefs.current[index]?.querySelector<HTMLVideoElement>("video[data-once]") ?? null}
+              onReplay={() => setReplay((r) => r + 1)}
+            />
+          )}
+          <button
+            type="button"
+            aria-expanded={detailsOpen}
+            aria-controls="project-details"
+            onClick={() => {
+              setSwitcherOpen(false);
+              setDetailsOpen((o) => !o);
+            }}
+            className={`inline-flex h-full min-w-0 cursor-pointer items-center gap-2 rounded-full pr-4 transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97] ${testName ? "pl-2" : "pl-4"}`}
           >
-            ▼
-          </span>
-        </button>
+            <span className="truncate">
+              {testName ? (
+                <>
+                  {isDesktop && (
+                    <>
+                      {project.title} <span className="text-secondary">·</span>{" "}
+                    </>
+                  )}
+                  A/B test – {testName}
+                </>
+              ) : (
+                project.title
+              )}
+            </span>
+            <span
+              aria-hidden="true"
+              className="shrink-0 text-[0.5rem]"
+              style={{ transform: detailsOpen ? "rotate(180deg)" : "none", transition: reduceMotion ? "none" : `transform 200ms ${EASE_OUT_CSS}` }}
+            >
+              ▼
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Strip, vertically centred in the remaining space */}
@@ -845,7 +868,7 @@ export default function ProjectStage({
                           // 8 px gaps (PhonesRow); a background makes it a 16:10 panel.
                           width: phonesFrame.background
                             ? phoneCardWidth(16 / 10)
-                            : phoneCardWidth(screens * PHONE_ASPECT, (screens - 1) * 8, item.testName ? TEST_PHONE_BAND : PHONE_BAND),
+                            : phoneCardWidth(screens * PHONE_ASPECT, (screens - 1) * 8),
                           marginLeft: i === 0 ? 0 : -OVERLAP,
                           transition:
                             reduceMotion || scrolling || entering ? "none" : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}`,
@@ -1020,9 +1043,6 @@ export default function ProjectStage({
         index={index}
         onEnd={onEnd}
         atPreview={atPreview && hasPreview}
-        testName={!atPreview && current?._type === "galleryPhones" ? (current.testName ?? null) : null}
-        testEnded={Boolean(current && endedKey === current._key)}
-        onReplay={() => setReplay((r) => r + 1)}
         nextProject={nextProject}
         title={project.title ?? "Project"}
         isDesktop={isDesktop}
