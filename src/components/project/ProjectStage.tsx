@@ -35,7 +35,7 @@ import { resolveFrame, resolveLandingFrame } from "@/lib/mediaFrame";
 import { LANDING_ASPECT, LANDING_SIZES, imageAspect, landingKind, storedVideoAspect, videoAspect } from "@/lib/landing";
 import ProjectDetailsOverlay from "@/components/project/ProjectDetailsOverlay";
 import GalleryProgress from "@/components/project/GalleryProgress";
-import ProjectSwitcher, { type SwitcherVariant } from "@/components/project/ProjectSwitcher";
+import ProjectSwitcher from "@/components/project/ProjectSwitcher";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -257,15 +257,8 @@ export default function ProjectStage({
     { scope: rootRef, dependencies: [hidden] },
   );
   const [detailsOpen, setDetailsOpen] = useState(false);
-  // Every project (ProjectSwitcher). Two layouts to compare in code (Ali
-  // 11-07, Figma "Project switcher · 11-05" B and D): the contact sheet by
-  // default, the zoom-out reel with ?switcher=reel.
+  // Every project (ProjectSwitcher, the index button on the filmstrip).
   const [switcherOpen, setSwitcherOpen] = useState(false);
-  // The stage renders on the client only (ProjectPageClient mounts it after
-  // hydration), so the query string is there on the first render.
-  const [switcherVariant] = useState<SwitcherVariant>(() =>
-    typeof window !== "undefined" && new URLSearchParams(window.location.search).get("switcher") === "reel" ? "reel" : "sheet",
-  );
   const closeSwitcher = useCallback(() => setSwitcherOpen(false), []);
   // Either overlay covers the strip: no wheel, keys, swipes or auto-advance
   // under it, and the centred clip pauses.
@@ -1051,7 +1044,6 @@ export default function ProjectStage({
         <ProjectSwitcher
           projects={allProjects}
           currentSlug={project.slug?.current}
-          variant={switcherVariant}
           open={switcherOpen}
           onClose={closeSwitcher}
           onPick={(slug, media) => {
