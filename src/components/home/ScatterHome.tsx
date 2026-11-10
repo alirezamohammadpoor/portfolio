@@ -155,7 +155,12 @@ export default function ScatterHome({ projects, contact }: ScatterHomeProps) {
         gsap.set([...media, ...text], { autoAlpha: 0 });
         ScrollTrigger.create({
           trigger: row,
-          start: "top 85%",
+          // Clamped, so a row that can never reach 85 % at the foot of the
+          // page (the closing line on a tall window) still enters. The
+          // closing line starts as soon as it peeks in: it is the last
+          // thing on the page and short, so it must never wait on a scroll
+          // position the page may not have.
+          start: row.dataset.enter === "early" ? "clamp(top bottom-=1)" : "clamp(top 85%)",
           once: true,
           onEnter: () => {
             gsap.set([...media, ...text], { autoAlpha: 1 });
@@ -272,7 +277,7 @@ export default function ScatterHome({ projects, contact }: ScatterHomeProps) {
           contact details on the About document. It replaced the index table
           of every project, which repeated the rows above it. */}
       {contact && (contact.email || contact.linkedinUrl || contact.githubUrl) && (
-        <section data-row className="mt-24 desktop:mt-40 desktop:grid desktop:grid-cols-12 desktop:gap-4">
+        <section data-row data-enter="early" className="mt-24 desktop:mt-40 desktop:grid desktop:grid-cols-12 desktop:gap-4">
           <p data-text className="text-h2 desktop:col-start-1 desktop:col-end-8 desktop:text-h1">
             <ClosingLine contact={contact} />
           </p>
