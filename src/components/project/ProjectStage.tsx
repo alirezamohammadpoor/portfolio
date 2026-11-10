@@ -65,6 +65,8 @@ const OVERLAP = 44;
 const NEIGHBOUR_SCALE = 0.92;
 const NEIGHBOUR_OPACITY = 0.6;
 const SETTLE_MS = 200;
+// Gap kept between the pill's excerpt and the centred card.
+const EXCERPT_CLEAR = 16;
 const ITEM_W = "calc(100vw - 2 * var(--grid-margin))";
 // Phone: the band a card may fill, the viewport less the header, the pill
 // row (h-14), the room kept under the strip for the filmstrip (pb-[52px])
@@ -260,6 +262,12 @@ export default function ProjectStage({
       ? current.label?.trim() || null
       : null;
   const pillLabel = testName ? `A/B test – ${testName}` : clipLabel;
+  // A short line under the pill while the clip is centred (Sanity
+  // `excerpt`; Figma "Pill excerpt · 11-10", Ali picked A in black).
+  const excerpt =
+    pillFree && (current?._type === "galleryPhones" || current?._type === "galleryVideo")
+      ? current.excerpt?.trim() || null
+      : null;
   // Either overlay covers the strip: no wheel, keys, swipes or auto-advance
   // under it, and the centred clip pauses.
   const covered = detailsOpen || switcherOpen;
@@ -760,6 +768,28 @@ export default function ProjectStage({
     return { width, height: (width - gaps) / (screens * PHONE_ASPECT), marginLeft: i === 0 ? 0 : DESK_GAP };
   };
 
+  // The excerpt hangs under the pill row, over the room above the card. Where
+  // it would reach the centred card, the strip scales down from the card's
+  // bottom edge just enough to clear it, so the filmstrip keeps its place.
+  const stripWrapRef = useRef<HTMLDivElement>(null);
+  const excerptRef = useRef<HTMLParagraphElement>(null);
+  useLayoutEffect(() => {
+    const wrap = stripWrapRef.current;
+    if (!wrap) return;
+    const ex = excerptRef.current;
+    const card = itemRefs.current[index];
+    let transform = "";
+    if (ex && card) {
+      const h = card.offsetHeight;
+      const need = ex.offsetTop + ex.offsetHeight + EXCERPT_CLEAR - (wrap.offsetTop + card.offsetTop);
+      if (need > 0 && h > 0) {
+        wrap.style.transformOrigin = `50% ${card.offsetTop + h}px`;
+        transform = `scale(${Math.max(0.7, (h - need) / h).toFixed(4)})`;
+      }
+    }
+    wrap.style.transform = transform;
+  }, [excerpt, index, grid, isDesktop]);
+
   return (
     <div
       ref={rootRef}
@@ -821,10 +851,23 @@ export default function ProjectStage({
             </span>
           </button>
         </div>
+        {excerpt && (
+          <p
+            key={current?._key}
+            ref={excerptRef}
+            className="absolute top-12 left-1/2 w-max max-w-[min(440px,calc(100vw-2*var(--grid-margin)))] -translate-x-1/2 text-center text-[0.875rem] leading-5 text-balance text-primary transition-opacity duration-200 starting:opacity-0"
+          >
+            {excerpt}
+          </p>
+        )}
       </div>
 
       {/* Strip, vertically centred in the remaining space */}
-      <div className={`flex flex-1 items-center pb-[52px] desktop:pb-[72px] ${hidden && arrivedInPlace ? "opacity-0" : ""}`}>
+      <div
+        ref={stripWrapRef}
+        className={`relative flex flex-1 items-center pb-[52px] desktop:pb-[72px] ${hidden && arrivedInPlace ? "opacity-0" : ""}`}
+        style={{ transition: reduceMotion ? "none" : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}` }}
+      >
         <div
           ref={stripRef}
           // A lone card is centred by the strip itself; with the next project's
