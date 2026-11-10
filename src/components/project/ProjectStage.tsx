@@ -251,8 +251,15 @@ export default function ProjectStage({
   // The centred clip's A/B test, named in the name pill; the pill reads as
   // the project again over the details or the switcher and on the next
   // project's card.
-  const testName =
-    !atPreview && !detailsOpen && !switcherOpen && current?._type === "galleryPhones" ? (current.testName ?? null) : null;
+  const pillFree = !atPreview && !detailsOpen && !switcherOpen;
+  const testName = pillFree && current?._type === "galleryPhones" ? (current.testName ?? null) : null;
+  // Any other clip can name itself in the pill too (Sanity `label`, e.g.
+  // "Prototype – Shop the Look"); it loops as usual, so no replay slot.
+  const clipLabel =
+    pillFree && !testName && (current?._type === "galleryPhones" || current?._type === "galleryVideo")
+      ? current.label?.trim() || null
+      : null;
+  const pillLabel = testName ? `A/B test – ${testName}` : clipLabel;
   // Either overlay covers the strip: no wheel, keys, swipes or auto-advance
   // under it, and the centred clip pauses.
   const covered = detailsOpen || switcherOpen;
@@ -792,14 +799,14 @@ export default function ProjectStage({
             className={`inline-flex h-full min-w-0 cursor-pointer items-center gap-2 rounded-full pr-4 transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97] ${testName ? "pl-2" : "pl-4"}`}
           >
             <span className="truncate">
-              {testName ? (
+              {pillLabel ? (
                 <>
                   {isDesktop && (
                     <>
                       {project.title} <span className="text-secondary">·</span>{" "}
                     </>
                   )}
-                  A/B test – {testName}
+                  {pillLabel}
                 </>
               ) : (
                 project.title
