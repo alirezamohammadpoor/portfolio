@@ -438,9 +438,17 @@ export const project = defineType({
               type: "number",
               readOnly: true,
             }),
+            defineField({
+              name: "label",
+              title: "Pill label",
+              type: "string",
+              description:
+                "Optional. Names this clip in the pill above the filmstrip while it is centred, e.g. \"Prototype – Shop the Look\". The clip loops as usual. An A/B test name takes its place when both are set.",
+            }),
           ],
           preview: {
-            prepare: () => ({ title: "Video" }),
+            select: { label: "label" },
+            prepare: ({ label }) => ({ title: label || "Video" }),
           },
         },
         {
@@ -464,11 +472,18 @@ export const project = defineType({
               description:
                 "The test this clip shows, e.g. Bestseller badge. When set, the clip plays once each time it is centred and holds on its last frame (the design), and a pill above the filmstrip reads \"A/B test – <name>\" with a replay button.",
             }),
+            defineField({
+              name: "label",
+              title: "Pill label",
+              type: "string",
+              description:
+                "Optional. Names this clip in the pill above the filmstrip while it is centred, e.g. \"Prototype – Shop the Look\". The clip loops as usual. An A/B test name takes its place when both are set.",
+            }),
           ],
           preview: {
-            select: { phones: "phones", testName: "testName" },
-            prepare: ({ phones, testName }) => ({
-              title: testName ? `A/B test – ${testName}` : `Phones (${Array.isArray(phones) ? phones.length : 0})`,
+            select: { phones: "phones", testName: "testName", label: "label" },
+            prepare: ({ phones, testName, label }) => ({
+              title: testName ? `A/B test – ${testName}` : label || `Phones (${Array.isArray(phones) ? phones.length : 0})`,
             }),
           },
         },
