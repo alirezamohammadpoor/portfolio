@@ -120,7 +120,7 @@ export async function GET() {
   await connection();
   const now = Date.now();
   if (cachedData && now - cachedAt < CACHE_TTL) {
-    return Response.json(cachedData, { status: cachedStatus });
+    return Response.json(cachedData, { status: cachedStatus, headers: cdnCacheHeaders(cachedStatus) });
   }
 
   if (!inFlight) {
@@ -139,5 +139,17 @@ export async function GET() {
   cachedData = data;
   cachedStatus = status;
   cachedAt = Date.now();
-  return Response.json(data, { status });
+  return Response.json(data, { status, headers: cdnCacheHeaders(status) });
+}
+
+// The widget polls every 10s for as long as /about is open, and each poll
+// would otherwise run this function. Let Vercel's CDN answer repeat polls:
+// a 200 for 10s (the poll interval, so "now playing" stays as fresh as it
+// was), an error for 5 minutes (a revoked token won't fix itself sooner).
+function cdnCacheHeaders(status: number): HeadersInit {
+  const ttl = status === 200 ? 10 : 300;
+  return {
+    "Cache-Control": "public, max-age=0, must-revalidate",
+    "CDN-Cache-Control": `public, s-maxage=${ttl}, stale-while-revalidate=${ttl}`,
+  };
 }
