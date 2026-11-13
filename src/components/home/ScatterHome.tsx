@@ -418,7 +418,9 @@ function CoverMedia({ project, aspect, priority = false, sizes }: CoverMediaProp
  * sentence instead of leaving a dead word behind.
  */
 function ClosingLine({ contact }: { contact: Contact }) {
-  const link = "underline decoration-1 underline-offset-[0.12em] transition-opacity duration-200 hover:opacity-60";
+  // The journal's link style: a hairline under the word and a pistachio
+  // sweep behind it on hover.
+  const link = "link-highlight border-b border-primary";
   const email = contact.email ? (
     <a href={`mailto:${contact.email}`} className={link}>email</a>
   ) : null;
