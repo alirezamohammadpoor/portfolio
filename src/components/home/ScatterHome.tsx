@@ -8,7 +8,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
-import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
+import type { ABOUT_QUERY_RESULT, PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { usePageTransition } from "@/context/TransitionContext";
 import { dur, ease, prefersReducedMotion, stagger } from "@/lib/motion";
@@ -78,11 +78,14 @@ function isAlign(value: string | null | undefined): value is TextAlign {
   return value === "top" || value === "middle" || value === "bottom";
 }
 
+type Contact = Pick<NonNullable<ABOUT_QUERY_RESULT>, "email" | "linkedinUrl" | "githubUrl">;
+
 interface ScatterHomeProps {
   projects: PROJECTS_QUERY_RESULT;
+  contact?: Contact | null;
 }
 
-export default function ScatterHome({ projects }: ScatterHomeProps) {
+export default function ScatterHome({ projects, contact }: ScatterHomeProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { startTransition } = usePageTransition();
@@ -152,7 +155,12 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
         gsap.set([...media, ...text], { autoAlpha: 0 });
         ScrollTrigger.create({
           trigger: row,
-          start: "top 85%",
+          // Clamped, so a row that can never reach 85 % at the foot of the
+          // page (the closing line on a tall window) still enters. The
+          // closing line starts as soon as it peeks in: it is the last
+          // thing on the page and short, so it must never wait on a scroll
+          // position the page may not have.
+          start: row.dataset.enter === "early" ? "clamp(top bottom-=1)" : "clamp(top 85%)",
           once: true,
           onEnter: () => {
             gsap.set([...media, ...text], { autoAlpha: 1 });
@@ -264,29 +272,17 @@ export default function ScatterHome({ projects }: ScatterHomeProps) {
         })}
       </div>
 
-      {/* Index of everything, as a table. */}
-      <section className="mt-24 desktop:mt-48">
-        <ul>
-          {projects.map((project) => (
-            <li key={project._id} className="border-t border-tertiary">
-              <Link
-                href={`/project/${project.slug?.current}`}
-                onClick={(e) => handleClick(e, project)}
-                className="flex items-baseline justify-between py-4 desktop:grid desktop:grid-cols-12 desktop:gap-4"
-              >
-                <span className="text-body desktop:col-start-1 desktop:col-end-5 desktop:text-h3">{project.title}</span>
-                <span className="hidden text-body text-primary desktop:col-start-6 desktop:col-end-11 desktop:block">
-                  {project.shortDescription}
-                </span>
-                <span className="text-sub text-secondary desktop:col-start-12 desktop:col-end-13 desktop:text-right desktop:text-body">
-                  →
-                </span>
-              </Link>
-            </li>
-          ))}
-          <li className="border-t border-tertiary" />
-        </ul>
-      </section>
+      {/* Closing line (Figma "Home footer · 11-10", C): the home ends on one
+          sentence in the opening statement's size, cols 1-7, its links to the
+          contact details on the About document. It replaced the index table
+          of every project, which repeated the rows above it. */}
+      {contact && (contact.email || contact.linkedinUrl || contact.githubUrl) && (
+        <section data-row data-enter="early" className="mt-24 desktop:mt-40 desktop:grid desktop:grid-cols-12 desktop:gap-4">
+          <p data-text className="text-h2 desktop:col-start-1 desktop:col-end-8 desktop:text-h1">
+            <ClosingLine contact={contact} />
+          </p>
+        </section>
+      )}
     </div>
   );
 }
@@ -414,4 +410,31 @@ function CoverMedia({ project, aspect, priority = false, sizes }: CoverMediaProp
       <span className="text-sub text-secondary">{title}</span>
     </div>
   );
+}
+
+/**
+ * "Say hello by email, or find me on LinkedIn and GitHub.", with a link on
+ * each channel the About document has. A missing channel drops out of the
+ * sentence instead of leaving a dead word behind.
+ */
+function ClosingLine({ contact }: { contact: Contact }) {
+  // The journal's link style: a hairline under the word and a pistachio
+  // sweep behind it on hover.
+  const link = "link-highlight border-b border-primary";
+  const email = contact.email ? (
+    <a href={`mailto:${contact.email}`} className={link}>email</a>
+  ) : null;
+  const profiles = [
+    contact.linkedinUrl ? <a key="in" href={contact.linkedinUrl} target="_blank" rel="noopener noreferrer" className={link}>LinkedIn</a> : null,
+    contact.githubUrl ? <a key="gh" href={contact.githubUrl} target="_blank" rel="noopener noreferrer" className={link}>GitHub</a> : null,
+  ].filter(Boolean);
+  const findMe = profiles.length ? (
+    <>
+      find me on {profiles[0]}
+      {profiles[1] ? <> and {profiles[1]}</> : null}
+    </>
+  ) : null;
+  if (email && findMe) return <>Say hello by {email}, or {findMe}.</>;
+  if (email) return <>Say hello by {email}.</>;
+  return <>Say hello, {findMe}.</>;
 }

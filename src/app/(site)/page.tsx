@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { draftMode } from "next/headers";
 import ScatterHome from "@/components/home/ScatterHome";
-import { getProjects } from "@/sanity/lib/data";
+import { getAbout, getProjects } from "@/sanity/lib/data";
 import { OPEN_GRAPH_BASE, SITE_OG_IMAGE } from "@/lib/site";
 
 const description =
@@ -21,12 +21,15 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const { isEnabled: isDraft } = await draftMode();
-  const projects = await getProjects(isDraft ? "drafts" : "published");
+  const [projects, about] = await Promise.all([
+    getProjects(isDraft ? "drafts" : "published"),
+    getAbout().catch(() => null),
+  ]);
 
   return (
     <>
       <h1 className="sr-only">Ali Reza Mohammad Poor — Frontend developer at the intersection of product and design</h1>
-      <ScatterHome projects={projects} />
+      <ScatterHome projects={projects} contact={about} />
     </>
   );
 }
