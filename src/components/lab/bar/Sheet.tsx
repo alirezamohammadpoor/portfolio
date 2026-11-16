@@ -15,6 +15,7 @@ import {
   PostView,
   ProjectView,
   WorkIndex,
+  useLabPanelFlag,
   usePresence,
   useReducedMotion,
   useScrollLock,
@@ -73,6 +74,7 @@ export default function Sheet({ data, page, go, setClip }: VariantProps) {
   const toggle = (p: Exclude<Panel, null>) => setOpen((o) => (o === p ? null : p));
 
   useScrollLock(shown !== null);
+  useLabPanelFlag(shown !== null);
   useModalFocus(open !== null, rootRef, scrollRef, close);
 
   const project = page.kind === "project" ? data.projects[page.index] : null;

@@ -52,6 +52,18 @@ export function useScrollLock(locked: boolean) {
  * Mounted while open and through the exit: `present` turns false only when
  * the variant says its close has finished.
  */
+/** Harness: the picker steps aside while a panel is open (it covered the last rows). */
+export function useLabPanelFlag(open: boolean) {
+  useEffect(() => {
+    const html = document.documentElement;
+    if (open) html.dataset.labPanel = "";
+    else delete html.dataset.labPanel;
+    return () => {
+      delete html.dataset.labPanel;
+    };
+  }, [open]);
+}
+
 export function usePresence<T>(value: T | null): [T | null, () => void] {
   const [present, setPresent] = useState<T | null>(value);
   if (value !== null && present !== value) setPresent(value);
@@ -195,6 +207,28 @@ export function PostView({ data, index }: { data: LabData; index: number }) {
 /** The pill's text on a clip: the A/B test or clip label, else the title. */
 export const pillText = (p: LabProject, clip: number) => p.clips[clip]?.label ?? p.title;
 
+/** A clip in the card: one 16:10 frame, or a phones row at the phones' own ratio. */
+function ClipMedia({ project, clip }: { project: LabProject; clip: number }) {
+  const c = project.clips[clip] ?? project.clips[0];
+  if (c?.phones && c.phones.length > 0) {
+    return (
+      <div className="flex aspect-[16/10] items-center justify-center gap-2 bg-tertiary p-4 desktop:gap-4 desktop:p-8">
+        {c.phones.map((ph, i) => (
+          <div key={i} className="relative aspect-[390/844] h-full overflow-hidden bg-bg">
+            {ph.video ? (
+              <video key={ph.video} src={ph.video} poster={ph.still ?? undefined} className="absolute inset-0 h-full w-full object-cover" muted loop playsInline autoPlay preload="metadata" />
+            ) : ph.still ? (
+              // eslint-disable-next-line @next/next/no-img-element -- lab: plain Sanity CDN stills
+              <img src={ph.still} alt="" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+            ) : null}
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return <Media still={c?.still ?? project.still} video={c?.video ?? (clip === 0 ? project.video : null)} priority />;
+}
+
 export function ProjectView({
   project,
   clip,
@@ -209,30 +243,58 @@ export function ProjectView({
   pill: ReactNode;
   top?: string;
 }) {
-  const c = project.clips[clip] ?? project.clips[0];
+  const n = project.clips.length;
+  const swipe = useRef<{ x: number; y: number } | null>(null);
+  const step = (d: number) => setClip((clip + d + n) % n);
   return (
     <div className={`${top} flex min-h-dvh flex-col justify-center pb-24`}>
       <div className="grid-site px-margin">
-        <div className="col-span-full desktop:col-start-3 desktop:col-end-11">
-          <Media still={c?.still ?? project.still} video={c?.video ?? (clip === 0 ? project.video : null)} priority />
+        {/* A horizontal swipe on the card steps through the clips (vertical stays scroll). */}
+        <div
+          className="relative col-span-full touch-pan-y select-none desktop:col-start-3 desktop:col-end-11"
+          onPointerDown={(e) => (swipe.current = { x: e.clientX, y: e.clientY })}
+          onPointerUp={(e) => {
+            const s0 = swipe.current;
+            swipe.current = null;
+            if (!s0 || n < 2) return;
+            const dx = e.clientX - s0.x;
+            if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(e.clientY - s0.y)) step(dx < 0 ? 1 : -1);
+          }}
+        >
+          <ClipMedia project={project} clip={clip} />
+          {n > 1 && (
+            <>
+              <button type="button" aria-label="Previous clip" onClick={() => step(-1)} className="absolute inset-y-0 left-0 w-1/4 cursor-w-resize" />
+              <button type="button" aria-label="Next clip" onClick={() => step(1)} className="absolute inset-y-0 right-0 w-1/4 cursor-e-resize" />
+            </>
+          )}
         </div>
       </div>
-      <div className="mt-4 flex min-h-9 justify-center px-margin">{pill}</div>
-      {project.clips.length > 1 && (
+      {pill && <div className="mt-4 flex min-h-9 justify-center px-margin">{pill}</div>}
+      {n > 1 && (
         <div className="mt-4 flex justify-center px-margin">
-          <div className="flex max-w-full gap-1 overflow-x-auto [scrollbar-width:none]" aria-label={`${project.title}, ${project.clips.length} clips`}>
-            {project.clips.map((k, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setClip(i)}
-                aria-label={`${i + 1} of ${project.clips.length}${k.label ? `, ${k.label}` : ""}`}
-                aria-current={i === clip}
-                className={`h-8 shrink-0 transition-opacity duration-[160ms] ${i === clip ? "opacity-100" : "opacity-40"}`}
-              >
-                <Media still={k.still} className="h-8" />
-              </button>
-            ))}
+          <div className="flex max-w-full items-end gap-1.5 overflow-x-auto py-1 [scrollbar-width:none]" aria-label={`${project.title}, ${n} clips`}>
+            {project.clips.map((k, i) => {
+              const thumb = k.phones?.[0]?.still ?? k.still;
+              const phone = Boolean(k.phones?.length);
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setClip(i)}
+                  aria-label={`${i + 1} of ${n}${k.label ? `, ${k.label}` : ""}`}
+                  aria-current={i === clip}
+                  className={`relative h-10 shrink-0 overflow-hidden bg-tertiary transition-[opacity,translate] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] ${phone ? "aspect-[390/844]" : "aspect-[16/10]"} ${
+                    i === clip ? "-translate-y-1 opacity-100" : "opacity-40"
+                  }`}
+                >
+                  {thumb && (
+                    // eslint-disable-next-line @next/next/no-img-element -- lab thumbnails
+                    <img src={thumb} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -242,15 +304,14 @@ export function ProjectView({
 
 // ── panel contents ────────────────────────────────────────────────────────
 
-type Row = { kind: "project" | "post"; index: number; title: string; still: string | null; line: string };
+type Row = { kind: "project" | "post"; index: number; title: string; still: string | null; video: string | null; line: string };
 
 /**
- * Work A: big names, the preview follows. With a fine pointer the hovered or
- * focused row leads and a click opens it. On touch the list is a wheel: the
- * row nearest the middle of the list leads, a tap on another row brings it
- * to the middle, a tap on the leading row opens it. Rows never change size,
- * so leading a new row moves nothing (an expanding row shifted the list
- * under the finger in the Figma mock's phone version).
+ * Work A: names and a preview that follows. With a fine pointer the hovered
+ * or focused row leads and a click opens it. On touch everything fits one
+ * screen (Ali 11-16: the wheel scrolled too much): a tap on a row previews
+ * it, a tap on the previewed row opens it. The preview plays the project's
+ * home cover clip; stills sit under it so a switch is instant.
  */
 export function WorkIndex({
   data,
@@ -264,73 +325,21 @@ export function WorkIndex({
   const desktop = useDesktop();
   const hover = useFineHover();
   const rows: Row[] = [
-    ...data.projects.map((p, i) => ({ kind: "project" as const, index: i, title: p.title, still: p.still, line: p.line })),
-    ...data.posts.map((p, i) => ({ kind: "post" as const, index: i, title: p.title, still: p.still, line: p.excerpt })),
+    ...data.projects.map((p, i) => ({ kind: "project" as const, index: i, title: p.title, still: p.still, video: p.video, line: p.line })),
+    ...data.posts.map((p, i) => ({ kind: "post" as const, index: i, title: p.title, still: p.still, video: null, line: p.excerpt })),
   ];
   const [active, setActive] = useState(0);
-  const ownRef = useRef<HTMLDivElement>(null);
-  const listRef = scrollRef ?? ownRef;
-  const rowRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const wheel = !hover;
-
-  // Wheel: the row nearest the list's middle leads (read once per frame).
-  useEffect(() => {
-    if (!wheel) return;
-    const el = listRef.current;
-    if (!el) return;
-    let raf = 0;
-    const pick = () => {
-      raf = 0;
-      const box = el.getBoundingClientRect();
-      const mid = box.top + box.height / 2;
-      let best = 0;
-      let dist = Infinity;
-      rowRefs.current.forEach((r, i) => {
-        if (!r) return;
-        const b = r.getBoundingClientRect();
-        const d = Math.abs(b.top + b.height / 2 - mid);
-        if (d < dist) {
-          dist = d;
-          best = i;
-        }
-      });
-      setActive(best);
-    };
-    const onScroll = () => {
-      if (!raf) raf = requestAnimationFrame(pick);
-    };
-    // Half the list's height above and below, so the first and last rows
-    // can reach the middle.
-    // Observed as a border box, which the padding does not change, so
-    // setting it never re-triggers the observer.
-    const ro = new ResizeObserver(([entry]) => {
-      const h = entry.borderBoxSize?.[0]?.blockSize ?? el.offsetHeight;
-      const pad = `${Math.max(0, h / 2 - 20)}px`;
-      if (el.style.paddingBlock !== pad) el.style.paddingBlock = pad;
-      pick();
-    });
-    ro.observe(el, { box: "border-box" });
-    el.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      ro.disconnect();
-      el.removeEventListener("scroll", onScroll);
-      cancelAnimationFrame(raf);
-    };
-  }, [wheel, listRef]);
-
   const press = (i: number) => {
     const r = rows[i];
-    if (!wheel || i === active) {
-      onOpen({ kind: r.kind, index: r.index });
-      return;
-    }
-    rowRefs.current[i]?.scrollIntoView({ block: "center", behavior: "smooth" });
+    if (hover || i === active) onOpen({ kind: r.kind, index: r.index });
+    else setActive(i);
   };
 
   const lead = rows[active] ?? rows[0];
   const preview = (
     <div>
-      <div className="relative aspect-[16/10] overflow-hidden bg-tertiary">
+      {/* 16:9 on a phone (one screen with every name), 16:10 on a laptop. */}
+      <div className="relative aspect-video overflow-hidden bg-tertiary desktop:aspect-[16/10]">
         {rows.map((r, i) =>
           r.still ? (
             // eslint-disable-next-line @next/next/no-img-element -- lab: stacked stills crossfade, no layout
@@ -343,12 +352,15 @@ export function WorkIndex({
             />
           ) : null,
         )}
+        {lead?.video && (
+          <video key={lead.video} src={lead.video} poster={lead.still ?? undefined} className="absolute inset-0 h-full w-full object-cover" muted loop playsInline autoPlay preload="metadata" />
+        )}
       </div>
-      <p className="mt-3 line-clamp-2 min-h-12 text-body text-secondary">{lead?.line}</p>
+      <p className="mt-2 min-h-[3rem] text-body text-primary">{lead?.line}</p>
     </div>
   );
 
-  const heading = (text: string, first: boolean) => <h2 className={`${first ? "" : "pt-10"} pb-2 text-body text-secondary`}>{text}</h2>;
+  const heading = (text: string, first: boolean) => <h2 className={`${first ? "" : "pt-4 desktop:pt-8"} pb-1 text-sub text-secondary`}>{text}</h2>;
   const list = (
     <>
       {rows.map((r, i) => (
@@ -356,9 +368,6 @@ export function WorkIndex({
           {i === 0 && heading("Projects", true)}
           {r.kind === "post" && r.index === 0 && heading("Journal", false)}
           <button
-            ref={(el) => {
-              rowRefs.current[i] = el;
-            }}
             type="button"
             onClick={() => press(i)}
             onPointerEnter={hover ? () => setActive(i) : undefined}
@@ -368,8 +377,8 @@ export function WorkIndex({
               if (e.currentTarget.matches(":focus-visible")) setActive(i);
             }}
             aria-current={i === active}
-            className={`block w-full py-1 text-left [overflow-wrap:anywhere] transition-colors duration-[160ms] snap-center ${
-              r.kind === "project" ? "text-h3 desktop:text-h2" : "text-body desktop:text-lead"
+            className={`block w-full text-left [overflow-wrap:anywhere] transition-colors duration-[160ms] ${
+              r.kind === "project" ? "text-lead leading-7 desktop:text-h3" : "text-body"
             } ${i === active ? "text-primary" : "text-secondary"}`}
           >
             {r.title}
@@ -379,41 +388,39 @@ export function WorkIndex({
     </>
   );
 
-  if (desktop && hover) {
+  if (desktop) {
     return (
-      <div ref={listRef} data-lenis-prevent className="h-full overflow-y-auto overscroll-contain">
-        <div className="grid-site px-margin pb-24">
-          <div className="col-span-6">{list}</div>
-          <div className="sticky top-0 col-span-5 col-start-8 self-start">{preview}</div>
+      <div ref={scrollRef} data-lenis-prevent className="max-h-[var(--panel-max,calc(100dvh-160px))] overflow-y-auto overscroll-contain">
+        <div className="grid-site px-margin pb-8">
+          <div className="col-span-4">{list}</div>
+          <div className="sticky top-0 col-span-8 col-start-5 self-start">{preview}</div>
         </div>
       </div>
     );
   }
   return (
-    <div className="flex h-full flex-col">
-      <div className="shrink-0 px-margin">{preview}</div>
-      <div
-        ref={listRef}
-        data-lenis-prevent
-        className="min-h-0 flex-1 snap-y snap-proximity overflow-y-auto overscroll-contain px-margin [mask-image:linear-gradient(transparent,black_20%,black_80%,transparent)]"
-      >
-        {list}
-      </div>
+    <div ref={scrollRef} data-lenis-prevent className="max-h-[var(--panel-max,calc(100dvh-160px))] overflow-y-auto overscroll-contain px-margin pb-3">
+      {preview}
+      <div className="mt-2">{list}</div>
     </div>
   );
 }
 
+/**
+ * About sized to fit (Ali 11-16): no scrolling on a phone, left aligned,
+ * the lead one step above the body instead of a headline.
+ */
 export function AboutBody({ about }: { about: LabAbout }) {
   const link = "w-fit hover:opacity-60";
   return (
-    <div className="grid-site px-margin pb-24">
-      <p className="col-span-full text-h3 desktop:col-start-3 desktop:col-end-11 desktop:text-center">{about.lead}</p>
-      <div className="col-span-full mt-6 space-y-4 text-body text-primary desktop:col-start-4 desktop:col-end-10">
+    <div className="px-margin pb-6 desktop:pb-8">
+      <p className="text-lead text-primary">{about.lead}</p>
+      <div className="mt-3 space-y-3 text-[0.9375rem] leading-[1.375rem] text-primary">
         {about.body.map((p, i) => (
           <p key={i}>{p}</p>
         ))}
       </div>
-      <div className="col-span-full mt-8 flex flex-wrap gap-x-6 gap-y-2 text-body desktop:col-start-4 desktop:col-end-10">
+      <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-body">
         {about.linkedinUrl && (
           <a className={link} href={about.linkedinUrl} target="_blank" rel="noreferrer">
             LinkedIn ↗
@@ -437,10 +444,10 @@ export function AboutBody({ about }: { about: LabAbout }) {
 export function DetailsBody({ project, clip }: { project: LabProject; clip: number }) {
   const label = project.clips[clip]?.label;
   return (
-    <div className="grid-site px-margin pb-24">
-      <h2 className="col-span-full text-h3 [overflow-wrap:anywhere] desktop:col-start-3 desktop:col-end-11 desktop:text-center">{project.title}</h2>
-      {label && <p className="col-span-full mt-1 text-body text-secondary desktop:col-start-3 desktop:col-end-11 desktop:text-center">{label}</p>}
-      <div className="col-span-full mt-6 space-y-4 text-body desktop:col-start-4 desktop:col-end-10">
+    <div className="px-margin pb-6 desktop:pb-8">
+      <h2 className="text-lead [overflow-wrap:anywhere]">{project.title}</h2>
+      {label && <p className="text-body text-secondary">{label}</p>}
+      <div className="mt-3 space-y-3 text-[0.9375rem] leading-[1.375rem]">
         {(project.description.length ? project.description : [project.line]).map((p, i) => (
           <p key={i}>{p}</p>
         ))}

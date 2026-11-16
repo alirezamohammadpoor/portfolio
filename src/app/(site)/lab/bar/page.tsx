@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import BarLab from "@/components/lab/bar/BarLab";
 import type { LabClip, LabData, LabProject } from "@/components/lab/bar/types";
 import { getAbout, getJournalPosts, getProject, getProjects } from "@/sanity/lib/data";
-import { fileUrl, imageUrl } from "@/sanity/lib/image";
+import { cropImageUrl, fileUrl, imageUrl } from "@/sanity/lib/image";
 
 // Site bar as one system (Ali, 11-16): three directions for the top bar,
 // Work, About and the project pill, behind the prototype picker. Not linked,
@@ -26,7 +26,10 @@ type GalleryItem = {
   label?: string | null;
 };
 
-const still = (img: Img) => (img?.asset?._ref ? imageUrl(img as never, 1280) : null);
+const still = (img: Img, w = 1280) => (img?.asset?._ref ? imageUrl(img as never, w) : null);
+// Journal covers are portraits: cut the 16:10 preview around the editor's
+// hotspot (the focal point set in Studio) instead of the centre.
+const crop = (img: Img) => (img?.asset?._ref ? cropImageUrl(img as never, 1280, 800) : null);
 const clip = (v: { asset?: { _ref?: string } } | null | undefined) => (v?.asset?._ref ? fileUrl(v.asset._ref) : null);
 const plain = (blocks: unknown) =>
   ((blocks ?? []) as Block[])
@@ -42,6 +45,7 @@ function clipsOf(gallery: GalleryItem[]): LabClip[] {
         label: g.testName ? `A/B test – ${g.testName}` : g.label?.trim() || null,
         still: still(p?.poster) ?? still(p?.image),
         video: clip(p?.video),
+        phones: (g.phones ?? []).map((ph) => ({ still: still(ph?.poster, 640) ?? still(ph?.image, 640), video: clip(ph?.video) })),
       };
     }
     if (g._type === "galleryVideo") return { label: g.label?.trim() || null, still: still(g.poster), video: clip(g.video) };
@@ -80,7 +84,7 @@ async function load(): Promise<LabData> {
       slug: p.slug?.current ?? p._id,
       title: p.title ?? "Untitled",
       excerpt: p.excerpt ?? "",
-      still: still(p.coverImage as Img),
+      still: crop(p.coverImage as Img),
     })),
     about: {
       lead,

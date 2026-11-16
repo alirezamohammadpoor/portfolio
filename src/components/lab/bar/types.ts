@@ -7,6 +7,8 @@ export type LabClip = {
   label: string | null;
   still: string | null;
   video: string | null;
+  /** A phones row: each screen at its own ratio, side by side in the card. */
+  phones?: { still: string | null; video: string | null }[];
 };
 
 export type LabProject = {

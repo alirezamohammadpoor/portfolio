@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { type LabData, type LabPage, worstCase } from "./types";
-import Island from "./Island";
 import Capsule from "./Capsule";
 import Sheet from "./Sheet";
 
@@ -14,7 +13,6 @@ export type VariantProps = {
 };
 
 const VARIANTS = [
-  { name: "Island", Component: Island },
   { name: "Capsule", Component: Capsule },
   { name: "Sheet", Component: Sheet },
 ] as const;
@@ -37,6 +35,7 @@ const PICKER_CSS = `
 .lab-data{position:fixed;bottom:68px;left:50%;transform:translateX(-50%);z-index:2147483646;display:flex;gap:2px;padding:2px;border-radius:999px;background:#e5e5e5;font:12px/1 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 .lab-data button{height:24px;padding:0 10px;border:0;border-radius:999px;background:transparent;color:#555;cursor:pointer}
 .lab-data button[aria-pressed="true"]{background:#fff;color:#111}
+html[data-lab-panel] .proto-picker,html[data-lab-panel] .lab-data{opacity:0;pointer-events:none}
 `;
 
 function readParam(name: string): string | null {
