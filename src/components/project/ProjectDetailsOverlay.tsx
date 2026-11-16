@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import NextLink from "next/link";
 import { Link } from "@/lib/viewTransitions";
 import type { PortableTextBlock } from "next-sanity";
@@ -9,6 +9,7 @@ import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { portableTextComponents } from "@/components/portableText/components";
 import { EASE_OUT_CSS } from "@/lib/motion";
 import CopyButton from "@/components/CopyButton";
+import { useModalFocus } from "@/hooks/useModalFocus";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -36,47 +37,7 @@ export default function ProjectDetailsOverlay({
       ? (project.fullDescription as PortableTextBlock[])
       : null;
 
-  // A modal dialog for the keyboard: focus moves to Close on open, Tab
-  // cycles inside the text, Escape closes, and focus goes back to the pill
-  // that opened it on close (or wherever it was, on unmount).
-  useEffect(() => {
-    if (!open) return;
-    const root = rootRef.current;
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-        return;
-      }
-      if (e.key !== "Tab" || !root) return;
-      const focusables = Array.from(
-        root.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'),
-      );
-      if (!focusables.length) {
-        e.preventDefault();
-        return;
-      }
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      const active = document.activeElement;
-      if (e.shiftKey && (active === first || !root.contains(active))) {
-        e.preventDefault();
-        last.focus({ preventScroll: true });
-      } else if (!e.shiftKey && (active === last || !root.contains(active))) {
-        e.preventDefault();
-        first.focus({ preventScroll: true });
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    closeRef.current?.focus({ preventScroll: true });
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      const active = document.activeElement;
-      if (opener && opener.isConnected && (!active || active === document.body || root?.contains(active))) {
-        opener.focus({ preventScroll: true });
-      }
-    };
-  }, [open, onClose]);
+  useModalFocus(open, rootRef, closeRef, onClose);
 
   // One beat (choreograph): the frost and the text arrive together in
   // 240 ms, the text rising 8 px; closing is faster (160 ms) and all at once,

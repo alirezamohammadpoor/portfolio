@@ -88,7 +88,7 @@ export default async function SiteLayout({
         <body className="font-sans">
           <GsapProvider>
             <TransitionProvider>
-              <Header />
+              <Header about={about} />
               <main className="pt-[var(--header-height)] min-h-[calc(100dvh-var(--header-height))]">{children}</main>
               <TransitionOverlay />
             </TransitionProvider>

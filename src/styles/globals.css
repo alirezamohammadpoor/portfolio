@@ -283,8 +283,19 @@
       transition: transform 0.4s var(--ease-out);
     }
 
-    .link-underline:hover::after {
+    .link-underline:hover::after,
+    .link-underline[aria-expanded="true"]::after {
       transform: scaleX(1);
+    }
+  }
+
+  /* A link whose panel is open (About) stays underlined; without the
+     hover sweep above that is a plain underline. */
+  @media not ((hover: hover) and (pointer: fine) and (width >= theme(--breakpoint-desktop))) {
+    .link-underline[aria-expanded="true"] {
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 4px;
     }
   }
 }

@@ -1,21 +1,29 @@
 "use client";
 
-import { useRef } from "react";
+import { useCallback, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Link } from "@/lib/viewTransitions";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { getIntroState, useIntroState } from "@/lib/intro";
 import { ENGLISH_NAME, PERSIAN_CHARS, PERSIAN_NAME } from "@/lib/name";
 import HomeIntro from "./HomeIntro";
+import AboutPanel, { type AboutData } from "@/components/about/AboutPanel";
 
 const SCRAMBLE_DURATION = 0.4;
 const PERSIAN_CLASS = "parastoo-font intro-name intro-name-slot";
 const ENGLISH_CLASS = "intro-name intro-name-slot";
 
-export default function Header() {
+export default function Header({ about }: { about: AboutData | null }) {
   const linkRef = useRef<HTMLAnchorElement>(null);
   const nameRef = useRef<HTMLSpanElement>(null);
   const introState = useIntroState();
+  // The panel belongs to the page it was opened on: a link taken from
+  // under it (Journal, the name) lands with it closed.
+  const pathname = usePathname();
+  const [aboutOpenOn, setAboutOpenOn] = useState<string | null>(null);
+  const aboutOpen = aboutOpenOn === pathname;
+  const closeAbout = useCallback(() => setAboutOpenOn(null), []);
 
   // The name stays Persian; a hover on a real pointer scrambles it to English
   // and back on leave (feedback on the link, nothing on touch). Attached
@@ -97,11 +105,24 @@ export default function Header() {
           <Link href="/journal" className="link-underline text-sub text-primary">
             Journal
           </Link>
-          <Link href="/about" className="link-underline text-sub text-primary">
+          {/* About opens the panel over the current page (Figma "About panel
+              · 11-16", option A); /about stays a real link for a new tab. */}
+          <a
+            href="/about"
+            aria-expanded={aboutOpen}
+            aria-controls="about-panel"
+            onClick={(e) => {
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+              e.preventDefault();
+              setAboutOpenOn((on) => (on === pathname ? null : pathname));
+            }}
+            className="link-underline text-sub text-primary"
+          >
             About
-          </Link>
+          </a>
         </nav>
       </header>
+      <AboutPanel about={about} open={aboutOpen} onClose={closeAbout} />
       {introState !== "done" && <HomeIntro targetRef={nameRef} />}
     </>
   );
