@@ -9,6 +9,7 @@ import { TransitionProvider } from "@/context/TransitionContext";
 import TransitionOverlay from "@/components/layout/TransitionOverlay";
 import DraftModeTools from "@/components/layout/DraftModeTools";
 import { getAbout } from "@/sanity/lib/data";
+import { getBarData } from "@/sanity/lib/bar";
 import JsonLd from "@/components/seo/JsonLd";
 import "@/styles/globals.css";
 
@@ -42,7 +43,7 @@ export default async function SiteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const about = await getAbout().catch(() => null);
+  const [about, bar] = await Promise.all([getAbout().catch(() => null), getBarData()]);
 
   const sameAs = [about?.linkedinUrl, about?.githubUrl].filter(
     (u): u is string => typeof u === "string" && u.length > 0,
@@ -88,7 +89,7 @@ export default async function SiteLayout({
         <body className="font-sans">
           <GsapProvider>
             <TransitionProvider>
-              <Header about={about} />
+              <Header bar={bar} />
               <main className="pt-[var(--header-height)] min-h-[calc(100dvh-var(--header-height))]">{children}</main>
               <TransitionOverlay />
             </TransitionProvider>
