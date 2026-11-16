@@ -108,3 +108,19 @@ export function reelScrubMode() {
   const params = new URLSearchParams(location.search);
   return params.get("reel") === "scrub" || params.has("scrub");
 }
+
+/** `&ring` (Ali 11-16): the covers land evenly on an oval around the name
+ *  and the oval turns the first project up to 12 o'clock before the dive,
+ *  instead of the six hand-placed spots, which overlap past six projects. */
+export function reelRingMode() {
+  if (typeof location === "undefined") return false;
+  return new URLSearchParams(location.search).has("ring");
+}
+
+/** `&n=12`: repeat the projects on the stage up to n covers, to judge how
+ *  the ring copes with more projects. Tuning only. */
+export function reelCountOverride() {
+  if (typeof location === "undefined") return 0;
+  const n = Number(new URLSearchParams(location.search).get("n"));
+  return Number.isFinite(n) && n > 0 ? Math.min(Math.floor(n), 40) : 0;
+}

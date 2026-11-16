@@ -16,6 +16,8 @@ import { holdIntro, releaseIntro } from "@/lib/intro";
 import {
   SCATTER_BEAT,
   getReelState,
+  reelCountOverride,
+  reelRingMode,
   reelScrubMode,
   setReelState,
   skipReel,
@@ -70,7 +72,7 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
       if (!stage || !world || !page || getReelState() !== "waiting") return;
       const heroes = gsap.utils.toArray<HTMLElement>("[data-hero]", stage);
       const covers = gsap.utils.toArray<HTMLElement>("[data-cover]", page);
-      if (!heroes.length || heroes.length !== covers.length) {
+      if (!heroes.length || (heroes.length !== covers.length && !reelCountOverride())) {
         setReelState("off");
         return;
       }
@@ -179,12 +181,15 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
       Promise.race([ready, timeout]).then(() => {
         if (cancelled) return;
         window.scrollTo(0, 0);
-        const rects = covers.map((cover) => {
+        const coverRects = covers.map((cover) => {
           const r = cover.getBoundingClientRect();
           return { x: r.left, y: r.top + window.scrollY, w: r.width, h: r.height };
         });
+        // `&n`: the extra heroes borrow the boxes of the covers they repeat.
+        const rects = heroes.map((_, i) => coverRects[i % coverRects.length]);
         tl = gsap.timeline({ paused: true, onComplete: scrubbing ? undefined : finish });
-        scatterTimeline(tl, heroes, world, rects);
+        if (reelRingMode()) ringTimeline(tl, heroes, world, rects);
+        else scatterTimeline(tl, heroes, world, rects);
 
         lenisRef.current?.stop();
         holdIntro();
@@ -214,9 +219,9 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
     <>
       <div ref={stageRef} aria-hidden="true" className="fixed inset-0 z-[55] overflow-hidden bg-bg">
         <div ref={worldRef} className="invisible absolute left-0 top-0 will-change-transform">
-          {projects.map((project, i) => (
-            <div key={project._id} data-hero className="absolute left-0 top-0 overflow-hidden bg-tertiary will-change-transform">
-              <HeroMedia project={project} sizes={coverSizes[i] ?? "(min-width: 75rem) 66vw, 100vw"} />
+          {stageProjects(projects).map((project, i) => (
+            <div key={`${project._id}-${i}`} data-hero className="absolute left-0 top-0 overflow-hidden bg-tertiary will-change-transform">
+              <HeroMedia project={project} sizes={coverSizes[i % projects.length] ?? "(min-width: 75rem) 66vw, 100vw"} />
             </div>
           ))}
         </div>
@@ -225,6 +230,13 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
     </>,
     document.body,
   );
+}
+
+/** The stage's projects: the home's, repeated up to `&n` when tuning. */
+function stageProjects(projects: PROJECTS_QUERY_RESULT) {
+  const n = reelCountOverride();
+  if (!n || !projects.length) return projects;
+  return Array.from({ length: n }, (_, i) => projects[i % projects.length]);
 }
 
 interface Rect {
@@ -363,6 +375,169 @@ function scatterTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: H
   });
 }
 
+/**
+ * An oval through the middle of a w × h box: equal arc-length steps around
+ * it, so the covers are evenly spaced on screen (equal angles bunch them at
+ * the ends of the long axis). `at(u)` gives the point at fraction u of the
+ * way round, clockwise from 12 o'clock.
+ */
+function ovalPath(a: number, b: number) {
+  const STEPS = 720;
+  const ts: number[] = [];
+  const lens: number[] = [0];
+  for (let k = 0; k <= STEPS; k++) ts.push(-Math.PI / 2 + (k / STEPS) * Math.PI * 2);
+  for (let k = 1; k <= STEPS; k++) {
+    const dx = a * (Math.cos(ts[k]) - Math.cos(ts[k - 1]));
+    const dy = b * (Math.sin(ts[k]) - Math.sin(ts[k - 1]));
+    lens.push(lens[k - 1] + Math.hypot(dx, dy));
+  }
+  const total = lens[STEPS];
+  return (u: number) => {
+    const target = (((u % 1) + 1) % 1) * total;
+    let lo = 0;
+    let hi = STEPS;
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >> 1;
+      if (lens[mid] < target) lo = mid;
+      else hi = mid;
+    }
+    const f = (target - lens[lo]) / (lens[hi] - lens[lo] || 1);
+    const t = ts[lo] + (ts[hi] - ts[lo]) * f;
+    return { x: a * Math.cos(t), y: b * Math.sin(t) };
+  };
+}
+
+/**
+ * The ring (Ali 11-16, `&ring`): every cover the same size, evenly spaced on
+ * an oval fitted to the field, so any number of projects fits without
+ * overlap; the cards shrink as the count grows. The middle stays clear for
+ * the name. While the field holds the oval turns, cards upright, carrying
+ * the first project up to 12 o'clock, and the view dives into it from there.
+ */
+function ringTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: HTMLElement, rects: Rect[]) {
+  const VW = window.innerWidth;
+  const VH = window.innerHeight;
+  const laptop = window.matchMedia(DESKTOP_QUERY).matches;
+  const N = heroes.length;
+  const top = 72;
+  const margin = laptop ? 24 : 16;
+  const gap = laptop ? 20 : 12;
+  const fw = VW - margin * 2;
+  const fh = VH - top - margin;
+  const ox = VW / 2;
+  const oy = top + fh / 2;
+  // Every cover is 16:10 on the page; the card keeps its own cover's shape.
+  const aspect = rects[0].h / rects[0].w;
+  // The ring stays clear of the name in the middle: on the laptop the card
+  // is at most a quarter of the field, on the phone just under half of it.
+  const maxW = laptop ? fw * 0.24 : fw * 0.46;
+
+  // The largest card for which N of them, evenly spaced, clear each other
+  // by `gap` at every turn of the oval.
+  function layout(cw: number) {
+    const ch = cw * aspect;
+    const a = Math.max(fw / 2 - cw / 2, cw);
+    const b = Math.max(fh / 2 - ch / 2, ch);
+    return { cw, ch, at: ovalPath(a, b) };
+  }
+  function clears(cw: number) {
+    const { ch, at } = layout(cw);
+    for (const shift of [0, 0.25, 0.5, 0.75]) {
+      const pts = Array.from({ length: N }, (_, i) => at((i + shift) / N));
+      for (let i = 0; i < N; i++) {
+        for (let j = i + 1; j < N; j++) {
+          if (Math.abs(pts[i].x - pts[j].x) < cw + gap && Math.abs(pts[i].y - pts[j].y) < ch + gap) return false;
+        }
+      }
+    }
+    return true;
+  }
+  let lo = 8;
+  let hi = maxW;
+  if (clears(hi)) lo = hi;
+  else for (let k = 0; k < 24; k++) {
+    const mid = (lo + hi) / 2;
+    if (clears(mid)) lo = mid;
+    else hi = mid;
+  }
+  const { cw, at } = layout(lo);
+
+  // The turn: the oval starts a little short of home and ends with the first
+  // project at 12 o'clock. About two thirds of a step, at least ~25°.
+  const turn = Math.max(0.66 / N, 0.07);
+  const ring = { u: -turn };
+  const fly = heroes.map(() => ({ p: 0 }));
+  const dive = { p: 0 };
+
+  const base = heroes.map((_, i) => {
+    const { x, y, w, h } = rects[i];
+    return { cx0: x + w / 2, cy0: y + h / 2, scale: cw / w };
+  });
+  // Where the first cover sits when the dive starts: 12 o'clock.
+  const home = at(0);
+  const firstCx = ox + home.x;
+  const firstCy = oy + home.y;
+  const first = rects[0];
+  const K = 1 / base[0].scale;
+  const dx = first.x + first.w / 2 - K * firstCx;
+  const dy = first.y + first.h / 2 - K * firstCy;
+  const push = (0.5 * Math.max(VW, VH)) / K;
+
+  heroes.forEach((hero, i) => {
+    const { x, y, w, h } = rects[i];
+    gsap.set(hero, { left: x, top: y, width: w, height: h, transformOrigin: "50% 50%" });
+  });
+  gsap.set(world, { transformOrigin: "0 0", x: 0, y: 0, scale: 1, autoAlpha: 1 });
+
+  // One render from the shared state, so the fly-out, the turn and the dive
+  // compose on the same transforms in any order the scrubber seeks.
+  function render() {
+    heroes.forEach((hero, i) => {
+      const { cx0, cy0, scale } = base[i];
+      const spot = at(i / N + ring.u);
+      let cx = ox + spot.x;
+      let cy = oy + spot.y;
+      const p = fly[i].p;
+      // Out of the middle of the screen.
+      cx = VW / 2 + (cx - VW / 2) * p;
+      cy = VH / 2 + (cy - VH / 2) * p;
+      let alpha = Math.min(1, p * 1.4);
+      if (i > 0 && dive.p > 0) {
+        // The rest drifts away from the first project and fades with the
+        // camera (Ali 11-04: neighbours' edges at the hand-over, too sudden).
+        const ax = cx - firstCx;
+        const ay = cy - firstCy;
+        const len = Math.hypot(ax, ay) || 1;
+        cx += (ax / len) * push * dive.p;
+        cy += (ay / len) * push * dive.p;
+        alpha *= 1 - dive.p;
+      }
+      gsap.set(hero, {
+        x: cx - cx0,
+        y: cy - cy0,
+        scale: scale * (0.35 + 0.65 * p),
+        autoAlpha: alpha,
+      });
+    });
+  }
+  render();
+
+  const at0 = SCATTER_BEAT.start;
+  heroes.forEach((_, i) => {
+    tl.to(fly[i], { p: 1, duration: SCATTER_BEAT.scatter, ease: ease.out, onUpdate: render }, at0 + i * SCATTER_BEAT.stagger);
+  });
+  const holdAt = at0 + SCATTER_BEAT.scatter + SCATTER_BEAT.stagger * (N - 1);
+  const diveAt = Math.max(holdAt + SCATTER_BEAT.hold, SCATTER_BEAT.write + dur.page + SCATTER_BEAT.afterName);
+  // The oval turns from the moment the covers leave the middle and settles
+  // just into the dive, so the hold never stands still and the first
+  // project is home before the camera gets close.
+  const turnStart = at0 + SCATTER_BEAT.scatter * 0.4;
+  const turnEnd = diveAt + SCATTER_BEAT.dive * 0.3;
+  tl.to(ring, { u: 0, duration: turnEnd - turnStart, ease: "power1.inOut", onUpdate: render }, turnStart);
+  tl.to(world, { x: dx, y: dy, scale: K, duration: SCATTER_BEAT.dive, ease: ease.inOut }, diveAt);
+  tl.to(dive, { p: 1, duration: SCATTER_BEAT.dive, ease: ease.inOut, onUpdate: render }, diveAt);
+}
+
 function HeroMedia({ project, sizes }: { project: Project; sizes: string }) {
   const coverMedia = project.coverMedia;
   if (coverMedia?.type === "video" && coverMedia.video?.asset?._ref) {
@@ -431,7 +606,8 @@ function Scrubber({ tl }: { tl: gsap.core.Timeline }) {
         value={t}
         onChange={(e) => {
           const v = Number(e.target.value);
-          tl.pause().seek(v);
+          // Events on: the ring renders from its tweens' onUpdate.
+          tl.pause().seek(v, false);
           setT(v);
           setPlaying(false);
         }}
