@@ -17,7 +17,6 @@ import {
   SCATTER_BEAT,
   getReelState,
   reelCountOverride,
-  reelRingMode,
   reelScrubMode,
   setReelState,
   skipReel,
@@ -41,8 +40,8 @@ interface HomeReelProps {
 
 /**
  * Home entry: while the name is written every project's cover flies out of
- * the middle onto one field, the field holds, and the view dives into the
- * first project (see scatterTimeline). The last frame is the page itself, so
+ * the middle onto an oval around the name, the oval turns, and the view dives into the
+ * first project (see ringTimeline). The last frame is the page itself, so
  * the stage just fades.
  *
  * The stage is a fixed layer outside <main> (which is hidden until the name
@@ -188,8 +187,7 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
         // `&n`: the extra heroes borrow the boxes of the covers they repeat.
         const rects = heroes.map((_, i) => coverRects[i % coverRects.length]);
         tl = gsap.timeline({ paused: true, onComplete: scrubbing ? undefined : finish });
-        if (reelRingMode()) ringTimeline(tl, heroes, world, rects);
-        else scatterTimeline(tl, heroes, world, rects);
+        ringTimeline(tl, heroes, world, rects);
 
         lenisRef.current?.stop();
         holdIntro();
@@ -247,135 +245,6 @@ interface Rect {
 }
 
 /**
- * Field spots: left, top and width of each cover as
- * fractions of the field. Laptop: the six-tile composition of /lab/scatter
- * fitted to one screen (a 16:10 field inside the viewport, under the
- * header). Phone: a zigzag down the whole screen, left and right columns apart.
- * Both keep a band across the middle clear for the name (Ali 11-04: the
- * name over a cover was too busy). More projects than
- * spots reuse them, nudged.
- */
-const SCATTER_LAPTOP = [
-  { l: 0.02, t: 0.02, w: 0.27 },
-  { l: 0.39, t: 0.0, w: 0.23 },
-  { l: 0.7, t: 0.06, w: 0.28 },
-  { l: 0.04, t: 0.64, w: 0.26 },
-  { l: 0.41, t: 0.73, w: 0.21 },
-  { l: 0.72, t: 0.62, w: 0.26 },
-];
-const SCATTER_PHONE = [
-  { l: 0.02, t: 0.0, w: 0.5 },
-  { l: 0.5, t: 0.12, w: 0.48 },
-  { l: 0.06, t: 0.25, w: 0.44 },
-  { l: 0.52, t: 0.55, w: 0.46 },
-  { l: 0.02, t: 0.69, w: 0.47 },
-  { l: 0.54, t: 0.84, w: 0.42 },
-];
-
-/**
- * The entry's timeline: while the name is being written every cover flies
- * out of the middle to its spot on one field, the field holds with a slow
- * drift once the name has reached the header, then the view dives into the
- * first project, which grows into its own slot at the top of the home while
- * the rest of the field drifts out of frame. The camera is the world
- * transform, so the first cover lands pixel exact and the page takes over.
- */
-function scatterTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: HTMLElement, rects: Rect[]) {
-  const VW = window.innerWidth;
-  const VH = window.innerHeight;
-  const laptop = window.matchMedia(DESKTOP_QUERY).matches;
-  const spots = laptop ? SCATTER_LAPTOP : SCATTER_PHONE;
-  // The field: under the header with a margin all round; on the laptop the
-  // largest 16:10 box that fits, centred.
-  const top = 72;
-  const margin = laptop ? 24 : 16;
-  const availW = VW - margin * 2;
-  const availH = VH - top - margin;
-  const fw = laptop ? Math.min(availW, availH * 1.6) : availW;
-  const fh = laptop ? fw / 1.6 : availH;
-  const fx = (VW - fw) / 2;
-  const fy = top + (availH - fh) / 2;
-
-  const spread = heroes.map((hero, i) => {
-    const { x, y, w, h } = rects[i];
-    const spot = spots[i % spots.length];
-    const nudge = Math.floor(i / spots.length) * 0.04;
-    const scale = (spot.w * fw) / w;
-    const cx = fx + (spot.l + nudge) * fw + (w * scale) / 2;
-    const cy = fy + (spot.t + nudge) * fh + (h * scale) / 2;
-    gsap.set(hero, {
-      left: x,
-      top: y,
-      width: w,
-      height: h,
-      transformOrigin: "50% 50%",
-      x: VW / 2 - (x + w / 2),
-      y: VH / 2 - (y + h / 2),
-      scale: scale * 0.35,
-      autoAlpha: 0,
-    });
-    return { x: cx - (x + w / 2), y: cy - (y + h / 2), scale, cx, cy };
-  });
-  gsap.set(world, { transformOrigin: "0 0", x: 0, y: 0, scale: 1, autoAlpha: 1 });
-
-  const at = SCATTER_BEAT.start;
-  // Out of the middle, first project first, each to its spot.
-  heroes.forEach((hero, i) => {
-    const { x, y, scale } = spread[i];
-    tl.to(hero, { x, y, scale, autoAlpha: 1, duration: SCATTER_BEAT.scatter, ease: ease.out }, at + i * SCATTER_BEAT.stagger);
-  });
-
-  // The camera: a world transform that maps the first cover's spot onto its
-  // slot on the page (same box, so one scale and one shift).
-  const first = rects[0];
-  const K = 1 / spread[0].scale;
-  const dx = first.x + first.w / 2 - K * spread[0].cx;
-  const dy = first.y + first.h / 2 - K * spread[0].cy;
-  const holdAt = at + SCATTER_BEAT.scatter + SCATTER_BEAT.stagger * (heroes.length - 1);
-  // The dive waits for the name to reach the header (the early scatter is
-  // full while the name is still writing).
-  const diveAt = Math.max(holdAt + SCATTER_BEAT.hold, SCATTER_BEAT.write + dur.page + SCATTER_BEAT.afterName);
-  // A slow lean toward the first project while the field holds.
-  const lean = 0.04;
-  const leanK = 1 + lean;
-  tl.to(
-    world,
-    {
-      x: -lean * spread[0].cx,
-      y: -lean * spread[0].cy,
-      scale: leanK,
-      duration: diveAt - (holdAt - SCATTER_BEAT.scatter * 0.5),
-      ease: "none",
-    },
-    holdAt - SCATTER_BEAT.scatter * 0.5,
-  );
-  tl.to(world, { x: dx, y: dy, scale: K, duration: SCATTER_BEAT.dive, ease: ease.inOut }, diveAt);
-  // The rest of the field clears out of frame as the camera dives: on the
-  // phone the zoom alone left the neighbours' edges in view at the hand-over
-  // (Ali 11-04). Each cover drifts away from the first one and fades.
-  const push = (0.5 * Math.max(VW, VH)) / K;
-  heroes.forEach((hero, i) => {
-    if (i === 0) return;
-    const ax = spread[i].cx - spread[0].cx;
-    const ay = spread[i].cy - spread[0].cy;
-    const len = Math.hypot(ax, ay) || 1;
-    tl.to(
-      hero,
-      {
-        x: spread[i].x + (ax / len) * push,
-        y: spread[i].y + (ay / len) * push,
-        autoAlpha: 0,
-        // With the camera, over the whole dive: they drift off as it moves
-        // rather than vanishing at its start (Ali 11-04: too sudden).
-        duration: SCATTER_BEAT.dive,
-        ease: ease.inOut,
-      },
-      diveAt,
-    );
-  });
-}
-
-/**
  * An oval through the middle of a w × h box: equal arc-length steps around
  * it, so the covers are evenly spaced on screen (equal angles bunch them at
  * the ends of the long axis). `at(u)` gives the point at fraction u of the
@@ -408,9 +277,10 @@ function ovalPath(a: number, b: number) {
 }
 
 /**
- * The ring (Ali 11-16, `&ring`): every cover the same size, evenly spaced on
+ * The ring (Ali 11-16): every cover the same size, evenly spaced on
  * an oval fitted to the field, so any number of projects fits without
- * overlap; the cards shrink as the count grows. The middle stays clear for
+ * overlap (the six hand-placed spots it replaced overlapped past six
+ * projects); the cards shrink as the count grows. The middle stays clear for
  * the name. While the field holds the oval turns, cards upright, carrying
  * the first project up to 12 o'clock, and the view dives into it from there.
  */

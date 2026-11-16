@@ -4,7 +4,7 @@
  * next to the intro's mark. The entry waits for its first cover to show a
  * frame, then plays with the handwritten name (Ali 11-05, "scatter early";
  * replaced the cover reel of PR #46): while the name is being written every
- * project flies out of the middle onto one field, the name leaves for the
+ * project flies out of the middle onto an oval, the name leaves for the
  * header, and the view dives into the first project, landing on its slot at
  * the top of the home. The intro holds back its "done" until the entry has
  * landed (src/lib/intro.ts).
@@ -33,7 +33,7 @@ export const SCATTER_BEAT = {
   scatter: 1.1,
   /** Offset between the covers leaving the middle. */
   stagger: 0.06,
-  /** The whole field, still but for a slow drift toward the first project. */
+  /** The oval turning the first project up to 12 o'clock. */
   hold: 1.0,
   /** Dive into the first project: it grows into its slot at the top of the
    *  home while the rest of the field drifts out of frame and fades. */
@@ -107,14 +107,6 @@ export function reelScrubMode() {
   if (typeof location === "undefined") return false;
   const params = new URLSearchParams(location.search);
   return params.get("reel") === "scrub" || params.has("scrub");
-}
-
-/** `&ring` (Ali 11-16): the covers land evenly on an oval around the name
- *  and the oval turns the first project up to 12 o'clock before the dive,
- *  instead of the six hand-placed spots, which overlap past six projects. */
-export function reelRingMode() {
-  if (typeof location === "undefined") return false;
-  return new URLSearchParams(location.search).has("ring");
 }
 
 /** `&n=12`: repeat the projects on the stage up to n covers, to judge how
