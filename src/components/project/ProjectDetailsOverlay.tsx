@@ -32,11 +32,6 @@ export default function ProjectDetailsOverlay({
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const description =
-    Array.isArray(project.fullDescription) && project.fullDescription.length > 0
-      ? (project.fullDescription as PortableTextBlock[])
-      : null;
-
   useModalFocus(open, rootRef, closeRef, onClose);
 
   // One beat (choreograph): the frost and the text arrive together in
@@ -81,32 +76,7 @@ export default function ProjectDetailsOverlay({
           if (e.target === e.currentTarget) onClose();
         }}
       >
-        {project.shortDescription && (
-          <p className="text-h3 text-primary desktop:text-h2 desktop:text-center">{project.shortDescription}</p>
-        )}
-        {description && (
-          <div className="mt-6 text-body text-primary desktop:mt-10 desktop:text-lead [&_p+p]:mt-4">
-            <PortableText value={description} components={portableTextComponents} />
-          </div>
-        )}
-        {project.techStack && project.techStack.length > 0 && (
-          <p className="mt-6 text-body text-secondary">{project.techStack.join(", ")}</p>
-        )}
-        <div className="mt-6 flex flex-col gap-1 text-body text-primary">
-          {project.caseStudy?.slug?.current && (
-            <Link href={`/journal/${project.caseStudy.slug.current}`} className="w-fit hover:opacity-60">
-              Read the case study →
-            </Link>
-          )}
-          {project.siteUrl && (
-            <NextLink href={project.siteUrl} target="_blank" rel="noopener noreferrer" className="w-fit hover:opacity-60">
-              Visit the site ↗<span className="sr-only"> (opens in a new tab)</span>
-            </NextLink>
-          )}
-          {project.sitePassword && (
-            <CopyButton value={project.sitePassword} label="Copy the site password" className="w-fit cursor-pointer text-left hover:opacity-60" />
-          )}
-        </div>
+        <ProjectDetailsText project={project} />
       </div>
       </div>
       <button
@@ -118,6 +88,70 @@ export default function ProjectDetailsOverlay({
       >
         Close
       </button>
+    </div>
+  );
+}
+
+/**
+ * The project's text: the short line leads, then the description, the
+ * stack and the links. Shared by the overlay and by the capsule bar, which
+ * opens the details inside itself in the /lab/project directions.
+ */
+export function ProjectDetailsText({ project, compact = false }: { project: Project; compact?: boolean }) {
+  const description =
+    Array.isArray(project.fullDescription) && project.fullDescription.length > 0
+      ? (project.fullDescription as PortableTextBlock[])
+      : null;
+  if (compact) {
+    return (
+      <div className="px-margin pb-6 desktop:pb-8">
+        {project.shortDescription && <p className="text-lead text-primary">{project.shortDescription}</p>}
+        {description && (
+          <div className="mt-3 text-[0.9375rem] leading-[1.375rem] text-primary [&_p+p]:mt-3">
+            <PortableText value={description} components={portableTextComponents} />
+          </div>
+        )}
+        {project.techStack && project.techStack.length > 0 && (
+          <p className="mt-3 text-sub text-secondary">{project.techStack.join(", ")}</p>
+        )}
+        <DetailsLinks project={project} />
+      </div>
+    );
+  }
+  return (
+    <>
+      {project.shortDescription && (
+        <p className="text-h3 text-primary desktop:text-h2 desktop:text-center">{project.shortDescription}</p>
+      )}
+      {description && (
+        <div className="mt-6 text-body text-primary desktop:mt-10 desktop:text-lead [&_p+p]:mt-4">
+          <PortableText value={description} components={portableTextComponents} />
+        </div>
+      )}
+      {project.techStack && project.techStack.length > 0 && (
+        <p className="mt-6 text-body text-secondary">{project.techStack.join(", ")}</p>
+      )}
+      <DetailsLinks project={project} />
+    </>
+  );
+}
+
+function DetailsLinks({ project }: { project: Project }) {
+  return (
+    <div className="mt-6 flex flex-col gap-1 text-body text-primary">
+      {project.caseStudy?.slug?.current && (
+        <Link href={`/journal/${project.caseStudy.slug.current}`} className="w-fit hover:opacity-60">
+          Read the case study →
+        </Link>
+      )}
+      {project.siteUrl && (
+        <NextLink href={project.siteUrl} target="_blank" rel="noopener noreferrer" className="w-fit hover:opacity-60">
+          Visit the site ↗<span className="sr-only"> (opens in a new tab)</span>
+        </NextLink>
+      )}
+      {project.sitePassword && (
+        <CopyButton value={project.sitePassword} label="Copy the site password" className="w-fit cursor-pointer text-left hover:opacity-60" />
+      )}
     </div>
   );
 }

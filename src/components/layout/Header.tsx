@@ -14,18 +14,21 @@ import { EASE_OUT_CSS } from "@/lib/motion";
 import type { BarData } from "@/sanity/lib/bar";
 import WorkPanel from "./bar/WorkPanel";
 import AboutBody from "./bar/AboutBody";
+import { useBarState } from "@/lib/barProject";
 
 const SCRAMBLE_DURATION = 0.4;
 const PERSIAN_CLASS = "parastoo-font intro-name intro-name-slot";
 const ENGLISH_CLASS = "intro-name intro-name-slot";
 
 type Panel = "work" | "about";
+type Shown = Panel | "details";
 
 /** Laptop widths: compact at rest, as wide as the open panel needs. */
-const WIDTH: Record<Panel | "none", string> = {
+const WIDTH: Record<Shown | "none", string> = {
   none: "26rem",
   work: "min(64rem, calc(100vw - 48px))",
   about: "36rem",
+  details: "40rem",
 };
 
 const ITEM =
@@ -49,12 +52,30 @@ export default function Header({ bar }: { bar: BarData }) {
   // it (a project, a post, the name) lands with it closed.
   const pathname = usePathname();
   const [openOn, setOpenOn] = useState<{ panel: Panel; path: string } | null>(null);
-  const open: Panel | null = openOn && openOn.path === pathname ? openOn.panel : null;
+  const userOpen: Panel | null = openOn && openOn.path === pathname ? openOn.panel : null;
+  // A project page can dock its title in the capsule's second row
+  // (/lab/project); "docked" and "title" open the details inside the
+  // capsule too, "overlay" keeps the stage's own frost overlay.
+  const { chrome, project: barProject } = useBarState();
+  const docked = barProject !== null && chrome !== "pill";
+  const detailsInBar = docked && (chrome === "docked" || chrome === "title");
+  const open: Shown | null = userOpen ?? (detailsInBar && barProject?.detailsOpen ? "details" : null);
   // Mounted through the close, so the panel can fold away.
-  const [shown, setShown] = useState<Panel | null>(open);
+  const [shown, setShown] = useState<Shown | null>(open);
   if (open !== null && shown !== open) setShown(open);
-  const close = useCallback(() => setOpenOn(null), []);
-  const toggle = (panel: Panel) => setOpenOn((o) => (o && o.path === pathname && o.panel === panel ? null : { panel, path: pathname }));
+  const closeDetails = barProject?.closeDetails;
+  const close = useCallback(() => {
+    setOpenOn(null);
+    closeDetails?.();
+  }, [closeDetails]);
+  const toggle = (panel: Panel) => {
+    if (barProject?.detailsOpen) barProject.closeDetails();
+    setOpenOn((o) => (o && o.path === pathname && o.panel === panel ? null : { panel, path: pathname }));
+  };
+  const toggleDetails = () => {
+    setOpenOn(null);
+    barProject?.toggleDetails();
+  };
   const showing = open ?? shown;
 
   useModalFocus(open !== null, rootRef, scrollRef, close);
@@ -160,7 +181,7 @@ export default function Header({ bar }: { bar: BarData }) {
               "--bar-w": WIDTH[open ?? "none"],
               // An open panel may use the screen down to 12px above its
               // bottom edge: the bar row and the gaps come off it.
-              "--panel-max": "calc(100dvh - 88px)",
+              "--panel-max": docked ? "calc(100dvh - 148px)" : "calc(100dvh - 88px)",
               transitionDuration: "320ms",
               transitionTimingFunction: EASE_OUT_CSS,
             } as CSSProperties
@@ -203,6 +224,42 @@ export default function Header({ bar }: { bar: BarData }) {
             </a>
           </nav>
 
+          {/* Second row on a project page: the title and the centred clip's
+              A/B test ("title" keeps only the title here). */}
+          <div
+            className="grid motion-safe:transition-[grid-template-rows]"
+            style={{ gridTemplateRows: docked ? "1fr" : "0fr", transitionDuration: "320ms", transitionTimingFunction: EASE_OUT_CSS }}
+          >
+            <div className="min-h-0 overflow-hidden">
+              {barProject && docked && (
+                <div className="mx-auto flex w-full items-center justify-center gap-2 px-4 pb-2.5 desktop:max-w-[26rem]">
+                  {chrome !== "title" && barProject.replay}
+                  <button
+                    type="button"
+                    onClick={toggleDetails}
+                    aria-expanded={barProject.detailsOpen}
+                    aria-controls={chrome === "overlay" ? "project-details" : "bar-panel"}
+                    className="flex min-w-0 flex-col items-center text-center transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98]"
+                  >
+                    <span className={`flex max-w-full items-center gap-1.5 ${userOpen ? "text-secondary" : "text-primary"}`}>
+                      <span className="truncate">{barProject.title}</span>
+                      <span
+                        aria-hidden
+                        className="shrink-0 text-[0.5rem] motion-safe:transition-transform motion-safe:duration-200"
+                        style={{ transform: barProject.detailsOpen ? "rotate(180deg)" : "none" }}
+                      >
+                        ▼
+                      </span>
+                    </span>
+                    {chrome !== "title" && barProject.label && (
+                      <span className="line-clamp-2 text-secondary [overflow-wrap:anywhere]">{barProject.label}</span>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* The panel opens inside the capsule, under its row, as tall as
               what it holds. */}
           <div
@@ -219,12 +276,16 @@ export default function Header({ bar }: { bar: BarData }) {
                   id="bar-panel"
                   role="dialog"
                   aria-modal="true"
-                  aria-label={showing === "work" ? "Work" : "About"}
+                  aria-label={showing === "work" ? "Work" : showing === "about" ? "About" : `${barProject?.title ?? "Project"} details`}
                   className="bar-panel-in pt-4 desktop:pt-6"
                   style={{ opacity: open ? 1 : 0, transition: `opacity ${open ? 200 : 100}ms ${EASE_OUT_CSS}` }}
                 >
                   {showing === "work" ? (
                     <WorkPanel bar={bar} scrollRef={scrollRef} />
+                  ) : showing === "details" ? (
+                    <div ref={scrollRef} tabIndex={-1} data-lenis-prevent className="max-h-[var(--panel-max)] overflow-y-auto overscroll-contain outline-none">
+                      {barProject?.details}
+                    </div>
                   ) : bar.about ? (
                     <div ref={scrollRef} tabIndex={-1} data-lenis-prevent className="max-h-[var(--panel-max)] overflow-y-auto overscroll-contain outline-none">
                       <AboutBody about={bar.about} />

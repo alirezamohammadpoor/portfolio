@@ -33,7 +33,8 @@ import PhonesRow, { PHONE_ASPECT } from "@/components/PhonesRow";
 import MediaFrame from "@/components/MediaFrame";
 import { resolveFrame, resolveLandingFrame } from "@/lib/mediaFrame";
 import { LANDING_ASPECT, LANDING_SIZES, imageAspect, landingKind, storedVideoAspect, videoAspect } from "@/lib/landing";
-import ProjectDetailsOverlay from "@/components/project/ProjectDetailsOverlay";
+import ProjectDetailsOverlay, { ProjectDetailsText } from "@/components/project/ProjectDetailsOverlay";
+import { setBarProject, useBarState } from "@/lib/barProject";
 import GalleryProgress from "@/components/project/GalleryProgress";
 import TestReplay from "@/components/project/TestReplay";
 import ProjectSwitcher from "@/components/project/ProjectSwitcher";
@@ -272,6 +273,49 @@ export default function ProjectStage({
     hiddenRef.current = hidden;
   }, [hidden]);
   const closeDetails = useCallback(() => setDetailsOpen(false), []);
+  const toggleDetails = useCallback(() => {
+    setSwitcherOpen(false);
+    setDetailsOpen((o) => !o);
+  }, []);
+
+  // The capsule bar (/lab/project): in any chrome but "pill" the bar's second
+  // row carries the title and the centred clip's test or label, and the name
+  // pill on the stage steps aside. The label holds while the details are
+  // open (the bar still says what you are looking at).
+  const { chrome } = useBarState();
+  const capsule = chrome !== "pill";
+  const barTest = !atPreview && current?._type === "galleryPhones" ? (current.testName ?? null) : null;
+  const barClipLabel =
+    !atPreview && !barTest && (current?._type === "galleryPhones" || current?._type === "galleryVideo")
+      ? current.label?.trim() || null
+      : null;
+  const barLabel = barTest ? `A/B test – ${barTest}` : barClipLabel;
+  const barEnded = Boolean(current && endedKey === current._key);
+  useEffect(() => {
+    if (!capsule || hidden) {
+      setBarProject(null);
+      return;
+    }
+    setBarProject({
+      title: project.title ?? "Project",
+      label: barLabel,
+      replay: barTest ? (
+        <TestReplay
+          key={current?._key}
+          name={barTest}
+          ended={barEnded}
+          reduceMotion={reduceMotion}
+          getVideo={() => itemRefs.current[index]?.querySelector<HTMLVideoElement>("video[data-once]") ?? null}
+          onReplay={() => setReplay((r) => r + 1)}
+        />
+      ) : null,
+      detailsOpen,
+      toggleDetails,
+      closeDetails,
+      details: <ProjectDetailsText project={project} compact />,
+    });
+  }, [capsule, hidden, project, barLabel, barTest, barEnded, current?._key, reduceMotion, index, detailsOpen, toggleDetails, closeDetails]);
+  useEffect(() => () => setBarProject(null), []);
   // While the finger is down the cards track scroll 1:1 (no CSS transition
   // fighting the per-frame transform); the 200 ms settle applies once idle.
   const [scrolling, setScrolling] = useState(false);
@@ -769,6 +813,18 @@ export default function ProjectStage({
           Fixed height, so card 1 sits on the same y on every project (the
           project → project clone lands on the previous page's y). */}
       <h1 className="sr-only">{project.title}</h1>
+      {capsule ? (
+        // The capsule's second row stands where the pill stood: the cards
+        // keep their y.
+        <div className="relative h-14 shrink-0">
+          {/* "title": the bar holds only the title; the test or clip label is
+              a caption under it, just above the card (the phone has no room
+              between the card and the filmstrip). */}
+          {chrome === "title" && barLabel && (
+            <p className="pointer-events-none absolute inset-x-0 bottom-1 truncate px-margin text-center text-body text-secondary">{barLabel}</p>
+          )}
+        </div>
+      ) : (
       <div className="relative z-50 flex h-14 shrink-0 items-start justify-center pt-2">
         {/* With an A/B test centred (Figma "Test pill · placement · 11-09",
             Ali picked C + R3) the pill carries it: the replay slot on the
@@ -822,6 +878,7 @@ export default function ProjectStage({
           </button>
         </div>
       </div>
+      )}
 
       {/* Strip, vertically centred in the remaining space */}
       <div className={`flex flex-1 items-center pb-[52px] desktop:pb-[72px] ${hidden && arrivedInPlace ? "opacity-0" : ""}`}>
@@ -1066,7 +1123,9 @@ export default function ProjectStage({
         indexOpen={switcherOpen}
       />
 
-      <ProjectDetailsOverlay project={project} open={detailsOpen} onClose={closeDetails} reduceMotion={reduceMotion} />
+      {(chrome === "pill" || chrome === "overlay") && (
+        <ProjectDetailsOverlay project={project} open={detailsOpen} onClose={closeDetails} reduceMotion={reduceMotion} />
+      )}
       {allProjects.length > 1 && (
         <ProjectSwitcher
           projects={allProjects}
