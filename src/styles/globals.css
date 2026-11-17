@@ -86,6 +86,15 @@
 }
 
 @layer base {
+  /* Tailwind 4 leaves buttons on the default arrow; everything you can
+     click shows the hand (Ali, 11-17), the capsule's Work and About too. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  label[for],
+  select {
+    cursor: pointer;
+  }
   html {
     background-color: var(--color-bg);
     color: var(--color-primary);
