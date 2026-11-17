@@ -32,8 +32,11 @@ const WIDTH: Record<Shown | "none", string> = {
   details: "40rem",
 };
 
+/** Phone width open: the grid margins. */
+const PHONE_OPEN = "calc(100vw - 2 * var(--grid-margin))";
+
 const ITEM =
-  "intro-nav relative flex h-14 items-center rounded-full transition-[color,scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] select-none touch-manipulation before:absolute before:-inset-x-2 before:-inset-y-1 before:content-['']";
+  "intro-nav relative flex h-11 items-center desktop:h-14 rounded-full transition-[color,scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] select-none touch-manipulation before:absolute before:-inset-x-2 before:-inset-y-1 before:content-['']";
 
 /**
  * The site bar (Capsule, picked 11-16 from /lab/bar): one centred frost
@@ -217,17 +220,20 @@ export default function Header({ bar }: { bar: BarData }) {
     <>
       <div ref={rootRef}>
         <header
-          className="fixed inset-x-[var(--grid-margin)] top-[calc(env(safe-area-inset-top)+12px)] z-50 flex flex-col overflow-hidden text-body shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_2px_rgb(0_0_0/0.06),0_10px_24px_-6px_rgb(0_0_0/0.14),0_28px_56px_-12px_rgb(0_0_0/0.16)] motion-safe:transition-[width,border-radius] desktop:top-[calc(env(safe-area-inset-top)+16px)] desktop:right-auto desktop:left-1/2 desktop:w-[var(--bar-w)] desktop:-translate-x-1/2"
+          className="fixed left-1/2 top-[calc(env(safe-area-inset-top)+12px)] w-[var(--bar-w-m)] -translate-x-1/2 z-50 flex flex-col overflow-hidden text-body shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_2px_rgb(0_0_0/0.06),0_10px_24px_-6px_rgb(0_0_0/0.14),0_28px_56px_-12px_rgb(0_0_0/0.16)] motion-safe:transition-[width,border-radius] desktop:top-[calc(env(safe-area-inset-top)+16px)] desktop:w-[var(--bar-w)]"
           style={
             {
               opacity: flight?.mode === "fade" ? 0 : 1,
               transitionProperty: flight || workOpen === "fade" ? "width, opacity, border-radius" : undefined,
               "--bar-w": WIDTH[open ?? "none"],
+              // Phone (Ali 11-17, "more petite"): compact at rest, the margins
+              // open or with a project row docked.
+              "--bar-w-m": open || docked ? PHONE_OPEN : "18.5rem",
               // An open panel may use the screen down to 12px above its
               // bottom edge: the bar row and the gaps come off it.
               "--panel-max": docked ? "calc(100dvh - 156px)" : "calc(100dvh - 96px)",
-              // Pebble (Ali picked A, 11-17): full round shut, 32px open.
-              borderRadius: open ? 32 : 28,
+              // Pebble (Ali picked A, 11-17): full round shut, rounder open.
+              borderRadius: open ? "var(--bar-r-open)" : "var(--bar-r)",
               ...panelSize(bar),
               transitionDuration: flight || workOpen === "fade" ? `320ms, ${flight ? 160 : 200}ms, 320ms` : "320ms",
               transitionTimingFunction: EASE_OUT_CSS,
@@ -246,7 +252,7 @@ export default function Header({ bar }: { bar: BarData }) {
             aria-hidden
             className={`pointer-events-none absolute inset-0 -z-10 rounded-[inherit] bg-bg/70 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`}
           />
-          <nav aria-label="Site" className="mx-auto grid h-14 w-full shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-x-7 px-6 text-[18px] leading-6 desktop:max-w-[30rem] desktop:px-7">
+          <nav aria-label="Site" className="mx-auto grid h-11 w-full max-w-[18.5rem] shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-x-5 px-[18px] text-[15px] leading-5 desktop:h-14 desktop:max-w-[30rem] desktop:gap-x-7 desktop:px-7 desktop:text-[18px] desktop:leading-6">
             <button type="button" onClick={() => toggle("work")} aria-expanded={open === "work"} aria-controls="bar-panel" className={`${ITEM} justify-self-start ${tone("work")}`}>
               Work
             </button>
@@ -254,7 +260,7 @@ export default function Header({ bar }: { bar: BarData }) {
               ref={linkRef}
               href="/"
               onClick={close}
-              className={`relative flex h-14 items-center whitespace-nowrap text-[20px] ${open ? "text-secondary" : "text-primary"}`}
+              className={`relative flex h-11 items-center whitespace-nowrap text-[15.5px] desktop:h-14 desktop:text-[20px] ${open ? "text-secondary" : "text-primary"}`}
               aria-label={ENGLISH_NAME}
             >
               <span ref={nameRef} className={PERSIAN_CLASS} dir="rtl" lang="fa">
@@ -333,9 +339,10 @@ export default function Header({ bar }: { bar: BarData }) {
                   // Laid out at the open width from the first frame (Ali, 11-17):
                   // on a laptop the capsule widens around the panel and clips
                   // it, instead of the text reflowing as the width grows.
-                  className="bar-panel-in relative pt-4 desktop:left-1/2 desktop:w-[var(--panel-w)] desktop:-translate-x-1/2 desktop:pt-6"
+                  className="bar-panel-in relative left-1/2 w-[var(--panel-w-m)] -translate-x-1/2 pt-4 desktop:w-[var(--panel-w)] desktop:pt-6"
                   style={{
                     "--panel-w": WIDTH[showing],
+                    "--panel-w-m": PHONE_OPEN,
                     opacity: open && !flight?.leaving ? 1 : 0,
                     transition: `opacity ${open && !flight ? 200 : 120}ms ${EASE_OUT_CSS}`,
                   } as CSSProperties}
