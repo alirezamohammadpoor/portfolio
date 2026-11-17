@@ -41,26 +41,16 @@ export type WorkOpen = "shrink" | "hold" | "fade" | null;
  */
 export type PreviewSwap = "fade" | "slide" | "dissolve";
 
-/**
- * How the project row in the Pebble is laid out (/lab/pebble, Ali 11-17).
- *  now:   centred, replay beside the title, test under it (Docked as built)
- *  list:  a hairline, then title and test stacked on the left, chevron and
- *         replay on the right
- *  inner: the project in its own tinted pill inside the Pebble
- *  grid:  centred on fixed slots, replay left, chevron right
- */
-export type ProjectRow = "now" | "list" | "inner" | "grid";
+type State = { chrome: StageChrome; project: BarProject | null; workOpen: WorkOpen; previewSwap: PreviewSwap };
 
-type State = { chrome: StageChrome; project: BarProject | null; workOpen: WorkOpen; previewSwap: PreviewSwap; projectRow: ProjectRow };
-
-let state: State = { chrome: "docked", project: null, workOpen: "fade", previewSwap: "fade", projectRow: "now" };
+let state: State = { chrome: "docked", project: null, workOpen: "fade", previewSwap: "fade" };
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 const subscribe = (l: () => void) => {
   listeners.add(l);
   return () => listeners.delete(l);
 };
-const SERVER: State = { chrome: "docked", project: null, workOpen: "fade", previewSwap: "fade", projectRow: "now" };
+const SERVER: State = { chrome: "docked", project: null, workOpen: "fade", previewSwap: "fade" };
 
 export function setBarProject(project: BarProject | null) {
   state = { ...state, project };
@@ -82,12 +72,6 @@ export function setWorkOpen(workOpen: WorkOpen) {
 export function setPreviewSwap(previewSwap: PreviewSwap) {
   if (state.previewSwap === previewSwap) return;
   state = { ...state, previewSwap };
-  emit();
-}
-
-export function setProjectRow(projectRow: ProjectRow) {
-  if (state.projectRow === projectRow) return;
-  state = { ...state, projectRow };
   emit();
 }
 

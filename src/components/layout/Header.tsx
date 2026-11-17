@@ -61,7 +61,7 @@ export default function Header({ bar }: { bar: BarData }) {
   // A project page can dock its title in the capsule's second row
   // (/lab/project); "docked" and "title" open the details inside the
   // capsule too, "overlay" keeps the stage's own frost overlay.
-  const { chrome, project: barProject, workOpen, projectRow } = useBarState();
+  const { chrome, project: barProject, workOpen } = useBarState();
   // A project opened from Work flies its preview into card 1 (Fade, Ali 11-17);
   // `flight` is what the capsule does meanwhile, until the page is up.
   const router = useRouter();
@@ -291,35 +291,8 @@ export default function Header({ bar }: { bar: BarData }) {
             style={{ gridTemplateRows: docked ? "1fr" : "0fr", transitionDuration: "320ms", transitionTimingFunction: EASE_OUT_CSS }}
           >
             <div className="min-h-0 overflow-hidden">
-              {barProject && docked && projectRow === "now" && (
-                <div className="mx-auto flex w-full items-center justify-center gap-2 px-4 pb-2.5 desktop:max-w-[30rem]">
-                  {chrome !== "title" && barProject.replay}
-                  <button
-                    type="button"
-                    onClick={toggleDetails}
-                    aria-expanded={barProject.detailsOpen}
-                    aria-controls={chrome === "overlay" ? "project-details" : "bar-panel"}
-                    className="flex min-w-0 flex-col items-center text-center transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98]"
-                  >
-                    <span className={`flex max-w-full items-center gap-1.5 ${userOpen ? "text-secondary" : "text-primary"}`}>
-                      <span className="truncate">{barProject.title}</span>
-                      <span
-                        aria-hidden
-                        className="shrink-0 text-[0.5rem] motion-safe:transition-transform motion-safe:duration-200"
-                        style={{ transform: barProject.detailsOpen ? "rotate(180deg)" : "none" }}
-                      >
-                        ▼
-                      </span>
-                    </span>
-                    {chrome !== "title" && barProject.label && (
-                      <span className="line-clamp-2 text-secondary [overflow-wrap:anywhere]">{barProject.label}</span>
-                    )}
-                  </button>
-                </div>
-              )}
-              {barProject && docked && projectRow !== "now" && (
+              {barProject && docked && (
                 <ProjectRowLayout
-                  layout={projectRow}
                   title={barProject.title}
                   label={chrome !== "title" ? barProject.label : null}
                   replay={chrome !== "title" ? barProject.replay : null}
