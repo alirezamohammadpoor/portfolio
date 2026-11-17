@@ -2,9 +2,9 @@
 @import "tailwindcss";
 
 @theme {
-  /* Room the capsule bar takes above the page: 12px + 40px bar + 12px on
-     a phone, 16 + 40 + 16 on a laptop (set with the grid below). */
-  --header-height: 64px;
+  /* Room the capsule bar takes above the page: 12px + 56px bar + 12px on
+     a phone, 16 + 56 + 16 on a laptop (set with the grid below). */
+  --header-height: 80px;
 
   --color-bg: #f7f7f7;
   --color-primary: #1a1a1a;
@@ -69,7 +69,7 @@
 }
 @media (min-width: 75rem) {
   :root {
-    --header-height: 72px;
+    --header-height: 88px;
     --grid-margin: 24px;
     --grid-gutter: 16px;
     --grid-columns: 12;
