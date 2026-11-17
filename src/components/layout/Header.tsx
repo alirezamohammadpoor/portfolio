@@ -217,7 +217,7 @@ export default function Header({ bar }: { bar: BarData }) {
     <>
       <div ref={rootRef}>
         <header
-          className="fixed inset-x-[var(--grid-margin)] top-[calc(env(safe-area-inset-top)+12px)] z-50 flex flex-col overflow-hidden rounded-[20px] text-body shadow-[0_0_0_1px_rgb(0_0_0/0.06),0_8px_24px_rgb(0_0_0/0.06)] motion-safe:transition-[width] desktop:top-[calc(env(safe-area-inset-top)+16px)] desktop:right-auto desktop:left-1/2 desktop:w-[var(--bar-w)] desktop:-translate-x-1/2"
+          className="fixed inset-x-[var(--grid-margin)] [view-transition-name:site-bar] top-[calc(env(safe-area-inset-top)+12px)] z-50 flex flex-col overflow-hidden rounded-[20px] text-body shadow-[0_0_0_1px_rgb(0_0_0/0.06),0_8px_24px_rgb(0_0_0/0.06)] motion-safe:transition-[width] desktop:top-[calc(env(safe-area-inset-top)+16px)] desktop:right-auto desktop:left-1/2 desktop:w-[var(--bar-w)] desktop:-translate-x-1/2"
           style={
             {
               opacity: flight?.mode === "fade" ? 0 : 1,

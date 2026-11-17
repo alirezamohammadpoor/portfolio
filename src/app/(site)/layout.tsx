@@ -11,7 +11,6 @@ import DraftModeTools from "@/components/layout/DraftModeTools";
 import { getAbout } from "@/sanity/lib/data";
 import { getBarData } from "@/sanity/lib/bar";
 import JsonLd from "@/components/seo/JsonLd";
-import PageTransitionPicker from "@/components/lab/pt/PageTransitionPicker";
 import "@/styles/globals.css";
 
 import { SITE_URL as siteUrl, OPEN_GRAPH_BASE, SITE_OG_IMAGE } from "@/lib/site";
@@ -98,7 +97,6 @@ export default async function SiteLayout({
           <Suspense fallback={null}>
             <DraftModeTools />
           </Suspense>
-          <PageTransitionPicker />
           <Analytics />
         </body>
       </html>
