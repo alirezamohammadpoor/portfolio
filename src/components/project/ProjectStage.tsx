@@ -67,13 +67,15 @@ const NEIGHBOUR_OPACITY = 0.6;
 const SETTLE_MS = 200;
 const ITEM_W = "calc(100vw - 2 * var(--grid-margin))";
 // Phone: the band a card may fill, the viewport less the header, the pill
-// row (h-14), the room kept under the strip for the filmstrip (pb-[52px])
-// and the strip's own padding (py-6). A tall clip, a 4:5 phone frame or a
+// row (h-14), the room kept under the strip for the filmstrip (pb-[76px]:
+// the filmstrip's 44px foot and its thumbs, plus about 32px so the thumbs
+// breathe under the tallest card, Ali 11-17) and the strip's own padding
+// (py-6). A tall clip, a 4:5 phone frame or a
 // lone phone screen gets narrower instead of running under the filmstrip.
 // snap-center centres a narrower card between its neighbours; the first and
 // the last card get there through the strip's side padding (the layout
 // effect below), and the depth loop reads each card's own offsetWidth.
-const PHONE_BAND = "calc(100svh - var(--header-height) - 56px - 52px - 48px)";
+const PHONE_BAND = "calc(100svh - var(--header-height) - 56px - 76px - 48px)";
 /** A phone card's width: the full column width unless the band bounds it. */
 const phoneCardWidth = (boxAspect: number, gapsPx = 0, band = PHONE_BAND) =>
   `min(${ITEM_W}, calc(${band} * ${boxAspect.toFixed(4)} + ${gapsPx}px))`;
@@ -880,7 +882,7 @@ export default function ProjectStage({
       )}
 
       {/* Strip, vertically centred in the remaining space */}
-      <div className={`flex flex-1 items-center pb-[52px] desktop:pb-[72px] ${hidden && arrivedInPlace ? "opacity-0" : ""}`}>
+      <div className={`flex flex-1 items-center pb-[76px] desktop:pb-[72px] ${hidden && arrivedInPlace ? "opacity-0" : ""}`}>
         <div
           ref={stripRef}
           // A lone card is centred by the strip itself; with the next project's
