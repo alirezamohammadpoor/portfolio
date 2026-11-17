@@ -25,23 +25,23 @@ export type BarProject = {
 
 /**
  * What the capsule does when a project opened from Work flies its preview
- * into card 1 (/lab/open, Ali 11-17). null: today's plain route change.
+ * into card 1. Ali picked "fade" from /lab/open (11-17): the capsule fades
+ * out and comes back once the page is up. null: a plain route change.
  *  shrink: the list fades, the window folds back while the video flies
  *  hold:   the window stays open (emptied) until the video has landed
- *  fade:   the capsule fades out and comes back once the page is up
  */
 export type WorkOpen = "shrink" | "hold" | "fade" | null;
 
 type State = { chrome: StageChrome; project: BarProject | null; workOpen: WorkOpen };
 
-let state: State = { chrome: "pill", project: null, workOpen: null };
+let state: State = { chrome: "pill", project: null, workOpen: "fade" };
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 const subscribe = (l: () => void) => {
   listeners.add(l);
   return () => listeners.delete(l);
 };
-const SERVER: State = { chrome: "pill", project: null, workOpen: null };
+const SERVER: State = { chrome: "pill", project: null, workOpen: "fade" };
 
 export function setBarProject(project: BarProject | null) {
   state = { ...state, project };
