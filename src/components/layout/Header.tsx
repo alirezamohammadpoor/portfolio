@@ -238,6 +238,12 @@ export default function Header({ bar }: { bar: BarData }) {
             aria-hidden
             className="intro-nav frost-strong pointer-events-none absolute inset-0 -z-10 rounded-[20px]"
           />
+          {/* Open, the window covers a lot of page: a denser fill keeps what
+              is behind from showing through as a soft grey block. */}
+          <span
+            aria-hidden
+            className={`pointer-events-none absolute inset-0 -z-10 rounded-[20px] bg-bg/70 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`}
+          />
           <nav aria-label="Site" className="mx-auto grid h-10 w-full shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-x-7 px-5 desktop:max-w-[26rem]">
             <button type="button" onClick={() => toggle("work")} aria-expanded={open === "work"} aria-controls="bar-panel" className={`${ITEM} justify-self-start ${tone("work")}`}>
               Work

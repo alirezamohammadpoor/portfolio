@@ -20,19 +20,20 @@ export default function AboutBody({
 }) {
   const { lead, body } = splitLead(about.bio);
   return (
-    // Laptop: the Work window's width, so the lead takes the left five
-    // columns and the body the right seven instead of one long measure.
-    <div className="px-margin pb-6 desktop:grid-site desktop:pb-8">
+    // The window is Work's size (fixed), so About fills it: the links sit
+    // at its foot. Laptop: lead in the left five columns, body in the right
+    // seven, their first lines on one baseline.
+    <div className="flex min-h-full flex-col px-margin pb-6 desktop:grid-site desktop:grid-rows-[auto_1fr] desktop:items-baseline desktop:pb-8">
       {lead && (
         <p className="text-lead text-primary desktop:col-span-5">{lead}</p>
       )}
-      <div className="desktop:col-span-7">
-        {body.length > 0 && (
-          <div className="mt-3 text-[0.9375rem] desktop:mt-0 leading-[1.375rem] text-primary break-words [&_p+p]:mt-3">
-            <PortableText value={body} />
-          </div>
-        )}
-        <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-body text-primary">
+      {body.length > 0 && (
+        <div className="mt-3 text-[0.9375rem] leading-[1.375rem] text-primary break-words desktop:col-span-7 desktop:mt-0 [&_p+p]:mt-3">
+          <PortableText value={body} />
+        </div>
+      )}
+      <div className="mt-auto pt-5 desktop:col-span-5 desktop:row-start-2 desktop:self-end desktop:pt-0">
+        <div className="flex flex-wrap gap-x-6 gap-y-2 text-body text-primary">
           {about.linkedinUrl && (
             <NextLink
               href={about.linkedinUrl}
