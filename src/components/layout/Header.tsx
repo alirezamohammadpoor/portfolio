@@ -26,7 +26,7 @@ type Shown = Panel | "details";
 
 /** Laptop widths: compact at rest, as wide as the open panel needs. */
 const WIDTH: Record<Shown | "none", string> = {
-  none: "30rem",
+  none: "16rem",
   work: "min(64rem, calc(100vw - 48px))",
   about: "min(64rem, calc(100vw - 48px))",
   details: "40rem",
@@ -36,7 +36,7 @@ const WIDTH: Record<Shown | "none", string> = {
 const PHONE_OPEN = "calc(100vw - 2 * var(--grid-margin))";
 
 const ITEM =
-  "intro-nav relative flex h-11 items-center desktop:h-14 rounded-full transition-[color,scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] select-none touch-manipulation before:absolute before:-inset-x-2 before:-inset-y-1 before:content-['']";
+  "intro-nav relative flex h-11 items-center rounded-full transition-[color,scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] select-none touch-manipulation before:absolute before:-inset-x-2 before:-inset-y-1 before:content-['']";
 
 /**
  * The site bar (Capsule, picked 11-16 from /lab/bar): one centred frost
@@ -252,7 +252,7 @@ export default function Header({ bar }: { bar: BarData }) {
             aria-hidden
             className={`pointer-events-none absolute inset-0 -z-10 rounded-[inherit] bg-bg/70 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`}
           />
-          <nav aria-label="Site" className="mx-auto grid h-11 w-full max-w-[16rem] shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-x-5 px-[18px] text-sub desktop:h-14 desktop:max-w-[30rem] desktop:gap-x-7 desktop:px-7 desktop:text-[18px] desktop:leading-6">
+          <nav aria-label="Site" className="mx-auto grid h-11 w-full max-w-[16rem] shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-x-5 px-[18px] text-sub">
             <button type="button" onClick={() => toggle("work")} aria-expanded={open === "work"} aria-controls="bar-panel" className={`${ITEM} justify-self-start ${tone("work")}`}>
               Work
             </button>
@@ -260,7 +260,7 @@ export default function Header({ bar }: { bar: BarData }) {
               ref={linkRef}
               href="/"
               onClick={close}
-              className={`relative flex h-11 items-center whitespace-nowrap text-[12px] desktop:h-14 desktop:text-[20px] ${open ? "text-secondary" : "text-primary"}`}
+              className={`relative flex h-11 items-center whitespace-nowrap text-[12px] ${open ? "text-secondary" : "text-primary"}`}
               aria-label={ENGLISH_NAME}
             >
               <span ref={nameRef} className={PERSIAN_CLASS} dir="rtl" lang="fa">

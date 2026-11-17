@@ -72,9 +72,7 @@
 }
 @media (min-width: 75rem) {
   :root {
-    --header-height: 88px;
-    --bar-r: 28px;
-    --bar-r-open: 32px;
+    --header-height: 72px;
     --grid-margin: 24px;
     --grid-gutter: 16px;
     --grid-columns: 12;
