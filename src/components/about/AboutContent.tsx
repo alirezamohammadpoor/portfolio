@@ -13,11 +13,12 @@ import {
 import type { ABOUT_QUERY_RESULT } from "@/sanity/types";
 import { cropImageUrl } from "@/sanity/lib/image";
 import { dur, ease, prefersReducedMotion, stagger } from "@/lib/motion";
-import dynamic from "next/dynamic";
+// Spotify widget switched off (Ali, 11-16); bring back with these lines.
+// import dynamic from "next/dynamic";
 import CopyButton from "@/components/CopyButton";
 import SocialLink from "./SocialLink";
 
-const SpotifyWidget = dynamic(() => import("./SpotifyWidget"), { ssr: false });
+// const SpotifyWidget = dynamic(() => import("./SpotifyWidget"), { ssr: false });
 
 type AboutBio = NonNullable<NonNullable<ABOUT_QUERY_RESULT>["bio"]>;
 type AboutPortrait = NonNullable<ABOUT_QUERY_RESULT>["portrait"];
@@ -135,9 +136,10 @@ export default function AboutContent({
           {email && <CopyButton value={email} label="Email" />}
         </div>
 
+        {/* Spotify widget switched off (Ali, 11-16).
         <div ref={spotifyRef} className="mt-6 max-w-[400px] gsap-hidden">
           <SpotifyWidget />
-        </div>
+        </div> */}
       </div>
 
       {/* Right column: portrait — desktop only */}

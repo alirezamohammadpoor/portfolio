@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import NextLink from "next/link";
 import { Link } from "@/lib/viewTransitions";
 import type { PortableTextBlock } from "next-sanity";
@@ -9,6 +9,7 @@ import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { portableTextComponents } from "@/components/portableText/components";
 import { EASE_OUT_CSS } from "@/lib/motion";
 import CopyButton from "@/components/CopyButton";
+import { useModalFocus } from "@/hooks/useModalFocus";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -31,52 +32,7 @@ export default function ProjectDetailsOverlay({
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const description =
-    Array.isArray(project.fullDescription) && project.fullDescription.length > 0
-      ? (project.fullDescription as PortableTextBlock[])
-      : null;
-
-  // A modal dialog for the keyboard: focus moves to Close on open, Tab
-  // cycles inside the text, Escape closes, and focus goes back to the pill
-  // that opened it on close (or wherever it was, on unmount).
-  useEffect(() => {
-    if (!open) return;
-    const root = rootRef.current;
-    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-        return;
-      }
-      if (e.key !== "Tab" || !root) return;
-      const focusables = Array.from(
-        root.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'),
-      );
-      if (!focusables.length) {
-        e.preventDefault();
-        return;
-      }
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      const active = document.activeElement;
-      if (e.shiftKey && (active === first || !root.contains(active))) {
-        e.preventDefault();
-        last.focus({ preventScroll: true });
-      } else if (!e.shiftKey && (active === last || !root.contains(active))) {
-        e.preventDefault();
-        first.focus({ preventScroll: true });
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    closeRef.current?.focus({ preventScroll: true });
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      const active = document.activeElement;
-      if (opener && opener.isConnected && (!active || active === document.body || root?.contains(active))) {
-        opener.focus({ preventScroll: true });
-      }
-    };
-  }, [open, onClose]);
+  useModalFocus(open, rootRef, closeRef, onClose);
 
   // One beat (choreograph): the frost and the text arrive together in
   // 240 ms, the text rising 8 px; closing is faster (160 ms) and all at once,
@@ -120,32 +76,7 @@ export default function ProjectDetailsOverlay({
           if (e.target === e.currentTarget) onClose();
         }}
       >
-        {project.shortDescription && (
-          <p className="text-h3 text-primary desktop:text-h2 desktop:text-center">{project.shortDescription}</p>
-        )}
-        {description && (
-          <div className="mt-6 text-body text-primary desktop:mt-10 desktop:text-lead [&_p+p]:mt-4">
-            <PortableText value={description} components={portableTextComponents} />
-          </div>
-        )}
-        {project.techStack && project.techStack.length > 0 && (
-          <p className="mt-6 text-body text-secondary">{project.techStack.join(", ")}</p>
-        )}
-        <div className="mt-6 flex flex-col gap-1 text-body text-primary">
-          {project.caseStudy?.slug?.current && (
-            <Link href={`/journal/${project.caseStudy.slug.current}`} className="w-fit hover:opacity-60">
-              Read the case study →
-            </Link>
-          )}
-          {project.siteUrl && (
-            <NextLink href={project.siteUrl} target="_blank" rel="noopener noreferrer" className="w-fit hover:opacity-60">
-              Visit the site ↗<span className="sr-only"> (opens in a new tab)</span>
-            </NextLink>
-          )}
-          {project.sitePassword && (
-            <CopyButton value={project.sitePassword} label="Copy the site password" className="w-fit cursor-pointer text-left hover:opacity-60" />
-          )}
-        </div>
+        <ProjectDetailsText project={project} />
       </div>
       </div>
       <button
@@ -157,6 +88,70 @@ export default function ProjectDetailsOverlay({
       >
         Close
       </button>
+    </div>
+  );
+}
+
+/**
+ * The project's text: the short line leads, then the description, the
+ * stack and the links. Shared by the overlay and by the capsule bar, which
+ * opens the details inside itself in the /lab/project directions.
+ */
+export function ProjectDetailsText({ project, compact = false }: { project: Project; compact?: boolean }) {
+  const description =
+    Array.isArray(project.fullDescription) && project.fullDescription.length > 0
+      ? (project.fullDescription as PortableTextBlock[])
+      : null;
+  if (compact) {
+    return (
+      <div className="px-margin pb-6 desktop:pb-8">
+        {project.shortDescription && <p className="text-lead text-primary">{project.shortDescription}</p>}
+        {description && (
+          <div className="mt-3 text-[0.9375rem] leading-[1.375rem] text-primary [&_p+p]:mt-3">
+            <PortableText value={description} components={portableTextComponents} />
+          </div>
+        )}
+        {project.techStack && project.techStack.length > 0 && (
+          <p className="mt-3 text-sub text-secondary">{project.techStack.join(", ")}</p>
+        )}
+        <DetailsLinks project={project} />
+      </div>
+    );
+  }
+  return (
+    <>
+      {project.shortDescription && (
+        <p className="text-h3 text-primary desktop:text-h2 desktop:text-center">{project.shortDescription}</p>
+      )}
+      {description && (
+        <div className="mt-6 text-body text-primary desktop:mt-10 desktop:text-lead [&_p+p]:mt-4">
+          <PortableText value={description} components={portableTextComponents} />
+        </div>
+      )}
+      {project.techStack && project.techStack.length > 0 && (
+        <p className="mt-6 text-body text-secondary">{project.techStack.join(", ")}</p>
+      )}
+      <DetailsLinks project={project} />
+    </>
+  );
+}
+
+function DetailsLinks({ project }: { project: Project }) {
+  return (
+    <div className="mt-6 flex flex-col gap-1 text-body text-primary">
+      {project.caseStudy?.slug?.current && (
+        <Link href={`/journal/${project.caseStudy.slug.current}`} className="w-fit hover:opacity-60">
+          Read the case study →
+        </Link>
+      )}
+      {project.siteUrl && (
+        <NextLink href={project.siteUrl} target="_blank" rel="noopener noreferrer" className="w-fit hover:opacity-60">
+          Visit the site ↗<span className="sr-only"> (opens in a new tab)</span>
+        </NextLink>
+      )}
+      {project.sitePassword && (
+        <CopyButton value={project.sitePassword} label="Copy the site password" className="w-fit cursor-pointer text-left hover:opacity-60" />
+      )}
     </div>
   );
 }

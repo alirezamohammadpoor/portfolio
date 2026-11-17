@@ -2,7 +2,9 @@
 @import "tailwindcss";
 
 @theme {
-  --header-height: 40px;
+  /* Room the capsule bar takes above the page: 12px + 40px bar + 12px on
+     a phone, 16 + 40 + 16 on a laptop (set with the grid below). */
+  --header-height: 64px;
 
   --color-bg: #f7f7f7;
   --color-primary: #1a1a1a;
@@ -67,6 +69,7 @@
 }
 @media (min-width: 75rem) {
   :root {
+    --header-height: 72px;
     --grid-margin: 24px;
     --grid-gutter: 16px;
     --grid-columns: 12;
@@ -386,5 +389,21 @@ html[data-custom-clone]::view-transition-new(root) {
     background-color: rgb(190 220 170);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
+  }
+}
+
+/* The capsule bar's panel content arrives just after the panel starts to
+   open (one entrance: the panel carries it, the content only fades). */
+@keyframes bar-panel-in {
+  from {
+    opacity: 0;
+  }
+}
+.bar-panel-in {
+  animation: bar-panel-in 200ms var(--ease-out) 60ms both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .bar-panel-in {
+    animation: none;
   }
 }
