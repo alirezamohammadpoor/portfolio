@@ -1,9 +1,12 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import type { ProjectRow } from "@/lib/barProject";
 
 const PRESS = "transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98]";
+
+/** The replay slot fills from white to pistachio as the test plays (Ali, 11-17). */
+const REPLAY_FILL = "[&>button]:bg-white [&>button>span]:bg-pistachio [&>button>svg]:mix-blend-normal [&>button>svg]:stroke-primary";
 
 function Chevron({ open, className = "" }: { open: boolean; className?: string }) {
   return (
@@ -58,30 +61,17 @@ export default function ProjectRowLayout({
             </span>
             <Chevron open={detailsOpen} className={tone} />
           </button>
-          {/* Ali 11-17: only the button takes the pistachio here. */}
-          {replay && <span className="flex [&>button]:bg-pistachio">{replay}</span>}
+          {/* Ali 11-17: only the button takes the pistachio here; it fills
+              from white to pistachio as the test plays. */}
+          {replay && <span className={`flex ${REPLAY_FILL}`}>{replay}</span>}
         </div>
       </div>
     );
   }
 
   if (layout === "inner") {
-    // The project in its own tinted pill, nested in the Pebble: replay at
-    // its left edge, title over test, the chevron at the end.
     return (
-      <div className="mx-auto w-full px-2 pb-2 desktop:max-w-[30rem]">
-        {/* Ali 11-17: the whole inner pill in pistachio, replay kept. */}
-        <div className="flex min-h-11 items-center gap-2 rounded-[calc(var(--bar-r)-8px)] bg-pistachio p-1.5">
-          {replay && <span className="flex [&>button]:bg-white/60">{replay}</span>}
-          <button {...toggle} className={`flex min-w-0 flex-1 items-center gap-2 py-1 pr-2 text-left ${replay ? "" : "pl-2.5"} ${PRESS}`}>
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className={`truncate leading-[1.25rem] ${tone}`}>{title}</span>
-              {label && <span className="line-clamp-2 text-[0.9375rem] leading-[1.25rem] text-primary/65 [overflow-wrap:anywhere]">{label}</span>}
-            </span>
-            <Chevron open={detailsOpen} className={tone} />
-          </button>
-        </div>
-      </div>
+      <InnerPill replay={replay} toggle={toggle} tone={tone} title={title} label={label} detailsOpen={detailsOpen} />
     );
   }
 
@@ -97,6 +87,69 @@ export default function ProjectRowLayout({
       <button {...toggle} aria-label={detailsOpen ? "Hide details" : "Show details"} className={`flex size-11 items-center justify-center justify-self-center rounded-full ${PRESS}`}>
         <Chevron open={detailsOpen} className={tone} />
       </button>
+    </div>
+  );
+}
+
+/**
+ * Inner pill (Ali, 11-17): the project in its own pill nested in the
+ * Pebble. On a test clip the pill itself fills from white to pistachio as
+ * the test plays, in step with the replay slot (whose own fill it copies
+ * each frame); a plain clip shows it full.
+ */
+function InnerPill({
+  replay,
+  toggle,
+  tone,
+  title,
+  label,
+  detailsOpen,
+}: {
+  replay: ReactNode;
+  toggle: { type: "button"; onClick: () => void; "aria-expanded": boolean; "aria-controls": string };
+  tone: string;
+  title: string;
+  label: string | null;
+  detailsOpen: boolean;
+}) {
+  const pillRef = useRef<HTMLDivElement>(null);
+  const fillRef = useRef<HTMLSpanElement>(null);
+  const testing = Boolean(replay);
+
+  useEffect(() => {
+    const fill = fillRef.current;
+    if (!fill) return;
+    if (!testing) {
+      fill.style.transform = "none";
+      return;
+    }
+    let raf = 0;
+    const tick = () => {
+      const src = pillRef.current?.querySelector<HTMLElement>('button[aria-label^="Replay"] > span');
+      fill.style.transform = src?.style.transform || "scaleX(0)";
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [testing]);
+
+  return (
+    <div className="mx-auto w-full px-2 pb-2 desktop:max-w-[30rem]">
+      <div
+        ref={pillRef}
+        className="relative isolate flex min-h-11 items-center gap-2 overflow-hidden rounded-[calc(var(--bar-r)-8px)] bg-white p-1.5 shadow-[inset_0_0_0_1px_rgb(0_0_0/0.06)]"
+      >
+        <span ref={fillRef} aria-hidden className="absolute inset-0 -z-10 origin-left bg-pistachio" style={{ transform: testing ? "scaleX(0)" : "none" }} />
+        {/* The slot keeps the replay; the pill carries the progress. */}
+        {replay && <span className="flex [&>button]:bg-white/70 [&>button>span]:opacity-0 [&>button>svg]:mix-blend-normal [&>button>svg]:stroke-primary">{replay}</span>}
+        <button {...toggle} className={`flex min-w-0 flex-1 items-center gap-2 py-1 pr-2 text-left ${replay ? "" : "pl-2.5"} ${PRESS}`}>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className={`truncate leading-[1.25rem] ${tone}`}>{title}</span>
+            {label && <span className="line-clamp-2 text-[0.9375rem] leading-[1.25rem] text-primary/65 [overflow-wrap:anywhere]">{label}</span>}
+          </span>
+          <Chevron open={detailsOpen} className={tone} />
+        </button>
+      </div>
     </div>
   );
 }
