@@ -16,6 +16,7 @@ import { holdIntro, releaseIntro } from "@/lib/intro";
 import {
   SCATTER_BEAT,
   getReelState,
+  reelCountOverride,
   reelScrubMode,
   setReelState,
   skipReel,
@@ -39,8 +40,8 @@ interface HomeReelProps {
 
 /**
  * Home entry: while the name is written every project's cover flies out of
- * the middle onto one field, the field holds, and the view dives into the
- * first project (see scatterTimeline). The last frame is the page itself, so
+ * the middle onto an oval around the name, the oval turns, and the view dives into the
+ * first project (see ringTimeline). The last frame is the page itself, so
  * the stage just fades.
  *
  * The stage is a fixed layer outside <main> (which is hidden until the name
@@ -70,7 +71,7 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
       if (!stage || !world || !page || getReelState() !== "waiting") return;
       const heroes = gsap.utils.toArray<HTMLElement>("[data-hero]", stage);
       const covers = gsap.utils.toArray<HTMLElement>("[data-cover]", page);
-      if (!heroes.length || heroes.length !== covers.length) {
+      if (!heroes.length || (heroes.length !== covers.length && !reelCountOverride())) {
         setReelState("off");
         return;
       }
@@ -179,12 +180,14 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
       Promise.race([ready, timeout]).then(() => {
         if (cancelled) return;
         window.scrollTo(0, 0);
-        const rects = covers.map((cover) => {
+        const coverRects = covers.map((cover) => {
           const r = cover.getBoundingClientRect();
           return { x: r.left, y: r.top + window.scrollY, w: r.width, h: r.height };
         });
+        // `&n`: the extra heroes borrow the boxes of the covers they repeat.
+        const rects = heroes.map((_, i) => coverRects[i % coverRects.length]);
         tl = gsap.timeline({ paused: true, onComplete: scrubbing ? undefined : finish });
-        scatterTimeline(tl, heroes, world, rects);
+        ringTimeline(tl, heroes, world, rects);
 
         lenisRef.current?.stop();
         holdIntro();
@@ -214,9 +217,9 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
     <>
       <div ref={stageRef} aria-hidden="true" className="fixed inset-0 z-[55] overflow-hidden bg-bg">
         <div ref={worldRef} className="invisible absolute left-0 top-0 will-change-transform">
-          {projects.map((project, i) => (
-            <div key={project._id} data-hero className="absolute left-0 top-0 overflow-hidden bg-tertiary will-change-transform">
-              <HeroMedia project={project} sizes={coverSizes[i] ?? "(min-width: 75rem) 66vw, 100vw"} />
+          {stageProjects(projects).map((project, i) => (
+            <div key={`${project._id}-${i}`} data-hero className="absolute left-0 top-0 overflow-hidden bg-tertiary will-change-transform">
+              <HeroMedia project={project} sizes={coverSizes[i % projects.length] ?? "(min-width: 75rem) 66vw, 100vw"} />
             </div>
           ))}
         </div>
@@ -227,6 +230,13 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
   );
 }
 
+/** The stage's projects: the home's, repeated up to `&n` when tuning. */
+function stageProjects(projects: PROJECTS_QUERY_RESULT) {
+  const n = reelCountOverride();
+  if (!n || !projects.length) return projects;
+  return Array.from({ length: n }, (_, i) => projects[i % projects.length]);
+}
+
 interface Rect {
   x: number;
   y: number;
@@ -235,132 +245,167 @@ interface Rect {
 }
 
 /**
- * Field spots: left, top and width of each cover as
- * fractions of the field. Laptop: the six-tile composition of /lab/scatter
- * fitted to one screen (a 16:10 field inside the viewport, under the
- * header). Phone: a zigzag down the whole screen, left and right columns apart.
- * Both keep a band across the middle clear for the name (Ali 11-04: the
- * name over a cover was too busy). More projects than
- * spots reuse them, nudged.
+ * An oval through the middle of a w × h box: equal arc-length steps around
+ * it, so the covers are evenly spaced on screen (equal angles bunch them at
+ * the ends of the long axis). `at(u)` gives the point at fraction u of the
+ * way round, clockwise from 12 o'clock.
  */
-const SCATTER_LAPTOP = [
-  { l: 0.02, t: 0.02, w: 0.27 },
-  { l: 0.39, t: 0.0, w: 0.23 },
-  { l: 0.7, t: 0.06, w: 0.28 },
-  { l: 0.04, t: 0.64, w: 0.26 },
-  { l: 0.41, t: 0.73, w: 0.21 },
-  { l: 0.72, t: 0.62, w: 0.26 },
-];
-const SCATTER_PHONE = [
-  { l: 0.02, t: 0.0, w: 0.5 },
-  { l: 0.5, t: 0.12, w: 0.48 },
-  { l: 0.06, t: 0.25, w: 0.44 },
-  { l: 0.52, t: 0.55, w: 0.46 },
-  { l: 0.02, t: 0.69, w: 0.47 },
-  { l: 0.54, t: 0.84, w: 0.42 },
-];
+function ovalPath(a: number, b: number) {
+  const STEPS = 720;
+  const ts: number[] = [];
+  const lens: number[] = [0];
+  for (let k = 0; k <= STEPS; k++) ts.push(-Math.PI / 2 + (k / STEPS) * Math.PI * 2);
+  for (let k = 1; k <= STEPS; k++) {
+    const dx = a * (Math.cos(ts[k]) - Math.cos(ts[k - 1]));
+    const dy = b * (Math.sin(ts[k]) - Math.sin(ts[k - 1]));
+    lens.push(lens[k - 1] + Math.hypot(dx, dy));
+  }
+  const total = lens[STEPS];
+  return (u: number) => {
+    const target = (((u % 1) + 1) % 1) * total;
+    let lo = 0;
+    let hi = STEPS;
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >> 1;
+      if (lens[mid] < target) lo = mid;
+      else hi = mid;
+    }
+    const f = (target - lens[lo]) / (lens[hi] - lens[lo] || 1);
+    const t = ts[lo] + (ts[hi] - ts[lo]) * f;
+    return { x: a * Math.cos(t), y: b * Math.sin(t) };
+  };
+}
 
 /**
- * The entry's timeline: while the name is being written every cover flies
- * out of the middle to its spot on one field, the field holds with a slow
- * drift once the name has reached the header, then the view dives into the
- * first project, which grows into its own slot at the top of the home while
- * the rest of the field drifts out of frame. The camera is the world
- * transform, so the first cover lands pixel exact and the page takes over.
+ * The ring (Ali 11-16): every cover the same size, evenly spaced on
+ * an oval fitted to the field, so any number of projects fits without
+ * overlap (the six hand-placed spots it replaced overlapped past six
+ * projects); the cards shrink as the count grows. The middle stays clear for
+ * the name. While the field holds the oval turns, cards upright, carrying
+ * the first project up to 12 o'clock, and the view dives into it from there.
  */
-function scatterTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: HTMLElement, rects: Rect[]) {
+function ringTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: HTMLElement, rects: Rect[]) {
   const VW = window.innerWidth;
   const VH = window.innerHeight;
   const laptop = window.matchMedia(DESKTOP_QUERY).matches;
-  const spots = laptop ? SCATTER_LAPTOP : SCATTER_PHONE;
-  // The field: under the header with a margin all round; on the laptop the
-  // largest 16:10 box that fits, centred.
+  const N = heroes.length;
   const top = 72;
   const margin = laptop ? 24 : 16;
-  const availW = VW - margin * 2;
-  const availH = VH - top - margin;
-  const fw = laptop ? Math.min(availW, availH * 1.6) : availW;
-  const fh = laptop ? fw / 1.6 : availH;
-  const fx = (VW - fw) / 2;
-  const fy = top + (availH - fh) / 2;
+  const gap = laptop ? 20 : 12;
+  const fw = VW - margin * 2;
+  const fh = VH - top - margin;
+  const ox = VW / 2;
+  const oy = top + fh / 2;
+  // Every cover is 16:10 on the page; the card keeps its own cover's shape.
+  const aspect = rects[0].h / rects[0].w;
+  // The ring stays clear of the name in the middle: on the laptop the card
+  // is at most a quarter of the field, on the phone just under half of it.
+  const maxW = laptop ? fw * 0.24 : fw * 0.46;
 
-  const spread = heroes.map((hero, i) => {
+  // The largest card for which N of them, evenly spaced, clear each other
+  // by `gap` at every turn of the oval.
+  function layout(cw: number) {
+    const ch = cw * aspect;
+    const a = Math.max(fw / 2 - cw / 2, cw);
+    const b = Math.max(fh / 2 - ch / 2, ch);
+    return { cw, ch, at: ovalPath(a, b) };
+  }
+  function clears(cw: number) {
+    const { ch, at } = layout(cw);
+    for (const shift of [0, 0.25, 0.5, 0.75]) {
+      const pts = Array.from({ length: N }, (_, i) => at((i + shift) / N));
+      for (let i = 0; i < N; i++) {
+        for (let j = i + 1; j < N; j++) {
+          if (Math.abs(pts[i].x - pts[j].x) < cw + gap && Math.abs(pts[i].y - pts[j].y) < ch + gap) return false;
+        }
+      }
+    }
+    return true;
+  }
+  let lo = 8;
+  let hi = maxW;
+  if (clears(hi)) lo = hi;
+  else for (let k = 0; k < 24; k++) {
+    const mid = (lo + hi) / 2;
+    if (clears(mid)) lo = mid;
+    else hi = mid;
+  }
+  const { cw, at } = layout(lo);
+
+  // The turn: the oval starts a little short of home and ends with the first
+  // project at 12 o'clock. About two thirds of a step, at least ~25°.
+  const turn = Math.max(0.66 / N, 0.07);
+  const ring = { u: -turn };
+  const fly = heroes.map(() => ({ p: 0 }));
+  const dive = { p: 0 };
+
+  const base = heroes.map((_, i) => {
     const { x, y, w, h } = rects[i];
-    const spot = spots[i % spots.length];
-    const nudge = Math.floor(i / spots.length) * 0.04;
-    const scale = (spot.w * fw) / w;
-    const cx = fx + (spot.l + nudge) * fw + (w * scale) / 2;
-    const cy = fy + (spot.t + nudge) * fh + (h * scale) / 2;
-    gsap.set(hero, {
-      left: x,
-      top: y,
-      width: w,
-      height: h,
-      transformOrigin: "50% 50%",
-      x: VW / 2 - (x + w / 2),
-      y: VH / 2 - (y + h / 2),
-      scale: scale * 0.35,
-      autoAlpha: 0,
-    });
-    return { x: cx - (x + w / 2), y: cy - (y + h / 2), scale, cx, cy };
+    return { cx0: x + w / 2, cy0: y + h / 2, scale: cw / w };
+  });
+  // Where the first cover sits when the dive starts: 12 o'clock.
+  const home = at(0);
+  const firstCx = ox + home.x;
+  const firstCy = oy + home.y;
+  const first = rects[0];
+  const K = 1 / base[0].scale;
+  const dx = first.x + first.w / 2 - K * firstCx;
+  const dy = first.y + first.h / 2 - K * firstCy;
+  const push = (0.5 * Math.max(VW, VH)) / K;
+
+  heroes.forEach((hero, i) => {
+    const { x, y, w, h } = rects[i];
+    gsap.set(hero, { left: x, top: y, width: w, height: h, transformOrigin: "50% 50%" });
   });
   gsap.set(world, { transformOrigin: "0 0", x: 0, y: 0, scale: 1, autoAlpha: 1 });
 
-  const at = SCATTER_BEAT.start;
-  // Out of the middle, first project first, each to its spot.
-  heroes.forEach((hero, i) => {
-    const { x, y, scale } = spread[i];
-    tl.to(hero, { x, y, scale, autoAlpha: 1, duration: SCATTER_BEAT.scatter, ease: ease.out }, at + i * SCATTER_BEAT.stagger);
-  });
+  // One render from the shared state, so the fly-out, the turn and the dive
+  // compose on the same transforms in any order the scrubber seeks.
+  function render() {
+    heroes.forEach((hero, i) => {
+      const { cx0, cy0, scale } = base[i];
+      const spot = at(i / N + ring.u);
+      let cx = ox + spot.x;
+      let cy = oy + spot.y;
+      const p = fly[i].p;
+      // Out of the middle of the screen.
+      cx = VW / 2 + (cx - VW / 2) * p;
+      cy = VH / 2 + (cy - VH / 2) * p;
+      let alpha = Math.min(1, p * 1.4);
+      if (i > 0 && dive.p > 0) {
+        // The rest drifts away from the first project and fades with the
+        // camera (Ali 11-04: neighbours' edges at the hand-over, too sudden).
+        const ax = cx - firstCx;
+        const ay = cy - firstCy;
+        const len = Math.hypot(ax, ay) || 1;
+        cx += (ax / len) * push * dive.p;
+        cy += (ay / len) * push * dive.p;
+        alpha *= 1 - dive.p;
+      }
+      gsap.set(hero, {
+        x: cx - cx0,
+        y: cy - cy0,
+        scale: scale * (0.35 + 0.65 * p),
+        autoAlpha: alpha,
+      });
+    });
+  }
+  render();
 
-  // The camera: a world transform that maps the first cover's spot onto its
-  // slot on the page (same box, so one scale and one shift).
-  const first = rects[0];
-  const K = 1 / spread[0].scale;
-  const dx = first.x + first.w / 2 - K * spread[0].cx;
-  const dy = first.y + first.h / 2 - K * spread[0].cy;
-  const holdAt = at + SCATTER_BEAT.scatter + SCATTER_BEAT.stagger * (heroes.length - 1);
-  // The dive waits for the name to reach the header (the early scatter is
-  // full while the name is still writing).
-  const diveAt = Math.max(holdAt + SCATTER_BEAT.hold, SCATTER_BEAT.write + dur.page + SCATTER_BEAT.afterName);
-  // A slow lean toward the first project while the field holds.
-  const lean = 0.04;
-  const leanK = 1 + lean;
-  tl.to(
-    world,
-    {
-      x: -lean * spread[0].cx,
-      y: -lean * spread[0].cy,
-      scale: leanK,
-      duration: diveAt - (holdAt - SCATTER_BEAT.scatter * 0.5),
-      ease: "none",
-    },
-    holdAt - SCATTER_BEAT.scatter * 0.5,
-  );
-  tl.to(world, { x: dx, y: dy, scale: K, duration: SCATTER_BEAT.dive, ease: ease.inOut }, diveAt);
-  // The rest of the field clears out of frame as the camera dives: on the
-  // phone the zoom alone left the neighbours' edges in view at the hand-over
-  // (Ali 11-04). Each cover drifts away from the first one and fades.
-  const push = (0.5 * Math.max(VW, VH)) / K;
-  heroes.forEach((hero, i) => {
-    if (i === 0) return;
-    const ax = spread[i].cx - spread[0].cx;
-    const ay = spread[i].cy - spread[0].cy;
-    const len = Math.hypot(ax, ay) || 1;
-    tl.to(
-      hero,
-      {
-        x: spread[i].x + (ax / len) * push,
-        y: spread[i].y + (ay / len) * push,
-        autoAlpha: 0,
-        // With the camera, over the whole dive: they drift off as it moves
-        // rather than vanishing at its start (Ali 11-04: too sudden).
-        duration: SCATTER_BEAT.dive,
-        ease: ease.inOut,
-      },
-      diveAt,
-    );
+  const at0 = SCATTER_BEAT.start;
+  heroes.forEach((_, i) => {
+    tl.to(fly[i], { p: 1, duration: SCATTER_BEAT.scatter, ease: ease.out, onUpdate: render }, at0 + i * SCATTER_BEAT.stagger);
   });
+  const holdAt = at0 + SCATTER_BEAT.scatter + SCATTER_BEAT.stagger * (N - 1);
+  const diveAt = Math.max(holdAt + SCATTER_BEAT.hold, SCATTER_BEAT.write + dur.page + SCATTER_BEAT.afterName);
+  // The oval turns from the moment the covers leave the middle and settles
+  // just into the dive, so the hold never stands still and the first
+  // project is home before the camera gets close.
+  const turnStart = at0 + SCATTER_BEAT.scatter * 0.4;
+  const turnEnd = diveAt + SCATTER_BEAT.dive * 0.3;
+  tl.to(ring, { u: 0, duration: turnEnd - turnStart, ease: "power1.inOut", onUpdate: render }, turnStart);
+  tl.to(world, { x: dx, y: dy, scale: K, duration: SCATTER_BEAT.dive, ease: ease.inOut }, diveAt);
+  tl.to(dive, { p: 1, duration: SCATTER_BEAT.dive, ease: ease.inOut, onUpdate: render }, diveAt);
 }
 
 function HeroMedia({ project, sizes }: { project: Project; sizes: string }) {
@@ -431,7 +476,8 @@ function Scrubber({ tl }: { tl: gsap.core.Timeline }) {
         value={t}
         onChange={(e) => {
           const v = Number(e.target.value);
-          tl.pause().seek(v);
+          // Events on: the ring renders from its tweens' onUpdate.
+          tl.pause().seek(v, false);
           setT(v);
           setPlaying(false);
         }}
