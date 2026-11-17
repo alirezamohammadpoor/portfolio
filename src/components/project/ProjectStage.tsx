@@ -886,7 +886,10 @@ export default function ProjectStage({
           ref={stripRef}
           // A lone card is centred by the strip itself; with the next project's
           // preview beside it the two overflow, so they snap like any strip.
-          className={`flex w-full ${isDesktop ? "items-center" : "items-start"} overflow-x-auto py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${single && !hasPreview ? "justify-center" : "snap-x snap-mandatory"}`}
+          // Cards are centred on their row on every breakpoint: the strip is
+          // as tall as its tallest card, so top-aligned cards moved a
+          // landscape clip up whenever the project also had phone clips.
+          className={`flex w-full items-center overflow-x-auto py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${single && !hasPreview ? "justify-center" : "snap-x snap-mandatory"}`}
           style={isDesktop ? undefined : { scrollPaddingInline: "var(--grid-margin)", paddingInline: "var(--grid-margin)" }}
           data-lenis-prevent
           data-stage-strip
