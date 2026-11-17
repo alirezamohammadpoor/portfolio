@@ -328,11 +328,15 @@ export default function Header({ bar }: { bar: BarData }) {
                   role="dialog"
                   aria-modal="true"
                   aria-label={showing === "work" ? "Work" : showing === "about" ? "About" : `${barProject?.title ?? "Project"} details`}
-                  className="bar-panel-in pt-4 desktop:pt-6"
+                  // Laid out at the open width from the first frame (Ali, 11-17):
+                  // on a laptop the capsule widens around the panel and clips
+                  // it, instead of the text reflowing as the width grows.
+                  className="bar-panel-in relative pt-4 desktop:left-1/2 desktop:w-[var(--panel-w)] desktop:-translate-x-1/2 desktop:pt-6"
                   style={{
+                    "--panel-w": WIDTH[showing],
                     opacity: open && !flight?.leaving ? 1 : 0,
                     transition: `opacity ${open && !flight ? 200 : 120}ms ${EASE_OUT_CSS}`,
-                  }}
+                  } as CSSProperties}
                 >
                   {showing === "work" ? (
                     <WorkPanel bar={bar} scrollRef={scrollRef} onOpenProject={openProject} />
