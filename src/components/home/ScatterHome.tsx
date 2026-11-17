@@ -78,7 +78,7 @@ function isAlign(value: string | null | undefined): value is TextAlign {
   return value === "top" || value === "middle" || value === "bottom";
 }
 
-type Contact = Pick<NonNullable<ABOUT_QUERY_RESULT>, "email" | "linkedinUrl" | "githubUrl">;
+export type Contact = Pick<NonNullable<ABOUT_QUERY_RESULT>, "email" | "linkedinUrl" | "githubUrl">;
 
 interface ScatterHomeProps {
   projects: PROJECTS_QUERY_RESULT;
@@ -417,7 +417,7 @@ function CoverMedia({ project, aspect, priority = false, sizes }: CoverMediaProp
  * each channel the About document has. A missing channel drops out of the
  * sentence instead of leaving a dead word behind.
  */
-function ClosingLine({ contact }: { contact: Contact }) {
+export function ClosingLine({ contact }: { contact: Contact }) {
   // The journal's link style: a hairline under the word and a pistachio
   // sweep behind it on hover.
   const link = "link-highlight border-b border-primary";
