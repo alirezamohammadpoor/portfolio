@@ -37,7 +37,6 @@ import ProjectDetailsOverlay, { ProjectDetailsText } from "@/components/project/
 import { setBarProject, useBarState } from "@/lib/barProject";
 import GalleryProgress from "@/components/project/GalleryProgress";
 import TestReplay from "@/components/project/TestReplay";
-import ProjectSwitcher from "@/components/project/ProjectSwitcher";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
@@ -1116,28 +1115,10 @@ export default function ProjectStage({
           goTo(i);
         }}
         onNavigateNext={nextSlug ? onNavigateNext : undefined}
-        onOpenIndex={allProjects.length > 1 ? () => {
-          setDetailsOpen(false);
-          setSwitcherOpen(true);
-        } : undefined}
-        indexOpen={switcherOpen}
       />
 
       {(chrome === "pill" || chrome === "overlay") && (
         <ProjectDetailsOverlay project={project} open={detailsOpen} onClose={closeDetails} reduceMotion={reduceMotion} />
-      )}
-      {allProjects.length > 1 && (
-        <ProjectSwitcher
-          projects={allProjects}
-          currentSlug={project.slug?.current}
-          open={switcherOpen}
-          onClose={closeSwitcher}
-          onPick={(slug, media) => {
-            if (onNavigateTo) onNavigateTo(slug, media);
-          }}
-          isDesktop={isDesktop}
-          reduceMotion={reduceMotion}
-        />
       )}
     </div>
   );

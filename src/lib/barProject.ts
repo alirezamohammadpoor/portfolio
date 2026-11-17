@@ -43,14 +43,14 @@ export type PreviewSwap = "fade" | "slide" | "dissolve";
 
 type State = { chrome: StageChrome; project: BarProject | null; workOpen: WorkOpen; previewSwap: PreviewSwap };
 
-let state: State = { chrome: "pill", project: null, workOpen: "fade", previewSwap: "fade" };
+let state: State = { chrome: "docked", project: null, workOpen: "fade", previewSwap: "fade" };
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 const subscribe = (l: () => void) => {
   listeners.add(l);
   return () => listeners.delete(l);
 };
-const SERVER: State = { chrome: "pill", project: null, workOpen: "fade", previewSwap: "fade" };
+const SERVER: State = { chrome: "docked", project: null, workOpen: "fade", previewSwap: "fade" };
 
 export function setBarProject(project: BarProject | null) {
   state = { ...state, project };
