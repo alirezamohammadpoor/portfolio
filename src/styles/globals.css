@@ -2,9 +2,9 @@
 @import "tailwindcss";
 
 @theme {
-  /* Room the capsule bar takes above the page: 12px + 56px bar + 12px on
+  /* Room the capsule bar takes above the page: 12px + 44px bar + 12px on
      a phone, 16 + 56 + 16 on a laptop (set with the grid below). */
-  --header-height: 80px;
+  --header-height: 68px;
 
   --color-bg: #f7f7f7;
   --color-primary: #1a1a1a;
@@ -63,6 +63,9 @@
    columns on a phone; 24px margin / 16px gutter and 12 columns on a laptop.
    The margin matches the header's padding. One place to retune. */
 :root {
+  /* Capsule bar corners, shut and open (Pebble, 11-17). */
+  --bar-r: 22px;
+  --bar-r-open: 28px;
   --grid-margin: 16px;
   --grid-gutter: 12px;
   --grid-columns: 4;
@@ -70,6 +73,8 @@
 @media (min-width: 75rem) {
   :root {
     --header-height: 88px;
+    --bar-r: 28px;
+    --bar-r-open: 32px;
     --grid-margin: 24px;
     --grid-gutter: 16px;
     --grid-columns: 12;
