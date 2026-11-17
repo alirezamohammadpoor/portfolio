@@ -281,6 +281,7 @@ export type Project = {
         videoWidth?: number;
         videoHeight?: number;
         label?: string;
+        excerpt?: string;
         _type: "galleryVideo";
         _key: string;
       }
@@ -296,6 +297,7 @@ export type Project = {
         frame?: MediaFrame;
         testName?: string;
         label?: string;
+        excerpt?: string;
         _type: "galleryPhones";
         _key: string;
       }
@@ -1016,6 +1018,7 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
         frame?: MediaFrame;
         testName?: string;
         label?: string;
+        excerpt?: string;
         _type: "galleryPhones";
         _key: string;
       }
@@ -1036,6 +1039,7 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
         videoWidth?: number;
         videoHeight?: number;
         label?: string;
+        excerpt?: string;
         _type: "galleryVideo";
         _key: string;
       }
