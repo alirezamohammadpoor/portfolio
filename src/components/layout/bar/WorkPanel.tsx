@@ -8,6 +8,24 @@ import type { BarData, BarRow } from "@/sanity/lib/bar";
 const FINE_HOVER = "(hover: hover) and (pointer: fine)";
 
 /**
+ * One window for Work and About (Ali, 11-17): the same size whichever is
+ * open and whatever the text, so nothing grows. The height is Work's, worked
+ * out from its parts so About can take it without Work being on screen:
+ *  phone  = the 16:9 preview (capsule width less 2x16 margin) + 8 + three
+ *           15/22 lines (66) + 8 + the list + 12 bottom
+ *  laptop = the 16:10 preview (8 of 12 columns in the 64rem capsule, 403)
+ *           + 8 + four 16/24 lines (96) + 32 bottom, or the list if longer
+ * and never past --panel-max (the screen less the capsule's row).
+ */
+export function panelSize(bar: BarData) {
+  const rows = 28 * bar.projects.length + 24 * bar.posts.length;
+  const phone = `calc((100vw - 64px) * 9 / 16 + ${8 + 66 + 8 + 12 + 20 + (bar.posts.length ? 36 : 0) + rows}px)`;
+  const laptop = `${Math.ceil(Math.max(403.34 + 8 + 96 + 32, 32 + 20 + (bar.posts.length ? 52 : 0) + rows))}px`;
+  return { "--panel-h": phone, "--panel-h-desk": laptop } as Record<string, string>;
+}
+export const PANEL_H = "h-[min(var(--panel-h),var(--panel-max))] desktop:h-[min(var(--panel-h-desk),var(--panel-max))]";
+
+/**
  * Work (Work A, Ali 11-16): the names and a preview that follows. With a
  * real pointer the hovered or focused row leads and a click opens it. On
  * touch everything fits one screen: the first tap on a row previews it,
@@ -54,7 +72,9 @@ export default function WorkPanel({ bar, scrollRef }: { bar: BarData; scrollRef:
           />
         )}
       </div>
-      <p className="mt-2 min-h-12 text-body text-primary">{lead?.line}</p>
+      {/* A fixed box for the line: three lines on a phone, four on a laptop
+          (the longest line on the site), so a longer one never moves the list. */}
+      <p className="mt-2 line-clamp-3 h-[66px] text-[0.9375rem] leading-[1.375rem] text-primary desktop:line-clamp-4 desktop:h-24 desktop:text-body">{lead?.line}</p>
     </div>
   );
 
@@ -94,7 +114,7 @@ export default function WorkPanel({ bar, scrollRef }: { bar: BarData; scrollRef:
 
   if (desktop) {
     return (
-      <div ref={scrollRef} tabIndex={-1} data-lenis-prevent className="max-h-[var(--panel-max)] overflow-y-auto overscroll-contain outline-none">
+      <div ref={scrollRef} tabIndex={-1} data-lenis-prevent className={`${PANEL_H} overflow-y-auto overscroll-contain outline-none`}>
         <div className="grid-site px-margin pb-8">
           <div className="col-span-4">{list}</div>
           <div className="sticky top-0 col-span-8 col-start-5 self-start">{preview}</div>
@@ -103,7 +123,7 @@ export default function WorkPanel({ bar, scrollRef }: { bar: BarData; scrollRef:
     );
   }
   return (
-    <div ref={scrollRef} tabIndex={-1} data-lenis-prevent className="max-h-[var(--panel-max)] overflow-y-auto overscroll-contain px-margin pb-3 outline-none">
+    <div ref={scrollRef} tabIndex={-1} data-lenis-prevent className={`${PANEL_H} overflow-y-auto overscroll-contain px-margin pb-3 outline-none`}>
       {preview}
       <div className="mt-2">{list}</div>
     </div>

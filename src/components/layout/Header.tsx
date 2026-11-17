@@ -12,7 +12,7 @@ import HomeIntro from "./HomeIntro";
 import { useModalFocus } from "@/hooks/useModalFocus";
 import { EASE_OUT_CSS } from "@/lib/motion";
 import type { BarData } from "@/sanity/lib/bar";
-import WorkPanel from "./bar/WorkPanel";
+import WorkPanel, { PANEL_H, panelSize } from "./bar/WorkPanel";
 import AboutBody from "./bar/AboutBody";
 import { useBarState } from "@/lib/barProject";
 
@@ -27,7 +27,7 @@ type Shown = Panel | "details";
 const WIDTH: Record<Shown | "none", string> = {
   none: "26rem",
   work: "min(64rem, calc(100vw - 48px))",
-  about: "36rem",
+  about: "min(64rem, calc(100vw - 48px))",
   details: "40rem",
 };
 
@@ -181,7 +181,8 @@ export default function Header({ bar }: { bar: BarData }) {
               "--bar-w": WIDTH[open ?? "none"],
               // An open panel may use the screen down to 12px above its
               // bottom edge: the bar row and the gaps come off it.
-              "--panel-max": docked ? "calc(100dvh - 148px)" : "calc(100dvh - 88px)",
+              "--panel-max": docked ? "calc(100dvh - 140px)" : "calc(100dvh - 80px)",
+              ...panelSize(bar),
               transitionDuration: "320ms",
               transitionTimingFunction: EASE_OUT_CSS,
             } as CSSProperties
@@ -287,7 +288,7 @@ export default function Header({ bar }: { bar: BarData }) {
                       {barProject?.details}
                     </div>
                   ) : bar.about ? (
-                    <div ref={scrollRef} tabIndex={-1} data-lenis-prevent className="max-h-[var(--panel-max)] overflow-y-auto overscroll-contain outline-none">
+                    <div ref={scrollRef} tabIndex={-1} data-lenis-prevent className={`${PANEL_H} overflow-y-auto overscroll-contain outline-none`}>
                       <AboutBody about={bar.about} />
                     </div>
                   ) : null}
