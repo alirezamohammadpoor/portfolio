@@ -101,7 +101,7 @@ export default function WorkPanel({
   );
 
   const heading = (text: string, first: boolean) => (
-    <h2 className={`${first ? "" : "pt-4 desktop:pt-8"} pb-1 text-sub text-secondary`}>{text}</h2>
+    <h2 className={`${first ? "" : "pt-4 desktop:pt-8"} pb-1 text-sub text-primary`}>{text}</h2>
   );
   // `tone` colours a row (active, not); `headings` adds Projects / Journal.
   const rowLink = (r: (typeof rows)[number], i: number, tone: (on: boolean) => string, extra = "") => (

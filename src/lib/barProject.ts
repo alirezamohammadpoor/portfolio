@@ -41,16 +41,23 @@ export type WorkOpen = "shrink" | "hold" | "fade" | null;
 export type PanelLayout = { work: "now" | "refined" | "bleed"; about: "now" | "spread" | "column" };
 const NOW: PanelLayout = { work: "now", about: "now" };
 
-type State = { chrome: StageChrome; project: BarProject | null; workOpen: WorkOpen; panels: PanelLayout };
+/**
+ * What the shut bar is made of (/lab/home, 11-17). "pebble" is the frosted
+ * capsule; "flat" drops the frost and shadow and sets the words in white,
+ * for a page that is one full-bleed picture. An open panel is always frost.
+ */
+export type BarSurface = "pebble" | "flat";
 
-let state: State = { chrome: "pill", project: null, workOpen: "fade", panels: NOW };
+type State = { chrome: StageChrome; project: BarProject | null; workOpen: WorkOpen; panels: PanelLayout; surface: BarSurface };
+
+let state: State = { chrome: "pill", project: null, workOpen: "fade", panels: NOW, surface: "pebble" };
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 const subscribe = (l: () => void) => {
   listeners.add(l);
   return () => listeners.delete(l);
 };
-const SERVER: State = { chrome: "pill", project: null, workOpen: "fade", panels: NOW };
+const SERVER: State = { chrome: "pill", project: null, workOpen: "fade", panels: NOW, surface: "pebble" };
 
 export function setBarProject(project: BarProject | null) {
   state = { ...state, project };
@@ -73,6 +80,12 @@ export function setPanelLayout(panels: PanelLayout | null) {
   const next = panels ?? NOW;
   if (state.panels.work === next.work && state.panels.about === next.about) return;
   state = { ...state, panels: next };
+  emit();
+}
+
+export function setBarSurface(surface: BarSurface) {
+  if (state.surface === surface) return;
+  state = { ...state, surface };
   emit();
 }
 

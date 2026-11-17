@@ -26,14 +26,17 @@ type Shown = Panel | "details";
 
 /** Laptop widths: compact at rest, as wide as the open panel needs. */
 const WIDTH: Record<Shown | "none", string> = {
-  none: "26rem",
+  none: "30rem",
   work: "min(64rem, calc(100vw - 48px))",
   about: "min(64rem, calc(100vw - 48px))",
   details: "40rem",
 };
 
+/** Phone width open: the grid margins. */
+const PHONE_OPEN = "calc(100vw - 2 * var(--grid-margin))";
+
 const ITEM =
-  "intro-nav relative flex h-10 items-center rounded-full transition-[color,scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] select-none touch-manipulation before:absolute before:-inset-x-2 before:-inset-y-1 before:content-['']";
+  "intro-nav relative flex h-11 items-center desktop:h-14 rounded-full transition-[color,scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.97] select-none touch-manipulation before:absolute before:-inset-x-2 before:-inset-y-1 before:content-['']";
 
 /**
  * The site bar (Capsule, picked 11-16 from /lab/bar): one centred frost
@@ -57,7 +60,7 @@ export default function Header({ bar }: { bar: BarData }) {
   // A project page can dock its title in the capsule's second row
   // (/lab/project); "docked" and "title" open the details inside the
   // capsule too, "overlay" keeps the stage's own frost overlay.
-  const { chrome, project: barProject, workOpen, panels } = useBarState();
+  const { chrome, project: barProject, workOpen, panels, surface } = useBarState();
   // A project opened from Work flies its preview into card 1 (Fade, Ali 11-17);
   // `flight` is what the capsule does meanwhile, until the page is up.
   const router = useRouter();
@@ -211,23 +214,31 @@ export default function Header({ bar }: { bar: BarData }) {
     { scope: linkRef },
   );
 
-  const tone = (me: Panel) => (open === null || open === me ? "text-primary" : "text-secondary");
+  // Flat (lab): shut over a full-bleed picture the bar is three white words,
+  // no frost or shadow; opening a panel brings the pebble back around it.
+  const flat = surface === "flat" && !open;
+  const tone = (me: Panel) => (flat ? "text-white" : open === null || open === me ? "text-primary" : "text-secondary");
 
   return (
     <>
       <div ref={rootRef}>
         <header
-          className="fixed inset-x-[var(--grid-margin)] top-[calc(env(safe-area-inset-top)+12px)] z-50 flex flex-col overflow-hidden rounded-[20px] text-body shadow-[0_0_0_1px_rgb(0_0_0/0.06),0_8px_24px_rgb(0_0_0/0.06)] motion-safe:transition-[width] desktop:top-[calc(env(safe-area-inset-top)+16px)] desktop:right-auto desktop:left-1/2 desktop:w-[var(--bar-w)] desktop:-translate-x-1/2"
+          className={`fixed left-1/2 top-[calc(env(safe-area-inset-top)+12px)] w-[var(--bar-w-m)] -translate-x-1/2 z-50 flex flex-col overflow-hidden text-body ${flat ? "" : "shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_2px_rgb(0_0_0/0.06),0_10px_24px_-6px_rgb(0_0_0/0.14),0_28px_56px_-12px_rgb(0_0_0/0.16)]"} motion-safe:transition-[width,border-radius] desktop:top-[calc(env(safe-area-inset-top)+16px)] desktop:w-[var(--bar-w)]`}
           style={
             {
               opacity: flight?.mode === "fade" ? 0 : 1,
-              transitionProperty: flight || workOpen === "fade" ? "width, opacity" : undefined,
+              transitionProperty: flight || workOpen === "fade" ? "width, opacity, border-radius" : undefined,
               "--bar-w": WIDTH[open ?? "none"],
+              // Phone (Ali 11-17, "more petite"): compact at rest, the margins
+              // open or with a project row docked.
+              "--bar-w-m": open || docked ? PHONE_OPEN : "18.5rem",
               // An open panel may use the screen down to 12px above its
               // bottom edge: the bar row and the gaps come off it.
-              "--panel-max": docked ? "calc(100dvh - 140px)" : "calc(100dvh - 80px)",
+              "--panel-max": docked ? "calc(100dvh - 156px)" : "calc(100dvh - 96px)",
+              // Pebble (Ali picked A, 11-17): full round shut, rounder open.
+              borderRadius: open ? "var(--bar-r-open)" : "var(--bar-r)",
               ...panelSize(bar),
-              transitionDuration: flight || workOpen === "fade" ? `320ms, ${flight ? 160 : 200}ms` : "320ms",
+              transitionDuration: flight || workOpen === "fade" ? `320ms, ${flight ? 160 : 200}ms, 320ms` : "320ms",
               transitionTimingFunction: EASE_OUT_CSS,
             } as CSSProperties
           }
@@ -236,15 +247,15 @@ export default function Header({ bar }: { bar: BarData }) {
               home intro, and the open panel shares it (never two blurs). */}
           <span
             aria-hidden
-            className="intro-nav frost-strong pointer-events-none absolute inset-0 -z-10 rounded-[20px]"
+            className={`intro-nav frost-strong pointer-events-none absolute inset-0 -z-10 rounded-[inherit] ${flat ? "invisible" : ""}`}
           />
           {/* Open, the window covers a lot of page: a denser fill keeps what
               is behind from showing through as a soft grey block. */}
           <span
             aria-hidden
-            className={`pointer-events-none absolute inset-0 -z-10 rounded-[20px] bg-bg/70 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`}
+            className={`pointer-events-none absolute inset-0 -z-10 rounded-[inherit] bg-bg/70 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`}
           />
-          <nav aria-label="Site" className="mx-auto grid h-10 w-full shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-x-7 px-5 desktop:max-w-[26rem]">
+          <nav aria-label="Site" className="mx-auto grid h-11 w-full max-w-[18.5rem] shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-x-5 px-[18px] text-[15px] leading-5 desktop:h-14 desktop:max-w-[30rem] desktop:gap-x-7 desktop:px-7 desktop:text-[18px] desktop:leading-6">
             <button type="button" onClick={() => toggle("work")} aria-expanded={open === "work"} aria-controls="bar-panel" className={`${ITEM} justify-self-start ${tone("work")}`}>
               Work
             </button>
@@ -252,7 +263,7 @@ export default function Header({ bar }: { bar: BarData }) {
               ref={linkRef}
               href="/"
               onClick={close}
-              className={`relative flex h-10 items-center whitespace-nowrap text-[15px] ${open ? "text-secondary" : "text-primary"}`}
+              className={`relative flex h-11 items-center whitespace-nowrap text-[15.5px] desktop:h-14 desktop:text-[20px] ${flat ? "text-white" : open ? "text-secondary" : "text-primary"}`}
               aria-label={ENGLISH_NAME}
             >
               <span ref={nameRef} className={PERSIAN_CLASS} dir="rtl" lang="fa">
@@ -283,7 +294,7 @@ export default function Header({ bar }: { bar: BarData }) {
           >
             <div className="min-h-0 overflow-hidden">
               {barProject && docked && (
-                <div className="mx-auto flex w-full items-center justify-center gap-2 px-4 pb-2.5 desktop:max-w-[26rem]">
+                <div className="mx-auto flex w-full items-center justify-center gap-2 px-4 pb-2.5 desktop:max-w-[30rem]">
                   {chrome !== "title" && barProject.replay}
                   <button
                     type="button"
@@ -328,12 +339,17 @@ export default function Header({ bar }: { bar: BarData }) {
                   role="dialog"
                   aria-modal="true"
                   aria-label={showing === "work" ? "Work" : showing === "about" ? "About" : `${barProject?.title ?? "Project"} details`}
+                  // Laid out at the open width from the first frame (Ali, 11-17):
+                  // on a laptop the capsule widens around the panel and clips
+                  // it, instead of the text reflowing as the width grows.
                   // Full bleed (lab) runs the picture up to the bar row: no top gap.
-                  className={`bar-panel-in ${showing === "work" && panels.work === "bleed" ? "" : "pt-4 desktop:pt-6"}`}
+                  className={`bar-panel-in relative left-1/2 w-[var(--panel-w-m)] -translate-x-1/2 desktop:w-[var(--panel-w)] ${showing === "work" && panels.work === "bleed" ? "" : "pt-4 desktop:pt-6"}`}
                   style={{
+                    "--panel-w": WIDTH[showing],
+                    "--panel-w-m": PHONE_OPEN,
                     opacity: open && !flight?.leaving ? 1 : 0,
                     transition: `opacity ${open && !flight ? 200 : 120}ms ${EASE_OUT_CSS}`,
-                  }}
+                  } as CSSProperties}
                 >
                   {showing === "work" ? (
                     <WorkPanel bar={bar} scrollRef={scrollRef} onOpenProject={openProject} layout={panels.work} />
