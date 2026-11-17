@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type RefObject } from "react";
+import { useRef, useState, type RefObject } from "react";
 import { Link } from "@/lib/viewTransitions";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { isPlainLeftClick } from "@/lib/clicks";
 import type { BarData, BarRow } from "@/sanity/lib/bar";
 
 const FINE_HOVER = "(hover: hover) and (pointer: fine)";
@@ -32,7 +33,17 @@ export const PANEL_H = "h-[min(var(--panel-h),var(--panel-max))] desktop:h-[min(
  * a tap on the previewed row opens it. The preview plays the project's
  * home cover clip over its still, so a switch shows something at once.
  */
-export default function WorkPanel({ bar, scrollRef }: { bar: BarData; scrollRef: RefObject<HTMLDivElement | null> }) {
+export default function WorkPanel({
+  bar,
+  scrollRef,
+  onOpenProject,
+}: {
+  bar: BarData;
+  scrollRef: RefObject<HTMLDivElement | null>;
+  /** Takes over opening a project from the preview (the /lab/open flight); true when it did. */
+  onOpenProject?: (href: string, preview: HTMLElement | null) => boolean;
+}) {
+  const previewRef = useRef<HTMLDivElement>(null);
   const desktop = useIsDesktop();
   const rows: (BarRow & { kind: "project" | "post" })[] = [
     ...bar.projects.map((r) => ({ ...r, kind: "project" as const })),
@@ -44,7 +55,7 @@ export default function WorkPanel({ bar, scrollRef }: { bar: BarData; scrollRef:
   const preview = (
     <div>
       {/* 16:9 on a phone (one screen with every name), 16:10 on a laptop. */}
-      <div className="relative aspect-video overflow-hidden bg-tertiary desktop:aspect-[16/10]">
+      <div ref={previewRef} className="relative aspect-video overflow-hidden bg-tertiary desktop:aspect-[16/10]">
         {rows.map((r, i) =>
           r.still ? (
             // eslint-disable-next-line @next/next/no-img-element -- stacked stills crossfade in place, no layout
@@ -54,6 +65,7 @@ export default function WorkPanel({ bar, scrollRef }: { bar: BarData; scrollRef:
               alt=""
               decoding="async"
               loading={i === 0 ? "eager" : "lazy"}
+              data-lead={i === active ? "" : undefined}
               className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-[160ms] ${i === active ? "opacity-100" : "opacity-0"}`}
             />
           ) : null,
@@ -92,7 +104,9 @@ export default function WorkPanel({ bar, scrollRef }: { bar: BarData; scrollRef:
           if (i !== active && !window.matchMedia(FINE_HOVER).matches) {
             e.preventDefault();
             setActive(i);
+            return;
           }
+          if (r.kind === "project" && i === active && isPlainLeftClick(e) && onOpenProject?.(r.href, previewRef.current)) e.preventDefault();
         }}
         onPointerEnter={(e) => {
           if (e.pointerType === "mouse") setActive(i);

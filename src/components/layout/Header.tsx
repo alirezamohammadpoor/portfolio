@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useLenis } from "lenis/react";
 import { Link } from "@/lib/viewTransitions";
 import gsap from "gsap";
@@ -14,7 +14,8 @@ import { EASE_OUT_CSS } from "@/lib/motion";
 import type { BarData } from "@/sanity/lib/bar";
 import WorkPanel, { PANEL_H, panelSize } from "./bar/WorkPanel";
 import AboutBody from "./bar/AboutBody";
-import { useBarState } from "@/lib/barProject";
+import { useBarState, type WorkOpen } from "@/lib/barProject";
+import { usePageTransition } from "@/context/TransitionContext";
 
 const SCRAMBLE_DURATION = 0.4;
 const PERSIAN_CLASS = "parastoo-font intro-name intro-name-slot";
@@ -56,10 +57,19 @@ export default function Header({ bar }: { bar: BarData }) {
   // A project page can dock its title in the capsule's second row
   // (/lab/project); "docked" and "title" open the details inside the
   // capsule too, "overlay" keeps the stage's own frost overlay.
-  const { chrome, project: barProject } = useBarState();
+  const { chrome, project: barProject, workOpen } = useBarState();
+  // A project opened from Work flies its preview into card 1 (/lab/open);
+  // `flight` is what the capsule does meanwhile, until the page is up.
+  const router = useRouter();
+  const { startTransition, isTransitioning, pageRevealed, id: transitionId } = usePageTransition();
+  const [started, setStarted] = useState<{ mode: NonNullable<WorkOpen>; id: number } | null>(null);
+  // Over once the page is up (or the transition gave up); a later morph
+  // from elsewhere has another id.
+  const flight = started && started.id === transitionId && isTransitioning && !pageRevealed ? { ...started, leaving: true } : null;
+  const holding = flight?.mode === "hold";
   const docked = barProject !== null && chrome !== "pill";
   const detailsInBar = docked && (chrome === "docked" || chrome === "title");
-  const open: Shown | null = userOpen ?? (detailsInBar && barProject?.detailsOpen ? "details" : null);
+  const open: Shown | null = holding ? "work" : userOpen ?? (detailsInBar && barProject?.detailsOpen ? "details" : null);
   // Mounted through the close, so the panel can fold away.
   const [shown, setShown] = useState<Shown | null>(open);
   if (open !== null && shown !== open) setShown(open);
@@ -77,6 +87,38 @@ export default function Header({ bar }: { bar: BarData }) {
     barProject?.toggleDetails();
   };
   const showing = open ?? shown;
+
+  const openProject = (href: string, preview: HTMLElement | null) => {
+    if (!workOpen) return false;
+    // The flight starts from what the preview paints: the lead's clip once
+    // it has a frame, otherwise the lead's still (the others sit at 0).
+    const video = preview?.querySelector("video");
+    const still = preview?.querySelector<HTMLImageElement>("img[data-lead]");
+    const r = (video && video.readyState >= 2 ? video : still)?.getBoundingClientRect();
+    const rect = r && { top: r.top, left: r.left, width: r.width, height: r.height };
+    const source =
+      !rect || !rect.width
+        ? null
+        : video && video.readyState >= 2 && video.videoWidth
+          ? { mediaType: "video" as const, sourceVideoElement: video, sourceRect: rect }
+          : still && (still.currentSrc || still.src)
+            ? { mediaType: "image" as const, imageUrl: still.currentSrc || still.src, sourceRect: rect }
+            : null;
+    if (!source) return false;
+    startTransition(source);
+    router.push(href);
+    setStarted({ mode: workOpen, id: transitionId + 1 });
+    return true;
+  };
+  // shrink: the list and text fade (120ms), then the window folds while the
+  // video is still flying. fade: the capsule is out of sight by then, so it
+  // closes underneath. hold: stays open until the page is up.
+  const flightMode = flight?.mode;
+  useEffect(() => {
+    if (!flightMode || flightMode === "hold") return;
+    const t = setTimeout(() => setOpenOn(null), flightMode === "shrink" ? 120 : 160);
+    return () => clearTimeout(t);
+  }, [flightMode]);
 
   useModalFocus(open !== null, rootRef, scrollRef, close);
 
@@ -178,12 +220,14 @@ export default function Header({ bar }: { bar: BarData }) {
           className="fixed inset-x-[var(--grid-margin)] top-[calc(env(safe-area-inset-top)+12px)] z-50 flex flex-col overflow-hidden rounded-[20px] text-body shadow-[0_0_0_1px_rgb(0_0_0/0.06),0_8px_24px_rgb(0_0_0/0.06)] motion-safe:transition-[width] desktop:top-[calc(env(safe-area-inset-top)+16px)] desktop:right-auto desktop:left-1/2 desktop:w-[var(--bar-w)] desktop:-translate-x-1/2"
           style={
             {
+              opacity: flight?.mode === "fade" ? 0 : 1,
+              transitionProperty: flight || workOpen === "fade" ? "width, opacity" : undefined,
               "--bar-w": WIDTH[open ?? "none"],
               // An open panel may use the screen down to 12px above its
               // bottom edge: the bar row and the gaps come off it.
               "--panel-max": docked ? "calc(100dvh - 140px)" : "calc(100dvh - 80px)",
               ...panelSize(bar),
-              transitionDuration: "320ms",
+              transitionDuration: flight || workOpen === "fade" ? `320ms, ${flight ? 160 : 200}ms` : "320ms",
               transitionTimingFunction: EASE_OUT_CSS,
             } as CSSProperties
           }
@@ -279,10 +323,13 @@ export default function Header({ bar }: { bar: BarData }) {
                   aria-modal="true"
                   aria-label={showing === "work" ? "Work" : showing === "about" ? "About" : `${barProject?.title ?? "Project"} details`}
                   className="bar-panel-in pt-4 desktop:pt-6"
-                  style={{ opacity: open ? 1 : 0, transition: `opacity ${open ? 200 : 100}ms ${EASE_OUT_CSS}` }}
+                  style={{
+                    opacity: open && !flight?.leaving ? 1 : 0,
+                    transition: `opacity ${open && !flight ? 200 : 120}ms ${EASE_OUT_CSS}`,
+                  }}
                 >
                   {showing === "work" ? (
-                    <WorkPanel bar={bar} scrollRef={scrollRef} />
+                    <WorkPanel bar={bar} scrollRef={scrollRef} onOpenProject={openProject} />
                   ) : showing === "details" ? (
                     <div ref={scrollRef} tabIndex={-1} data-lenis-prevent className="max-h-[var(--panel-max)] overflow-y-auto overscroll-contain outline-none">
                       {barProject?.details}
@@ -301,7 +348,7 @@ export default function Header({ bar }: { bar: BarData }) {
         <div
           aria-hidden
           onClick={close}
-          className={`fixed inset-0 z-[49] bg-black/10 transition-opacity duration-200 ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
+          className={`fixed inset-0 z-[49] bg-black/10 transition-opacity duration-200 ${open && !flight ? "opacity-100" : "pointer-events-none opacity-0"}`}
         />
       </div>
       {introState !== "done" && <HomeIntro targetRef={nameRef} />}
