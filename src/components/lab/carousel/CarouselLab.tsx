@@ -6,14 +6,13 @@ import { PICKER_CSS } from "../pickerCss";
 import HomeCarousel, { type Caption } from "./HomeCarousel";
 
 const VARIANTS: { name: string; caption: Caption }[] = [
-  { name: "Under", caption: "under" },
   { name: "On video", caption: "on" },
   { name: "Fixed spot", caption: "fixed" },
 ];
 
 /**
  * The drifting carousel home behind the prototype picker (PICKER.md verbatim:
- * keys 1-3, arrows, ?v=N, replay). The variants differ only in where the held
+ * keys 1-2, arrows, ?v=N, replay). The variants differ only in where the held
  * project's description shows; replay runs the glide-in again.
  */
 export default function CarouselLab({ bar }: { bar: BarData }) {
@@ -69,7 +68,9 @@ export default function CarouselLab({ bar }: { bar: BarData }) {
 
   return (
     <>
-      <style>{PICKER_CSS}</style>
+      {/* The picker sits in the white space just above the clips, so it never
+          covers a clip or its caption. */}
+      <style>{`${PICKER_CSS}.proto-picker{bottom:calc(50dvh + 16px)}`}</style>
       <HomeCarousel bar={bar} caption={VARIANTS[current].caption} replay={replay} />
       <nav ref={pickerRef} className="proto-picker" aria-label="Prototype variants">
         <span ref={highlightRef} className="proto-picker-highlight" aria-hidden="true" />
