@@ -3,12 +3,11 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { BarData } from "@/sanity/lib/bar";
 import { PICKER_CSS } from "../pickerCss";
-import HomeCarousel, { type Caption } from "./HomeCarousel";
+import HomeCarousel from "./HomeCarousel";
 
-const VARIANTS: { name: string; caption: Caption }[] = [
-  { name: "On video", caption: "on" },
-  { name: "Fixed spot", caption: "fixed" },
-];
+// Ali picked the fixed spot over "on the clip" (11-17); one variant left,
+// the picker stays for replay.
+const VARIANTS: { name: string }[] = [{ name: "Fixed spot" }];
 
 /**
  * The drifting carousel home behind the prototype picker (PICKER.md verbatim:
@@ -69,9 +68,9 @@ export default function CarouselLab({ bar }: { bar: BarData }) {
   return (
     <>
       {/* The picker sits in the white space just above the clips, so it never
-          covers a clip or its caption. */}
+          covers a clip. */}
       <style>{`${PICKER_CSS}.proto-picker{bottom:calc(50dvh + 16px)}`}</style>
-      <HomeCarousel bar={bar} caption={VARIANTS[current].caption} replay={replay} />
+      <HomeCarousel bar={bar} replay={replay} />
       <nav ref={pickerRef} className="proto-picker" aria-label="Prototype variants">
         <span ref={highlightRef} className="proto-picker-highlight" aria-hidden="true" />
         {VARIANTS.map((v, i) => (

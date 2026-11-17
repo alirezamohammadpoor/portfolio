@@ -5,8 +5,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ClosingLine } from "@/components/home/ScatterHome";
 import type { BarData, BarRow } from "@/sanity/lib/bar";
 
-export type Caption = "on" | "fixed";
-
 // Drift speed in px/s, and how fast the row eases to a stop on hover (or back
 // up to speed after): a per-second rate for an exponential approach.
 const DRIFT = { desk: 64, phone: 40 };
@@ -26,16 +24,15 @@ const glideEase = (t: number) => 1 - Math.pow(1 - t, 4);
  * the bottom half bleeding to the bottom edge. The row drifts left on a loop
  * with every clip playing; the wheel, a trackpad or a drag moves it too.
  * Hover (or a first tap on a phone) eases it to a stop, pauses the other
- * clips and shows the description on the clip or in one fixed spot. Click
- * (second tap) opens the project.
+ * clips and shows the description in one fixed spot (Ali's pick over "on the
+ * clip"). Scrolling lets go of the hover, so every clip plays while the row
+ * moves. Click (second tap) opens the project.
  */
 export default function HomeCarousel({
   bar,
-  caption,
   replay,
 }: {
   bar: BarData;
-  caption: Caption;
   replay: number;
 }) {
   const rows = bar.projects;
@@ -116,11 +113,15 @@ export default function HomeCarousel({
     // Wheel and trackpad, anywhere on the (one screen) page: either axis
     // moves the row, straight away.
     let fling = 0;
+    // While the row is being scrolled, dragged or is still flying from a
+    // flick, nothing is held: every clip in view plays.
+    let movingUntil = 0;
     const onWheel = (e: WheelEvent) => {
       const unit = e.deltaMode === 1 ? 16 : 1;
       const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
       x -= d * unit;
       fling = 0;
+      movingUntil = performance.now() + 350;
     };
     // Drag (finger or mouse): the row follows, and a flick carries on.
     let press: { id: number; x: number; t: number; moved: boolean } | null = null;
@@ -142,6 +143,7 @@ export default function HomeCarousel({
       }
       const t = performance.now();
       x += dx;
+      movingUntil = t + 350;
       fling = (dx / Math.max(1, t - press.t)) * 1000;
       press.x = e.clientX;
       press.t = t;
@@ -159,7 +161,13 @@ export default function HomeCarousel({
     track.addEventListener("pointercancel", onUp);
 
     const frame = (now: number) => {
-      if (mouse) {
+      const moving = now < movingUntil || (press?.moved ?? false) || Math.abs(fling) > 30;
+      if (moving) {
+        if (activeRef.current !== null) {
+          touchHeld.current = false;
+          hold(null);
+        }
+      } else if (mouse) {
         const card = document.elementFromPoint(mouse.x, mouse.y)?.closest<HTMLElement>("[data-card]");
         const i = card ? Number(card.dataset.card) : null;
         if (i !== activeRef.current) hold(i);
@@ -231,7 +239,7 @@ export default function HomeCarousel({
         </h2>
         {bar.about && (
           <p
-            className={`col-span-4 col-start-1 row-start-2 mt-3 text-body desktop:col-start-1 desktop:col-end-8 desktop:mt-6 desktop:text-lead ${caption === "fixed" && held ? "invisible desktop:visible" : ""}`}
+            className={`col-span-4 col-start-1 row-start-2 mt-3 text-body desktop:col-start-1 desktop:col-end-8 desktop:mt-6 desktop:text-lead ${held ? "invisible desktop:visible" : ""}`}
           >
             <ClosingLine contact={bar.about} />
           </p>
@@ -239,7 +247,7 @@ export default function HomeCarousel({
         {/* Fixed spot: one caption that swaps to whichever card is held, at
             the foot of the top half (cols 9-12 on the laptop). A phone has no
             spare room there, so it takes the closing line's place instead. */}
-        {caption === "fixed" && (
+        {(
           <div
             key={held?.href ?? "none"}
             className={`col-span-4 col-start-1 row-start-2 mt-3 self-start desktop:mt-0 desktop:self-end desktop:col-start-9 desktop:col-end-13 desktop:row-start-1 desktop:row-end-4 ${held ? "animate-[caption-in_240ms_cubic-bezier(0.23,1,0.32,1)_both]" : ""}`}
@@ -252,11 +260,10 @@ export default function HomeCarousel({
       <div className="h-[50dvh] shrink-0 overflow-hidden">
         <div
           ref={trackRef}
-          className="flex h-full w-max cursor-grab touch-none gap-3 select-none will-change-transform active:cursor-grabbing desktop:gap-4"
+          className="flex h-full w-max cursor-grab touch-none select-none will-change-transform active:cursor-grabbing"
           style={{ transform: "translate3d(100vw,0,0)" }}
         >
           {items.map((r, i) => {
-            const on = active === i;
             return (
               <Link
                 key={i}
@@ -309,13 +316,6 @@ export default function HomeCarousel({
                   // eslint-disable-next-line @next/next/no-img-element -- lab stand-in for a missing clip
                   <img src={r.still} alt="" draggable={false} className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
                 ) : null}
-                {caption === "on" && (
-                  <div
-                    className={`absolute inset-x-0 bottom-0 bg-[linear-gradient(to_top,rgb(0_0_0/0.6),transparent)] p-4 pt-16 transition-opacity duration-[240ms] desktop:p-6 desktop:pt-20 ${on ? "opacity-100" : "opacity-0"}`}
-                  >
-                    {words(r, "white", true)}
-                  </div>
-                )}
               </Link>
             );
           })}
