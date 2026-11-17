@@ -50,7 +50,8 @@ export default function FullBleedHome({ bar }: { bar: BarData }) {
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-primary">
-      {/* The picture: every still stacked (crossfade), the lead's clip on top. */}
+      {/* The picture: every still stacked (crossfade). No clips here: the recorded
+          clips carry the client site's own nav band and captions. */}
       {rows.map((r, i) =>
         r.still ? (
           // eslint-disable-next-line @next/next/no-img-element -- stacked stills crossfade in place
@@ -63,19 +64,6 @@ export default function FullBleedHome({ bar }: { bar: BarData }) {
             className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-[240ms] ${i === active ? "opacity-100" : "opacity-0"}`}
           />
         ) : null,
-      )}
-      {lead?.video && (
-        <video
-          key={lead.video}
-          src={lead.video}
-          poster={lead.still ?? undefined}
-          className="absolute inset-0 h-full w-full object-cover"
-          muted
-          loop
-          playsInline
-          autoPlay
-          preload="metadata"
-        />
       )}
       {/* Shade at the edges, so white type reads on any picture. */}
       <div
