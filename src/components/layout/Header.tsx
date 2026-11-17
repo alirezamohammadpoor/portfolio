@@ -363,11 +363,14 @@ export default function Header({ bar }: { bar: BarData }) {
             </div>
           </div>
         </header>
-        {/* A light scrim keeps the page from competing with the open capsule. */}
+        {/* A light scrim keeps the page from competing with the open capsule.
+            It fades its colour, not its opacity: Safari on iOS tints the
+            area above the page from a fixed element's background colour
+            even at opacity 0, which painted it grey. */}
         <div
           aria-hidden
           onClick={close}
-          className={`fixed inset-0 z-[49] bg-black/10 transition-opacity duration-200 ${open && !flight ? "opacity-100" : "pointer-events-none opacity-0"}`}
+          className={`fixed inset-0 z-[49] transition-colors duration-200 ${open && !flight ? "bg-black/10" : "pointer-events-none bg-transparent"}`}
         />
       </div>
       {introState !== "done" && <HomeIntro targetRef={nameRef} />}

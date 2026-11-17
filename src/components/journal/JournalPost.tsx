@@ -105,13 +105,13 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
             {post.excerpt && (
               <p
                 ref={excerptRef}
-                className="gsap-hidden mt-4 text-sub desktop:text-body text-primary"
+                className="gsap-hidden mt-4 text-sub desktop:text-lead text-primary"
               >
                 {post.excerpt}
               </p>
             )}
             {post.publishedAt && (
-              <p ref={bylineRef} className="gsap-hidden mt-6 text-sub text-primary">
+              <p ref={bylineRef} className="gsap-hidden mt-10 text-sub desktop:mt-12 desktop:text-body text-primary">
                 By{" "}
                 <Link href="/about" className="underline underline-offset-2 decoration-primary">
                   Ali Reza Mohammad Poor
@@ -158,7 +158,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
         {post.body && (
           <div
             ref={bodyRef}
-            className="gsap-hidden text-sub desktop:text-body text-primary space-y-4 mx-auto max-w-[75ch] [&>h2]:mt-12 [&>h3]:mt-10 [&>h4]:mt-8 [&_h2]:text-h2 desktop:[&_h2]:text-h1 [&_h3]:text-h3 desktop:[&_h3]:text-h2 [&_h4]:text-body desktop:[&_h4]:text-h3 [&_h5]:text-sub desktop:[&_h5]:text-lead [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+            className="gsap-hidden text-sub desktop:text-lead text-primary space-y-4 mx-auto max-w-[75ch] [&>h2]:mt-12 [&>h3]:mt-10 [&>h4]:mt-8 [&_h2]:text-h2 desktop:[&_h2]:text-h1 [&_h3]:text-h3 desktop:[&_h3]:text-h2 [&_h4]:text-body desktop:[&_h4]:text-h3 [&_h5]:text-sub desktop:[&_h5]:text-lead [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
           >
             <PortableText
               value={post.body as PortableTextBlock[]}
