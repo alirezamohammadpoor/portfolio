@@ -14,6 +14,7 @@ import { EASE_OUT_CSS } from "@/lib/motion";
 import type { BarData } from "@/sanity/lib/bar";
 import WorkPanel, { PANEL_H, panelSize } from "./bar/WorkPanel";
 import AboutBody from "./bar/AboutBody";
+import ProjectRowLayout from "./bar/ProjectRow";
 import { useBarState, type WorkOpen } from "@/lib/barProject";
 import { usePageTransition } from "@/context/TransitionContext";
 
@@ -60,7 +61,7 @@ export default function Header({ bar }: { bar: BarData }) {
   // A project page can dock its title in the capsule's second row
   // (/lab/project); "docked" and "title" open the details inside the
   // capsule too, "overlay" keeps the stage's own frost overlay.
-  const { chrome, project: barProject, workOpen } = useBarState();
+  const { chrome, project: barProject, workOpen, projectRow } = useBarState();
   // A project opened from Work flies its preview into card 1 (Fade, Ali 11-17);
   // `flight` is what the capsule does meanwhile, until the page is up.
   const router = useRouter();
@@ -290,7 +291,7 @@ export default function Header({ bar }: { bar: BarData }) {
             style={{ gridTemplateRows: docked ? "1fr" : "0fr", transitionDuration: "320ms", transitionTimingFunction: EASE_OUT_CSS }}
           >
             <div className="min-h-0 overflow-hidden">
-              {barProject && docked && (
+              {barProject && docked && projectRow === "now" && (
                 <div className="mx-auto flex w-full items-center justify-center gap-2 px-4 pb-2.5 desktop:max-w-[30rem]">
                   {chrome !== "title" && barProject.replay}
                   <button
@@ -315,6 +316,18 @@ export default function Header({ bar }: { bar: BarData }) {
                     )}
                   </button>
                 </div>
+              )}
+              {barProject && docked && projectRow !== "now" && (
+                <ProjectRowLayout
+                  layout={projectRow}
+                  title={barProject.title}
+                  label={chrome !== "title" ? barProject.label : null}
+                  replay={chrome !== "title" ? barProject.replay : null}
+                  detailsOpen={barProject.detailsOpen}
+                  dim={Boolean(userOpen)}
+                  controls={chrome === "overlay" ? "project-details" : "bar-panel"}
+                  onToggle={toggleDetails}
+                />
               )}
             </div>
           </div>
