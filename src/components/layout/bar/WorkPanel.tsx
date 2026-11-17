@@ -86,7 +86,7 @@ export default function WorkPanel({
       </div>
       {/* A fixed box for the line: three lines on a phone, four on a laptop
           (the longest line on the site), so a longer one never moves the list. */}
-      <p className="mt-2 line-clamp-3 h-[66px] text-[0.9375rem] leading-[1.375rem] text-primary desktop:line-clamp-4 desktop:h-24 desktop:text-body">{lead?.line}</p>
+      <p className="mt-2 line-clamp-3 h-12 text-sub text-primary desktop:line-clamp-4 desktop:h-24 desktop:text-body">{lead?.line}</p>
     </div>
   );
 
@@ -118,7 +118,7 @@ export default function WorkPanel({
         }}
         aria-current={i === active ? "true" : undefined}
         className={`block w-full text-left [overflow-wrap:anywhere] transition-colors duration-[160ms] ${
-          r.kind === "project" ? "text-lead leading-7 desktop:text-h3" : "text-body"
+          r.kind === "project" ? "text-lead desktop:text-h3" : "text-sub"
         } ${i === active ? "text-primary" : "text-secondary"}`}
       >
         {r.title}

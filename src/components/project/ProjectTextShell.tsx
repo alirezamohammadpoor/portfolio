@@ -42,7 +42,7 @@ export default function ProjectTextShell({ project }: { project: Project }) {
         <div>
           {project.title && <h1 className="text-primary">{project.title}</h1>}
           {description && (
-            <div className="mt-4 text-body text-primary [&>p]:my-0 [&>p+p]:mt-3">
+            <div className="mt-4 text-sub desktop:text-body text-primary [&>p]:my-0 [&>p+p]:mt-3">
               <PortableText value={description} components={portableTextComponents} />
             </div>
           )}
@@ -75,7 +75,7 @@ export default function ProjectTextShell({ project }: { project: Project }) {
                     {test.title && <h3 className="text-h3 text-primary">{test.title}</h3>}
                     {test.status && <p className="text-sub text-secondary">{test.status}</p>}
                     {Array.isArray(test.text) && test.text.length > 0 && (
-                      <div className="mt-4 text-body text-primary">
+                      <div className="mt-4 text-sub desktop:text-body text-primary">
                         <PortableText value={test.text as PortableTextBlock[]} components={portableTextComponents} />
                       </div>
                     )}
@@ -86,7 +86,7 @@ export default function ProjectTextShell({ project }: { project: Project }) {
                       ["Decision", test.decision],
                     ].map(([k, v]) =>
                       v ? (
-                        <p key={k} className="mt-2 text-body text-primary">
+                        <p key={k} className="mt-2 text-sub desktop:text-body text-primary">
                           <span className="text-sub uppercase text-secondary">{k}</span> {v}
                         </p>
                       ) : null,
@@ -99,7 +99,7 @@ export default function ProjectTextShell({ project }: { project: Project }) {
               <section key={block._key} className="mt-10">
                 {block.title && <h2 className="text-h2 text-primary">{block.title}</h2>}
                 {Array.isArray(block.text) && block.text.length > 0 && (
-                  <div className="mt-4 text-body text-primary">
+                  <div className="mt-4 text-sub desktop:text-body text-primary">
                     <PortableText value={block.text as PortableTextBlock[]} components={portableTextComponents} />
                   </div>
                 )}

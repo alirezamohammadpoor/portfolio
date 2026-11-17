@@ -108,12 +108,12 @@ function layoutOf(chapter: Chapter): Layout {
   }
 }
 
-const readingText = "text-body desktop:text-lead text-primary [&>p]:my-0 [&>p+p]:mt-3";
+const readingText = "text-sub desktop:text-lead text-primary [&>p]:my-0 [&>p+p]:mt-3";
 
 // Phone: one column, the media at full width under the text.
 const PHONE = {
   title: "col-span-4 text-h3",
-  body: "col-span-4 mt-3 text-body",
+  body: "col-span-4 mt-3 text-sub desktop:text-body",
   media: "col-span-4 mt-4",
   frameBox: "h-[70dvh]",
 } as const;
@@ -269,7 +269,7 @@ function TestStory({ test }: { test: AbTest }) {
       {filled.map(([k, v]) => (
         <div key={k} className="grid grid-cols-[6rem_1fr] gap-x-4 border-b border-tertiary py-3">
           <dt className="text-sub uppercase text-secondary">{k}</dt>
-          <dd className="text-body text-primary whitespace-pre-line">{v}</dd>
+          <dd className="text-sub desktop:text-body text-primary whitespace-pre-line">{v}</dd>
         </div>
       ))}
     </dl>
@@ -427,7 +427,7 @@ export default function ProjectChapters({
           {Array.isArray(project.fullDescription) && project.fullDescription.length > 0 && (
             <div
               ref={descRef}
-              className="mt-4 text-body text-primary [&>p]:my-0 [&>p+p]:mt-3 [&>h2]:mt-12 [&>h3]:mt-10"
+              className="mt-4 text-sub desktop:text-body text-primary [&>p]:my-0 [&>p+p]:mt-3 [&>h2]:mt-12 [&>h3]:mt-10"
             >
               <PortableText
                 value={project.fullDescription as PortableTextBlock[]}

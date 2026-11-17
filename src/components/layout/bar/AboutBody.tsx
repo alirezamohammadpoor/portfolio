@@ -28,12 +28,12 @@ export default function AboutBody({
         <p className="text-lead text-primary desktop:col-span-5">{lead}</p>
       )}
       {body.length > 0 && (
-        <div className="mt-3 text-[0.9375rem] leading-[1.375rem] text-primary break-words desktop:col-span-7 desktop:mt-0 [&_p+p]:mt-3">
+        <div className="mt-3 text-sub text-primary desktop:text-body break-words desktop:col-span-7 desktop:mt-0 [&_p+p]:mt-3">
           <PortableText value={body} />
         </div>
       )}
       <div className="mt-auto pt-5 desktop:col-span-5 desktop:row-start-2 desktop:self-end desktop:pt-0">
-        <div className="flex flex-wrap gap-x-6 gap-y-2 text-body text-primary">
+        <div className="flex flex-wrap gap-x-6 gap-y-2 text-sub desktop:text-body text-primary">
           {about.linkedinUrl && (
             <NextLink
               href={about.linkedinUrl}

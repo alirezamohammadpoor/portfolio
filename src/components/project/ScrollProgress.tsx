@@ -73,7 +73,7 @@ function Title({ text, className }: { text: string; className: string }) {
       style={{ transform: "translateY(calc(var(--p, 0) * 100vh - 100% - 0.75rem))", opacity: END }}
     >
       <span
-        className={`block whitespace-nowrap text-body font-medium ${className}`}
+        className={`block whitespace-nowrap text-sub desktop:text-body font-medium ${className}`}
         style={{ width: WIDE, lineHeight: WIDE, writingMode: "vertical-rl", transform: "rotate(180deg)" }}
       >
         {text}

@@ -821,7 +821,7 @@ export default function ProjectStage({
               a caption under it, just above the card (the phone has no room
               between the card and the filmstrip). */}
           {chrome === "title" && barLabel && (
-            <p className="pointer-events-none absolute inset-x-0 bottom-1 truncate px-margin text-center text-body text-secondary">{barLabel}</p>
+            <p className="pointer-events-none absolute inset-x-0 bottom-1 truncate px-margin text-center text-sub desktop:text-body text-secondary">{barLabel}</p>
           )}
         </div>
       ) : (
@@ -832,7 +832,7 @@ export default function ProjectStage({
             so there the test's name stands in for the title. */}
         <div
           data-stage-chrome="pill"
-          className={`frost-soft invisible inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center rounded-full text-body text-primary ${testName ? "pl-1" : ""}`}
+          className={`frost-soft invisible inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center rounded-full text-sub desktop:text-body text-primary ${testName ? "pl-1" : ""}`}
         >
           {testName && (
             <TestReplay
