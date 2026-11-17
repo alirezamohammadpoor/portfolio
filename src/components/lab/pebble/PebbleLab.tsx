@@ -4,18 +4,16 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { setProjectRow, type ProjectRow } from "@/lib/barProject";
 import { PICKER_CSS } from "../pickerCss";
 
-// Three layouts for the project row in the Pebble (Ali, 11-17). "Now" is
-// Docked as built, for comparison.
+// The project row in the Pebble (Ali, 11-17): down to List (pistachio
+// replay button) and Inner pill (the whole pill in pistachio).
 const VARIANTS: { name: string; row: ProjectRow }[] = [
-  { name: "Now", row: "now" },
   { name: "List", row: "list" },
   { name: "Inner pill", row: "inner" },
-  { name: "Grid", row: "grid" },
 ];
 
 // The filmstrip owns the bottom centre and the Pebble the top, so the
 // picker sits bottom right on a laptop and under the thumbnails on a phone.
-// ←/→ step through the gallery on this page, so only 1–4 and R switch.
+// ←/→ step through the gallery on this page, so only 1–2 and R switch.
 const CORNER = `.proto-picker[data-corner]{bottom:4px}@media (min-width:75rem){.proto-picker[data-corner]{left:auto;right:16px;bottom:16px;transform:none}}`;
 
 export default function PebbleLab({ children }: { children: ReactNode }) {

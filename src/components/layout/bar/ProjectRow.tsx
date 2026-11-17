@@ -58,7 +58,8 @@ export default function ProjectRowLayout({
             </span>
             <Chevron open={detailsOpen} className={tone} />
           </button>
-          {replay}
+          {/* Ali 11-17: only the button takes the pistachio here. */}
+          {replay && <span className="flex [&>button]:bg-pistachio">{replay}</span>}
         </div>
       </div>
     );
@@ -69,12 +70,13 @@ export default function ProjectRowLayout({
     // its left edge, title over test, the chevron at the end.
     return (
       <div className="mx-auto w-full px-2 pb-2 desktop:max-w-[30rem]">
-        <div className="flex min-h-11 items-center gap-2 rounded-[calc(var(--bar-r)-8px)] bg-black/[0.05] p-1.5">
-          {replay}
+        {/* Ali 11-17: the whole inner pill in pistachio, replay kept. */}
+        <div className="flex min-h-11 items-center gap-2 rounded-[calc(var(--bar-r)-8px)] bg-pistachio p-1.5">
+          {replay && <span className="flex [&>button]:bg-white/60">{replay}</span>}
           <button {...toggle} className={`flex min-w-0 flex-1 items-center gap-2 py-1 pr-2 text-left ${replay ? "" : "pl-2.5"} ${PRESS}`}>
             <span className="flex min-w-0 flex-1 flex-col">
               <span className={`truncate leading-[1.25rem] ${tone}`}>{title}</span>
-              {label && <span className="line-clamp-2 text-[0.9375rem] leading-[1.25rem] text-secondary [overflow-wrap:anywhere]">{label}</span>}
+              {label && <span className="line-clamp-2 text-[0.9375rem] leading-[1.25rem] text-primary/65 [overflow-wrap:anywhere]">{label}</span>}
             </span>
             <Chevron open={detailsOpen} className={tone} />
           </button>
