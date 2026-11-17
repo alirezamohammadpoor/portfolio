@@ -8,6 +8,7 @@ import GsapProvider from "@/components/layout/GsapProvider";
 import { TransitionProvider } from "@/context/TransitionContext";
 import TransitionOverlay from "@/components/layout/TransitionOverlay";
 import DraftModeTools from "@/components/layout/DraftModeTools";
+import WorkPanelPicker from "@/components/lab/wp/WorkPanelPicker";
 import { getAbout } from "@/sanity/lib/data";
 import { getBarData } from "@/sanity/lib/bar";
 import JsonLd from "@/components/seo/JsonLd";
@@ -103,6 +104,7 @@ export default async function SiteLayout({
           <Suspense fallback={null}>
             <DraftModeTools />
           </Suspense>
+          <WorkPanelPicker />
           <Analytics />
         </body>
       </html>

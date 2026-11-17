@@ -94,7 +94,7 @@ export default function WorkPanel({
   );
 
   const heading = (text: string, first: boolean) => (
-    <h2 className={`${first ? "" : "pt-4 desktop:pt-8"} pb-1 text-sub text-primary`}>{text}</h2>
+    <h2 data-wp-label="" className={`${first ? "" : "pt-4 desktop:pt-8"} pb-1 text-sub text-primary`}>{text}</h2>
   );
   const list = rows.map((r, i) => (
     <div key={r.href}>
@@ -120,6 +120,7 @@ export default function WorkPanel({
           if (e.currentTarget.matches(":focus-visible")) setActive(i);
         }}
         aria-current={i === active ? "true" : undefined}
+        data-wp-row={r.kind}
         className={`block w-full text-left [overflow-wrap:anywhere] transition-colors duration-[160ms] ${
           "text-lead desktop:text-h3"
         } ${i === active ? "text-primary" : "text-secondary"}`}
