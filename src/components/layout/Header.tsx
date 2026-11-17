@@ -92,7 +92,7 @@ export default function Header({ bar }: { bar: BarData }) {
     if (!workOpen) return false;
     // The flight starts from what the preview paints: the lead's clip once
     // it has a frame, otherwise the lead's still (the others sit at 0).
-    const video = preview?.querySelector("video");
+    const video = preview?.querySelector<HTMLVideoElement>("[data-current] video");
     const still = preview?.querySelector<HTMLImageElement>("img[data-lead]");
     const r = (video && video.readyState >= 2 ? video : still)?.getBoundingClientRect();
     const rect = r && { top: r.top, left: r.left, width: r.width, height: r.height };

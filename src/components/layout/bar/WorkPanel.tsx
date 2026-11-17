@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
+import { useBarState } from "@/lib/barProject";
 import { Link } from "@/lib/viewTransitions";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { isPlainLeftClick } from "@/lib/clicks";
@@ -49,44 +50,82 @@ export default function WorkPanel({
     ...bar.projects.map((r) => ({ ...r, kind: "project" as const })),
     ...bar.posts.map((r) => ({ ...r, kind: "post" as const })),
   ];
-  const [active, setActive] = useState(0);
+  const [active, setActiveRaw] = useState(0);
   const lead = rows[active] ?? rows[0];
+  const { previewSwap } = useBarState();
+  // The preview is a stack of layers: the lead's on top, entering, and the
+  // one it replaces underneath, still playing, until the entrance ends.
+  const [layers, setLayers] = useState<{ i: number; id: number; dir: 1 | -1 }[]>([{ i: 0, id: 0, dir: 1 }]);
+  const setActive = (i: number) => {
+    if (i === active) return;
+    setActiveRaw(i);
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setLayers((ls) => {
+      const last = ls[ls.length - 1];
+      const next = { i, id: last.id + 1, dir: (i > active ? 1 : -1) as 1 | -1 };
+      return reduced ? [next] : [last, next];
+    });
+  };
+  // Every still is warm before its first switch, so a new layer never
+  // shows the empty box.
+  useEffect(() => {
+    rows.forEach((r) => {
+      if (!r.still) return;
+      const img = new Image();
+      img.src = r.still;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per open
+  }, []);
 
   const preview = (
     <div>
       {/* 16:9 on a phone (one screen with every name), 16:10 on a laptop. */}
       <div ref={previewRef} className="relative aspect-video overflow-hidden bg-tertiary desktop:aspect-[16/10]">
-        {rows.map((r, i) =>
-          r.still ? (
-            // eslint-disable-next-line @next/next/no-img-element -- stacked stills crossfade in place, no layout
-            <img
-              key={r.href}
-              src={r.still}
-              alt=""
-              decoding="async"
-              loading={i === 0 ? "eager" : "lazy"}
-              data-lead={i === active ? "" : undefined}
-              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-[160ms] ${i === active ? "opacity-100" : "opacity-0"}`}
-            />
-          ) : null,
-        )}
-        {lead?.video && (
-          <video
-            key={lead.video}
-            src={lead.video}
-            poster={lead.still ?? undefined}
-            className="absolute inset-0 h-full w-full object-cover"
-            muted
-            loop
-            playsInline
-            autoPlay
-            preload="metadata"
-          />
-        )}
+        {layers.map((l, k) => {
+          const r = rows[l.i];
+          const current = k === layers.length - 1;
+          return (
+            <div
+              key={l.id}
+              className="work-layer absolute inset-0"
+              data-swap={previewSwap}
+              data-state={!current ? "out" : l.id === 0 ? "rest" : "in"}
+              data-current={current ? "" : undefined}
+              style={{ "--dir": l.dir } as CSSProperties}
+              onAnimationEnd={(e) => {
+                if (current && e.target === e.currentTarget) setLayers((ls) => ls.slice(-1));
+              }}
+            >
+              {r?.still && (
+                // eslint-disable-next-line @next/next/no-img-element -- a layer's still under its clip, no layout
+                <img src={r.still} alt="" decoding="async" data-lead={current ? "" : undefined} className="absolute inset-0 h-full w-full object-cover" />
+              )}
+              {r?.video && (
+                <video
+                  src={r.video}
+                  poster={r.still ?? undefined}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  muted
+                  loop
+                  playsInline
+                  autoPlay
+                  preload="metadata"
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
       {/* A fixed box for the line: three lines on a phone, four on a laptop
           (the longest line on the site), so a longer one never moves the list. */}
-      <p className="mt-2 line-clamp-3 h-[66px] text-[0.9375rem] leading-[1.375rem] text-primary desktop:line-clamp-4 desktop:h-24 desktop:text-body">{lead?.line}</p>
+      <p
+        key={active}
+        data-swap={previewSwap}
+        style={{ "--dir": layers[layers.length - 1].dir } as CSSProperties}
+        className={`${layers[layers.length - 1].id > 0 ? "work-line" : ""} mt-2 line-clamp-3 h-[66px] text-[0.9375rem] leading-[1.375rem] text-primary desktop:line-clamp-4 desktop:h-24 desktop:text-body`}
+      >
+        {lead?.line}
+      </p>
     </div>
   );
 
