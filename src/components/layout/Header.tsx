@@ -57,7 +57,7 @@ export default function Header({ bar }: { bar: BarData }) {
   // A project page can dock its title in the capsule's second row
   // (/lab/project); "docked" and "title" open the details inside the
   // capsule too, "overlay" keeps the stage's own frost overlay.
-  const { chrome, project: barProject, workOpen } = useBarState();
+  const { chrome, project: barProject, workOpen, panels } = useBarState();
   // A project opened from Work flies its preview into card 1 (Fade, Ali 11-17);
   // `flight` is what the capsule does meanwhile, until the page is up.
   const router = useRouter();
@@ -328,21 +328,22 @@ export default function Header({ bar }: { bar: BarData }) {
                   role="dialog"
                   aria-modal="true"
                   aria-label={showing === "work" ? "Work" : showing === "about" ? "About" : `${barProject?.title ?? "Project"} details`}
-                  className="bar-panel-in pt-4 desktop:pt-6"
+                  // Full bleed (lab) runs the picture up to the bar row: no top gap.
+                  className={`bar-panel-in ${showing === "work" && panels.work === "bleed" ? "" : "pt-4 desktop:pt-6"}`}
                   style={{
                     opacity: open && !flight?.leaving ? 1 : 0,
                     transition: `opacity ${open && !flight ? 200 : 120}ms ${EASE_OUT_CSS}`,
                   }}
                 >
                   {showing === "work" ? (
-                    <WorkPanel bar={bar} scrollRef={scrollRef} onOpenProject={openProject} />
+                    <WorkPanel bar={bar} scrollRef={scrollRef} onOpenProject={openProject} layout={panels.work} />
                   ) : showing === "details" ? (
                     <div ref={scrollRef} tabIndex={-1} data-lenis-prevent className="max-h-[var(--panel-max)] overflow-y-auto overscroll-contain outline-none">
                       {barProject?.details}
                     </div>
                   ) : bar.about ? (
                     <div ref={scrollRef} tabIndex={-1} data-lenis-prevent className={`${PANEL_H} overflow-y-auto overscroll-contain outline-none`}>
-                      <AboutBody about={bar.about} />
+                      <AboutBody about={bar.about} layout={panels.about} />
                     </div>
                   ) : null}
                 </div>

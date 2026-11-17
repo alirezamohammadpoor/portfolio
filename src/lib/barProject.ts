@@ -32,16 +32,25 @@ export type BarProject = {
  */
 export type WorkOpen = "shrink" | "hold" | "fade" | null;
 
-type State = { chrome: StageChrome; project: BarProject | null; workOpen: WorkOpen };
+/**
+ * How Work and About lay out in the capsule's window (/lab/panels, 11-17).
+ * "now" is what shipped; the others are the Figma directions Ali picked to
+ * prototype: Work refined (row-snapped) and full bleed, About spread over
+ * the rows and one narrow column.
+ */
+export type PanelLayout = { work: "now" | "refined" | "bleed"; about: "now" | "spread" | "column" };
+const NOW: PanelLayout = { work: "now", about: "now" };
 
-let state: State = { chrome: "pill", project: null, workOpen: "fade" };
+type State = { chrome: StageChrome; project: BarProject | null; workOpen: WorkOpen; panels: PanelLayout };
+
+let state: State = { chrome: "pill", project: null, workOpen: "fade", panels: NOW };
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 const subscribe = (l: () => void) => {
   listeners.add(l);
   return () => listeners.delete(l);
 };
-const SERVER: State = { chrome: "pill", project: null, workOpen: "fade" };
+const SERVER: State = { chrome: "pill", project: null, workOpen: "fade", panels: NOW };
 
 export function setBarProject(project: BarProject | null) {
   state = { ...state, project };
@@ -57,6 +66,13 @@ export function setStageChrome(chrome: StageChrome) {
 export function setWorkOpen(workOpen: WorkOpen) {
   if (state.workOpen === workOpen) return;
   state = { ...state, workOpen };
+  emit();
+}
+
+export function setPanelLayout(panels: PanelLayout | null) {
+  const next = panels ?? NOW;
+  if (state.panels.work === next.work && state.panels.about === next.about) return;
+  state = { ...state, panels: next };
   emit();
 }
 
