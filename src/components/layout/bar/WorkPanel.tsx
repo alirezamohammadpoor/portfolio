@@ -55,11 +55,13 @@ export default function WorkPanel({
   const lead = rows[active] ?? rows[0];
   const { previewSwap } = useBarState();
   // The preview is a stack of layers: the lead's on top and the one it
-  // replaces underneath, still playing. A clip with no still waits, hidden,
-  // until it has a frame (Ali 11-18: the empty box flickered on every
-  // switch), then enters; the one under it leaves when the entrance ends.
+  // replaces underneath, still playing. A layer with a clip waits, hidden,
+  // until the clip has a frame, then enters; the one under it leaves when
+  // the entrance ends. The cover still is never shown before a clip (Ali
+  // 11-18: the still, then the clip, read as a flicker, and with no still
+  // the empty box did).
   type Layer = { i: number; id: number; dir: 1 | -1; ready: boolean };
-  const [layers, setLayers] = useState<Layer[]>([{ i: 0, id: 0, dir: 1, ready: true }]);
+  const [layers, setLayers] = useState<Layer[]>(() => [{ i: 0, id: 0, dir: 1, ready: !rows[0]?.video }]);
   const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const setActive = (i: number) => {
     if (i === active) return;
@@ -68,7 +70,7 @@ export default function WorkPanel({
       // Build on the newest layer that is showing, never on one still waiting.
       const base = [...ls].reverse().find((l) => l.ready) ?? ls[0];
       const r = rows[i];
-      const next: Layer = { i, id: ls[ls.length - 1].id + 1, dir: i > active ? 1 : -1, ready: Boolean(r?.still || !r?.video) };
+      const next: Layer = { i, id: ls[ls.length - 1].id + 1, dir: i > active ? 1 : -1, ready: !r?.video };
       return reducedMotion() && next.ready ? [next] : [base, next];
     });
   };
@@ -99,7 +101,7 @@ export default function WorkPanel({
           const r = rows[l.i];
           const current = k === layers.length - 1;
           const top = layers[layers.length - 1];
-          const state = !l.ready ? "wait" : current ? (l.id === 0 ? "rest" : "in") : top.ready ? "out" : "rest";
+          const state = !l.ready ? "wait" : current ? (l.id === 0 && !r?.video ? "rest" : "in") : top.ready ? "out" : "rest";
           return (
             <div
               key={l.id}
@@ -114,7 +116,13 @@ export default function WorkPanel({
             >
               {r?.still && (
                 // eslint-disable-next-line @next/next/no-img-element -- a layer's still under its clip, no layout
-                <img src={r.still} alt="" decoding="sync" data-lead={current ? "" : undefined} className="absolute inset-0 h-full w-full object-cover" />
+                <img
+                  src={r.still}
+                  alt=""
+                  decoding="sync"
+                  data-lead={current ? "" : undefined}
+                  className={`absolute inset-0 h-full w-full object-cover ${r.video ? "opacity-0" : ""}`}
+                />
               )}
               {r?.video && <LayerVideo src={r.video} onReady={() => markReady(l.id)} />}
             </div>
