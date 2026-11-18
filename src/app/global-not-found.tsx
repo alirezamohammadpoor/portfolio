@@ -23,7 +23,7 @@ export default function GlobalNotFound() {
       <body className="font-sans">
         <main className="flex min-h-dvh flex-col items-center justify-center px-4 desktop:px-6">
           <h1 className="text-primary">404</h1>
-          <p className="mt-4 text-body text-secondary">Page not found.</p>
+          <p className="mt-4 text-sub desktop:text-body text-secondary">Page not found.</p>
           {/* A plain anchor: this document renders outside the app router, so next/link has no router to mount into. */}
           {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
           <a href="/" className="link-underline mt-8 text-sub text-primary uppercase">

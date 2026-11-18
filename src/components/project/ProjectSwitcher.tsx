@@ -167,7 +167,7 @@ export default function ProjectSwitcher({ projects, currentSlug, open, onClose, 
                     >
                       {src && <Image src={src} alt="" fill unoptimized sizes="(min-width: 75rem) 300px, 50vw" className="object-cover" />}
                     </span>
-                    <span className="truncate text-body text-primary">{p.title}</span>
+                    <span className="truncate text-sub desktop:text-body text-primary">{p.title}</span>
                   </button>
                 </li>
               );

@@ -227,7 +227,7 @@ export default function ScatterHome({ projects, contact }: ScatterHomeProps) {
               <Link href={href} onClick={(e) => handleClick(e, project)} className="block">
                 <h3 data-text className="text-h3">{project.title}</h3>
                 {!preset.under && (
-                  <p data-text className="mt-2 text-body text-primary">
+                  <p data-text className="mt-2 text-sub desktop:text-body text-primary">
                     {project.shortDescription}
                   </p>
                 )}
@@ -263,7 +263,7 @@ export default function ScatterHome({ projects, contact }: ScatterHomeProps) {
               )}
               {label}
               {preset.under && (
-                <p data-text className="mt-2 text-body text-primary desktop:col-start-5 desktop:col-end-10 desktop:row-start-2 desktop:mt-6 desktop:text-lead">
+                <p data-text className="mt-2 text-sub text-primary desktop:col-start-5 desktop:col-end-10 desktop:row-start-2 desktop:mt-6 desktop:text-lead">
                   {project.shortDescription}
                 </p>
               )}

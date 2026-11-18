@@ -13,7 +13,7 @@ const FINE_HOVER = "(hover: hover) and (pointer: fine)";
  * open and whatever the text, so nothing grows. The height is Work's, worked
  * out from its parts so About can take it without Work being on screen:
  *  phone  = the 16:9 preview (capsule width less 2x16 margin) + 8 + three
- *           15/22 lines (66) + 24 + the list + 12 bottom
+ *           12/16 lines (48) + 24 + the list + 12 bottom
  *  laptop = the 16:10 preview (8 of 12 columns in the 64rem capsule, 403)
  *           + 8 + four 16/24 lines (96) + 32 bottom, or the list if longer
  * and never past --panel-max (the screen less the capsule's row).
@@ -22,7 +22,7 @@ export function panelSize(bar: BarData) {
   // Quiet (Ali 11-18): every name, project or post, is one 16/24 line on a
   // phone and one 18/28 line on a laptop; a label is 12/16 plus 8 below.
   const count = bar.projects.length + bar.posts.length;
-  const phone = `calc((100vw - 64px) * 9 / 16 + ${8 + 66 + 24 + 12 + 24 + (bar.posts.length ? 40 : 0) + 24 * count}px)`;
+  const phone = `calc((100vw - 64px) * 9 / 16 + ${8 + 48 + 24 + 12 + 24 + (bar.posts.length ? 40 : 0) + 24 * count}px)`;
   const laptop = `${Math.ceil(Math.max(403.34 + 8 + 96 + 32, 32 + 24 + (bar.posts.length ? 56 : 0) + 28 * count))}px`;
   return { "--panel-h": phone, "--panel-h-desk": laptop } as Record<string, string>;
 }
@@ -88,7 +88,7 @@ export default function WorkPanel({
       </div>
       {/* A fixed box for the line: three lines on a phone, four on a laptop
           (the longest line on the site), so a longer one never moves the list. */}
-      <p className="mt-2 line-clamp-3 h-[66px] text-[0.9375rem] leading-[1.375rem] text-primary desktop:line-clamp-4 desktop:h-24 desktop:text-body">{lead?.line}</p>
+      <p className="mt-2 line-clamp-3 h-12 text-sub text-primary desktop:line-clamp-4 desktop:h-24 desktop:text-body">{lead?.line}</p>
     </div>
   );
 
