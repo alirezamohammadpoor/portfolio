@@ -106,6 +106,9 @@
   }
 
   body {
+    /* The page colour on body too: iOS Safari tints the area above the page
+       from body, and a transparent body reads as its default grey. */
+    background-color: var(--color-bg);
     min-height: 100vh;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;

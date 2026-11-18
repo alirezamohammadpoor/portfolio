@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { ViewTransitions } from "@/lib/viewTransitions";
 import { Analytics } from "@vercel/analytics/next";
 import { parastoo } from "@/lib/fonts";
@@ -36,6 +36,12 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
   },
+};
+
+// The browser chrome above the page (iOS Safari's status bar area, Android's
+// address bar) takes the page's own background instead of a default grey.
+export const viewport: Viewport = {
+  themeColor: "#f7f7f7",
 };
 
 export default async function SiteLayout({

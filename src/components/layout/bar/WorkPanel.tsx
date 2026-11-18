@@ -13,15 +13,17 @@ const FINE_HOVER = "(hover: hover) and (pointer: fine)";
  * open and whatever the text, so nothing grows. The height is Work's, worked
  * out from its parts so About can take it without Work being on screen:
  *  phone  = the 16:9 preview (capsule width less 2x16 margin) + 8 + three
- *           15/22 lines (66) + 8 + the list + 12 bottom
+ *           12/16 lines (48) + 24 + the list + 12 bottom
  *  laptop = the 16:10 preview (8 of 12 columns in the 64rem capsule, 403)
  *           + 8 + four 16/24 lines (96) + 32 bottom, or the list if longer
  * and never past --panel-max (the screen less the capsule's row).
  */
 export function panelSize(bar: BarData) {
-  const rows = 28 * bar.projects.length + 24 * bar.posts.length;
-  const phone = `calc((100vw - 64px) * 9 / 16 + ${8 + 66 + 8 + 12 + 20 + (bar.posts.length ? 36 : 0) + rows}px)`;
-  const laptop = `${Math.ceil(Math.max(403.34 + 8 + 96 + 32, 32 + 20 + (bar.posts.length ? 52 : 0) + rows))}px`;
+  // Quiet (Ali 11-18): every name, project or post, is one 16/24 line on a
+  // phone and one 18/28 line on a laptop; a label is 12/16 plus 8 below.
+  const count = bar.projects.length + bar.posts.length;
+  const phone = `calc((100vw - 64px) * 9 / 16 + ${8 + 48 + 24 + 12 + 24 + (bar.posts.length ? 40 : 0) + 24 * count}px)`;
+  const laptop = `${Math.ceil(Math.max(403.34 + 8 + 96 + 32, 32 + 24 + (bar.posts.length ? 56 : 0) + 28 * count))}px`;
   return { "--panel-h": phone, "--panel-h-desk": laptop } as Record<string, string>;
 }
 export const PANEL_H = "h-[min(var(--panel-h),var(--panel-max))] desktop:h-[min(var(--panel-h-desk),var(--panel-max))]";
@@ -91,7 +93,7 @@ export default function WorkPanel({
   );
 
   const heading = (text: string, first: boolean) => (
-    <h2 className={`${first ? "" : "pt-4 desktop:pt-8"} pb-1 text-sub text-secondary`}>{text}</h2>
+    <h2 className={`${first ? "" : "pt-4 desktop:pt-8"} pb-2 text-sub text-primary`}>{text}</h2>
   );
   const list = rows.map((r, i) => (
     <div key={r.href}>
@@ -117,9 +119,7 @@ export default function WorkPanel({
           if (e.currentTarget.matches(":focus-visible")) setActive(i);
         }}
         aria-current={i === active ? "true" : undefined}
-        className={`block w-full text-left [overflow-wrap:anywhere] transition-colors duration-[160ms] ${
-          r.kind === "project" ? "text-lead desktop:text-h3" : "text-sub"
-        } ${i === active ? "text-primary" : "text-secondary"}`}
+        className={`block w-full text-left text-body [overflow-wrap:anywhere] transition-colors duration-[160ms] desktop:text-lead ${i === active ? "text-primary" : "text-secondary"}`}
       >
         {r.title}
       </Link>
@@ -139,7 +139,7 @@ export default function WorkPanel({
   return (
     <div ref={scrollRef} tabIndex={-1} data-lenis-prevent className={`${PANEL_H} overflow-y-auto overscroll-contain px-margin pb-3 outline-none`}>
       {preview}
-      <div className="mt-2">{list}</div>
+      <div className="mt-6">{list}</div>
     </div>
   );
 }
