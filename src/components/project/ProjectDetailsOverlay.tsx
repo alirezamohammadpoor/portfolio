@@ -107,7 +107,7 @@ export function ProjectDetailsText({ project, compact = false }: { project: Proj
       <div className="px-margin pb-6 desktop:pb-8">
         {project.shortDescription && <p className="text-lead text-primary">{project.shortDescription}</p>}
         {description && (
-          <div className="mt-3 text-[0.9375rem] leading-[1.375rem] text-primary [&_p+p]:mt-3">
+          <div className="mt-3 text-sub text-primary desktop:text-body [&_p+p]:mt-3">
             <PortableText value={description} components={portableTextComponents} />
           </div>
         )}
@@ -124,12 +124,12 @@ export function ProjectDetailsText({ project, compact = false }: { project: Proj
         <p className="text-h3 text-primary desktop:text-h2 desktop:text-center">{project.shortDescription}</p>
       )}
       {description && (
-        <div className="mt-6 text-body text-primary desktop:mt-10 desktop:text-lead [&_p+p]:mt-4">
+        <div className="mt-6 text-sub text-primary desktop:mt-10 desktop:text-lead [&_p+p]:mt-4">
           <PortableText value={description} components={portableTextComponents} />
         </div>
       )}
       {project.techStack && project.techStack.length > 0 && (
-        <p className="mt-6 text-body text-secondary">{project.techStack.join(", ")}</p>
+        <p className="mt-6 text-sub desktop:text-body text-secondary">{project.techStack.join(", ")}</p>
       )}
       <DetailsLinks project={project} />
     </>
@@ -138,7 +138,7 @@ export function ProjectDetailsText({ project, compact = false }: { project: Proj
 
 function DetailsLinks({ project }: { project: Project }) {
   return (
-    <div className="mt-6 flex flex-col gap-1 text-body text-primary">
+    <div className="mt-6 flex flex-col gap-1 text-sub desktop:text-body text-primary">
       {project.caseStudy?.slug?.current && (
         <Link href={`/journal/${project.caseStudy.slug.current}`} className="w-fit hover:opacity-60">
           Read the case study →
