@@ -220,7 +220,7 @@ export default function Header({ bar }: { bar: BarData }) {
     <>
       <div ref={rootRef}>
         <header
-          className="fixed left-1/2 top-[calc(env(safe-area-inset-top)+12px)] w-[var(--bar-w-m)] -translate-x-1/2 z-50 flex flex-col overflow-hidden text-sub desktop:text-body shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_2px_rgb(0_0_0/0.06),0_10px_24px_-6px_rgb(0_0_0/0.14),0_28px_56px_-12px_rgb(0_0_0/0.16)] motion-safe:transition-[width,border-radius] desktop:top-[calc(env(safe-area-inset-top)+16px)] desktop:w-[var(--bar-w)]"
+          className="fixed left-1/2 [view-transition-name:site-bar] top-[calc(env(safe-area-inset-top)+12px)] w-[var(--bar-w-m)] -translate-x-1/2 z-50 flex flex-col overflow-hidden text-sub desktop:text-body shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_2px_rgb(0_0_0/0.06),0_10px_24px_-6px_rgb(0_0_0/0.14),0_28px_56px_-12px_rgb(0_0_0/0.16)] motion-safe:transition-[width,border-radius] desktop:top-[calc(env(safe-area-inset-top)+16px)] desktop:w-[var(--bar-w)]"
           style={
             {
               opacity: flight?.mode === "fade" ? 0 : 1,
