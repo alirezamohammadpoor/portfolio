@@ -425,6 +425,7 @@ html[data-custom-clone]::view-transition-new(root) {
 /* Work's preview swap (/lab/preview, Ali 11-17). The entering layer sits on
    top; the one it replaces keeps playing underneath until the entrance
    ends. --dir is 1 moving down the list, -1 moving up. */
+.work-layer[data-state="wait"] { opacity: 0; }
 .work-layer[data-state="in"][data-swap="fade"] { animation: work-fade-in 240ms cubic-bezier(0.23, 1, 0.32, 1) both; }
 .work-layer[data-state="in"][data-swap="slide"] { animation: work-slide-in 360ms cubic-bezier(0.32, 0.72, 0, 1) both; }
 .work-layer[data-state="out"][data-swap="slide"] { animation: work-slide-out 360ms cubic-bezier(0.32, 0.72, 0, 1) both; }

@@ -5,6 +5,7 @@ import { useBarState } from "@/lib/barProject";
 import { Link } from "@/lib/viewTransitions";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { isPlainLeftClick } from "@/lib/clicks";
+import { onFirstVideoFrame } from "@/lib/firstFrame";
 import type { BarData, BarRow } from "@/sanity/lib/bar";
 
 const FINE_HOVER = "(hover: hover) and (pointer: fine)";
@@ -53,19 +54,31 @@ export default function WorkPanel({
   const [active, setActiveRaw] = useState(0);
   const lead = rows[active] ?? rows[0];
   const { previewSwap } = useBarState();
-  // The preview is a stack of layers: the lead's on top, entering, and the
-  // one it replaces underneath, still playing, until the entrance ends.
-  const [layers, setLayers] = useState<{ i: number; id: number; dir: 1 | -1 }[]>([{ i: 0, id: 0, dir: 1 }]);
+  // The preview is a stack of layers: the lead's on top and the one it
+  // replaces underneath, still playing. A clip with no still waits, hidden,
+  // until it has a frame (Ali 11-18: the empty box flickered on every
+  // switch), then enters; the one under it leaves when the entrance ends.
+  type Layer = { i: number; id: number; dir: 1 | -1; ready: boolean };
+  const [layers, setLayers] = useState<Layer[]>([{ i: 0, id: 0, dir: 1, ready: true }]);
+  const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const setActive = (i: number) => {
     if (i === active) return;
     setActiveRaw(i);
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setLayers((ls) => {
-      const last = ls[ls.length - 1];
-      const next = { i, id: last.id + 1, dir: (i > active ? 1 : -1) as 1 | -1 };
-      return reduced ? [next] : [last, next];
+      // Build on the newest layer that is showing, never on one still waiting.
+      const base = [...ls].reverse().find((l) => l.ready) ?? ls[0];
+      const r = rows[i];
+      const next: Layer = { i, id: ls[ls.length - 1].id + 1, dir: i > active ? 1 : -1, ready: Boolean(r?.still || !r?.video) };
+      return reducedMotion() && next.ready ? [next] : [base, next];
     });
   };
+  const markReady = (id: number) =>
+    setLayers((ls) => {
+      const at = ls.findIndex((l) => l.id === id);
+      if (at < 0 || ls[at].ready) return ls;
+      const next = ls.map((l) => (l.id === id ? { ...l, ready: true } : l));
+      return reducedMotion() ? next.slice(at) : next;
+    });
   // Every still is warm before its first switch, so a new layer never
   // shows the empty box.
   useEffect(() => {
@@ -73,6 +86,7 @@ export default function WorkPanel({
       if (!r.still) return;
       const img = new Image();
       img.src = r.still;
+      img.decode().catch(() => {});
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per open
   }, []);
@@ -84,34 +98,25 @@ export default function WorkPanel({
         {layers.map((l, k) => {
           const r = rows[l.i];
           const current = k === layers.length - 1;
+          const top = layers[layers.length - 1];
+          const state = !l.ready ? "wait" : current ? (l.id === 0 ? "rest" : "in") : top.ready ? "out" : "rest";
           return (
             <div
               key={l.id}
               className="work-layer absolute inset-0"
               data-swap={previewSwap}
-              data-state={!current ? "out" : l.id === 0 ? "rest" : "in"}
+              data-state={state}
               data-current={current ? "" : undefined}
               style={{ "--dir": l.dir } as CSSProperties}
               onAnimationEnd={(e) => {
-                if (current && e.target === e.currentTarget) setLayers((ls) => ls.slice(-1));
+                if (current && l.ready && e.target === e.currentTarget) setLayers((ls) => ls.slice(-1));
               }}
             >
               {r?.still && (
                 // eslint-disable-next-line @next/next/no-img-element -- a layer's still under its clip, no layout
-                <img src={r.still} alt="" decoding="async" data-lead={current ? "" : undefined} className="absolute inset-0 h-full w-full object-cover" />
+                <img src={r.still} alt="" decoding="sync" data-lead={current ? "" : undefined} className="absolute inset-0 h-full w-full object-cover" />
               )}
-              {r?.video && (
-                <video
-                  src={r.video}
-                  poster={r.still ?? undefined}
-                  className="absolute inset-0 h-full w-full object-cover"
-                  muted
-                  loop
-                  playsInline
-                  autoPlay
-                  preload="metadata"
-                />
-              )}
+              {r?.video && <LayerVideo src={r.video} onReady={() => markReady(l.id)} />}
             </div>
           );
         })}
@@ -180,5 +185,48 @@ export default function WorkPanel({
       {preview}
       <div className="mt-2">{list}</div>
     </div>
+  );
+}
+
+/**
+ * A layer's clip, hidden until it has presented a frame of its own. A new
+ * <video> paints blank (and iOS drops the poster on play) until its first
+ * frame decodes, which flickered on every switch on a phone (Ali, 11-18);
+ * until then the still underneath shows (or, with no still, the layer
+ * waits and the previous preview keeps playing).
+ */
+function LayerVideo({ src, onReady }: { src: string; onReady: () => void }) {
+  const [shown, setShown] = useState(false);
+  const ref = useRef<HTMLVideoElement>(null);
+  const readyRef = useRef(onReady);
+  useEffect(() => {
+    readyRef.current = onReady;
+  });
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    const show = () => {
+      setShown(true);
+      readyRef.current();
+    };
+    // A clip that never loads (data saver, low power) still lets the layer in.
+    const late = window.setTimeout(() => readyRef.current(), 2500);
+    const stop = onFirstVideoFrame(v, show);
+    return () => {
+      stop();
+      window.clearTimeout(late);
+    };
+  }, []);
+  return (
+    <video
+      ref={ref}
+      src={src}
+      className={`absolute inset-0 h-full w-full object-cover ${shown ? "opacity-100" : "opacity-0"}`}
+      muted
+      loop
+      playsInline
+      autoPlay
+      preload="auto"
+    />
   );
 }
