@@ -10,6 +10,7 @@ import Load from "./films/Load";
 import { LoadA, LoadB, LoadC } from "./films/LoadMocks";
 import Pipeline from "./films/Pipeline";
 import Savings from "./films/Savings";
+import { SavingsA, SavingsB, SavingsC } from "./films/SavingsMocks";
 import Traffic from "./films/Traffic";
 
 // The devops project's five gallery films (script approved by Ali 11-20),
@@ -28,6 +29,9 @@ const SCENES: { name: string; View: (p: { cut: Cut; theme: Theme }) => React.Rea
   { name: "Load A", View: LoadA },
   { name: "Load B", View: LoadB },
   { name: "Load C", View: LoadC },
+  { name: "Savings A", View: SavingsA },
+  { name: "Savings B", View: SavingsB },
+  { name: "Savings C", View: SavingsC },
 ];
 
 function readParams() {
