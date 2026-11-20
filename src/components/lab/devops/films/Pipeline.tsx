@@ -26,8 +26,8 @@ const SAY = [
   "Before: jobs wait for a free machine, then every package is tested.",
   "Every change tested all 16 packages.",
   "Now only the 3 it touches. Test job 8 → 5 min.",
-  "After: no queue, fewer tests, the review app deploys itself. Estimate.",
-  "Jobs lost waiting for a machine: 59 → 17 over 90 days, replayed.",
+  "After: no queue, fewer tests, the review app deploys itself.",
+  "Jobs lost waiting for a machine: 59 → 17 over 90 days.",
 ];
 
 function geo(cut: Cut) {
@@ -79,7 +79,11 @@ const build: Build = (tl, q, cut) => {
   tl.to([...scene, ...beforeRow], { opacity: 0, duration: 0.4, ease: "site-out" }, 6.6);
   tl.fromTo(tiles, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.4, ease: "site-out", stagger: 0.03 }, 7.0);
   say(1, 7.2, 9.4);
-  tl.to(tiles.filter((_, i) => !CHANGED.has(i)), { opacity: 0.12, duration: 0.4, ease: "site-out", stagger: 0.05 }, 9.6);
+  // Untouched packages empty to outlines; the 3 it touches turn pistachio.
+  const tileFills = q("[data-pkgfill]");
+  tl.set(tileFills, { opacity: 1 }, 0);
+  tl.to(tileFills.filter((_, i) => !CHANGED.has(i)), { opacity: 0, duration: 0.4, ease: "site-out", stagger: 0.05 }, 9.6);
+  tl.to(tileFills.filter((_, i) => CHANGED.has(i)), { opacity: 0, duration: 0.5, ease: "site-out" }, 10.2);
   say(2, 10.0, 12.4);
   tl.to(tiles, { opacity: 0, duration: 0.4, ease: "site-out" }, 12.6);
 
@@ -96,7 +100,7 @@ const build: Build = (tl, q, cut) => {
   outro(tl, q, 21.0);
 };
 
-function Bar({ segs, y, h, fill, seg }: { segs: typeof BEFORE; y: number; h: number; fill: string; seg?: string }) {
+function Bar({ segs, y, h, fill, seg, tone = "ink" }: { segs: typeof BEFORE; y: number; h: number; fill: string; seg?: string; tone?: "ink" | "accent" }) {
   const cut = useCut();
   const g = geo(cut);
   const t = T[cut];
@@ -116,9 +120,10 @@ function Bar({ segs, y, h, fill, seg }: { segs: typeof BEFORE; y: number; h: num
               top: 0,
               width: s.min * unit,
               height: h,
-              background: s.striped ? "repeating-linear-gradient(45deg, var(--ink) 0 2px, var(--bg) 2px 9px)" : "var(--ink)",
-              boxShadow: "inset -3px 0 0 var(--bg)",
-              color: "var(--bg)",
+              // Waiting is an outline; work is solid (pistachio on the after bar).
+              background: s.striped ? "transparent" : tone === "accent" ? "var(--accent)" : "var(--ink)",
+              boxShadow: s.striped ? "inset 0 0 0 1.5px var(--ink), inset -3px 0 0 var(--bg)" : "inset -3px 0 0 var(--bg)",
+              color: tone === "accent" ? "var(--accent-ink)" : "var(--bg)",
               display: "flex",
               alignItems: "center",
               paddingLeft: cut === "laptop" ? 12 : 16,
@@ -171,7 +176,7 @@ export default function Pipeline({ cut, theme }: { cut: Cut; theme: Theme }) {
         After
       </Label>
       <div data-after>
-        <Bar segs={AFTER} y={g.afterY} h={g.barH} fill="data-afill" />
+        <Bar segs={AFTER} y={g.afterY} h={g.barH} fill="data-afill" tone="accent" />
       </div>
       {clock(g.afterY, 18, "data-aclock")}
 
@@ -180,8 +185,10 @@ export default function Pipeline({ cut, theme }: { cut: Cut; theme: Theme }) {
         <div
           key={i}
           data-pkg
-          style={{ position: "absolute", left: (w - grid) / 2 + (i % 4) * (g.tile + g.tileGap), top: g.gridY + Math.floor(i / 4) * (g.tile + g.tileGap), width: g.tile, height: g.tile, background: "var(--ink)" }}
-        />
+          style={{ position: "absolute", left: (w - grid) / 2 + (i % 4) * (g.tile + g.tileGap), top: g.gridY + Math.floor(i / 4) * (g.tile + g.tileGap), width: g.tile, height: g.tile, background: CHANGED.has(i) ? "var(--accent)" : "transparent", boxShadow: "inset 0 0 0 1.5px var(--ink)" }}
+        >
+          <div data-pkgfill style={{ position: "absolute", inset: 0, background: "var(--ink)" }} />
+        </div>
       ))}
 
       {SAY.map((s, i) => (

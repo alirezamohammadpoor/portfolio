@@ -32,10 +32,10 @@ const THEMES: Record<Theme, CSSProperties> = {
     "--bg": "#ffffff",
     "--ink": "#000000",
     "--muted": "#767676",
-    "--line": "#e0e0e0",
+    "--line": "#000000",
     "--soft": "#f2f2f2",
-    "--accent": "#000000",
-    "--accent-ink": "#ffffff",
+    "--accent": "#bedcaa",
+    "--accent-ink": "#000000",
     "--font": '"TWK Lausanne Pan", "Helvetica Neue", Helvetica, Arial, sans-serif',
   } as CSSProperties,
   site: {

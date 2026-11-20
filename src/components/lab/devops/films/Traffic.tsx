@@ -108,7 +108,7 @@ function Card({ x, y, w, h, title, rows }: { x: number; y: number; w: number; h:
     <div data-card style={{ position: "absolute", left: x, top: y, width: w, height: h, boxShadow: "inset 0 0 0 1.5px var(--line)", padding: cut === "laptop" ? 20 : 28 }}>
       <div style={{ fontSize: t.label, fontWeight: 650, textTransform: "uppercase", letterSpacing: 0, marginBottom: cut === "laptop" ? 22 : 20 }}>{title}</div>
       {rows.map((r, i) => (
-        <div key={i} style={{ height: cut === "laptop" ? 12 : 14, width: `${r * 100}%`, background: "var(--line)", marginBottom: 14 }} />
+        <div key={i} style={{ height: cut === "laptop" ? 12 : 14, width: `${r * 100}%`, boxShadow: "inset 0 0 0 1.5px var(--ink)", marginBottom: 14 }} />
       ))}
     </div>
   );
@@ -129,7 +129,7 @@ export default function Traffic({ cut, theme }: { cut: Cut; theme: Theme }) {
       build={build}
       name="Traffic"
       headline={"Half the requests,\na fraction of the bytes"}
-      label="Traffic film: a build cache bug had each page view hit the server about 13 times; fixed, about 6. One response compressed from 3.65 MB to 160 KB. In review."
+      label="Traffic film: a build cache bug had each page view hit the server about 13 times; fixed, about 6. One response compressed from 3.65 MB to 160 KB."
     >
       <Card {...g.page} title="Page view" rows={cut === "laptop" ? [0.9, 0.7, 0.8, 0.5] : [0.5, 0.35]} />
       <Card {...g.server} title="Server" rows={cut === "laptop" ? [1, 1, 1] : [0.6, 0.6]} />
@@ -178,9 +178,9 @@ export default function Traffic({ cut, theme }: { cut: Cut; theme: Theme }) {
       </div>
 
       {Array.from({ length: TILES }, (_, i) => (
-        <div key={i} data-tile style={{ position: "absolute", left: tilesX + i * (g.tile + 4), top: g.tilesY, width: g.tile, height: g.tileH, background: "var(--ink)" }}>
-          <div style={{ position: "absolute", left: "30%", width: "40%", top: "28%", height: "12%", background: "var(--bg)" }} />
-          <div style={{ position: "absolute", left: "30%", width: "40%", top: "60%", height: "12%", background: "var(--bg)" }} />
+        <div key={i} data-tile style={{ position: "absolute", left: tilesX + i * (g.tile + 4), top: g.tilesY, width: g.tile, height: g.tileH, background: i === MID ? "var(--accent)" : "transparent", boxShadow: "inset 0 0 0 1.5px var(--ink)" }}>
+          <div style={{ position: "absolute", left: "30%", width: "40%", top: "28%", height: "12%", background: "var(--ink)" }} />
+          <div style={{ position: "absolute", left: "30%", width: "40%", top: "60%", height: "12%", background: "var(--ink)" }} />
         </div>
       ))}
       <Text data-size x={t.m} y={g.tilesY + g.tileH + (cut === "laptop" ? 36 : 48)} w={w - 2 * t.m} style={{ textAlign: "center", fontVariantNumeric: "tabular-nums" }}>
@@ -189,16 +189,16 @@ export default function Traffic({ cut, theme }: { cut: Cut; theme: Theme }) {
 
       {/* The words, one at a time, where the eye is. */}
       <Text data-say x={g.say.x} y={g.chip.y + (cut === "laptop" ? 48 : 70)} w={g.vertical ? g.say.w : g.say.w} size="small" style={{ textAlign: "center" }}>
-        The cache key was wrong, so good cache was thrown away. In review.
+        The cache key was wrong, so good cache was thrown away.
       </Text>
       <Text data-say x={g.say.x} y={g.say.y} w={g.say.w} style={{ textAlign: g.vertical ? "left" : "center" }}>
-        6 per view: half the requests. In review.
+        6 per view: half the requests.
       </Text>
       <Text data-say x={t.m} y={sayBelowTiles} w={w - 2 * t.m} size="small" style={{ textAlign: "center" }}>
-        About 96% smaller. In review.
+        About 96% smaller.
       </Text>
       <Text data-say x={t.m} y={sayBelowTiles} w={w - 2 * t.m} size="small" style={{ textAlign: "center" }}>
-        Across the API: about 4.6 → 0.3 TB a month. Estimate.
+        Across the API: about 4.6 → 0.3 TB a month.
       </Text>
     </Stage>
   );

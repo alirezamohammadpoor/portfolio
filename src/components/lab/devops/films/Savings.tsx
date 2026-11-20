@@ -3,19 +3,19 @@
 import type gsap from "gsap";
 import Stage, { SIZE, T, Text, count, enter, outro, type Build, type Cut, type Theme } from "../Stage";
 
-// Film 5, v3: two versions kept (Ali 11-20), 100 dots and the bar in two
-// slow steps. Cost review at list prices,
-// found, not applied. Area shares from the review; each saving sized from
+// Film 5, v4: the bill as one bar in two slow steps (Ali 11-20 picked the
+// bar). Black is what stays, pistachio what can go. Cost review at list
+// prices, found, not applied. Area shares from the review; each saving sized from
 // the inventory's per-fix estimates and scaled to about a quarter for the
 // quick wins and over half with the bigger moves.
 const AREAS = [
-  { name: "Production", share: 28, shade: 100 },
-  { name: "Older sites", share: 28, shade: 62 },
-  { name: "Older cluster", share: 13, shade: 84 },
-  { name: "Test and stage", share: 8, shade: 44 },
-  { name: "Dev cluster", share: 9, shade: 72 },
-  { name: "CI machines", share: 7, shade: 34 },
-  { name: "Logs and images", share: 7, shade: 54 },
+  { name: "Production", share: 28 },
+  { name: "Older sites", share: 28 },
+  { name: "Older cluster", share: 13 },
+  { name: "Test and stage", share: 8 },
+  { name: "Dev cluster", share: 9 },
+  { name: "CI machines", share: 7 },
+  { name: "Logs and images", share: 7 },
 ];
 // One saving per beat, in the order they leave. `area` indexes AREAS.
 const STEPS = [
@@ -74,11 +74,11 @@ function Bar({ cut }: { cut: Cut }) {
           style={{
             position: "absolute",
             ...box(g, START[i], p.units),
-            background: `color-mix(in srgb, var(--ink) ${AREAS[p.area].shade}%, var(--bg))`,
+            background: "var(--ink)",
             boxShadow: g.vertical ? "inset 0 -3px 0 var(--bg)" : "inset -3px 0 0 var(--bg)",
           }}
         >
-          {p.step >= 0 && <div data-mark style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(45deg, transparent 0 7px, var(--bg) 7px 10px)" }} />}
+          {p.step >= 0 && <div data-mark style={{ position: "absolute", inset: 0, background: "var(--accent)", boxShadow: g.vertical ? "inset 0 -3px 0 var(--bg)" : "inset -3px 0 0 var(--bg)" }} />}
         </div>
       ))}
     </>
@@ -125,81 +125,6 @@ function close(tl: gsap.core.Timeline, q: Q, g: ReturnType<typeof geo>, gone: (s
     if (PIECES[i].step >= 0 && gone(PIECES[i].step)) return;
     tl.to(el, { [g.vertical ? "y" : "x"]: (to[i] - START[i]) * unit, duration: dur, ease: "site-in-out" }, at);
   });
-}
-
-/* B: the bill as 100 dots, two groups leave. */
-
-function geoB(cut: Cut) {
-  const { w } = SIZE[cut];
-  if (cut === "laptop") {
-    const dot = 22, gap = 14, side = 10 * (dot + gap) - gap;
-    return { dot, gap, x: 200, y: 300, side, textX: 200 + side + 64, textW: w - (200 + side + 64) - 80, sayY: 300 + side - 150, countY: 300 + side - 90, endY: 300 + side - 20 };
-  }
-  const dot = 40, gap = 22, side = 10 * (dot + gap) - gap;
-  return { dot, gap, x: (w - side) / 2, y: 440, side, textX: 72, textW: w - 144, sayY: 440 + side + 40, countY: 440 + side + 100, endY: 440 + side + 180 };
-}
-const GROUPS = [
-  { size: QUICK, line: "Quick wins, config and small code: about a quarter." },
-  { size: BIG, line: "With the bigger moves: over half." },
-];
-const DOT_GROUP = Array.from({ length: 100 }, (_, i) => (i >= 100 - QUICK ? 0 : i >= 100 - QUICK - BIG ? 1 : -1));
-const BEAT_B = 3.6;
-
-const buildB: Build = (tl, q, cut) => {
-  const g = geoB(cut);
-  const dots = q("[data-dot]");
-  const fills = q("[data-dfill]");
-  const says = q("[data-say]");
-  const pct = q("[data-pct]")[0];
-  tl.set([...dots, ...says, ...q("[data-count]"), ...q("[data-end]")], { opacity: 0 }, 0);
-  tl.set(dots, { y: 0 }, 0);
-  tl.set(fills, { opacity: 1 }, 0);
-  tl.set(pct, { textContent: "100" }, 0);
-  tl.fromTo(dots, { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.4, ease: "site-out", stagger: 0.006 }, 0.3);
-  enter(tl, q("[data-count]"), 1.2);
-  let left = 100;
-  GROUPS.forEach((grp, k) => {
-    const at = 2.4 + k * BEAT_B;
-    tl.fromTo(says[k], { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, ease: "site-out" }, at);
-    tl.to(fills.filter((_, i) => DOT_GROUP[i] === k), { opacity: 0, duration: 0.3, ease: "site-out", stagger: 0.012 }, at);
-    tl.to(dots.filter((_, i) => DOT_GROUP[i] === k), { opacity: 0, y: g.dot, duration: 0.5, ease: "site-out", stagger: 0.015 }, at + 1.6);
-    count(tl, pct, left, left - grp.size, at + 1.6, 0.9, "site-out");
-    left -= grp.size;
-    tl.to(says[k], { opacity: 0, duration: 0.25, ease: "site-out" }, at + BEAT_B - 0.35);
-  });
-  const endAt = 2.4 + GROUPS.length * BEAT_B + 0.2;
-  enter(tl, q("[data-end]"), endAt);
-  outro(tl, q, endAt + 2.6);
-};
-
-function SavingsB({ cut, theme }: { cut: Cut; theme: Theme }) {
-  const g = geoB(cut);
-  const t = T[cut];
-  const align = cut === "laptop" ? "left" : "center";
-  return (
-    <Stage cut={cut} theme={theme} build={buildB} name="Savings" headline={HEAD} label="Savings film: the cloud bill as 100 dots; quick wins leave, then the bigger moves, about half stays.">
-      {DOT_GROUP.map((_, i) => (
-        <div
-          key={i}
-          data-dot
-          style={{ position: "absolute", left: g.x + (i % 10) * (g.dot + g.gap), top: g.y + Math.floor(i / 10) * (g.dot + g.gap), width: g.dot, height: g.dot, borderRadius: 999, boxShadow: "inset 0 0 0 2px var(--ink)" }}
-        >
-          <div data-dfill style={{ position: "absolute", inset: 0, borderRadius: 999, background: "var(--ink)" }} />
-        </div>
-      ))}
-      {GROUPS.map((grp) => (
-        <Text key={grp.line} data-say x={g.textX} y={g.sayY} w={g.textW} size="small" style={{ textAlign: align }}>
-          {grp.line}
-        </Text>
-      ))}
-      <Text data-count x={g.textX} y={g.countY} w={g.textW} style={{ textAlign: align, fontVariantNumeric: "tabular-nums" }}>
-        <span data-pct>100</span>% of a month&apos;s cloud bill
-      </Text>
-      <Text data-end x={g.textX} y={g.endY} w={g.textW} size="small" style={{ textAlign: align, color: "var(--muted)", fontSize: t.small }}>
-        {END}
-      </Text>
-    </Stage>
-  );
 }
 
 /* C: the bar in two slow steps. */
@@ -252,4 +177,4 @@ function SavingsC({ cut, theme }: { cut: Cut; theme: Theme }) {
   );
 }
 
-export { SavingsB as default, SavingsC as SavingsBar };
+export default SavingsC;

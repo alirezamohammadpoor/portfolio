@@ -7,7 +7,7 @@ import { SIZE } from "./Stage";
 import Cluster from "./films/Cluster";
 import Load from "./films/Load";
 import Pipeline from "./films/Pipeline";
-import Savings, { SavingsBar } from "./films/Savings";
+import Savings from "./films/Savings";
 import Traffic from "./films/Traffic";
 
 // The devops project's five gallery films (script approved by Ali 11-20),
@@ -20,7 +20,6 @@ const SCENES: { name: string; View: (p: { cut: Cut; theme: Theme }) => React.Rea
   { name: "Traffic", View: Traffic },
   { name: "Load", View: Load },
   { name: "Savings", View: Savings },
-  { name: "Savings, bar", View: SavingsBar },
 ];
 
 function readParams() {

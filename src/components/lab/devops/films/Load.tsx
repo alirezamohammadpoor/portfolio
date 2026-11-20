@@ -3,8 +3,8 @@
 import type gsap from "gsap";
 import Stage, { SIZE, T, Text, count, enter, outro, type Build, type Cut, type Theme } from "../Stage";
 
-// Film 4, v3 (Ali 11-20 picked the 100 dots). About a third fewer API
-// requests, in review. The split is the inventory's estimate from usage:
+// Film 4, v4 (Ali 11-20 picked the 100 dots). About a third fewer API
+// requests. The split is the inventory's estimate from usage:
 // of about 149M requests a month, junk paths -33M, preflight -10 to -14M,
 // review widget -3 to -4.5M.
 const FIXES = [
@@ -65,7 +65,7 @@ function Lines({ x, y, w, align = "left" }: { x: number; y: number; w: number; a
         </Text>
       ))}
       <Text data-end x={x} y={y} w={w} size="small" style={{ textAlign: align, color: "var(--muted)" }}>
-        About a third fewer. In review, estimated from usage.
+        About a third fewer.
       </Text>
     </>
   );
@@ -105,7 +105,7 @@ const buildA: Build = (tl, q, cut) => {
     const at = FIRST + k * BEAT;
     const mine = dots.filter((_, i) => GROUP[i] === k);
     const mineFills = fills.filter((_, i) => GROUP[i] === k);
-    // Mark the group, hold, then it leaves.
+    // Mark the group pistachio, hold, then it leaves.
     tl.to(mineFills, { opacity: 0, duration: 0.35, ease: "site-out", stagger: 0.015 }, at);
     tl.to(mine, { opacity: 0, y: g.dot, duration: 0.5, ease: "site-out", stagger: 0.02 }, at + 1.4);
   });
@@ -121,7 +121,7 @@ function LoadA({ cut, theme }: { cut: Cut; theme: Theme }) {
         <div
           key={i}
           data-dot
-          style={{ position: "absolute", left: g.x + (i % 10) * (g.dot + g.gap), top: g.y + Math.floor(i / 10) * (g.dot + g.gap), width: g.dot, height: g.dot, borderRadius: 999, boxShadow: "inset 0 0 0 2px var(--ink)" }}
+          style={{ position: "absolute", left: g.x + (i % 10) * (g.dot + g.gap), top: g.y + Math.floor(i / 10) * (g.dot + g.gap), width: g.dot, height: g.dot, borderRadius: 999, background: "var(--accent)" }}
         >
           <div data-dfill style={{ position: "absolute", inset: 0, borderRadius: 999, background: "var(--ink)" }} />
         </div>

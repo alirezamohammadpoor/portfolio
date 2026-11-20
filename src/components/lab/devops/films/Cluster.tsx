@@ -102,15 +102,15 @@ export default function Cluster({ cut, theme }: { cut: Cut; theme: Theme }) {
       build={build}
       name="Cloud cluster"
       headline={"Machines that\nfollow the load"}
-      label="Cluster film: production machines sat 2–15% busy all day; a pool that scales would follow traffic, from 3 machines at night to 9 at the peak. Proposed."
+      label="Cluster film: production machines sat 2–15% busy all day; a pool that scales would follow traffic, from 3 machines at night to 9 at the peak."
     >
       <Captions
         lines={[
           "One day of traffic on the production cluster.",
           "Before: every machine on, all day, mostly idle.",
           "Paid for all day, used for a fraction of it.",
-          "Proposed: the pool grows with traffic and shrinks at night.",
-          "The same idea fits CI and dev machines. Proposed.",
+          "After: the pool grows with traffic and shrinks at night.",
+          "The same idea fits CI and dev machines.",
         ]}
       />
       {Array.from({ length: N }, (_, i) => (
@@ -173,10 +173,10 @@ export default function Cluster({ cut, theme }: { cut: Cut; theme: Theme }) {
       <div data-head style={{ position: "absolute", left: g.curve.x - 1, top: g.curve.y - 16, width: 2, height: g.curve.h + 16, background: "var(--ink)" }} />
 
       <Text data-fact x={g.countX} y={g.countY} w={cut === "laptop" ? w - g.countX - t.m : w - 2 * t.m}>
-        CI build machines sit idle 85% of hours. They could start from zero. Proposed.
+        CI build machines sit idle 85% of hours. They could start from zero.
       </Text>
       <Text data-fact x={g.countX} y={g.countY} w={cut === "laptop" ? w - g.countX - t.m : w - 2 * t.m}>
-        The dev cluster uses about a quarter of its memory. Proposed.
+        The dev cluster uses about a quarter of its memory.
       </Text>
     </Stage>
   );
