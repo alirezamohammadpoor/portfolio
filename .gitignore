@@ -50,3 +50,5 @@ schema.json
 # claude
 .claude/
 .agents/
+# TRY brand fonts for rendering the devops films locally (licensed, never committed)
+/public/lab-fonts/
