@@ -270,6 +270,13 @@ export default function ProjectStage({
     pillFree && (current?._type === "galleryPhones" || current?._type === "galleryVideo")
       ? current.excerpt?.trim() || null
       : null;
+  // Every clip's excerpt, stacked in one slot as tall as the longest, so
+  // the room under the Pebble never changes between clips (Ali 11-20: the
+  // strip jumped when the first excerpt arrived).
+  const excerpts = gallery.map((g) =>
+    g._type === "galleryPhones" || g._type === "galleryVideo" ? { key: g._key, text: g.excerpt?.trim() || null } : null,
+  );
+  const excerptSlot = excerpts.some((e) => e?.text);
   // Either overlay covers the strip: no wheel, keys, swipes or auto-advance
   // under it, and the centred clip pauses.
   const covered = detailsOpen || switcherOpen;
@@ -817,24 +824,10 @@ export default function ProjectStage({
   // it would reach the centred card, the strip scales down from the card's
   // bottom edge just enough to clear it, so the filmstrip keeps its place.
   const stripWrapRef = useRef<HTMLDivElement>(null);
-  const excerptRef = useRef<HTMLParagraphElement>(null);
-  // The Pebble's project row grows when a long test name wraps (laptop bar
-  // at rest is narrow): the excerpt drops below the bar's real bottom edge.
-  const [pebbleDrop, setPebbleDrop] = useState(0);
-  useLayoutEffect(() => {
-    if (!capsule || !excerpt) return;
-    const bar = document.querySelector("header");
-    const root = rootRef.current;
-    if (!bar || !root) return;
-    const measure = () => {
-      const drop = bar.getBoundingClientRect().bottom - (root.getBoundingClientRect().top + 56);
-      setPebbleDrop(Math.max(0, Math.round(drop)));
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(bar);
-    return () => ro.disconnect();
-  }, [capsule, excerpt, index]);
+  const excerptRef = useRef<HTMLElement | null>(null);
+  const setExcerptEl = useCallback((el: HTMLElement | null) => {
+    excerptRef.current = el;
+  }, []);
   useLayoutEffect(() => {
     const wrap = stripWrapRef.current;
     if (!wrap) return;
@@ -850,7 +843,7 @@ export default function ProjectStage({
       }
     }
     wrap.style.transform = transform;
-  }, [excerpt, index, grid, isDesktop, pebbleDrop]);
+  }, [excerptSlot, index, grid, isDesktop]);
 
   return (
     <div
@@ -872,15 +865,22 @@ export default function ProjectStage({
         </div>
         {/* The centred clip's excerpt (Sanity `excerpt`) under the Pebble's
             project row, in the flow: the strip below gives up the room. */}
-        {excerpt && (
-          <p
-            key={current?._key}
-            ref={excerptRef}
-            style={{ marginTop: pebbleDrop }}
-            className="mx-auto shrink-0 px-margin pt-3 text-center text-[0.875rem] leading-5 text-balance text-primary transition-opacity duration-200 starting:opacity-0 desktop:max-w-[480px] desktop:px-0"
-          >
-            {excerpt}
-          </p>
+        {excerptSlot && (
+          <div ref={setExcerptEl} className="mx-auto grid w-full shrink-0 px-margin pt-3 desktop:w-[480px] desktop:px-0">
+            {excerpts.map(
+              (e) =>
+                e?.text && (
+                  <p
+                    key={e.key}
+                    aria-hidden={!excerpt || e.key !== current?._key}
+                    className="[grid-area:1/1] text-center text-[0.875rem] leading-5 text-balance text-primary motion-safe:transition-opacity motion-safe:duration-200"
+                    style={{ opacity: excerpt && e.key === current?._key ? 1 : 0 }}
+                  >
+                    {e.text}
+                  </p>
+                ),
+            )}
+          </div>
         )}
         </>
       ) : (
@@ -939,7 +939,7 @@ export default function ProjectStage({
         {excerpt && (
           <p
             key={current?._key}
-            ref={excerptRef}
+            ref={setExcerptEl}
             className="absolute top-12 left-1/2 w-max max-w-[min(440px,calc(100vw-2*var(--grid-margin)))] -translate-x-1/2 text-center text-[0.875rem] leading-5 text-balance text-primary transition-opacity duration-200 starting:opacity-0"
           >
             {excerpt}
