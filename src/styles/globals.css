@@ -72,9 +72,7 @@
 }
 @media (min-width: 75rem) {
   :root {
-    --header-height: 88px;
-    --bar-r: 28px;
-    --bar-r-open: 32px;
+    --header-height: 72px;
     --grid-margin: 24px;
     --grid-gutter: 16px;
     --grid-columns: 12;
@@ -108,6 +106,9 @@
   }
 
   body {
+    /* The page colour on body too: iOS Safari tints the area above the page
+       from body, and a transparent body reads as its default grey. */
+    background-color: var(--color-bg);
     min-height: 100vh;
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
@@ -321,55 +322,51 @@
   background-size: 100% 100%;
 }
 
-/* Page transitions (View Transitions API) */
-@keyframes page-exit {
+/* Page transitions (View Transitions API): plain `Link` navigations fade
+   through the page colour. The old page clears, then the new one arrives;
+   no double exposure, about 280ms end to end. Picked 11-17 over a crossfade
+   and a rise (Emil Kowalski's /prototype picker). The media hand-offs use
+   the plain router and never start a view transition. */
+@keyframes page-out {
   to {
-    transform: scale(0.9) translateY(-150px);
-    opacity: 0.5;
+    opacity: 0;
   }
 }
 
-@keyframes page-slide-in {
-  from {
-    transform: translateY(100vh);
-  }
-}
-
-@keyframes page-enter {
+@keyframes page-in {
   from {
     opacity: 0;
   }
 }
 
-/* Default page transition — same slide on mobile and desktop. */
 ::view-transition-old(root) {
-  animation: page-exit 1.2s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+  animation: page-out 120ms var(--ease-out) both;
+  mix-blend-mode: normal;
 }
 
 ::view-transition-new(root) {
-  animation:
-    page-slide-in 1s cubic-bezier(0.76, 0, 0.24, 1),
-    page-enter 0.5s ease;
+  animation: page-in 180ms var(--ease-out) 100ms both;
+  mix-blend-mode: normal;
 }
 
-/* Custom clone path (home→project): the clone overlay and the text
-   choreography are the only motion, on every viewport. Two motion systems
-   at once (page slide under a morph) read as mud. */
-html[data-custom-clone]::view-transition-old(root),
-html[data-custom-clone]::view-transition-new(root) {
-  animation: none;
-}
-
-/* Black backdrop behind the transition snapshot on every viewport —
-   otherwise mobile reveals the html #f7f7f7 bg as a white flash during
-   the snapshot window. */
 ::view-transition-group(root) {
-  background-color: black;
+  background-color: var(--color-bg);
+}
+
+/* The capsule bar (Header, view-transition-name site-bar) holds still while
+   the page under it changes; when its project row comes or goes, the bar's
+   own group resizes in step. */
+::view-transition-group(site-bar),
+::view-transition-old(site-bar),
+::view-transition-new(site-bar) {
+  animation-duration: 220ms;
+  animation-timing-function: var(--ease-out);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
     animation: none;
   }
   /* The long-title marquee rests; the title clips under the right fade. */

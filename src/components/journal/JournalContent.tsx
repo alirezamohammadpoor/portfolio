@@ -66,7 +66,7 @@ export default function JournalContent({
         className="mt-8 grid grid-cols-1 gap-8 desktop:grid-cols-3"
       >
         {posts.length === 0 ? (
-          <p className="text-body text-secondary">No posts yet.</p>
+          <p className="text-sub desktop:text-body text-secondary">No posts yet.</p>
         ) : (
           posts.map((post) => <JournalCard key={post._id} post={post} />)
         )}

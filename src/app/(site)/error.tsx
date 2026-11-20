@@ -14,7 +14,7 @@ export default function Error({ reset }: { reset: () => void }) {
   return (
     <div ref={scopeRef} className="flex min-h-[calc(100dvh-var(--header-height))] flex-col items-center justify-center px-4 desktop:px-6">
       <h1 ref={titleRef} className="text-primary">Error</h1>
-      <p ref={bodyRef} className="mt-4 text-body text-secondary">Something went wrong.</p>
+      <p ref={bodyRef} className="mt-4 text-sub desktop:text-body text-secondary">Something went wrong.</p>
       <button
         onClick={() => reset()}
         aria-label="Try again"
