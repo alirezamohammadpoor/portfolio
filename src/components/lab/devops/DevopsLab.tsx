@@ -7,6 +7,7 @@ import { SIZE } from "./Stage";
 import Cluster from "./films/Cluster";
 import { SqueezeA, SqueezeB, SqueezeC } from "./films/Compress";
 import Load from "./films/Load";
+import { LoadA, LoadB, LoadC } from "./films/LoadMocks";
 import Pipeline from "./films/Pipeline";
 import Savings from "./films/Savings";
 import Traffic from "./films/Traffic";
@@ -24,6 +25,9 @@ const SCENES: { name: string; View: (p: { cut: Cut; theme: Theme }) => React.Rea
   { name: "Squeeze A", View: SqueezeA },
   { name: "Squeeze B", View: SqueezeB },
   { name: "Squeeze C", View: SqueezeC },
+  { name: "Load A", View: LoadA },
+  { name: "Load B", View: LoadB },
+  { name: "Load C", View: LoadC },
 ];
 
 function readParams() {
