@@ -5,6 +5,7 @@ import { PICKER_CSS } from "../pickerCss";
 import type { Cut, Theme } from "./Stage";
 import { SIZE } from "./Stage";
 import Cluster from "./films/Cluster";
+import { SqueezeA, SqueezeB, SqueezeC } from "./films/Compress";
 import Load from "./films/Load";
 import Pipeline from "./films/Pipeline";
 import Savings from "./films/Savings";
@@ -20,6 +21,9 @@ const SCENES: { name: string; View: (p: { cut: Cut; theme: Theme }) => React.Rea
   { name: "Traffic", View: Traffic },
   { name: "Load", View: Load },
   { name: "Savings", View: Savings },
+  { name: "Squeeze A", View: SqueezeA },
+  { name: "Squeeze B", View: SqueezeB },
+  { name: "Squeeze C", View: SqueezeC },
 ];
 
 function readParams() {
