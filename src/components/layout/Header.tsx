@@ -14,6 +14,7 @@ import { EASE_OUT_CSS } from "@/lib/motion";
 import type { BarData } from "@/sanity/lib/bar";
 import WorkPanel, { PANEL_H, panelSize } from "./bar/WorkPanel";
 import AboutBody from "./bar/AboutBody";
+import ProjectRowLayout from "./bar/ProjectRow";
 import { useBarState, type WorkOpen } from "@/lib/barProject";
 import { usePageTransition } from "@/context/TransitionContext";
 
@@ -95,7 +96,7 @@ export default function Header({ bar }: { bar: BarData }) {
     if (!workOpen) return false;
     // The flight starts from what the preview paints: the lead's clip once
     // it has a frame, otherwise the lead's still (the others sit at 0).
-    const video = preview?.querySelector("video");
+    const video = preview?.querySelector<HTMLVideoElement>("[data-current] video");
     const still = preview?.querySelector<HTMLImageElement>("img[data-lead]");
     const r = (video && video.readyState >= 2 ? video : still)?.getBoundingClientRect();
     const rect = r && { top: r.top, left: r.left, width: r.width, height: r.height };
@@ -291,30 +292,15 @@ export default function Header({ bar }: { bar: BarData }) {
           >
             <div className="min-h-0 overflow-hidden">
               {barProject && docked && (
-                <div className="mx-auto flex w-full items-center justify-center gap-2 px-4 pb-2.5 desktop:max-w-[30rem]">
-                  {chrome !== "title" && barProject.replay}
-                  <button
-                    type="button"
-                    onClick={toggleDetails}
-                    aria-expanded={barProject.detailsOpen}
-                    aria-controls={chrome === "overlay" ? "project-details" : "bar-panel"}
-                    className="flex min-w-0 flex-col items-center text-center transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98]"
-                  >
-                    <span className={`flex max-w-full items-center gap-1.5 ${userOpen ? "text-secondary" : "text-primary"}`}>
-                      <span className="truncate">{barProject.title}</span>
-                      <span
-                        aria-hidden
-                        className="shrink-0 text-[0.5rem] motion-safe:transition-transform motion-safe:duration-200"
-                        style={{ transform: barProject.detailsOpen ? "rotate(180deg)" : "none" }}
-                      >
-                        ▼
-                      </span>
-                    </span>
-                    {chrome !== "title" && barProject.label && (
-                      <span className="line-clamp-2 text-secondary [overflow-wrap:anywhere]">{barProject.label}</span>
-                    )}
-                  </button>
-                </div>
+                <ProjectRowLayout
+                  title={barProject.title}
+                  label={chrome !== "title" ? barProject.label : null}
+                  replay={chrome !== "title" ? barProject.replay : null}
+                  detailsOpen={barProject.detailsOpen}
+                  dim={Boolean(userOpen)}
+                  controls={chrome === "overlay" ? "project-details" : "bar-panel"}
+                  onToggle={toggleDetails}
+                />
               )}
             </div>
           </div>

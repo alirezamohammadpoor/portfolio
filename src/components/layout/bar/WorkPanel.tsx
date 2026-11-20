@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useState, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { Link } from "@/lib/viewTransitions";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { isPlainLeftClick } from "@/lib/clicks";
+import { onFirstVideoFrame } from "@/lib/firstFrame";
 import type { BarData, BarRow } from "@/sanity/lib/bar";
 
 const FINE_HOVER = "(hover: hover) and (pointer: fine)";
@@ -51,44 +52,89 @@ export default function WorkPanel({
     ...bar.projects.map((r) => ({ ...r, kind: "project" as const })),
     ...bar.posts.map((r) => ({ ...r, kind: "post" as const })),
   ];
-  const [active, setActive] = useState(0);
+  const [active, setActiveRaw] = useState(0);
   const lead = rows[active] ?? rows[0];
+  // The preview is a stack of layers: the lead's on top and the one it
+  // replaces underneath, still playing. A layer with a clip waits, hidden,
+  // until the clip has a frame, then enters; the one under it leaves when
+  // the entrance ends. The cover still is never shown before a clip (Ali
+  // 11-18: the still, then the clip, read as a flicker, and with no still
+  // the empty box did).
+  type Layer = { i: number; id: number; ready: boolean };
+  const [layers, setLayers] = useState<Layer[]>(() => [{ i: 0, id: 0, ready: !rows[0]?.video }]);
+  const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const setActive = (i: number) => {
+    if (i === active) return;
+    setActiveRaw(i);
+    setLayers((ls) => {
+      // Build on the newest layer that is showing, never on one still waiting.
+      const base = [...ls].reverse().find((l) => l.ready) ?? ls[0];
+      const r = rows[i];
+      const next: Layer = { i, id: ls[ls.length - 1].id + 1, ready: !r?.video };
+      return reducedMotion() && next.ready ? [next] : [base, next];
+    });
+  };
+  const markReady = (id: number) =>
+    setLayers((ls) => {
+      const at = ls.findIndex((l) => l.id === id);
+      if (at < 0 || ls[at].ready) return ls;
+      const next = ls.map((l) => (l.id === id ? { ...l, ready: true } : l));
+      return reducedMotion() ? next.slice(at) : next;
+    });
+  // Every still is warm before its first switch, so a new layer never
+  // shows the empty box.
+  useEffect(() => {
+    rows.forEach((r) => {
+      if (!r.still) return;
+      const img = new Image();
+      img.src = r.still;
+      img.decode().catch(() => {});
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per open
+  }, []);
 
   const preview = (
     <div>
       {/* 16:9 on a phone (one screen with every name), 16:10 on a laptop. */}
       <div ref={previewRef} className="relative aspect-video overflow-hidden bg-tertiary desktop:aspect-[16/10]">
-        {rows.map((r, i) =>
-          r.still ? (
-            // eslint-disable-next-line @next/next/no-img-element -- stacked stills crossfade in place, no layout
-            <img
-              key={r.href}
-              src={r.still}
-              alt=""
-              decoding="async"
-              loading={i === 0 ? "eager" : "lazy"}
-              data-lead={i === active ? "" : undefined}
-              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-[160ms] ${i === active ? "opacity-100" : "opacity-0"}`}
-            />
-          ) : null,
-        )}
-        {lead?.video && (
-          <video
-            key={lead.video}
-            src={lead.video}
-            poster={lead.still ?? undefined}
-            className="absolute inset-0 h-full w-full object-cover"
-            muted
-            loop
-            playsInline
-            autoPlay
-            preload="metadata"
-          />
-        )}
+        {layers.map((l, k) => {
+          const r = rows[l.i];
+          const current = k === layers.length - 1;
+          const top = layers[layers.length - 1];
+          const state = !l.ready ? "wait" : current ? (l.id === 0 && !r?.video ? "rest" : "in") : top.ready ? "out" : "rest";
+          return (
+            <div
+              key={l.id}
+              className="work-layer absolute inset-0"
+              data-state={state}
+              data-current={current ? "" : undefined}
+              onAnimationEnd={(e) => {
+                if (current && l.ready && e.target === e.currentTarget) setLayers((ls) => ls.slice(-1));
+              }}
+            >
+              {r?.still && (
+                // eslint-disable-next-line @next/next/no-img-element -- a layer's still under its clip, no layout
+                <img
+                  src={r.still}
+                  alt=""
+                  decoding="sync"
+                  data-lead={current ? "" : undefined}
+                  className={`absolute inset-0 h-full w-full object-cover ${r.video ? "opacity-0" : ""}`}
+                />
+              )}
+              {r?.video && <LayerVideo src={r.video} onReady={() => markReady(l.id)} />}
+            </div>
+          );
+        })}
       </div>
       {/* A fixed box for the line: three lines on a phone, four on a laptop
           (the longest line on the site), so a longer one never moves the list. */}
-      <p className="mt-2 line-clamp-3 h-12 text-sub text-primary desktop:line-clamp-4 desktop:h-24 desktop:text-body">{lead?.line}</p>
+      <p
+        key={active}
+        className={`${layers[layers.length - 1].id > 0 ? "work-line" : ""} mt-2 line-clamp-3 h-12 text-sub text-primary desktop:line-clamp-4 desktop:h-24 desktop:text-body`}
+      >
+        {lead?.line}
+      </p>
     </div>
   );
 
@@ -141,5 +187,48 @@ export default function WorkPanel({
       {preview}
       <div className="mt-6">{list}</div>
     </div>
+  );
+}
+
+/**
+ * A layer's clip, hidden until it has presented a frame of its own. A new
+ * <video> paints blank (and iOS drops the poster on play) until its first
+ * frame decodes, which flickered on every switch on a phone (Ali, 11-18);
+ * until then the still underneath shows (or, with no still, the layer
+ * waits and the previous preview keeps playing).
+ */
+function LayerVideo({ src, onReady }: { src: string; onReady: () => void }) {
+  const [shown, setShown] = useState(false);
+  const ref = useRef<HTMLVideoElement>(null);
+  const readyRef = useRef(onReady);
+  useEffect(() => {
+    readyRef.current = onReady;
+  });
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    const show = () => {
+      setShown(true);
+      readyRef.current();
+    };
+    // A clip that never loads (data saver, low power) still lets the layer in.
+    const late = window.setTimeout(() => readyRef.current(), 2500);
+    const stop = onFirstVideoFrame(v, show);
+    return () => {
+      stop();
+      window.clearTimeout(late);
+    };
+  }, []);
+  return (
+    <video
+      ref={ref}
+      src={src}
+      className={`absolute inset-0 h-full w-full object-cover ${shown ? "opacity-100" : "opacity-0"}`}
+      muted
+      loop
+      playsInline
+      autoPlay
+      preload="auto"
+    />
   );
 }

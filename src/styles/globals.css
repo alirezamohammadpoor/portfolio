@@ -418,3 +418,14 @@
     animation: none;
   }
 }
+
+/* Work's preview swap (/lab/preview, Ali 11-17). The entering layer sits on
+   top; the one it replaces keeps playing underneath until the entrance
+   ends. --dir is 1 moving down the list, -1 moving up. */
+.work-layer[data-state="wait"] { opacity: 0; }
+.work-layer[data-state="in"] { animation: work-fade-in 240ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.work-line { animation: work-fade-in 200ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+@keyframes work-fade-in { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .work-layer, .work-line { animation: none !important; }
+}
