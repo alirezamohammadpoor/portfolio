@@ -7,6 +7,7 @@
       "esnext"
     ],
     "skipLibCheck": true,
+    "types": ["node", "bun"],
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
