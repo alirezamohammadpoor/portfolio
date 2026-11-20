@@ -1,177 +1,255 @@
 "use client";
 
-import Stage, { Captions, SIZE, T, Text, captionBeats, count, enter, outro, type Build, type Cut, type Theme } from "../Stage";
+import type gsap from "gsap";
+import Stage, { SIZE, T, Text, count, enter, outro, type Build, type Cut, type Theme } from "../Stage";
 
-// Script film 5. Cost review at list prices: quick wins 21–33% of the
-// monthly bill, the full plan 54–63%. Found, not applied. Area shares are
-// from the review; how each area splits into quick and big is drawn to
-// land on about 75% and about 45% left.
+// Film 5, v3: two versions kept (Ali 11-20), 100 dots and the bar in two
+// slow steps. Cost review at list prices,
+// found, not applied. Area shares from the review; each saving sized from
+// the inventory's per-fix estimates and scaled to about a quarter for the
+// quick wins and over half with the bigger moves.
 const AREAS = [
-  { name: "Production", share: 27, quick: 0, big: 0, shade: 100 },
-  { name: "Older sites", share: 28, quick: 0, big: 20, shade: 62 },
-  { name: "Older cluster", share: 13, quick: 4, big: 9, shade: 84 },
-  { name: "Test and stage", share: 8, quick: 5, big: 0, shade: 44 },
-  { name: "Dev cluster", share: 9, quick: 6, big: 0, shade: 72 },
-  { name: "CI machines", share: 7, quick: 6, big: 0, shade: 34 },
-  { name: "Logs and images", share: 7, quick: 4, big: 0, shade: 54 },
+  { name: "Production", share: 28, shade: 100 },
+  { name: "Older sites", share: 28, shade: 62 },
+  { name: "Older cluster", share: 13, shade: 84 },
+  { name: "Test and stage", share: 8, shade: 44 },
+  { name: "Dev cluster", share: 9, shade: 72 },
+  { name: "CI machines", share: 7, shade: 34 },
+  { name: "Logs and images", share: 7, shade: 54 },
 ];
-const TOTAL = AREAS.reduce((s, a) => s + a.share, 0);
+// One saving per beat, in the order they leave. `area` indexes AREAS.
+const STEPS = [
+  { area: 2, units: 10, quick: true, line: "Older cluster sized to its load" },
+  { area: 4, units: 5, quick: true, line: "Dev cluster: stale review apps removed" },
+  { area: 3, units: 5, quick: true, line: "Duplicate stage stack turned off" },
+  { area: 5, units: 3, quick: true, line: "CI machines start from zero" },
+  { area: 6, units: 2, quick: true, line: "Fewer logs kept" },
+  { area: 1, units: 24, quick: false, line: "Older sites move to the shared platform" },
+  { area: 2, units: 3, quick: false, line: "Older cluster retired" },
+];
+const QUICK = STEPS.filter((s) => s.quick).reduce((a, s) => a + s.units, 0);
+const BIG = STEPS.filter((s) => !s.quick).reduce((a, s) => a + s.units, 0);
+const HEAD = "Where the cloud\nbill can shrink";
+const END = "Found in a cost review, not applied yet. List-price estimates.";
 
-type Kind = "keep" | "quick" | "big";
+// Each area splits into what stays, then its savings in step order.
 const PIECES = AREAS.flatMap((a, area) => {
-  const parts: { area: number; kind: Kind; units: number; last: boolean }[] = [];
-  const keep = a.share - a.quick - a.big;
-  if (keep) parts.push({ area, kind: "keep", units: keep, last: false });
-  if (a.quick) parts.push({ area, kind: "quick", units: a.quick, last: false });
-  if (a.big) parts.push({ area, kind: "big", units: a.big, last: false });
-  parts[parts.length - 1].last = true;
-  return parts;
+  const mine = STEPS.map((s, i) => ({ ...s, i })).filter((s) => s.area === area);
+  const keep = a.share - mine.reduce((t, s) => t + s.units, 0);
+  return [...(keep ? [{ area, units: keep, step: -1 }] : []), ...mine.map((s) => ({ area, units: s.units, step: s.i }))];
 });
-const offsets = (keepIf: (k: Kind) => boolean) => {
+/** Where each piece starts once `gone(step)` pieces have left. */
+const offsets = (gone: (step: number) => boolean) => {
   let at = 0;
   return PIECES.map((p) => {
     const o = at;
-    if (keepIf(p.kind)) at += p.units;
+    if (p.step < 0 || !gone(p.step)) at += p.units;
     return o;
   });
 };
-const START = offsets(() => true);
-const AFTER_QUICK = offsets((k) => k !== "quick");
-const AFTER_BIG = offsets((k) => k === "keep");
-const pct = (keep: (k: Kind) => boolean) => Math.round((100 * PIECES.filter((p) => keep(p.kind)).reduce((s, p) => s + p.units, 0)) / TOTAL);
+const START = offsets(() => false);
 
 function geo(cut: Cut) {
   const t = T[cut];
   const { w } = SIZE[cut];
-  if (cut === "laptop") return { vertical: false, x: t.m, y: 400, len: w - 2 * t.m, thick: 140, countY: 700, factY: 790 };
-  return { vertical: true, x: 600, y: 480, len: 560, thick: 300, countY: 1070, factY: 1166 };
+  if (cut === "laptop") return { vertical: false, x: t.m, y: 400, len: w - 2 * t.m, thick: 140, labelY: 566, countY: 650, endY: 720 };
+  return { vertical: true, x: 600, y: 470, len: 600, thick: 300, labelY: 0, countY: 1110, endY: 1170 };
 }
-
-const build: Build = (tl, q, cut) => {
-  const g = geo(cut);
-  const unit = g.len / TOTAL;
-  const pieces = q("[data-piece]");
-  const marks = q("[data-mark]");
-  const pctEl = q("[data-pct]")[0];
-  const axis = g.vertical ? "y" : "x";
-  const lift = g.vertical ? { x: 150 } : { y: -70 };
-
-  captionBeats(tl, q, [0.2, 2.0, 4.0, 7.0, 10.0]);
-  tl.set([...pieces, ...marks, ...q("[data-area]"), ...q("[data-count]"), ...q("[data-fact]")], { opacity: 0 }, 0);
-  tl.set(pieces, { x: 0, y: 0 }, 0);
-  tl.set(pctEl, { textContent: "100" }, 0);
-
-  enter(tl, q("[data-ghost]"), 0.3);
-  tl.fromTo(pieces, { opacity: 0, [axis]: 0, scale: 0.98 }, { opacity: 1, scale: 1, duration: 0.45, ease: "site-out", stagger: 0.04 }, 0.4);
-  enter(tl, q("[data-area]"), 1.0, 0.06);
-  enter(tl, q("[data-count]"), 1.4);
-
-  // Each area's idle share gets marked.
-  tl.fromTo(marks, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "site-out", stagger: 0.07 }, 2.2);
-  tl.to(q("[data-area]"), { opacity: 0, duration: 0.3, ease: "site-out" }, 3.9);
-
-  const step = (kind: Kind, at: number, to: number[], from: number, toPct: number) => {
-    const out = pieces.filter((_, i) => PIECES[i].kind === kind);
-    tl.to(out, { ...lift, opacity: 0, duration: 0.6, ease: "site-out", stagger: 0.05 }, at);
-    pieces.forEach((el, i) => {
-      if (PIECES[i].kind === kind) return;
-      tl.to(el, { [axis]: (to[i] - START[i]) * unit, duration: 0.9, ease: "site-in-out" }, at + 0.7);
-    });
-    count(tl, pctEl, from, toPct, at + 0.7, 0.9, "site-in-out");
-  };
-  const afterQuick = pct((k) => k !== "quick");
-  step("quick", 4.2, AFTER_QUICK, 100, afterQuick);
-  step("big", 7.2, AFTER_BIG, afterQuick, pct((k) => k === "keep"));
-
-  enter(tl, q("[data-fact]"), 10.2);
-  outro(tl, q, 12.6);
+const box = (g: ReturnType<typeof geo>, o: number, u: number) => {
+  const unit = g.len / 100;
+  return g.vertical ? { left: g.x, top: g.y + o * unit, width: g.thick, height: u * unit } : { left: g.x + o * unit, top: g.y, width: u * unit, height: g.thick };
 };
 
-export default function Savings({ cut, theme }: { cut: Cut; theme: Theme }) {
+type Q = (s: string) => Element[];
+
+function Bar({ cut }: { cut: Cut }) {
   const g = geo(cut);
-  const t = T[cut];
-  const { w } = SIZE[cut];
-  const unit = g.len / TOTAL;
-  const box = (o: number, units: number) =>
-    g.vertical ? { left: g.x, top: g.y + o * unit, width: g.thick, height: units * unit } : { left: g.x + o * unit, top: g.y, width: units * unit, height: g.thick };
-  const areaStart = AREAS.map((_, i) => AREAS.slice(0, i).reduce((s, a) => s + a.share, 0));
   return (
-    <Stage
-      cut={cut}
-      theme={theme}
-      build={build}
-      name="Savings"
-      headline={"Where the cloud\nbill can shrink"}
-      label="Savings film: a month of cloud spend by area. Quick wins take about a quarter off, the bigger moves over half. Found in a cost review, not applied yet."
-    >
-      <Captions
-        lines={[
-          "One month of cloud spend, by area.",
-          "Mapped area by area: what sits idle.",
-          "Quick wins, config and small code changes: about a quarter.",
-          "With the bigger moves: over half.",
-          "Proposed. Nothing is applied yet.",
-        ]}
-      />
-      <div data-ghost style={{ position: "absolute", ...box(0, TOTAL), boxShadow: "inset 0 0 0 1.5px var(--line)" }} />
+    <>
+      <div data-ghost style={{ position: "absolute", ...box(g, 0, 100), boxShadow: "inset 0 0 0 1.5px var(--line)" }} />
       {PIECES.map((p, i) => (
         <div
           key={i}
           data-piece
           style={{
             position: "absolute",
-            ...box(START[i], p.units),
+            ...box(g, START[i], p.units),
             background: `color-mix(in srgb, var(--ink) ${AREAS[p.area].shade}%, var(--bg))`,
-            boxShadow: p.last ? (g.vertical ? "inset 0 -3px 0 var(--bg)" : "inset -3px 0 0 var(--bg)") : undefined,
+            boxShadow: g.vertical ? "inset 0 -3px 0 var(--bg)" : "inset -3px 0 0 var(--bg)",
           }}
         >
-          {p.kind !== "keep" && (
-            <div
-              data-mark
-              style={{
-                position: "absolute",
-                inset: 0,
-                background: "repeating-linear-gradient(45deg, transparent 0 7px, var(--bg) 7px 10px)",
-              }}
-            />
-          )}
+          {p.step >= 0 && <div data-mark style={{ position: "absolute", inset: 0, background: "repeating-linear-gradient(45deg, transparent 0 7px, var(--bg) 7px 10px)" }} />}
         </div>
       ))}
+    </>
+  );
+}
 
-      {AREAS.map((a, i) => {
-        const label = `${a.name} ${a.share}%`;
-        if (g.vertical) {
-          const mid = g.y + (areaStart[i] + a.share / 2) * unit;
-          return (
-            <Text key={a.name} data-area x={t.m} y={mid - t.small * 0.6} w={g.x - t.m - 32} size="small" style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-              {label}
-            </Text>
-          );
-        }
-        // Three staggered rows under the bar, each with a tick up to its area.
-        const row = i % 3;
-        const right = i === AREAS.length - 1;
-        const x = g.x + (right ? areaStart[i] + a.share : areaStart[i]) * unit;
-        const top = g.y + g.thick + 14 + row * 30;
-        return (
-          <div key={a.name} data-area>
-            <div style={{ position: "absolute", left: x - (right ? 2 : 0), top: g.y + g.thick + 4, width: 1.5, height: top - (g.y + g.thick + 4) + 18, background: "var(--muted)" }} />
-            <Text x={right ? x - 260 - 8 : x + 8} y={top} w={260} size="small" style={{ whiteSpace: "nowrap", textAlign: right ? "right" : "left" }}>
-              {label}
-            </Text>
-          </div>
-        );
-      })}
-
-      <div data-count style={{ position: "absolute", left: t.m, top: g.countY, width: w - 2 * t.m, display: "flex", alignItems: "baseline", gap: cut === "laptop" ? 16 : 24 }}>
+function Readout({ cut }: { cut: Cut }) {
+  const g = geo(cut);
+  const t = T[cut];
+  const { w } = SIZE[cut];
+  return (
+    <>
+      <div data-count style={{ position: "absolute", left: t.m, top: g.countY, width: w - 2 * t.m, display: "flex", alignItems: "baseline", gap: cut === "laptop" ? 14 : 22 }}>
         <span style={{ fontSize: t.head, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
           <span data-pct>100</span>%
         </span>
-        <span style={{ fontSize: t.fact }}>of a month&apos;s cloud bill left</span>
+        <span style={{ fontSize: t.fact }}>of a month&apos;s cloud bill</span>
       </div>
-      <Text data-fact x={t.m} y={g.factY} w={w - 2 * t.m} size="small" style={{ color: "var(--muted)" }}>
-        Found in a cost review, not applied yet. List-price estimates.
+      <Text data-end x={t.m} y={g.endY} w={w - 2 * t.m} size="small" style={{ color: "var(--muted)" }}>
+        {END}
+      </Text>
+    </>
+  );
+}
+
+/** Bar entrance, the readout, and the closing line. */
+function base(tl: gsap.core.Timeline, q: Q, endAt: number) {
+  const pieces = q("[data-piece]");
+  tl.set([...pieces, ...q("[data-mark]"), ...q("[data-count]"), ...q("[data-end]"), ...q("[data-say]")], { opacity: 0 }, 0);
+  tl.set(pieces, { x: 0, y: 0 }, 0);
+  tl.set(q("[data-pct]")[0], { textContent: "100" }, 0);
+  enter(tl, q("[data-ghost]"), 0.3);
+  tl.fromTo(pieces, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "site-out", stagger: 0.03 }, 0.4);
+  enter(tl, q("[data-count]"), 1.2);
+  enter(tl, q("[data-end]"), endAt);
+  outro(tl, q, endAt + 2.6);
+}
+
+/** Close the bar up once `gone` steps have left. */
+function close(tl: gsap.core.Timeline, q: Q, g: ReturnType<typeof geo>, gone: (s: number) => boolean, at: number, dur: number) {
+  const unit = g.len / 100;
+  const to = offsets(gone);
+  q("[data-piece]").forEach((el, i) => {
+    if (PIECES[i].step >= 0 && gone(PIECES[i].step)) return;
+    tl.to(el, { [g.vertical ? "y" : "x"]: (to[i] - START[i]) * unit, duration: dur, ease: "site-in-out" }, at);
+  });
+}
+
+/* B: the bill as 100 dots, two groups leave. */
+
+function geoB(cut: Cut) {
+  const { w } = SIZE[cut];
+  if (cut === "laptop") {
+    const dot = 22, gap = 14, side = 10 * (dot + gap) - gap;
+    return { dot, gap, x: 200, y: 300, side, textX: 200 + side + 64, textW: w - (200 + side + 64) - 80, sayY: 300 + side - 150, countY: 300 + side - 90, endY: 300 + side - 20 };
+  }
+  const dot = 40, gap = 22, side = 10 * (dot + gap) - gap;
+  return { dot, gap, x: (w - side) / 2, y: 440, side, textX: 72, textW: w - 144, sayY: 440 + side + 40, countY: 440 + side + 100, endY: 440 + side + 180 };
+}
+const GROUPS = [
+  { size: QUICK, line: "Quick wins, config and small code: about a quarter." },
+  { size: BIG, line: "With the bigger moves: over half." },
+];
+const DOT_GROUP = Array.from({ length: 100 }, (_, i) => (i >= 100 - QUICK ? 0 : i >= 100 - QUICK - BIG ? 1 : -1));
+const BEAT_B = 3.6;
+
+const buildB: Build = (tl, q, cut) => {
+  const g = geoB(cut);
+  const dots = q("[data-dot]");
+  const fills = q("[data-dfill]");
+  const says = q("[data-say]");
+  const pct = q("[data-pct]")[0];
+  tl.set([...dots, ...says, ...q("[data-count]"), ...q("[data-end]")], { opacity: 0 }, 0);
+  tl.set(dots, { y: 0 }, 0);
+  tl.set(fills, { opacity: 1 }, 0);
+  tl.set(pct, { textContent: "100" }, 0);
+  tl.fromTo(dots, { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.4, ease: "site-out", stagger: 0.006 }, 0.3);
+  enter(tl, q("[data-count]"), 1.2);
+  let left = 100;
+  GROUPS.forEach((grp, k) => {
+    const at = 2.4 + k * BEAT_B;
+    tl.fromTo(says[k], { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, ease: "site-out" }, at);
+    tl.to(fills.filter((_, i) => DOT_GROUP[i] === k), { opacity: 0, duration: 0.3, ease: "site-out", stagger: 0.012 }, at);
+    tl.to(dots.filter((_, i) => DOT_GROUP[i] === k), { opacity: 0, y: g.dot, duration: 0.5, ease: "site-out", stagger: 0.015 }, at + 1.6);
+    count(tl, pct, left, left - grp.size, at + 1.6, 0.9, "site-out");
+    left -= grp.size;
+    tl.to(says[k], { opacity: 0, duration: 0.25, ease: "site-out" }, at + BEAT_B - 0.35);
+  });
+  const endAt = 2.4 + GROUPS.length * BEAT_B + 0.2;
+  enter(tl, q("[data-end]"), endAt);
+  outro(tl, q, endAt + 2.6);
+};
+
+function SavingsB({ cut, theme }: { cut: Cut; theme: Theme }) {
+  const g = geoB(cut);
+  const t = T[cut];
+  const align = cut === "laptop" ? "left" : "center";
+  return (
+    <Stage cut={cut} theme={theme} build={buildB} name="Savings" headline={HEAD} label="Savings film: the cloud bill as 100 dots; quick wins leave, then the bigger moves, about half stays.">
+      {DOT_GROUP.map((_, i) => (
+        <div
+          key={i}
+          data-dot
+          style={{ position: "absolute", left: g.x + (i % 10) * (g.dot + g.gap), top: g.y + Math.floor(i / 10) * (g.dot + g.gap), width: g.dot, height: g.dot, borderRadius: 999, boxShadow: "inset 0 0 0 2px var(--ink)" }}
+        >
+          <div data-dfill style={{ position: "absolute", inset: 0, borderRadius: 999, background: "var(--ink)" }} />
+        </div>
+      ))}
+      {GROUPS.map((grp) => (
+        <Text key={grp.line} data-say x={g.textX} y={g.sayY} w={g.textW} size="small" style={{ textAlign: align }}>
+          {grp.line}
+        </Text>
+      ))}
+      <Text data-count x={g.textX} y={g.countY} w={g.textW} style={{ textAlign: align, fontVariantNumeric: "tabular-nums" }}>
+        <span data-pct>100</span>% of a month&apos;s cloud bill
+      </Text>
+      <Text data-end x={g.textX} y={g.endY} w={g.textW} size="small" style={{ textAlign: align, color: "var(--muted)", fontSize: t.small }}>
+        {END}
       </Text>
     </Stage>
   );
 }
+
+/* C: the bar in two slow steps. */
+
+const buildC: Build = (tl, q, cut) => {
+  const g = geo(cut);
+  const pieces = q("[data-piece]");
+  const marks = q("[data-mark]");
+  const says = q("[data-say]");
+  const pct = q("[data-pct]")[0];
+  const lift = g.vertical ? { x: 140 } : { y: -80 };
+  const markIdx = PIECES.filter((p) => p.step >= 0);
+  let left = 100;
+  [true, false].forEach((quick, k) => {
+    const at = 2.4 + k * 5.0;
+    const inStep = (st: number) => STEPS[st].quick === quick;
+    tl.fromTo(says[k], { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, ease: "site-out" }, at);
+    tl.to(marks.filter((_, i) => inStep(markIdx[i].step)), { opacity: 1, duration: 0.4, ease: "site-out", stagger: 0.12 }, at);
+    tl.to(pieces.filter((_, i) => PIECES[i].step >= 0 && inStep(PIECES[i].step)), { ...lift, opacity: 0, duration: 0.8, ease: "site-out", stagger: 0.12 }, at + 1.6);
+    close(tl, q, g, (st) => STEPS[st].quick || !quick, at + 2.8, 1.2);
+    const size = quick ? QUICK : BIG;
+    count(tl, pct, left, left - size, at + 2.8, 1.2, "site-in-out");
+    left -= size;
+    tl.to(says[k], { opacity: 0, duration: 0.25, ease: "site-out" }, at + 4.6);
+  });
+  base(tl, q, 2.4 + 2 * 5.0 + 0.2);
+};
+
+function SavingsC({ cut, theme }: { cut: Cut; theme: Theme }) {
+  const g = geo(cut);
+  const t = T[cut];
+  const { w } = SIZE[cut];
+  const lines = ["Quick wins, config and small code: about a quarter.", "With the bigger moves: over half."];
+  return (
+    <Stage cut={cut} theme={theme} build={buildC} name="Savings" headline={HEAD} label="Savings film: the cloud bill as one bar; quick wins leave, then the bigger moves, held slowly.">
+      <Bar cut={cut} />
+      {lines.map((l) =>
+        g.vertical ? (
+          <Text key={l} data-say x={t.m} y={g.y + g.len / 2 - t.small} w={g.x - t.m - 28} size="small" style={{ textAlign: "right" }}>
+            {l}
+          </Text>
+        ) : (
+          <Text key={l} data-say x={t.m} y={g.labelY} w={w - 2 * t.m} size="small">
+            {l}
+          </Text>
+        ),
+      )}
+      <Readout cut={cut} />
+    </Stage>
+  );
+}
+
+export { SavingsB as default, SavingsC as SavingsBar };

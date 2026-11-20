@@ -1,165 +1,135 @@
 "use client";
 
-import Stage, { Captions, Label, T, Text, captionBeats, count, enter, outro, type Build, type Cut, type Theme } from "../Stage";
+import type gsap from "gsap";
+import Stage, { SIZE, T, Text, count, enter, outro, type Build, type Cut, type Theme } from "../Stage";
 
-// Script film 4. Three load fixes together take about a third of the API's
-// requests away (in review). The lane densities are drawn, not measured:
-// only the 100 → 67% total is a fact.
-const LANES = [
-  { name: "Page data", every: 0.35, gate: null, stop: "" },
-  { name: "Asset and junk paths", every: 1.0, gate: 4.0, stop: "Filtered" },
-  { name: "Preflight checks", every: 1.9, gate: 6.0, stop: "Cached" },
-  { name: "Review widget", every: 2.8, gate: 8.0, stop: "Cached" },
-] as const;
+// Film 4, v3 (Ali 11-20 picked the 100 dots). About a third fewer API
+// requests, in review. The split is the inventory's estimate from usage:
+// of about 149M requests a month, junk paths -33M, preflight -10 to -14M,
+// review widget -3 to -4.5M.
+const FIXES = [
+  { size: 22, line: "Asset and junk paths skip the lookup." },
+  { size: 8, line: "Browsers keep the preflight answer." },
+  { size: 3, line: "Review widgets read from cache." },
+];
+const KEEP = 100 - FIXES.reduce((s, f) => s + f.size, 0);
+const BEAT = 3.2;
+const FIRST = 2.4;
+const HEAD = "A third fewer\nAPI requests";
 
-// Every chip's lane and start time, fixed so the film is deterministic.
-const CHIPS = LANES.flatMap((l, lane) => {
-  const out: { lane: number; t: number }[] = [];
-  for (let t = 0.3 + lane * 0.17; t < 12.2; t += l.every) out.push({ lane, t: Math.round(t * 100) / 100 });
-  return out;
-});
-const TRAVEL = 1.6;
+type Q = (s: string) => Element[];
 
-function geo(cut: Cut) {
-  const t = T[cut];
-  if (cut === "laptop") {
-    const lane = (i: number) => 380 + i * 110;
-    return { lane, trackX: 320, boxX: 1000, boxY: 330, boxW: 200, boxH: 420, gateX: 430, gateW: 100, gateH: 44, chipW: 40, chipH: 20, labelX: t.m, labelY: (i: number) => lane(i) - 11, labelW: 220, lift: 40 };
-  }
-  const lane = (i: number) => 600 + i * 190;
-  return { lane, trackX: t.m, boxX: 760, boxY: 520, boxW: 248, boxH: 700, gateX: 200, gateW: 170, gateH: 64, chipW: 56, chipH: 30, labelX: t.m, labelY: (i: number) => lane(i) - 82, labelW: 700, lift: 60 };
+/** The fix lines: one shows at a time, at the action. */
+function fixLines(tl: gsap.core.Timeline, q: Q) {
+  const lines = q("[data-fix]");
+  tl.set(lines, { opacity: 0 }, 0);
+  lines.forEach((el, k) => {
+    const at = FIRST + k * BEAT;
+    tl.fromTo(el, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "site-out" }, at);
+    tl.to(el, { opacity: 0, duration: 0.3, ease: "site-out" }, at + BEAT - 0.5);
+  });
 }
 
-const build: Build = (tl, q, cut) => {
-  const g = geo(cut);
-  const chips = q("[data-chip]");
-  const gates = q("[data-gate]");
-  const meter = q("[data-meter]")[0];
-
-  captionBeats(tl, q, [1.5, 4.0, 6.0, 8.0, 10.0]);
-  tl.set([...chips, ...gates, ...q("[data-lane-label]")], { opacity: 0 }, 0);
-  tl.set(chips, { x: 0, scale: 1 }, 0);
-  tl.set(meter, { textContent: "100" }, 0);
-  enter(tl, [...q("[data-box]"), ...q("[data-track]")], 0.2, 0.04);
-  enter(tl, q("[data-lane-label]"), 1.5, 0.08);
-
-  const full = g.boxX - g.trackX - g.chipW;
-  const speed = full / TRAVEL;
-  const stop = g.gateX - g.trackX - g.chipW - 6;
-
-  chips.forEach((el, i) => {
-    const { lane, t } = CHIPS[i];
-    const gate = LANES[lane].gate;
-    const atGate = t + stop / speed;
-    tl.to(el, { opacity: 1, duration: 0.15, ease: "site-out" }, t);
-    if (gate !== null && atGate >= gate + 0.3) {
-      tl.to(el, { x: stop, duration: stop / speed, ease: "none" }, t);
-      if (lane === 1) {
-        // Junk bounces off the filter.
-        tl.to(el, { x: stop - g.lift, opacity: 0, duration: 0.45, ease: "site-out" }, atGate);
-      } else {
-        // Preflight and widget calls are answered by the cache.
-        tl.to(el, { scale: 0.4, opacity: 0, duration: 0.3, ease: "site-out" }, atGate);
-      }
-      return;
-    }
-    tl.to(el, { x: full, duration: TRAVEL, ease: "none" }, t);
-    tl.to(el, { opacity: 0, duration: 0.12, ease: "none" }, t + TRAVEL - 0.12);
+/** Counter that steps down as each fix lands, then the closing line. */
+function total(tl: gsap.core.Timeline, q: Q) {
+  const n = q("[data-total]")[0];
+  tl.set(n, { textContent: "100" }, 0);
+  tl.set(q("[data-end]"), { opacity: 0 }, 0);
+  enter(tl, q("[data-count]"), 1.2);
+  let left = 100;
+  FIXES.forEach((f, k) => {
+    count(tl, n, left, left - f.size, FIRST + k * BEAT + 1.4, 0.7, "site-out");
+    left -= f.size;
   });
+  enter(tl, q("[data-end]"), FIRST + FIXES.length * BEAT + 0.2);
+  outro(tl, q, FIRST + FIXES.length * BEAT + 2.8);
+}
 
-  LANES.forEach((l, i) => {
-    if (l.gate === null) return;
-    const el = gates[i - 1];
-    tl.fromTo(el, { opacity: 0, y: -16 }, { opacity: 1, y: 0, duration: 0.45, ease: "site-out" }, l.gate);
+function Count({ x, y, w, unit, align = "left" }: { x: number; y: number; w: number; unit: string; align?: "left" | "center" }) {
+  return (
+    <>
+      <Text data-count x={x} y={y} w={w} style={{ textAlign: align, fontVariantNumeric: "tabular-nums" }}>
+        <span data-total>100</span>
+        {unit} {unit ? "of requests reach the API" : "requests reach the API"}
+      </Text>
+    </>
+  );
+}
+
+function Lines({ x, y, w, align = "left" }: { x: number; y: number; w: number; align?: "left" | "center" }) {
+  return (
+    <>
+      {FIXES.map((f) => (
+        <Text key={f.line} data-fix x={x} y={y} w={w} size="small" style={{ textAlign: align }}>
+          {f.line}
+        </Text>
+      ))}
+      <Text data-end x={x} y={y} w={w} size="small" style={{ textAlign: align, color: "var(--muted)" }}>
+        About a third fewer. In review, estimated from usage.
+      </Text>
+    </>
+  );
+}
+
+/* 100 dots, the groups leave one at a time. */
+
+// Which fix each dot belongs to: the first fix takes the bottom rows, the
+// next the dots above them, so the grid empties from the bottom up.
+const GROUP = Array.from({ length: 100 }, (_, i) => {
+  let edge = 100;
+  for (let k = 0; k < FIXES.length; k++) {
+    edge -= FIXES[k].size;
+    if (i >= edge) return k;
+  }
+  return -1;
+});
+
+function geoA(cut: Cut) {
+  const { w } = SIZE[cut];
+  if (cut === "laptop") {
+    const dot = 22, gap = 14, side = 10 * (dot + gap) - gap;
+    return { dot, gap, x: 200, y: 300, side, textX: 200 + side + 64, textW: w - (200 + side + 64) - 80, textY: 300 + side - 120, countY: 300 + side - 60, align: "left" as const };
+  }
+  const dot = 40, gap = 22, side = 10 * (dot + gap) - gap;
+  return { dot, gap, x: (w - side) / 2, y: 460, side, textX: 72, textW: w - 144, textY: 460 + side + 50, countY: 460 + side + 110, align: "center" as const };
+}
+
+const buildA: Build = (tl, q, cut) => {
+  const g = geoA(cut);
+  const dots = q("[data-dot]");
+  const fills = q("[data-dfill]");
+  tl.set(dots, { opacity: 0, y: 0 }, 0);
+  tl.set(fills, { opacity: 1 }, 0);
+  tl.fromTo(dots, { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.4, ease: "site-out", stagger: 0.006 }, 0.3);
+  FIXES.forEach((_, k) => {
+    const at = FIRST + k * BEAT;
+    const mine = dots.filter((_, i) => GROUP[i] === k);
+    const mineFills = fills.filter((_, i) => GROUP[i] === k);
+    // Mark the group, hold, then it leaves.
+    tl.to(mineFills, { opacity: 0, duration: 0.35, ease: "site-out", stagger: 0.015 }, at);
+    tl.to(mine, { opacity: 0, y: g.dot, duration: 0.5, ease: "site-out", stagger: 0.02 }, at + 1.4);
   });
-
-  count(tl, meter, 100, 67, 10.2, 1.6, "site-out");
-  outro(tl, q, 13.0);
+  fixLines(tl, q);
+  total(tl, q);
 };
 
-export default function Load({ cut, theme }: { cut: Cut; theme: Theme }) {
-  const g = geo(cut);
-  const t = T[cut];
+function LoadA({ cut, theme }: { cut: Cut; theme: Theme }) {
+  const g = geoA(cut);
   return (
-    <Stage
-      cut={cut}
-      theme={theme}
-      build={build}
-      name="Load"
-      headline={"A third fewer\nAPI requests"}
-      label="Load film: four kinds of request reached the API; filtering junk paths and caching preflight checks and the review widget leaves about two thirds. In review."
-    >
-      <Captions
-        lines={[
-          "Before: every request reached the API, even ones it can't answer.",
-          "Asset and junk paths skip the lookup. In review.",
-          "Browsers keep the preflight answer. In review.",
-          "Review widgets read from cache. In review.",
-          "About a third fewer requests reach the API.",
-        ]}
-      />
-      {LANES.map((l, i) => (
-        <div key={l.name}>
-          <div data-track style={{ position: "absolute", left: g.trackX, top: g.lane(i) - 1, width: g.boxX - g.trackX, height: 2, background: "var(--line)" }} />
-          <Text data-lane-label x={g.labelX} y={g.labelY(i)} w={g.labelW} size="small">
-            {l.name}
-          </Text>
-        </div>
-      ))}
-
-      {CHIPS.map((c, i) => (
+    <Stage cut={cut} theme={theme} build={buildA} name="Load" headline={HEAD} label="Load film: 100 requests as dots; three groups leave one at a time and 67 stay.">
+      {GROUP.map((_, i) => (
         <div
           key={i}
-          data-chip
-          style={{
-            position: "absolute",
-            left: g.trackX,
-            top: g.lane(c.lane) - g.chipH / 2,
-            width: g.chipW,
-            height: g.chipH,
-            borderRadius: 999,
-            background: c.lane === 0 ? "var(--ink)" : "var(--bg)",
-            boxShadow: c.lane === 0 ? undefined : "inset 0 0 0 2px var(--ink)",
-          }}
-        />
-      ))}
-
-      {LANES.slice(1).map((l, i) => (
-        <div
-          key={l.name}
-          data-gate
-          style={{
-            position: "absolute",
-            left: g.gateX,
-            top: g.lane(i + 1) - g.gateH / 2,
-            width: g.gateW,
-            height: g.gateH,
-            background: "var(--ink)",
-            color: "var(--bg)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: t.label,
-            fontWeight: 650,
-            textTransform: "uppercase",
-            letterSpacing: 0,
-          }}
+          data-dot
+          style={{ position: "absolute", left: g.x + (i % 10) * (g.dot + g.gap), top: g.y + Math.floor(i / 10) * (g.dot + g.gap), width: g.dot, height: g.dot, borderRadius: 999, boxShadow: "inset 0 0 0 2px var(--ink)" }}
         >
-          {l.stop}
+          <div data-dfill style={{ position: "absolute", inset: 0, borderRadius: 999, background: "var(--ink)" }} />
         </div>
       ))}
-
-      <div data-box style={{ position: "absolute", left: g.boxX, top: g.boxY, width: g.boxW, height: g.boxH, boxShadow: "inset 0 0 0 1.5px var(--ink)", background: "var(--bg)" }}>
-        <Label x={cut === "laptop" ? 20 : 24} y={cut === "laptop" ? 20 : 24}>
-          API
-        </Label>
-        <div style={{ position: "absolute", left: cut === "laptop" ? 20 : 24, bottom: cut === "laptop" ? 20 : 28, right: 12 }}>
-          <div style={{ fontSize: t.head, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
-            <span data-meter>100</span>%
-          </div>
-          <div style={{ fontSize: t.small, lineHeight: 1.2, marginTop: 8, color: "var(--muted)" }}>of requests</div>
-        </div>
-      </div>
+      <Lines x={g.textX} y={g.textY} w={g.textW} align={g.align} />
+      <Count x={g.textX} y={g.countY} w={g.textW} unit="" align={g.align} />
     </Stage>
   );
 }
+
+export default LoadA;

@@ -5,12 +5,9 @@ import { PICKER_CSS } from "../pickerCss";
 import type { Cut, Theme } from "./Stage";
 import { SIZE } from "./Stage";
 import Cluster from "./films/Cluster";
-import { SqueezeA, SqueezeB, SqueezeC } from "./films/Compress";
 import Load from "./films/Load";
-import { LoadA, LoadB, LoadC } from "./films/LoadMocks";
 import Pipeline from "./films/Pipeline";
-import Savings from "./films/Savings";
-import { SavingsA, SavingsB, SavingsC } from "./films/SavingsMocks";
+import Savings, { SavingsBar } from "./films/Savings";
 import Traffic from "./films/Traffic";
 
 // The devops project's five gallery films (script approved by Ali 11-20),
@@ -23,15 +20,7 @@ const SCENES: { name: string; View: (p: { cut: Cut; theme: Theme }) => React.Rea
   { name: "Traffic", View: Traffic },
   { name: "Load", View: Load },
   { name: "Savings", View: Savings },
-  { name: "Squeeze A", View: SqueezeA },
-  { name: "Squeeze B", View: SqueezeB },
-  { name: "Squeeze C", View: SqueezeC },
-  { name: "Load A", View: LoadA },
-  { name: "Load B", View: LoadB },
-  { name: "Load C", View: LoadC },
-  { name: "Savings A", View: SavingsA },
-  { name: "Savings B", View: SavingsB },
-  { name: "Savings C", View: SavingsC },
+  { name: "Savings, bar", View: SavingsBar },
 ];
 
 function readParams() {

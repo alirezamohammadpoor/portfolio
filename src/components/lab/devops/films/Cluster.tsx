@@ -14,9 +14,9 @@ function geo(cut: Cut) {
   const { w } = SIZE[cut];
   const t = T[cut];
   if (cut === "laptop") {
-    return { cols: 6, tw: 128, th: 92, gx: 16, gy: 16, tx: t.m, ty: 300, countX: 968, countY: 300, curve: { x: t.m, y: 600, w: w - 2 * t.m, h: 150 }, dayY: 566, factY: 820, fact2X: 640 };
+    return { cols: 6, tw: 128, th: 92, gx: 16, gy: 16, tx: t.m, ty: 300, countX: 968, countY: 300, curve: { x: t.m, y: 600, w: w - 2 * t.m, h: 150 }, dayY: 566 };
   }
-  return { cols: 4, tw: 210, th: 84, gx: 32, gy: 16, tx: t.m, ty: 480, countX: t.m, countY: 792, curve: { x: t.m, y: 956, w: w - 2 * t.m, h: 110 }, dayY: 906, factY: 1166, fact2X: t.m };
+  return { cols: 4, tw: 210, th: 84, gx: 32, gy: 16, tx: t.m, ty: 480, countX: t.m, countY: 792, curve: { x: t.m, y: 956, w: w - 2 * t.m, h: 110 }, dayY: 906 };
 }
 
 function curvePath(c: { x: number; y: number; w: number; h: number }) {
@@ -81,8 +81,13 @@ const build: Build = (tl, q, cut) => {
   tl.to(busy, { opacity: 1, duration: 0.3 }, 8.45);
   sweep(8.4, 6.5, true);
 
-  enter(tl, q("[data-fact]"), 15.0);
-  outro(tl, q, 17.0);
+  // The two facts take the counter's place, one at a time, where the eye is.
+  const facts = q("[data-fact]");
+  tl.to(q("[data-count]"), { opacity: 0, duration: 0.3, ease: "site-out" }, 15.0);
+  tl.fromTo(facts[0], { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "site-out" }, 15.3);
+  tl.to(facts[0], { opacity: 0, duration: 0.3, ease: "site-out" }, 17.6);
+  tl.fromTo(facts[1], { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "site-out" }, 17.9);
+  outro(tl, q, 20.2);
 };
 
 export default function Cluster({ cut, theme }: { cut: Cut; theme: Theme }) {
@@ -167,11 +172,11 @@ export default function Cluster({ cut, theme }: { cut: Cut; theme: Theme }) {
       </svg>
       <div data-head style={{ position: "absolute", left: g.curve.x - 1, top: g.curve.y - 16, width: 2, height: g.curve.h + 16, background: "var(--ink)" }} />
 
-      <Text data-fact x={g.curve.x} y={g.factY} w={cut === "laptop" ? 520 : w - 2 * t.m} size="small">
-        CI build machines idle 85% of hours → start from zero
+      <Text data-fact x={g.countX} y={g.countY} w={cut === "laptop" ? w - g.countX - t.m : w - 2 * t.m}>
+        CI build machines sit idle 85% of hours. They could start from zero. Proposed.
       </Text>
-      <Text data-fact x={g.fact2X} y={cut === "laptop" ? g.factY : g.factY + t.small * 1.5} w={cut === "laptop" ? 560 : w - 2 * t.m} size="small">
-        Dev cluster: about a quarter of its memory used
+      <Text data-fact x={g.countX} y={g.countY} w={cut === "laptop" ? w - g.countX - t.m : w - 2 * t.m}>
+        The dev cluster uses about a quarter of its memory. Proposed.
       </Text>
     </Stage>
   );
