@@ -254,7 +254,7 @@ export default function Header({ bar }: { bar: BarData }) {
               is behind from showing through as a soft grey block. */}
           <span
             aria-hidden
-            className={`pointer-events-none absolute inset-0 -z-10 rounded-[inherit] bg-bg/70 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`}
+            className={`pointer-events-none absolute inset-0 -z-10 rounded-[inherit] bg-bg/90 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`}
           />
           <nav aria-label="Site" className="mx-auto grid h-11 w-full max-w-[16rem] shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-x-5 px-[18px] text-[14px] leading-5">
             <button type="button" onClick={() => toggle("work")} aria-expanded={open === "work"} aria-controls="bar-panel" className={`${ITEM} justify-self-start ${tone("work")}`}>

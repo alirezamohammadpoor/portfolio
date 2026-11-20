@@ -1,11 +1,13 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { EASE_OUT_CSS } from "@/lib/motion";
 
 const PRESS = "transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98]";
 
-/** The replay slot fills from white to pistachio as the test plays (Ali, 11-17). */
-const REPLAY_FILL = "[&>button]:bg-white [&>button>span]:bg-pistachio [&>button>svg]:mix-blend-normal [&>button>svg]:stroke-primary";
+/** The replay slot fills from white to pistachio as the test plays (Ali, 11-17).
+ * A hairline keeps the white part of the pill visible on the white Pebble. */
+const REPLAY_FILL = "[&>button]:bg-white [&>button]:outline [&>button]:outline-1 [&>button]:-outline-offset-1 [&>button]:outline-black/10 [&>button>span]:bg-pistachio [&>button>svg]:mix-blend-normal [&>button>svg]:stroke-primary";
 
 function Chevron({ open, className = "" }: { open: boolean; className?: string }) {
   return (
@@ -42,6 +44,10 @@ export default function ProjectRowLayout({
   controls: string;
   onToggle: () => void;
 }) {
+  // The test line opens and folds like the Pebble's rows (320ms, same
+  // ease) instead of snapping, and keeps its last name while it folds.
+  const [shownLabel, setShownLabel] = useState(label);
+  if (label && label !== shownLabel) setShownLabel(label);
   const tone = dim ? "text-secondary" : "text-primary";
   const toggle = { type: "button" as const, onClick: onToggle, "aria-expanded": detailsOpen, "aria-controls": controls };
 
@@ -52,7 +58,15 @@ export default function ProjectRowLayout({
         <button {...toggle} className={`flex min-w-0 flex-1 items-center gap-3 text-left ${PRESS}`}>
           <span className="flex min-w-0 flex-1 flex-col">
             <span className={`truncate ${tone}`}>{title}</span>
-            {label && <span className="line-clamp-2 text-[0.9375rem] leading-[1.25rem] text-secondary [overflow-wrap:anywhere]">{label}</span>}
+            <span
+              aria-hidden={!label}
+              className="grid motion-safe:transition-[grid-template-rows,opacity]"
+              style={{ gridTemplateRows: label ? "1fr" : "0fr", opacity: label ? 1 : 0, transitionDuration: "320ms", transitionTimingFunction: EASE_OUT_CSS }}
+            >
+              <span className="min-h-0 overflow-hidden">
+                {shownLabel && <span className="line-clamp-2 block text-[0.9375rem] leading-[1.25rem] text-secondary [overflow-wrap:anywhere]">{shownLabel}</span>}
+              </span>
+            </span>
           </span>
           <Chevron open={detailsOpen} className={tone} />
         </button>
