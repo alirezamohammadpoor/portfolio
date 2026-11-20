@@ -426,21 +426,9 @@ html[data-custom-clone]::view-transition-new(root) {
    top; the one it replaces keeps playing underneath until the entrance
    ends. --dir is 1 moving down the list, -1 moving up. */
 .work-layer[data-state="wait"] { opacity: 0; }
-.work-layer[data-state="in"][data-swap="fade"] { animation: work-fade-in 240ms cubic-bezier(0.23, 1, 0.32, 1) both; }
-.work-layer[data-state="in"][data-swap="slide"] { animation: work-slide-in 360ms cubic-bezier(0.32, 0.72, 0, 1) both; }
-.work-layer[data-state="out"][data-swap="slide"] { animation: work-slide-out 360ms cubic-bezier(0.32, 0.72, 0, 1) both; }
-.work-layer[data-state="in"][data-swap="dissolve"] { animation: work-dissolve-in 320ms cubic-bezier(0.23, 1, 0.32, 1) both; }
-.work-layer[data-state="out"][data-swap="dissolve"] { animation: work-dissolve-out 320ms cubic-bezier(0.23, 1, 0.32, 1) both; }
-.work-line[data-swap="fade"] { animation: work-fade-in 200ms cubic-bezier(0.23, 1, 0.32, 1) both; }
-.work-line[data-swap="slide"] { animation: work-line-slide 280ms cubic-bezier(0.23, 1, 0.32, 1) both; }
-.work-line[data-swap="dissolve"] { animation: work-line-dissolve 280ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.work-layer[data-state="in"] { animation: work-fade-in 240ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+.work-line { animation: work-fade-in 200ms cubic-bezier(0.23, 1, 0.32, 1) both; }
 @keyframes work-fade-in { from { opacity: 0; } }
-@keyframes work-slide-in { from { transform: translateX(calc(var(--dir) * 100%)); } }
-@keyframes work-slide-out { to { transform: translateX(calc(var(--dir) * -30%)); opacity: 0.4; } }
-@keyframes work-dissolve-in { from { opacity: 0; transform: scale(1.04); filter: blur(12px); } }
-@keyframes work-dissolve-out { to { opacity: 0; filter: blur(12px); } }
-@keyframes work-line-slide { from { opacity: 0; transform: translateY(calc(var(--dir) * 8px)); } }
-@keyframes work-line-dissolve { from { opacity: 0; filter: blur(4px); } }
 @media (prefers-reduced-motion: reduce) {
   .work-layer, .work-line { animation: none !important; }
 }

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type RefObject } from "react";
-import { useBarState } from "@/lib/barProject";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { Link } from "@/lib/viewTransitions";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { isPlainLeftClick } from "@/lib/clicks";
@@ -53,15 +52,14 @@ export default function WorkPanel({
   ];
   const [active, setActiveRaw] = useState(0);
   const lead = rows[active] ?? rows[0];
-  const { previewSwap } = useBarState();
   // The preview is a stack of layers: the lead's on top and the one it
   // replaces underneath, still playing. A layer with a clip waits, hidden,
   // until the clip has a frame, then enters; the one under it leaves when
   // the entrance ends. The cover still is never shown before a clip (Ali
   // 11-18: the still, then the clip, read as a flicker, and with no still
   // the empty box did).
-  type Layer = { i: number; id: number; dir: 1 | -1; ready: boolean };
-  const [layers, setLayers] = useState<Layer[]>(() => [{ i: 0, id: 0, dir: 1, ready: !rows[0]?.video }]);
+  type Layer = { i: number; id: number; ready: boolean };
+  const [layers, setLayers] = useState<Layer[]>(() => [{ i: 0, id: 0, ready: !rows[0]?.video }]);
   const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const setActive = (i: number) => {
     if (i === active) return;
@@ -70,7 +68,7 @@ export default function WorkPanel({
       // Build on the newest layer that is showing, never on one still waiting.
       const base = [...ls].reverse().find((l) => l.ready) ?? ls[0];
       const r = rows[i];
-      const next: Layer = { i, id: ls[ls.length - 1].id + 1, dir: i > active ? 1 : -1, ready: !r?.video };
+      const next: Layer = { i, id: ls[ls.length - 1].id + 1, ready: !r?.video };
       return reducedMotion() && next.ready ? [next] : [base, next];
     });
   };
@@ -106,10 +104,8 @@ export default function WorkPanel({
             <div
               key={l.id}
               className="work-layer absolute inset-0"
-              data-swap={previewSwap}
               data-state={state}
               data-current={current ? "" : undefined}
-              style={{ "--dir": l.dir } as CSSProperties}
               onAnimationEnd={(e) => {
                 if (current && l.ready && e.target === e.currentTarget) setLayers((ls) => ls.slice(-1));
               }}
@@ -133,8 +129,6 @@ export default function WorkPanel({
           (the longest line on the site), so a longer one never moves the list. */}
       <p
         key={active}
-        data-swap={previewSwap}
-        style={{ "--dir": layers[layers.length - 1].dir } as CSSProperties}
         className={`${layers[layers.length - 1].id > 0 ? "work-line" : ""} mt-2 line-clamp-3 h-[66px] text-[0.9375rem] leading-[1.375rem] text-primary desktop:line-clamp-4 desktop:h-24 desktop:text-body`}
       >
         {lead?.line}
