@@ -33,6 +33,9 @@ const WIDTH: Record<Shown | "none", string> = {
   details: "40rem",
 };
 
+/** Laptop width at rest with a project row docked: room for the test name on one line. */
+const DOCKED_W = "26rem";
+
 /** Phone width open: the grid margins. */
 const PHONE_OPEN = "calc(100vw - 2 * var(--grid-margin))";
 
@@ -226,7 +229,7 @@ export default function Header({ bar }: { bar: BarData }) {
             {
               opacity: flight?.mode === "fade" ? 0 : 1,
               transitionProperty: flight || workOpen === "fade" ? "width, opacity, border-radius" : undefined,
-              "--bar-w": WIDTH[open ?? "none"],
+              "--bar-w": open ? WIDTH[open] : docked ? DOCKED_W : WIDTH.none,
               // Phone (Ali 11-17, "more petite"): compact at rest, the margins
               // open or with a project row docked.
               "--bar-w-m": open || docked ? PHONE_OPEN : "16rem",
