@@ -31,11 +31,12 @@ const THEMES: Record<Theme, CSSProperties> = {
   try: {
     "--bg": "#ffffff",
     "--ink": "#000000",
-    "--muted": "#767676",
-    "--line": "#000000",
+    // TRY's deck: black on white, warm grey hairlines, no accent colour.
+    "--muted": "#000000",
+    "--line": "#999994",
     "--soft": "#f2f2f2",
-    "--accent": "#bedcaa",
-    "--accent-ink": "#000000",
+    "--accent": "#000000",
+    "--accent-ink": "#ffffff",
     "--font": '"TWK Lausanne Pan", "Helvetica Neue", Helvetica, Arial, sans-serif',
   } as CSSProperties,
   site: {

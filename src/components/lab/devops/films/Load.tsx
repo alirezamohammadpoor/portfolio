@@ -105,7 +105,7 @@ const buildA: Build = (tl, q, cut) => {
     const at = FIRST + k * BEAT;
     const mine = dots.filter((_, i) => GROUP[i] === k);
     const mineFills = fills.filter((_, i) => GROUP[i] === k);
-    // Mark the group pistachio, hold, then it leaves.
+    // Mark the group (it empties to rings), hold, then it leaves.
     tl.to(mineFills, { opacity: 0, duration: 0.35, ease: "site-out", stagger: 0.015 }, at);
     tl.to(mine, { opacity: 0, y: g.dot, duration: 0.5, ease: "site-out", stagger: 0.02 }, at + 1.4);
   });
@@ -121,7 +121,7 @@ function LoadA({ cut, theme }: { cut: Cut; theme: Theme }) {
         <div
           key={i}
           data-dot
-          style={{ position: "absolute", left: g.x + (i % 10) * (g.dot + g.gap), top: g.y + Math.floor(i / 10) * (g.dot + g.gap), width: g.dot, height: g.dot, borderRadius: 999, background: "var(--accent)" }}
+          style={{ position: "absolute", left: g.x + (i % 10) * (g.dot + g.gap), top: g.y + Math.floor(i / 10) * (g.dot + g.gap), width: g.dot, height: g.dot, borderRadius: 999, boxShadow: "inset 0 0 0 2px var(--ink)" }}
         >
           <div data-dfill style={{ position: "absolute", inset: 0, borderRadius: 999, background: "var(--ink)" }} />
         </div>

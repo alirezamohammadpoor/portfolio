@@ -41,7 +41,7 @@ function geo(cut: Cut) {
   return { x, len, axisY: 520, beforeY: 640, afterY: 840, barH: 96, labelGap: 40, sayY: 1000, tile: 140, tileGap: 20, gridY: 470 };
 }
 
-const build: Build = (tl, q, cut) => {
+const build: Build = (tl, q, cut, c) => {
   const g = geo(cut);
   const scene = q("[data-scene]");
   const beforeRow = q("[data-before]");
@@ -79,18 +79,22 @@ const build: Build = (tl, q, cut) => {
   tl.to([...scene, ...beforeRow], { opacity: 0, duration: 0.4, ease: "site-out" }, 6.6);
   tl.fromTo(tiles, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.4, ease: "site-out", stagger: 0.03 }, 7.0);
   say(1, 7.2, 9.4);
-  // Untouched packages empty to outlines; the 3 it touches turn pistachio.
+  // Untouched packages empty to hairlines; the 3 it touches stay solid.
   const tileFills = q("[data-pkgfill]");
   tl.set(tileFills, { opacity: 1 }, 0);
   tl.to(tileFills.filter((_, i) => !CHANGED.has(i)), { opacity: 0, duration: 0.4, ease: "site-out", stagger: 0.05 }, 9.6);
-  tl.to(tileFills.filter((_, i) => CHANGED.has(i)), { opacity: 0, duration: 0.5, ease: "site-out" }, 10.2);
   say(2, 10.0, 12.4);
   tl.to(tiles, { opacity: 0, duration: 0.4, ease: "site-out" }, 12.6);
 
-  // After: the before bar comes back dimmed, the after bar fills under it.
+  // After: the before bar comes back as hairlines, the after bar fills
+  // solid under it.
   tl.set(bSegs, { opacity: 1 }, 12.9);
+  bSegs.forEach((el, i) => {
+    if (BEFORE[i].striped) return;
+    tl.set(el, { backgroundColor: "transparent", color: c.ink, boxShadow: `inset 0 0 0 1px ${c.line}, inset -3px 0 0 ${c.bg}` }, 12.9);
+  });
   tl.to(scene, { opacity: 1, duration: 0.45, ease: "site-out" }, 13.0);
-  tl.to(beforeRow, { opacity: 0.3, duration: 0.45, ease: "site-out" }, 13.0);
+  tl.to(beforeRow, { opacity: 1, duration: 0.45, ease: "site-out" }, 13.0);
   enter(tl, afterRow, 13.3);
   tl.to(aFill, { clipPath: "inset(0% 0% 0% 0%)", duration: 3.0, ease: "none" }, 13.8);
   count(tl, aClock, 0, 18, 13.8, 3.0);
@@ -122,7 +126,7 @@ function Bar({ segs, y, h, fill, seg, tone = "ink" }: { segs: typeof BEFORE; y: 
               height: h,
               // Waiting is an outline; work is solid (pistachio on the after bar).
               background: s.striped ? "transparent" : tone === "accent" ? "var(--accent)" : "var(--ink)",
-              boxShadow: s.striped ? "inset 0 0 0 1.5px var(--ink), inset -3px 0 0 var(--bg)" : "inset -3px 0 0 var(--bg)",
+              boxShadow: s.striped ? "inset 0 0 0 1px var(--line), inset -3px 0 0 var(--bg)" : "inset -3px 0 0 var(--bg)",
               color: tone === "accent" ? "var(--accent-ink)" : "var(--bg)",
               display: "flex",
               alignItems: "center",
@@ -185,7 +189,7 @@ export default function Pipeline({ cut, theme }: { cut: Cut; theme: Theme }) {
         <div
           key={i}
           data-pkg
-          style={{ position: "absolute", left: (w - grid) / 2 + (i % 4) * (g.tile + g.tileGap), top: g.gridY + Math.floor(i / 4) * (g.tile + g.tileGap), width: g.tile, height: g.tile, background: CHANGED.has(i) ? "var(--accent)" : "transparent", boxShadow: "inset 0 0 0 1.5px var(--ink)" }}
+          style={{ position: "absolute", left: (w - grid) / 2 + (i % 4) * (g.tile + g.tileGap), top: g.gridY + Math.floor(i / 4) * (g.tile + g.tileGap), width: g.tile, height: g.tile, background: CHANGED.has(i) ? "var(--accent)" : "transparent", boxShadow: "inset 0 0 0 1px var(--line)" }}
         >
           <div data-pkgfill style={{ position: "absolute", inset: 0, background: "var(--ink)" }} />
         </div>

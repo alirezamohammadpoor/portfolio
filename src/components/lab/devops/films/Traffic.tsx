@@ -108,7 +108,7 @@ function Card({ x, y, w, h, title, rows }: { x: number; y: number; w: number; h:
     <div data-card style={{ position: "absolute", left: x, top: y, width: w, height: h, boxShadow: "inset 0 0 0 1.5px var(--line)", padding: cut === "laptop" ? 20 : 28 }}>
       <div style={{ fontSize: t.label, fontWeight: 650, textTransform: "uppercase", letterSpacing: 0, marginBottom: cut === "laptop" ? 22 : 20 }}>{title}</div>
       {rows.map((r, i) => (
-        <div key={i} style={{ height: cut === "laptop" ? 12 : 14, width: `${r * 100}%`, boxShadow: "inset 0 0 0 1.5px var(--ink)", marginBottom: 14 }} />
+        <div key={i} style={{ height: cut === "laptop" ? 12 : 14, width: `${r * 100}%`, boxShadow: "inset 0 0 0 1px var(--line)", marginBottom: 14 }} />
       ))}
     </div>
   );
@@ -178,9 +178,9 @@ export default function Traffic({ cut, theme }: { cut: Cut; theme: Theme }) {
       </div>
 
       {Array.from({ length: TILES }, (_, i) => (
-        <div key={i} data-tile style={{ position: "absolute", left: tilesX + i * (g.tile + 4), top: g.tilesY, width: g.tile, height: g.tileH, background: i === MID ? "var(--accent)" : "transparent", boxShadow: "inset 0 0 0 1.5px var(--ink)" }}>
-          <div style={{ position: "absolute", left: "30%", width: "40%", top: "28%", height: "12%", background: "var(--ink)" }} />
-          <div style={{ position: "absolute", left: "30%", width: "40%", top: "60%", height: "12%", background: "var(--ink)" }} />
+        <div key={i} data-tile style={{ position: "absolute", left: tilesX + i * (g.tile + 4), top: g.tilesY, width: g.tile, height: g.tileH, background: i === MID ? "var(--ink)" : "transparent", boxShadow: "inset 0 0 0 1px var(--line)" }}>
+          <div style={{ position: "absolute", left: "30%", width: "40%", top: "28%", height: "12%", background: i === MID ? "var(--bg)" : "var(--ink)" }} />
+          <div style={{ position: "absolute", left: "30%", width: "40%", top: "60%", height: "12%", background: i === MID ? "var(--bg)" : "var(--ink)" }} />
         </div>
       ))}
       <Text data-size x={t.m} y={g.tilesY + g.tileH + (cut === "laptop" ? 36 : 48)} w={w - 2 * t.m} style={{ textAlign: "center", fontVariantNumeric: "tabular-nums" }}>

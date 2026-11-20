@@ -4,7 +4,7 @@ import type gsap from "gsap";
 import Stage, { SIZE, T, Text, count, enter, outro, type Build, type Cut, type Theme } from "../Stage";
 
 // Film 5, v4: the bill as one bar in two slow steps (Ali 11-20 picked the
-// bar). Black is what stays, pistachio what can go. Cost review at list
+// bar). Black is what stays; what can go empties to an outline. Cost review at list
 // prices, found, not applied. Area shares from the review; each saving sized from
 // the inventory's per-fix estimates and scaled to about a quarter for the
 // quick wins and over half with the bigger moves.
@@ -78,7 +78,7 @@ function Bar({ cut }: { cut: Cut }) {
             boxShadow: g.vertical ? "inset 0 -3px 0 var(--bg)" : "inset -3px 0 0 var(--bg)",
           }}
         >
-          {p.step >= 0 && <div data-mark style={{ position: "absolute", inset: 0, background: "var(--accent)", boxShadow: g.vertical ? "inset 0 -3px 0 var(--bg)" : "inset -3px 0 0 var(--bg)" }} />}
+          {p.step >= 0 && <div data-mark style={{ position: "absolute", inset: 0, background: "var(--bg)", boxShadow: g.vertical ? "inset 0 0 0 1.5px var(--ink), inset 0 -3px 0 var(--bg)" : "inset 0 0 0 1.5px var(--ink), inset -3px 0 0 var(--bg)" }} />}
         </div>
       ))}
     </>
