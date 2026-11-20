@@ -818,6 +818,23 @@ export default function ProjectStage({
   // bottom edge just enough to clear it, so the filmstrip keeps its place.
   const stripWrapRef = useRef<HTMLDivElement>(null);
   const excerptRef = useRef<HTMLParagraphElement>(null);
+  // The Pebble's project row grows when a long test name wraps (laptop bar
+  // at rest is narrow): the excerpt drops below the bar's real bottom edge.
+  const [pebbleDrop, setPebbleDrop] = useState(0);
+  useLayoutEffect(() => {
+    if (!capsule || !excerpt) return;
+    const bar = document.querySelector("header");
+    const root = rootRef.current;
+    if (!bar || !root) return;
+    const measure = () => {
+      const drop = bar.getBoundingClientRect().bottom - (root.getBoundingClientRect().top + 56);
+      setPebbleDrop(Math.max(0, Math.round(drop)));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(bar);
+    return () => ro.disconnect();
+  }, [capsule, excerpt, index]);
   useLayoutEffect(() => {
     const wrap = stripWrapRef.current;
     if (!wrap) return;
@@ -833,7 +850,7 @@ export default function ProjectStage({
       }
     }
     wrap.style.transform = transform;
-  }, [excerpt, index, grid, isDesktop]);
+  }, [excerpt, index, grid, isDesktop, pebbleDrop]);
 
   return (
     <div
@@ -859,6 +876,7 @@ export default function ProjectStage({
           <p
             key={current?._key}
             ref={excerptRef}
+            style={{ marginTop: pebbleDrop }}
             className="mx-auto shrink-0 px-margin pt-3 text-center text-[0.875rem] leading-5 text-balance text-primary transition-opacity duration-200 starting:opacity-0 desktop:max-w-[480px] desktop:px-0"
           >
             {excerpt}
