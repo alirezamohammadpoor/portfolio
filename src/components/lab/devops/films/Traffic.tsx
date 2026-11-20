@@ -58,8 +58,9 @@ const build: Build = (tl, q, cut) => {
   const fly = (k: number, at: number) => {
     dots.slice(0, k).forEach((el, i) => {
       const t = at + i * 0.14;
-      tl.fromTo(el, { x: 0, y: 0, opacity: 1 }, { ...(g.vertical ? { y: travel } : { x: travel }), duration: 0.9, ease: "site-in-out" }, t);
-      tl.to(el, { opacity: 0, duration: 0.15, ease: "site-out" }, t + 0.9);
+      tl.fromTo(el, { x: 0, y: 0, opacity: 1, scale: 1 }, { ...(g.vertical ? { y: travel } : { x: travel }), duration: 0.9, ease: "site-in-out" }, t);
+      // Land: shrink into the server as it fades.
+      tl.to(el, { opacity: 0, scale: 0.6, duration: 0.2, ease: "site-out" }, t + 0.85);
       tl.set(n, { textContent: String(i + 1) }, t + 0.9);
     });
   };
@@ -85,14 +86,16 @@ const build: Build = (tl, q, cut) => {
 
   // One response, compressed: 23 repeats merge into one.
   tl.to(cards, { opacity: 0, duration: 0.4, ease: "site-out" }, 12.9);
-  tl.fromTo(tiles, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.45, ease: "site-out", stagger: 0.02 }, 13.4);
+  // Out from the middle tile, the one that stays.
+  tl.fromTo(tiles, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "site-out", stagger: { from: "center", amount: 0.3, ease: "power2.out" } }, 13.4);
   enter(tl, q("[data-size]"), 13.8);
   const home = (i: number) => (MID - i) * (g.tile + 4);
   tiles.forEach((el, i) => {
     if (i === MID) return;
     const at = 15.2 + (Math.abs(i - MID) - 1) * 0.16;
     tl.to(el, { x: home(i), duration: 0.9, ease: "site-in-out" }, at);
-    tl.to(el, { opacity: 0, duration: 0.2, ease: "site-out" }, at + 0.75);
+    // Dissolve while converging, so the repeats never pile up on the kept tile.
+    tl.to(el, { opacity: 0, duration: 0.35, ease: "site-out" }, at + 0.5);
   });
   const squeeze = 0.16 * (MID - 1) + 0.9;
   count(tl, size, FROM, TO, 15.2, squeeze, "site-in-out");

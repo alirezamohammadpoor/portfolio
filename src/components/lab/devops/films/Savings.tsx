@@ -81,6 +81,8 @@ function Bar({ cut }: { cut: Cut }) {
           {p.step >= 0 && <div data-mark style={{ position: "absolute", inset: 0, background: "var(--bg)", boxShadow: g.vertical ? "inset 0 0 0 1.5px var(--ink), inset 0 -3px 0 var(--bg)" : "inset 0 0 0 1.5px var(--ink), inset -3px 0 0 var(--bg)" }} />}
         </div>
       ))}
+      {/* One entrance for the whole bar: a cover that wipes off. */}
+      <div data-wipe style={{ position: "absolute", ...box(g, 0, 100), left: box(g, 0, 100).left - 2, top: box(g, 0, 100).top - 2, width: box(g, 0, 100).width + 4, height: box(g, 0, 100).height + 4, background: "var(--bg)", transformOrigin: g.vertical ? "50% 100%" : "100% 50%" }} />
     </>
   );
 }
@@ -105,13 +107,13 @@ function Readout({ cut }: { cut: Cut }) {
 }
 
 /** Bar entrance, the readout, and the closing line. */
-function base(tl: gsap.core.Timeline, q: Q, endAt: number) {
+function base(tl: gsap.core.Timeline, q: Q, g: ReturnType<typeof geo>, endAt: number) {
   const pieces = q("[data-piece]");
   tl.set([...pieces, ...q("[data-mark]"), ...q("[data-count]"), ...q("[data-end]"), ...q("[data-say]")], { opacity: 0 }, 0);
   tl.set(pieces, { x: 0, y: 0 }, 0);
   tl.set(q("[data-pct]")[0], { textContent: "100" }, 0);
-  enter(tl, q("[data-ghost]"), 0.3);
-  tl.fromTo(pieces, { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "site-out", stagger: 0.03 }, 0.4);
+  tl.set(pieces, { opacity: 1 }, 0);
+  tl.fromTo(q("[data-wipe]"), { scaleX: 1, scaleY: 1 }, { [g.vertical ? "scaleY" : "scaleX"]: 0, duration: 1.1, ease: "site-in-out" }, 0.3);
   enter(tl, q("[data-count]"), 1.2);
   enter(tl, q("[data-end]"), endAt);
   outro(tl, q, endAt + 2.6);
@@ -142,15 +144,17 @@ const buildC: Build = (tl, q, cut) => {
     const at = 2.4 + k * 5.0;
     const inStep = (st: number) => STEPS[st].quick === quick;
     tl.fromTo(says[k], { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, ease: "site-out" }, at);
-    tl.to(marks.filter((_, i) => inStep(markIdx[i].step)), { opacity: 1, duration: 0.4, ease: "site-out", stagger: 0.12 }, at);
+    // The step's pieces mark as one group, then leave as a wave.
+    tl.to(marks.filter((_, i) => inStep(markIdx[i].step)), { opacity: 1, duration: 0.45, ease: "site-out" }, at);
     tl.to(pieces.filter((_, i) => PIECES[i].step >= 0 && inStep(PIECES[i].step)), { ...lift, opacity: 0, duration: 0.8, ease: "site-out", stagger: 0.12 }, at + 1.6);
-    close(tl, q, g, (st) => STEPS[st].quick || !quick, at + 2.8, 1.2);
+    // The gap starts closing while the last pieces are still leaving.
+    close(tl, q, g, (st) => STEPS[st].quick || !quick, at + 2.3, 1.2);
     const size = quick ? QUICK : BIG;
-    count(tl, pct, left, left - size, at + 2.8, 1.2, "site-in-out");
+    count(tl, pct, left, left - size, at + 2.3, 1.2, "site-in-out");
     left -= size;
     tl.to(says[k], { opacity: 0, duration: 0.25, ease: "site-out" }, at + 4.6);
   });
-  base(tl, q, 2.4 + 2 * 5.0 + 0.2);
+  base(tl, q, g, 2.4 + 2 * 5.0 + 0.2);
 };
 
 function SavingsC({ cut, theme }: { cut: Cut; theme: Theme }) {

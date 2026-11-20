@@ -77,12 +77,14 @@ const build: Build = (tl, q, cut, c) => {
   // Tests is the part that changed: light it, then open it up.
   tl.to(bSegs.filter((_, i) => BEFORE[i].name !== "Tests"), { opacity: 0.2, duration: 0.4, ease: "site-out" }, 5.6);
   tl.to([...scene, ...beforeRow], { opacity: 0, duration: 0.4, ease: "site-out" }, 6.6);
-  tl.fromTo(tiles, { opacity: 0, scale: 0.9 }, { opacity: 1, scale: 1, duration: 0.4, ease: "site-out", stagger: 0.03 }, 7.0);
+  // One diagonal wave across the grid, gaps shrinking as it goes.
+  tl.fromTo(tiles, { opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1, duration: 0.5, ease: "site-out", stagger: { grid: [4, 4], from: "start", amount: 0.36, ease: "power2.out" } }, 7.0);
   say(1, 7.2, 9.4);
   // Untouched packages empty to hairlines; the 3 it touches stay solid.
   const tileFills = q("[data-pkgfill]");
   tl.set(tileFills, { opacity: 1 }, 0);
-  tl.to(tileFills.filter((_, i) => !CHANGED.has(i)), { opacity: 0, duration: 0.4, ease: "site-out", stagger: 0.05 }, 9.6);
+  // The 13 empty as one move: their order carries no meaning.
+  tl.to(tileFills.filter((_, i) => !CHANGED.has(i)), { opacity: 0, duration: 0.5, ease: "site-out" }, 9.6);
   say(2, 10.0, 12.4);
   tl.to(tiles, { opacity: 0, duration: 0.4, ease: "site-out" }, 12.6);
 

@@ -100,7 +100,8 @@ const buildA: Build = (tl, q, cut) => {
   const fills = q("[data-dfill]");
   tl.set(dots, { opacity: 0, y: 0 }, 0);
   tl.set(fills, { opacity: 1 }, 0);
-  tl.fromTo(dots, { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.4, ease: "site-out", stagger: 0.006 }, 0.3);
+  // A diagonal wave from the top left, gaps shrinking as it goes.
+  tl.fromTo(dots, { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.5, ease: "site-out", stagger: { grid: [10, 10], from: "start", amount: 0.6, ease: "power2.out" } }, 0.3);
   FIXES.forEach((_, k) => {
     const at = FIRST + k * BEAT;
     const mine = dots.filter((_, i) => GROUP[i] === k);
