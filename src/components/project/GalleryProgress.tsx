@@ -139,7 +139,7 @@ function Filmstrip({ gallery, index, onEnd, atPreview, nextProject, title, isDes
             onClick={onNavigateNext}
             tabIndex={handOver ? 0 : -1}
             aria-hidden={!handOver}
-            className={`frost-soft absolute top-1/2 left-1/2 inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center gap-2 rounded-full pr-4 pl-1 text-body whitespace-nowrap text-primary select-none ${handOver ? "cursor-pointer" : "pointer-events-none"}`}
+            className={`frost-soft absolute top-1/2 left-1/2 inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center gap-2 rounded-full pr-4 pl-1 text-sub desktop:text-body whitespace-nowrap text-primary select-none ${handOver ? "cursor-pointer" : "pointer-events-none"}`}
             style={{
               translate: "-50% -50%",
               opacity: handOver ? 1 : 0,

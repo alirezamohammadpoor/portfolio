@@ -32,25 +32,16 @@ export type BarProject = {
  */
 export type WorkOpen = "shrink" | "hold" | "fade" | null;
 
-/**
- * How Work's preview changes when another project leads (/lab/preview,
- * Ali 11-17: the phone swap needs a better transition).
- *  fade:     the new clip fades in over the old one, which keeps playing
- *  slide:    the new clip slides in from the side you moved to in the list
- *  dissolve: the old clip softens away while the new one sharpens in
- */
-export type PreviewSwap = "fade" | "slide" | "dissolve";
+type State = { chrome: StageChrome; project: BarProject | null; workOpen: WorkOpen };
 
-type State = { chrome: StageChrome; project: BarProject | null; workOpen: WorkOpen; previewSwap: PreviewSwap };
-
-let state: State = { chrome: "docked", project: null, workOpen: "fade", previewSwap: "fade" };
+let state: State = { chrome: "docked", project: null, workOpen: "fade" };
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 const subscribe = (l: () => void) => {
   listeners.add(l);
   return () => listeners.delete(l);
 };
-const SERVER: State = { chrome: "docked", project: null, workOpen: "fade", previewSwap: "fade" };
+const SERVER: State = { chrome: "docked", project: null, workOpen: "fade" };
 
 export function setBarProject(project: BarProject | null) {
   state = { ...state, project };
@@ -66,12 +57,6 @@ export function setStageChrome(chrome: StageChrome) {
 export function setWorkOpen(workOpen: WorkOpen) {
   if (state.workOpen === workOpen) return;
   state = { ...state, workOpen };
-  emit();
-}
-
-export function setPreviewSwap(previewSwap: PreviewSwap) {
-  if (state.previewSwap === previewSwap) return;
-  state = { ...state, previewSwap };
   emit();
 }
 

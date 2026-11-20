@@ -99,7 +99,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
             {/* gsap-hidden: on a hard load the server text would paint, vanish
                 when hydration starts the entrance and come back; the hooks
                 show the block as they split it (3 s CSS fallback without JS). */}
-            <h1 ref={titleRef} className="gsap-hidden text-primary text-[32px] leading-[40px] desktop:text-[48px] desktop:leading-[56px] font-normal">
+            <h1 ref={titleRef} className="gsap-hidden text-primary text-h2 desktop:text-h1 font-normal">
               {post.title}
             </h1>
             {post.excerpt && (
@@ -158,7 +158,7 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
         {post.body && (
           <div
             ref={bodyRef}
-            className="gsap-hidden text-sub desktop:text-body text-primary space-y-4 mx-auto max-w-[75ch] [&>h2]:mt-12 [&>h3]:mt-10 [&>h4]:mt-8 [&_h2]:text-[32px] [&_h2]:leading-[40px] desktop:[&_h2]:text-[40px] desktop:[&_h2]:leading-[48px] [&_h3]:text-[24px] [&_h3]:leading-[32px] desktop:[&_h3]:text-[32px] desktop:[&_h3]:leading-[40px] [&_h4]:text-[16px] [&_h4]:leading-[24px] desktop:[&_h4]:text-[24px] desktop:[&_h4]:leading-[32px] [&_h5]:text-[14px] [&_h5]:leading-[20px] desktop:[&_h5]:text-[20px] desktop:[&_h5]:leading-[28px] [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+            className="gsap-hidden text-sub desktop:text-body text-primary space-y-4 mx-auto max-w-[75ch] [&>h2]:mt-12 [&>h3]:mt-10 [&>h4]:mt-8 [&_h2]:text-h2 desktop:[&_h2]:text-h1 [&_h3]:text-h3 desktop:[&_h3]:text-h2 [&_h4]:text-body desktop:[&_h4]:text-h3 [&_h5]:text-sub desktop:[&_h5]:text-lead [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
           >
             <PortableText
               value={post.body as PortableTextBlock[]}
