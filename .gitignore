@@ -50,3 +50,5 @@ schema.json
 # claude
 .claude/
 .agents/
+# TRY brand fonts for the lab films: licensed, local only
+/public/lab-fonts/
