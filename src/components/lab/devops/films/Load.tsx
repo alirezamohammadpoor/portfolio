@@ -1,7 +1,17 @@
 "use client";
 
 import type gsap from "gsap";
-import Stage, { SIZE, T, Text, count, enter, outro, type Build, type Cut, type Theme } from "../Stage";
+import Stage, {
+  SIZE,
+  T,
+  Text,
+  count,
+  enter,
+  outro,
+  type Build,
+  type Cut,
+  type Theme,
+} from "../Stage";
 
 // Film 4, v4 (Ali 11-20 picked the 100 dots). About a third fewer API
 // requests. The split is the inventory's estimate from usage:
@@ -45,10 +55,28 @@ function total(tl: gsap.core.Timeline, q: Q) {
   outro(tl, q, FIRST + FIXES.length * BEAT + 2.8);
 }
 
-function Count({ x, y, w, unit, align = "left" }: { x: number; y: number; w: number; unit: string; align?: "left" | "center" }) {
+function Count({
+  x,
+  y,
+  w,
+  unit,
+  align = "left",
+}: {
+  x: number;
+  y: number;
+  w: number;
+  unit: string;
+  align?: "left" | "center";
+}) {
   return (
     <>
-      <Text data-count x={x} y={y} w={w} style={{ textAlign: align, fontVariantNumeric: "tabular-nums" }}>
+      <Text
+        data-count
+        x={x}
+        y={y}
+        w={w}
+        style={{ textAlign: align, fontVariantNumeric: "tabular-nums" }}
+      >
         <span data-total>100</span>
         {unit} {unit ? "of requests reach the API" : "requests reach the API"}
       </Text>
@@ -56,7 +84,17 @@ function Count({ x, y, w, unit, align = "left" }: { x: number; y: number; w: num
   );
 }
 
-function Lines({ x, y, w, align = "left" }: { x: number; y: number; w: number; align?: "left" | "center" }) {
+function Lines({
+  x,
+  y,
+  w,
+  align = "left",
+}: {
+  x: number;
+  y: number;
+  w: number;
+  align?: "left" | "center";
+}) {
   return (
     <>
       {FIXES.map((f) => (
@@ -64,7 +102,14 @@ function Lines({ x, y, w, align = "left" }: { x: number; y: number; w: number; a
           {f.line}
         </Text>
       ))}
-      <Text data-end x={x} y={y} w={w} size="small" style={{ textAlign: align, color: "var(--muted)" }}>
+      <Text
+        data-end
+        x={x}
+        y={y}
+        w={w}
+        size="small"
+        style={{ textAlign: align, color: "var(--muted)" }}
+      >
         About a third fewer.
       </Text>
     </>
@@ -87,11 +132,37 @@ const GROUP = Array.from({ length: 100 }, (_, i) => {
 function geoA(cut: Cut) {
   const { w } = SIZE[cut];
   if (cut === "laptop") {
-    const dot = 22, gap = 14, side = 10 * (dot + gap) - gap;
-    return { dot, gap, x: 200, y: 300, side, textX: 200 + side + 64, textW: w - (200 + side + 64) - 80, textY: 300 + side - 120, countY: 300 + side - 60, align: "left" as const };
+    const dot = 22,
+      gap = 14,
+      side = 10 * (dot + gap) - gap;
+    return {
+      dot,
+      gap,
+      x: 200,
+      y: 300,
+      side,
+      textX: 200 + side + 64,
+      textW: w - (200 + side + 64) - 80,
+      textY: 300 + side - 120,
+      countY: 300 + side - 60,
+      align: "left" as const,
+    };
   }
-  const dot = 40, gap = 22, side = 10 * (dot + gap) - gap;
-  return { dot, gap, x: (w - side) / 2, y: 460, side, textX: 72, textW: w - 144, textY: 460 + side + 50, countY: 460 + side + 110, align: "center" as const };
+  const dot = 40,
+    gap = 22,
+    side = 10 * (dot + gap) - gap;
+  return {
+    dot,
+    gap,
+    x: (w - side) / 2,
+    y: 460,
+    side,
+    textX: 72,
+    textW: w - 144,
+    textY: 460 + side + 50,
+    countY: 460 + side + 110,
+    align: "center" as const,
+  };
 }
 
 const buildA: Build = (tl, q, cut) => {
@@ -101,7 +172,18 @@ const buildA: Build = (tl, q, cut) => {
   tl.set(dots, { opacity: 0, y: 0 }, 0);
   tl.set(fills, { opacity: 1 }, 0);
   // A diagonal wave from the top left, gaps shrinking as it goes.
-  tl.fromTo(dots, { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.5, ease: "site-out", stagger: { grid: [10, 10], from: "start", amount: 0.6, ease: "power2.out" } }, 0.3);
+  tl.fromTo(
+    dots,
+    { opacity: 0, scale: 0.85 },
+    {
+      opacity: 1,
+      scale: 1,
+      duration: 0.5,
+      ease: "site-out",
+      stagger: { grid: [10, 10], from: "start", amount: 0.6, ease: "power2.out" },
+    },
+    0.3,
+  );
   FIXES.forEach((_, k) => {
     const at = FIRST + k * BEAT;
     const mine = dots.filter((_, i) => GROUP[i] === k);
@@ -117,14 +199,32 @@ const buildA: Build = (tl, q, cut) => {
 function LoadA({ cut, theme }: { cut: Cut; theme: Theme }) {
   const g = geoA(cut);
   return (
-    <Stage cut={cut} theme={theme} build={buildA} name="Load" headline={HEAD} label="Load film: 100 requests as dots; three groups leave one at a time and 67 stay.">
+    <Stage
+      cut={cut}
+      theme={theme}
+      build={buildA}
+      name="Load"
+      headline={HEAD}
+      label="Load film: 100 requests as dots; three groups leave one at a time and 67 stay."
+    >
       {GROUP.map((_, i) => (
         <div
           key={i}
           data-dot
-          style={{ position: "absolute", left: g.x + (i % 10) * (g.dot + g.gap), top: g.y + Math.floor(i / 10) * (g.dot + g.gap), width: g.dot, height: g.dot, borderRadius: 999, boxShadow: "inset 0 0 0 2px var(--ink)" }}
+          style={{
+            position: "absolute",
+            left: g.x + (i % 10) * (g.dot + g.gap),
+            top: g.y + Math.floor(i / 10) * (g.dot + g.gap),
+            width: g.dot,
+            height: g.dot,
+            borderRadius: 999,
+            boxShadow: "inset 0 0 0 2px var(--ink)",
+          }}
         >
-          <div data-dfill style={{ position: "absolute", inset: 0, borderRadius: 999, background: "var(--ink)" }} />
+          <div
+            data-dfill
+            style={{ position: "absolute", inset: 0, borderRadius: 999, background: "var(--ink)" }}
+          />
         </div>
       ))}
       <Lines x={g.textX} y={g.textY} w={g.textW} align={g.align} />

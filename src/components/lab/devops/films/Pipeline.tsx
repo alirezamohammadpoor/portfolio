@@ -1,6 +1,18 @@
 "use client";
 
-import Stage, { Label, SIZE, T, Text, count, enter, outro, useCut, type Build, type Cut, type Theme } from "../Stage";
+import Stage, {
+  Label,
+  SIZE,
+  T,
+  Text,
+  count,
+  enter,
+  outro,
+  useCut,
+  type Build,
+  type Cut,
+  type Theme,
+} from "../Stage";
 
 // Film 1, v3 (Ali 11-20: one thing at a time, words at the action).
 // Measured: push to review 26 → 18 min (estimate, 604 pipelines), test job
@@ -36,9 +48,33 @@ function geo(cut: Cut) {
   const x = t.m;
   const len = w - 2 * t.m;
   if (cut === "laptop") {
-    return { x, len, axisY: 330, beforeY: 400, afterY: 520, barH: 64, labelGap: 26, sayY: 640, tile: 92, tileGap: 14, gridY: 330 };
+    return {
+      x,
+      len,
+      axisY: 330,
+      beforeY: 400,
+      afterY: 520,
+      barH: 64,
+      labelGap: 26,
+      sayY: 640,
+      tile: 92,
+      tileGap: 14,
+      gridY: 330,
+    };
   }
-  return { x, len, axisY: 520, beforeY: 640, afterY: 840, barH: 96, labelGap: 40, sayY: 1000, tile: 140, tileGap: 20, gridY: 470 };
+  return {
+    x,
+    len,
+    axisY: 520,
+    beforeY: 640,
+    afterY: 840,
+    barH: 96,
+    labelGap: 40,
+    sayY: 1000,
+    tile: 140,
+    tileGap: 20,
+    gridY: 470,
+  };
 }
 
 const build: Build = (tl, q, cut, c) => {
@@ -60,7 +96,12 @@ const build: Build = (tl, q, cut, c) => {
   tl.set([bClock, aClock], { textContent: "0" }, 0);
 
   const say = (i: number, at: number, until: number) => {
-    tl.fromTo(says[i], { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "site-out" }, at);
+    tl.fromTo(
+      says[i],
+      { opacity: 0, y: 8 },
+      { opacity: 1, y: 0, duration: 0.45, ease: "site-out" },
+      at,
+    );
     tl.to(says[i], { opacity: 0, duration: 0.3, ease: "site-out" }, until);
   };
 
@@ -75,16 +116,35 @@ const build: Build = (tl, q, cut, c) => {
   say(0, 1.0, 5.6);
 
   // Tests is the part that changed: light it, then open it up.
-  tl.to(bSegs.filter((_, i) => BEFORE[i].name !== "Tests"), { opacity: 0.2, duration: 0.4, ease: "site-out" }, 5.6);
+  tl.to(
+    bSegs.filter((_, i) => BEFORE[i].name !== "Tests"),
+    { opacity: 0.2, duration: 0.4, ease: "site-out" },
+    5.6,
+  );
   tl.to([...scene, ...beforeRow], { opacity: 0, duration: 0.4, ease: "site-out" }, 6.6);
   // One diagonal wave across the grid, gaps shrinking as it goes.
-  tl.fromTo(tiles, { opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1, duration: 0.5, ease: "site-out", stagger: { grid: [4, 4], from: "start", amount: 0.36, ease: "power2.out" } }, 7.0);
+  tl.fromTo(
+    tiles,
+    { opacity: 0, scale: 0.92 },
+    {
+      opacity: 1,
+      scale: 1,
+      duration: 0.5,
+      ease: "site-out",
+      stagger: { grid: [4, 4], from: "start", amount: 0.36, ease: "power2.out" },
+    },
+    7.0,
+  );
   say(1, 7.2, 9.4);
   // Untouched packages empty to hairlines; the 3 it touches stay solid.
   const tileFills = q("[data-pkgfill]");
   tl.set(tileFills, { opacity: 1 }, 0);
   // The 13 empty as one move: their order carries no meaning.
-  tl.to(tileFills.filter((_, i) => !CHANGED.has(i)), { opacity: 0, duration: 0.5, ease: "site-out" }, 9.6);
+  tl.to(
+    tileFills.filter((_, i) => !CHANGED.has(i)),
+    { opacity: 0, duration: 0.5, ease: "site-out" },
+    9.6,
+  );
   say(2, 10.0, 12.4);
   tl.to(tiles, { opacity: 0, duration: 0.4, ease: "site-out" }, 12.6);
 
@@ -93,7 +153,15 @@ const build: Build = (tl, q, cut, c) => {
   tl.set(bSegs, { opacity: 1 }, 12.9);
   bSegs.forEach((el, i) => {
     if (BEFORE[i].striped) return;
-    tl.set(el, { backgroundColor: "transparent", color: c.ink, boxShadow: `inset 0 0 0 1px ${c.line}, inset -3px 0 0 ${c.bg}` }, 12.9);
+    tl.set(
+      el,
+      {
+        backgroundColor: "transparent",
+        color: c.ink,
+        boxShadow: `inset 0 0 0 1px ${c.line}, inset -3px 0 0 ${c.bg}`,
+      },
+      12.9,
+    );
   });
   tl.to(scene, { opacity: 1, duration: 0.45, ease: "site-out" }, 13.0);
   tl.to(beforeRow, { opacity: 1, duration: 0.45, ease: "site-out" }, 13.0);
@@ -106,14 +174,37 @@ const build: Build = (tl, q, cut, c) => {
   outro(tl, q, 21.0);
 };
 
-function Bar({ segs, y, h, fill, seg, tone = "ink" }: { segs: typeof BEFORE; y: number; h: number; fill: string; seg?: string; tone?: "ink" | "accent" }) {
+function Bar({
+  segs,
+  y,
+  h,
+  fill,
+  seg,
+  tone = "ink",
+}: {
+  segs: typeof BEFORE;
+  y: number;
+  h: number;
+  fill: string;
+  seg?: string;
+  tone?: "ink" | "accent";
+}) {
   const cut = useCut();
   const g = geo(cut);
   const t = T[cut];
   const unit = g.len / AXIS;
   const lefts = segs.map((_, i) => segs.slice(0, i).reduce((a, s) => a + s.min, 0) * unit);
   return (
-    <div {...{ [fill]: true }} style={{ position: "absolute", left: g.x, top: y, width: segs.reduce((a, s) => a + s.min, 0) * unit, height: h }}>
+    <div
+      {...{ [fill]: true }}
+      style={{
+        position: "absolute",
+        left: g.x,
+        top: y,
+        width: segs.reduce((a, s) => a + s.min, 0) * unit,
+        height: h,
+      }}
+    >
       {segs.map((s, i) => {
         const left = lefts[i];
         return (
@@ -127,8 +218,14 @@ function Bar({ segs, y, h, fill, seg, tone = "ink" }: { segs: typeof BEFORE; y: 
               width: s.min * unit,
               height: h,
               // Waiting is an outline; work is solid (pistachio on the after bar).
-              background: s.striped ? "transparent" : tone === "accent" ? "var(--accent)" : "var(--ink)",
-              boxShadow: s.striped ? "inset 0 0 0 1px var(--line), inset -3px 0 0 var(--bg)" : "inset -3px 0 0 var(--bg)",
+              background: s.striped
+                ? "transparent"
+                : tone === "accent"
+                  ? "var(--accent)"
+                  : "var(--ink)",
+              boxShadow: s.striped
+                ? "inset 0 0 0 1px var(--line), inset -3px 0 0 var(--bg)"
+                : "inset -3px 0 0 var(--bg)",
               color: tone === "accent" ? "var(--accent-ink)" : "var(--bg)",
               display: "flex",
               alignItems: "center",
@@ -156,16 +253,50 @@ export default function Pipeline({ cut, theme }: { cut: Cut; theme: Theme }) {
   const unit = g.len / AXIS;
   const grid = 4 * g.tile + 3 * g.tileGap;
   const clock = (y: number, min: number, attr: string) => (
-    <Text {...{ [attr === "data-bclock" ? "data-before" : "data-after"]: true }} x={g.x + min * unit + 16} y={y + g.barH / 2 - t.fact * 0.6} w={200} style={{ fontVariantNumeric: "tabular-nums" }}>
+    <Text
+      {...{ [attr === "data-bclock" ? "data-before" : "data-after"]: true }}
+      x={g.x + min * unit + 16}
+      y={y + g.barH / 2 - t.fact * 0.6}
+      w={200}
+      style={{ fontVariantNumeric: "tabular-nums" }}
+    >
       <span {...{ [attr]: true }}>0</span> min
     </Text>
   );
   return (
-    <Stage cut={cut} theme={theme} build={build} name="Pipeline" headline={"Push to\nreview app"} label="Pipeline film: before, 26 minutes from push to a review app, every package tested; after, 18 minutes, only the 3 changed packages tested.">
+    <Stage
+      cut={cut}
+      theme={theme}
+      build={build}
+      name="Pipeline"
+      headline={"Push to\nreview app"}
+      label="Pipeline film: before, 26 minutes from push to a review app, every package tested; after, 18 minutes, only the 3 changed packages tested."
+    >
       {/* Axis, minutes. */}
-      <div data-scene style={{ position: "absolute", left: g.x, top: g.axisY, width: g.len, height: 2, background: "var(--line)" }} />
+      <div
+        data-scene
+        style={{
+          position: "absolute",
+          left: g.x,
+          top: g.axisY,
+          width: g.len,
+          height: 2,
+          background: "var(--line)",
+        }}
+      />
       {TICKS.map((m, i) => (
-        <Text key={m} data-scene x={g.x + m * unit - (i === TICKS.length - 1 ? 200 : i === 0 ? 0 : 100)} y={g.axisY + 10} w={200} size="small" style={{ color: "var(--muted)", textAlign: i === TICKS.length - 1 ? "right" : i === 0 ? "left" : "center" }}>
+        <Text
+          key={m}
+          data-scene
+          x={g.x + m * unit - (i === TICKS.length - 1 ? 200 : i === 0 ? 0 : 100)}
+          y={g.axisY + 10}
+          w={200}
+          size="small"
+          style={{
+            color: "var(--muted)",
+            textAlign: i === TICKS.length - 1 ? "right" : i === 0 ? "left" : "center",
+          }}
+        >
           {m} min
         </Text>
       ))}
@@ -191,14 +322,29 @@ export default function Pipeline({ cut, theme }: { cut: Cut; theme: Theme }) {
         <div
           key={i}
           data-pkg
-          style={{ position: "absolute", left: (w - grid) / 2 + (i % 4) * (g.tile + g.tileGap), top: g.gridY + Math.floor(i / 4) * (g.tile + g.tileGap), width: g.tile, height: g.tile, background: CHANGED.has(i) ? "var(--accent)" : "transparent", boxShadow: "inset 0 0 0 1px var(--line)" }}
+          style={{
+            position: "absolute",
+            left: (w - grid) / 2 + (i % 4) * (g.tile + g.tileGap),
+            top: g.gridY + Math.floor(i / 4) * (g.tile + g.tileGap),
+            width: g.tile,
+            height: g.tile,
+            background: CHANGED.has(i) ? "var(--accent)" : "transparent",
+            boxShadow: "inset 0 0 0 1px var(--line)",
+          }}
         >
           <div data-pkgfill style={{ position: "absolute", inset: 0, background: "var(--ink)" }} />
         </div>
       ))}
 
       {SAY.map((s, i) => (
-        <Text key={i} data-say x={g.x} y={i === 1 || i === 2 ? g.gridY + grid + (cut === "laptop" ? 36 : 48) : g.sayY} w={g.len} style={{ textAlign: i === 1 || i === 2 ? "center" : "left" }}>
+        <Text
+          key={i}
+          data-say
+          x={g.x}
+          y={i === 1 || i === 2 ? g.gridY + grid + (cut === "laptop" ? 36 : 48) : g.sayY}
+          w={g.len}
+          style={{ textAlign: i === 1 || i === 2 ? "center" : "left" }}
+        >
           {s}
         </Text>
       ))}

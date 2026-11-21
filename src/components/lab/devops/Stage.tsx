@@ -14,7 +14,16 @@
  * real face. `theme="site"` swaps in the portfolio's own colours.
  */
 
-import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import gsap from "gsap";
 import { registerMotion } from "@/lib/motion";
 
@@ -47,7 +56,7 @@ const THEMES: Record<Theme, CSSProperties> = {
     "--soft": "#ededeb",
     "--accent": "#bedcaa",
     "--accent-ink": "#1a1a1a",
-    "--font": 'var(--font-sans)',
+    "--font": "var(--font-sans)",
   } as CSSProperties,
 };
 
@@ -62,7 +71,15 @@ export const useCut = () => useContext(CutContext);
 
 type Q = (sel: string) => Element[];
 /** Theme colours resolved to real values, for tweens that can't read var(). */
-export type Colors = { bg: string; ink: string; muted: string; line: string; soft: string; accent: string; accentInk: string };
+export type Colors = {
+  bg: string;
+  ink: string;
+  muted: string;
+  line: string;
+  soft: string;
+  accent: string;
+  accentInk: string;
+};
 export type Build = (tl: gsap.core.Timeline, q: Q, cut: Cut, c: Colors) => void;
 
 const FONT_CSS = `
@@ -117,7 +134,15 @@ export default function Stage({ cut, theme, build, label, name, headline, childr
         // lands on a chrome-only frame, so the first frame is that too.
         const cs = getComputedStyle(stage);
         const v = (n: string) => cs.getPropertyValue(n).trim();
-        build(tl, q, cut, { bg: v("--bg"), ink: v("--ink"), muted: v("--muted"), line: v("--line"), soft: v("--soft"), accent: v("--accent"), accentInk: v("--accent-ink") });
+        build(tl, q, cut, {
+          bg: v("--bg"),
+          ink: v("--ink"),
+          muted: v("--muted"),
+          line: v("--line"),
+          soft: v("--soft"),
+          accent: v("--accent"),
+          accentInk: v("--accent-ink"),
+        });
         (window as unknown as { __devops?: gsap.core.Timeline }).__devops = tl;
         if (reduced) tl.progress(1);
         else tl.play(0);
@@ -137,7 +162,10 @@ export default function Stage({ cut, theme, build, label, name, headline, childr
       role="img"
       aria-label={label}
       className="relative w-full overflow-hidden"
-      style={{ aspectRatio: `${w} / ${h}`, background: THEMES[theme]["--bg" as keyof CSSProperties] as string }}
+      style={{
+        aspectRatio: `${w} / ${h}`,
+        background: THEMES[theme]["--bg" as keyof CSSProperties] as string,
+      }}
     >
       <style>{FONT_CSS}</style>
       <div
@@ -166,7 +194,16 @@ export default function Stage({ cut, theme, build, label, name, headline, childr
           <Logo x={t.m} y={cut === "laptop" ? 64 : 72} scale={cut === "laptop" ? 1 : 2} />
           <div
             data-chrome
-            style={{ position: "absolute", left: headX, top: headY, width: w - headX - t.m, fontSize: t.head, lineHeight: 1.1, letterSpacing: "-0.02em", whiteSpace: "pre-line" }}
+            style={{
+              position: "absolute",
+              left: headX,
+              top: headY,
+              width: w - headX - t.m,
+              fontSize: t.head,
+              lineHeight: 1.1,
+              letterSpacing: "-0.02em",
+              whiteSpace: "pre-line",
+            }}
           >
             {headline}
           </div>
@@ -182,7 +219,14 @@ export default function Stage({ cut, theme, build, label, name, headline, childr
 
 function Logo({ x, y, scale }: { x: number; y: number; scale: number }) {
   return (
-    <svg data-chrome width={68 * scale} height={20 * scale} viewBox="0 0 68 20" style={{ position: "absolute", left: x, top: y }} fill="var(--ink)">
+    <svg
+      data-chrome
+      width={68 * scale}
+      height={20 * scale}
+      viewBox="0 0 68 20"
+      style={{ position: "absolute", left: x, top: y }}
+      fill="var(--ink)"
+    >
       <path d="M40.26 4.18v8.6c0 1.68-1.39 3.04-3.09 3.04s-3.09-1.36-3.09-3.04v-8.6h6.18ZM44.52 0H29.82v12.79C29.82 16.77 33.11 20 37.17 20s7.35-3.23 7.35-7.21V0Z" />
       <path d="m33.5 12.1-3.01-2.95-8.03 7.88 3.01 2.96 8.03-7.89Z" />
       <path d="M59.18 0h-4.26v11.8h4.26V0Z" />
@@ -195,23 +239,63 @@ function Logo({ x, y, scale }: { x: number; y: number; scale: number }) {
   );
 }
 
-type Pos = { x: number; y: number; w?: number; style?: CSSProperties; children: ReactNode; [data: `data-${string}`]: string | boolean | undefined };
+type Pos = {
+  x: number;
+  y: number;
+  w?: number;
+  style?: CSSProperties;
+  children: ReactNode;
+  [data: `data-${string}`]: string | boolean | undefined;
+};
 
 /** Small capitals in the heavier weight, TRY's overline. */
 export function Label({ x, y, w, style, children, ...data }: Pos) {
   const t = T[useCut()];
   return (
-    <div {...data} style={{ position: "absolute", left: x, top: y, width: w, fontSize: t.label, fontWeight: 650, letterSpacing: 0, textTransform: "uppercase", lineHeight: 1.1, ...style }}>
+    <div
+      {...data}
+      style={{
+        position: "absolute",
+        left: x,
+        top: y,
+        width: w,
+        fontSize: t.label,
+        fontWeight: 650,
+        letterSpacing: 0,
+        textTransform: "uppercase",
+        lineHeight: 1.1,
+        ...style,
+      }}
+    >
       {children}
     </div>
   );
 }
 
 /** Plain text at a size from the cut's scale. */
-export function Text({ x, y, w, size = "fact", style, children, ...data }: Pos & { size?: "cap" | "fact" | "small" | "head" }) {
+export function Text({
+  x,
+  y,
+  w,
+  size = "fact",
+  style,
+  children,
+  ...data
+}: Pos & { size?: "cap" | "fact" | "small" | "head" }) {
   const t = T[useCut()];
   return (
-    <div {...data} style={{ position: "absolute", left: x, top: y, width: w, fontSize: t[size], lineHeight: 1.2, ...style }}>
+    <div
+      {...data}
+      style={{
+        position: "absolute",
+        left: x,
+        top: y,
+        width: w,
+        fontSize: t[size],
+        lineHeight: 1.2,
+        ...style,
+      }}
+    >
       {children}
     </div>
   );
@@ -233,7 +317,16 @@ export function Captions({ lines }: { lines: string[] }) {
         <div
           key={i}
           data-cap={i}
-          style={{ position: "absolute", left: x, top: y, width: w - x - t.m, fontSize: t.cap, lineHeight: 1.25, color: "var(--muted)", fontWeight: 350 }}
+          style={{
+            position: "absolute",
+            left: x,
+            top: y,
+            width: w - x - t.m,
+            fontSize: t.cap,
+            lineHeight: 1.25,
+            color: "var(--muted)",
+            fontWeight: 350,
+          }}
         >
           {line}
         </div>
@@ -248,19 +341,42 @@ export function captionBeats(tl: gsap.core.Timeline, q: Q, times: number[]) {
   tl.set(caps, { opacity: 0 }, 0);
   times.forEach((at, i) => {
     if (i > 0) tl.to(caps[i - 1], { opacity: 0, y: -12, duration: 0.25, ease: "site-out" }, at);
-    tl.fromTo(caps[i], { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.45, ease: "site-out" }, i > 0 ? at + 0.15 : at);
+    tl.fromTo(
+      caps[i],
+      { opacity: 0, y: 12 },
+      { opacity: 1, y: 0, duration: 0.45, ease: "site-out" },
+      i > 0 ? at + 0.15 : at,
+    );
   });
 }
 
 /** Count a number in an element from `from` to `to`, tween-driven so a
  * paused, seeked timeline renders it too (no callbacks). */
-export function count(tl: gsap.core.Timeline, el: Element, from: number, to: number, at: number, duration: number, ease = "none") {
-  tl.fromTo(el, { textContent: from }, { textContent: to, snap: { textContent: 1 }, duration, ease }, at);
+export function count(
+  tl: gsap.core.Timeline,
+  el: Element,
+  from: number,
+  to: number,
+  at: number,
+  duration: number,
+  ease = "none",
+) {
+  tl.fromTo(
+    el,
+    { textContent: from },
+    { textContent: to, snap: { textContent: 1 }, duration, ease },
+    at,
+  );
 }
 
 /** Ease a set of elements in from below, staggered. */
 export function enter(tl: gsap.core.Timeline, els: Element[], at: number, stagger = 0.07) {
-  tl.fromTo(els, { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "site-out", stagger }, at);
+  tl.fromTo(
+    els,
+    { opacity: 0, y: 12 },
+    { opacity: 1, y: 0, duration: 0.5, ease: "site-out", stagger },
+    at,
+  );
 }
 
 /** End of every film: fade the film's own layers, keep the chrome, so the

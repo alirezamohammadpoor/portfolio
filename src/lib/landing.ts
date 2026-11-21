@@ -58,15 +58,57 @@ export const LANDING_SIZES: Record<LandingKind, string> = {
 
 /** Width / height of a Sanity image with dimensions metadata, else null. */
 export function imageAspect(
-  image: { asset?: { metadata?: { dimensions?: { width?: number | null; height?: number | null } | null } | null } | null } | null | undefined,
+  image:
+    | {
+        asset?: {
+          metadata?: {
+            dimensions?: { width?: number | null; height?: number | null } | null;
+          } | null;
+        } | null;
+      }
+    | null
+    | undefined,
 ): number | null {
   const d = image?.asset?.metadata?.dimensions;
   return d?.width && d?.height ? d.width / d.height : null;
 }
 
 /** Width / height stored on a gallery video in Sanity (video-posters.mjs), else null. */
-export function storedVideoAspect(item: { videoWidth?: number | null; videoHeight?: number | null } | null | undefined): number | null {
+export function storedVideoAspect(
+  item: { videoWidth?: number | null; videoHeight?: number | null } | null | undefined,
+): number | null {
   return item?.videoWidth && item.videoHeight ? item.videoWidth / item.videoHeight : null;
+}
+
+type ClipItem = {
+  video?: { asset?: { _ref?: string } | null } | null;
+  poster?: { asset?: unknown } | null;
+  videoWidth?: number | null;
+  videoHeight?: number | null;
+  phoneVideo?: { asset?: { _ref?: string } | null } | null;
+  phonePoster?: { asset?: unknown } | null;
+  phoneVideoWidth?: number | null;
+  phoneVideoHeight?: number | null;
+};
+
+/**
+ * The clip a gallery video plays at this size: below the desktop breakpoint
+ * its phone cut when it has one, else the clip itself. Ref, poster and stored
+ * size always come from the same cut.
+ */
+export function galleryClip<T extends ClipItem>(item: T, isDesktop: boolean) {
+  if (!isDesktop && item.phoneVideo?.asset?._ref) {
+    return {
+      ref: item.phoneVideo.asset._ref,
+      poster: item.phonePoster?.asset ? (item.phonePoster as NonNullable<T["poster"]>) : null,
+      size: { videoWidth: item.phoneVideoWidth, videoHeight: item.phoneVideoHeight },
+    };
+  }
+  return {
+    ref: item.video?.asset?._ref,
+    poster: item.poster?.asset ? (item.poster as NonNullable<T["poster"]>) : null,
+    size: { videoWidth: item.videoWidth, videoHeight: item.videoHeight },
+  };
 }
 
 /** Width / height of a video element once it knows its size, else null. */
@@ -91,7 +133,9 @@ export function landingTop(kind: LandingKind, isDesktop: boolean): number | null
   // The content box: <main> carries the header's height as padding (the
   // layout's pt-[var(--header-height)]), and the hero sits below it.
   const mainTop =
-    main.getBoundingClientRect().top + window.scrollY + (parseFloat(getComputedStyle(main).paddingTop) || 0);
+    main.getBoundingClientRect().top +
+    window.scrollY +
+    (parseFloat(getComputedStyle(main).paddingTop) || 0);
   switch (kind) {
     case "chapters":
       return mainTop + (isDesktop ? HERO_TOP.desktop : HERO_TOP.phone);
@@ -104,8 +148,14 @@ export function landingTop(kind: LandingKind, isDesktop: boolean): number | null
 // the text block the four beside it. Which side is chosen in Sanity
 // (heroLayout) or fixed by the slug hash, so a page never changes.
 export const HERO_VARIANTS = {
-  "media-right": { media: "desktop:col-start-5 desktop:col-end-13", text: "desktop:col-start-1 desktop:col-end-5" },
-  "media-left": { media: "desktop:col-start-1 desktop:col-end-9", text: "desktop:col-start-9 desktop:col-end-13" },
+  "media-right": {
+    media: "desktop:col-start-5 desktop:col-end-13",
+    text: "desktop:col-start-1 desktop:col-end-5",
+  },
+  "media-left": {
+    media: "desktop:col-start-1 desktop:col-end-9",
+    text: "desktop:col-start-9 desktop:col-end-13",
+  },
 } as const;
 export type HeroVariant = keyof typeof HERO_VARIANTS;
 

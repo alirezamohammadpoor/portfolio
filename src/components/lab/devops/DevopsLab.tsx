@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { PICKER_CSS } from "../pickerCss";
+import { PICKER_CSS } from "./pickerCss";
 import type { Cut, Theme } from "./Stage";
 import { SIZE } from "./Stage";
 import Cluster from "./films/Cluster";
@@ -50,7 +50,9 @@ export default function DevopsLab() {
     setTheme(p.theme);
     if (p.solo) setSolo(Math.max(0, Math.min(SCENES.length - 1, parseInt(p.solo, 10) - 1)));
     /* eslint-enable react-hooks/set-state-in-effect */
-    requestAnimationFrame(() => requestAnimationFrame(() => pickerRef.current?.setAttribute("data-ready", "")));
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => pickerRef.current?.setAttribute("data-ready", "")),
+    );
   }, []);
 
   const moveHighlight = useCallback(() => {
@@ -100,7 +102,10 @@ export default function DevopsLab() {
   if (solo !== null) {
     const { View } = SCENES[solo];
     return (
-      <div data-solo style={{ position: "fixed", left: 0, top: 0, width: SIZE[cut].w, zIndex: 2147483647 }}>
+      <div
+        data-solo
+        style={{ position: "fixed", left: 0, top: 0, width: SIZE[cut].w, zIndex: 2147483647 }}
+      >
         <style>{"header, nextjs-portal { display: none !important; }"}</style>
         <View cut={cut} theme={theme} />
       </div>
@@ -113,18 +118,38 @@ export default function DevopsLab() {
     <>
       <style>{PICKER_CSS}</style>
       <div className="flex min-h-dvh items-center justify-center px-4 py-24 desktop:px-6">
-        <div className="w-full" style={{ maxWidth: `min(1120px, (100dvh - 220px) * ${w} / ${h})` }} key={`${current}-${mountKey}-${cut}-${theme}`}>
+        <div
+          className="w-full"
+          style={{ maxWidth: `min(1120px, (100dvh - 220px) * ${w} / ${h})` }}
+          key={`${current}-${mountKey}-${cut}-${theme}`}
+        >
           <View cut={cut} theme={theme} />
         </div>
       </div>
       <div className="lab-data" role="group" aria-label="Cut and look">
         {(["laptop", "phone"] as Cut[]).map((k) => (
-          <button key={k} type="button" aria-pressed={cut === k} onClick={() => { setCut(k); setParam("cut", k); }}>
+          <button
+            key={k}
+            type="button"
+            aria-pressed={cut === k}
+            onClick={() => {
+              setCut(k);
+              setParam("cut", k);
+            }}
+          >
             {k === "laptop" ? "Laptop" : "Phone"}
           </button>
         ))}
         {(["try", "site"] as Theme[]).map((k) => (
-          <button key={k} type="button" aria-pressed={theme === k} onClick={() => { setTheme(k); setParam("theme", k); }}>
+          <button
+            key={k}
+            type="button"
+            aria-pressed={theme === k}
+            onClick={() => {
+              setTheme(k);
+              setParam("theme", k);
+            }}
+          >
             {k === "try" ? "TRY" : "Site"}
           </button>
         ))}
@@ -147,7 +172,12 @@ export default function DevopsLab() {
           </button>
         ))}
         <span className="proto-picker-divider" aria-hidden="true" />
-        <button type="button" className="proto-picker-item proto-picker-replay" aria-label="Replay animation (R)" onClick={() => setMountKey((k) => k + 1)}>
+        <button
+          type="button"
+          className="proto-picker-item proto-picker-replay"
+          aria-label="Replay animation (R)"
+          onClick={() => setMountKey((k) => k + 1)}
+        >
           ↻
         </button>
       </nav>

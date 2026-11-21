@@ -1,6 +1,18 @@
 "use client";
 
-import Stage, { Captions, Label, SIZE, T, Text, captionBeats, enter, outro, type Build, type Cut, type Theme } from "../Stage";
+import Stage, {
+  Captions,
+  Label,
+  SIZE,
+  T,
+  Text,
+  captionBeats,
+  enter,
+  outro,
+  type Build,
+  type Cut,
+  type Theme,
+} from "../Stage";
 
 // Script film 2. Measured in the cluster review: most production nodes sat
 // at 2–15% CPU; CI build machines idle 85% of hours; dev cluster used about
@@ -14,13 +26,38 @@ function geo(cut: Cut) {
   const { w } = SIZE[cut];
   const t = T[cut];
   if (cut === "laptop") {
-    return { cols: 6, tw: 128, th: 92, gx: 16, gy: 16, tx: t.m, ty: 300, countX: 968, countY: 300, curve: { x: t.m, y: 600, w: w - 2 * t.m, h: 150 }, dayY: 566 };
+    return {
+      cols: 6,
+      tw: 128,
+      th: 92,
+      gx: 16,
+      gy: 16,
+      tx: t.m,
+      ty: 300,
+      countX: 968,
+      countY: 300,
+      curve: { x: t.m, y: 600, w: w - 2 * t.m, h: 150 },
+      dayY: 566,
+    };
   }
-  return { cols: 4, tw: 210, th: 84, gx: 32, gy: 16, tx: t.m, ty: 480, countX: t.m, countY: 792, curve: { x: t.m, y: 956, w: w - 2 * t.m, h: 110 }, dayY: 906 };
+  return {
+    cols: 4,
+    tw: 210,
+    th: 84,
+    gx: 32,
+    gy: 16,
+    tx: t.m,
+    ty: 480,
+    countX: t.m,
+    countY: 792,
+    curve: { x: t.m, y: 956, w: w - 2 * t.m, h: 110 },
+    dayY: 906,
+  };
 }
 
 function curvePath(c: { x: number; y: number; w: number; h: number }) {
-  const pt = (i: number) => [c.x + (i / (LOAD.length - 1)) * c.w, c.y + c.h * (1 - LOAD[i])] as const;
+  const pt = (i: number) =>
+    [c.x + (i / (LOAD.length - 1)) * c.w, c.y + c.h * (1 - LOAD[i])] as const;
   return LOAD.map((_, i) => {
     const [x, y] = pt(i);
     if (i === 0) return `M${x} ${y}`;
@@ -39,14 +76,28 @@ const build: Build = (tl, q, cut) => {
   const busy = q("[data-busy]")[0];
 
   captionBeats(tl, q, [0.2, 1.5, 6.7, 8.2, 14.9]);
-  tl.set([...q("[data-ring]"), ...q("[data-fact]"), ...head, ...q("[data-count]")], { opacity: 0 }, 0);
+  tl.set(
+    [...q("[data-ring]"), ...q("[data-fact]"), ...head, ...q("[data-count]")],
+    { opacity: 0 },
+    0,
+  );
   tl.set(fills, { scaleY: 0 }, 0);
   tl.set(on, { textContent: String(N) }, 0);
   tl.set(busy, { textContent: "2–15% busy" }, 0);
 
-  tl.fromTo(tiles, { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.4, ease: "site-out", stagger: 0.03 }, 0.3);
+  tl.fromTo(
+    tiles,
+    { opacity: 0, scale: 0.96 },
+    { opacity: 1, scale: 1, duration: 0.4, ease: "site-out", stagger: 0.03 },
+    0.3,
+  );
   enter(tl, q("[data-day]"), 0.5, 0.04);
-  tl.fromTo(q("[data-curve]"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.9, ease: "site-out" }, 0.6);
+  tl.fromTo(
+    q("[data-curve]"),
+    { strokeDashoffset: 1 },
+    { strokeDashoffset: 0, duration: 0.9, ease: "site-out" },
+    0.6,
+  );
 
   const sweep = (at: number, dur: number, after: boolean) => {
     tl.fromTo(head, { x: 0, opacity: 1 }, { x: g.curve.w, duration: dur, ease: "none" }, at);
@@ -55,11 +106,19 @@ const build: Build = (tl, q, cut) => {
       const t = at + s * step;
       const n = after ? active(load) : N;
       tiles.forEach((el, i) => {
-        tl.to(el, { opacity: i < n ? 1 : 0.22, scale: i < n ? 1 : 0.96, duration: 0.35, ease: "site-out" }, t);
+        tl.to(
+          el,
+          { opacity: i < n ? 1 : 0.22, scale: i < n ? 1 : 0.96, duration: 0.35, ease: "site-out" },
+          t,
+        );
       });
       fills.forEach((el, i) => {
         // Before: all on, each 2–15% busy. After: fewer on, each 50–70%.
-        const level = after ? (i < n ? 0.5 + ((i * 7 + s) % 5) * 0.05 : 0) : 0.02 + load * 0.1 + (i % 3) * 0.01;
+        const level = after
+          ? i < n
+            ? 0.5 + ((i * 7 + s) % 5) * 0.05
+            : 0
+          : 0.02 + load * 0.1 + (i % 3) * 0.01;
         tl.to(el, { scaleY: level, duration: 0.45, ease: "site-out" }, t);
       });
       tl.set(on, { textContent: String(n) }, t);
@@ -71,7 +130,12 @@ const build: Build = (tl, q, cut) => {
   sweep(1.7, 5, false);
 
   // The thin fills, ringed.
-  tl.fromTo(q("[data-ring]"), { opacity: 0, scale: 1.02 }, { opacity: 1, scale: 1, duration: 0.4, ease: "site-out" }, 6.8);
+  tl.fromTo(
+    q("[data-ring]"),
+    { opacity: 0, scale: 1.02 },
+    { opacity: 1, scale: 1, duration: 0.4, ease: "site-out" },
+    6.8,
+  );
   tl.to(q("[data-ring]"), { opacity: 0, duration: 0.3, ease: "site-out" }, 8.0);
 
   // After (proposed): the same day, slower, the pool following the curve.
@@ -84,9 +148,19 @@ const build: Build = (tl, q, cut) => {
   // The two facts take the counter's place, one at a time, where the eye is.
   const facts = q("[data-fact]");
   tl.to(q("[data-count]"), { opacity: 0, duration: 0.3, ease: "site-out" }, 15.0);
-  tl.fromTo(facts[0], { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "site-out" }, 15.3);
+  tl.fromTo(
+    facts[0],
+    { opacity: 0, y: 8 },
+    { opacity: 1, y: 0, duration: 0.45, ease: "site-out" },
+    15.3,
+  );
   tl.to(facts[0], { opacity: 0, duration: 0.3, ease: "site-out" }, 17.6);
-  tl.fromTo(facts[1], { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "site-out" }, 17.9);
+  tl.fromTo(
+    facts[1],
+    { opacity: 0, y: 8 },
+    { opacity: 1, y: 0, duration: 0.45, ease: "site-out" },
+    17.9,
+  );
   outro(tl, q, 20.2);
 };
 
@@ -127,7 +201,15 @@ export default function Cluster({ cut, theme }: { cut: Cut; theme: Theme }) {
             overflow: "hidden",
           }}
         >
-          <div data-fill style={{ position: "absolute", inset: 0, background: "var(--accent)", transformOrigin: "50% 100%" }} />
+          <div
+            data-fill
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "var(--accent)",
+              transformOrigin: "50% 100%",
+            }}
+          />
         </div>
       ))}
       <div
@@ -141,12 +223,27 @@ export default function Cluster({ cut, theme }: { cut: Cut; theme: Theme }) {
           boxShadow: "inset 0 0 0 2px var(--ink)",
         }}
       />
-      <div data-count style={{ position: "absolute", left: g.countX, top: g.countY, width: cut === "laptop" ? w - g.countX - t.m : w - 2 * t.m, display: "flex", flexDirection: cut === "laptop" ? "column" : "row", gap: cut === "laptop" ? 6 : 24, alignItems: cut === "laptop" ? "flex-start" : "baseline" }}>
+      <div
+        data-count
+        style={{
+          position: "absolute",
+          left: g.countX,
+          top: g.countY,
+          width: cut === "laptop" ? w - g.countX - t.m : w - 2 * t.m,
+          display: "flex",
+          flexDirection: cut === "laptop" ? "column" : "row",
+          gap: cut === "laptop" ? 6 : 24,
+          alignItems: cut === "laptop" ? "flex-start" : "baseline",
+        }}
+      >
         <span style={{ fontSize: t.head, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>
           <span data-on>12</span>
         </span>
         <span style={{ fontSize: t.fact }}>machines on</span>
-        <span data-busy style={{ fontSize: t.fact, color: "var(--muted)", marginTop: cut === "laptop" ? 34 : 0 }}>
+        <span
+          data-busy
+          style={{ fontSize: t.fact, color: "var(--muted)", marginTop: cut === "laptop" ? 34 : 0 }}
+        >
           2–15% busy
         </span>
       </div>
@@ -154,9 +251,29 @@ export default function Cluster({ cut, theme }: { cut: Cut; theme: Theme }) {
       <Label data-day x={g.curve.x} y={g.dayY}>
         Time of day
       </Label>
-      <svg data-day width={w} height={SIZE[cut].h} style={{ position: "absolute", left: 0, top: 0, overflow: "visible" }}>
-        <line x1={g.curve.x} x2={g.curve.x + g.curve.w} y1={g.curve.y + g.curve.h} y2={g.curve.y + g.curve.h} stroke="var(--line)" strokeWidth={2} />
-        <path data-curve d={curvePath(g.curve)} fill="none" stroke="var(--ink)" strokeWidth={cut === "laptop" ? 2.5 : 4} pathLength={1} strokeDasharray="1 1" />
+      <svg
+        data-day
+        width={w}
+        height={SIZE[cut].h}
+        style={{ position: "absolute", left: 0, top: 0, overflow: "visible" }}
+      >
+        <line
+          x1={g.curve.x}
+          x2={g.curve.x + g.curve.w}
+          y1={g.curve.y + g.curve.h}
+          y2={g.curve.y + g.curve.h}
+          stroke="var(--line)"
+          strokeWidth={2}
+        />
+        <path
+          data-curve
+          d={curvePath(g.curve)}
+          fill="none"
+          stroke="var(--ink)"
+          strokeWidth={cut === "laptop" ? 2.5 : 4}
+          pathLength={1}
+          strokeDasharray="1 1"
+        />
         {HOURS.map((h, i) => (
           <text
             key={h}
@@ -170,12 +287,32 @@ export default function Cluster({ cut, theme }: { cut: Cut; theme: Theme }) {
           </text>
         ))}
       </svg>
-      <div data-head style={{ position: "absolute", left: g.curve.x - 1, top: g.curve.y - 16, width: 2, height: g.curve.h + 16, background: "var(--ink)" }} />
+      <div
+        data-head
+        style={{
+          position: "absolute",
+          left: g.curve.x - 1,
+          top: g.curve.y - 16,
+          width: 2,
+          height: g.curve.h + 16,
+          background: "var(--ink)",
+        }}
+      />
 
-      <Text data-fact x={g.countX} y={g.countY} w={cut === "laptop" ? w - g.countX - t.m : w - 2 * t.m}>
+      <Text
+        data-fact
+        x={g.countX}
+        y={g.countY}
+        w={cut === "laptop" ? w - g.countX - t.m : w - 2 * t.m}
+      >
         CI build machines sit idle 85% of hours. They could start from zero.
       </Text>
-      <Text data-fact x={g.countX} y={g.countY} w={cut === "laptop" ? w - g.countX - t.m : w - 2 * t.m}>
+      <Text
+        data-fact
+        x={g.countX}
+        y={g.countY}
+        w={cut === "laptop" ? w - g.countX - t.m : w - 2 * t.m}
+      >
         The dev cluster uses about a quarter of its memory.
       </Text>
     </Stage>
