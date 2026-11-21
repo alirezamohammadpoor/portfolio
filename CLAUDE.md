@@ -6,7 +6,8 @@ Next 16.3 (App Router, Turbopack) + React 19, Sanity v5 (Studio at `/studio`), G
 
 - `bun run dev` (via portless) or `bun run dev:plain`. A fresh worktree needs `.env.local` (see `.env.local.example`).
 - `bun run typegen` after any schema change.
-- There is no test suite. The gate before a PR is `bun run lint`, `bunx tsc --noEmit` and `bun run build`, all clean.
+- Tooling: `bun run lint` (oxlint), `bun run check` (tsgo, the native TypeScript; `check:tsc` is the old tsc), `bun run test` (bun test, files `src/**/*.test.ts`), `bun run fmt` (oxfmt). The repo is not reformatted yet, so only format files you touch.
+- The gate before a PR is `bun run verify`: lint, check, test and build in parallel, all clean. GitHub Actions runs lint, check and test on every PR; Vercel's preview is the build.
 
 # Where things are
 

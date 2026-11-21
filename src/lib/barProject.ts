@@ -34,14 +34,14 @@ export type WorkOpen = "shrink" | "hold" | "fade" | null;
 
 type State = { chrome: StageChrome; project: BarProject | null; workOpen: WorkOpen };
 
-let state: State = { chrome: "pill", project: null, workOpen: "fade" };
+let state: State = { chrome: "docked", project: null, workOpen: "fade" };
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 const subscribe = (l: () => void) => {
   listeners.add(l);
   return () => listeners.delete(l);
 };
-const SERVER: State = { chrome: "pill", project: null, workOpen: "fade" };
+const SERVER: State = { chrome: "docked", project: null, workOpen: "fade" };
 
 export function setBarProject(project: BarProject | null) {
   state = { ...state, project };
