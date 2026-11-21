@@ -14,8 +14,11 @@
  * one master timeline, so the block plays, scrubs and renders frame by frame
  * (window.__reel) from the same code.
  *
- * Look: TRY house brand, black on white, #999994 hairline, TWK Lausanne Pan
- * from public/lab-fonts (gitignored, licensed; a fallback face otherwise).
+ * Staging (Ali, 21 Nov, after Aino's Samsoe Samsoe film): the shop's own
+ * studio photo opens full bleed and its frame closes into the phone; behind the
+ * phone a sideways-smeared copy of a photo is the stage, and it changes with the
+ * step (list, product page, cart). Photos live in public/lab-media (gitignored,
+ * client material); fonts in public/lab-fonts (gitignored, licensed).
  */
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -27,9 +30,9 @@ import { SCENES } from "@/components/lab/morph/scenes";
 registerMotion();
 
 const SQ = 1080;
-const WIN = { x: 240, y: 232, w: 600, h: 776, r: 20 };
+const WIN = { x: 560, y: 100, w: 440, h: 880, r: 36 }; // the phone, right of the line column
 const CAM = WIN.w / 390; // stage points to pixels
-const VIEW = WIN.h / CAM; // stage points visible in the window (504)
+const VIEW = WIN.h / CAM; // stage points visible in the window (780)
 
 /** PDP scenes are offset so their buy boxes share one top edge: the crossfade
  * between them changes only what the test changes (stage points). The page
@@ -38,9 +41,11 @@ const PDP_TOP = 272.5; // delivery's buy box top (it has the gallery photo above
 const OFFSET = { badge: 0, delivery: 0, soldout: PDP_TOP - 0, similar: PDP_TOP - 95.3, kit: 0 };
 
 /** Where the camera looks (top of the visible band, stage points), per scene. */
-const FOCUS = { badge: 40, delivery: 470, soldout: 600, similar: 560 };
-/** The cart sheet sits so its kit block lands in the window without a pan. */
-const KIT_Y = FOCUS.similar - 200;
+const FOCUS = { badge: 0, delivery: 230, soldout: 260, similar: 250 };
+/** The cart covers the window from its top edge, no pan. */
+const KIT_Y = FOCUS.similar;
+const MEDIA = "/lab-media/stronger";
+const BACKS = ["best", "pdp", "cart"] as const;
 
 const LINES = [
   "Five A/B tests for a sportswear shop.",
@@ -86,7 +91,11 @@ export default function StrongerReel() {
 
     // Known start state, so seeking backwards restores it.
     gsap.set(cam, { y: -FOCUS.badge }); // the CSS scale applies after the translate, so y is in stage points
-    gsap.set(q("[data-win]"), { opacity: 0, y: 40 });
+    const photo = q("[data-photo]");
+    const full = `inset(0px 0px 0px 0px round 0px)`;
+    const phone = `inset(${WIN.y}px ${SQ - WIN.x - WIN.w}px ${SQ - WIN.y - WIN.h}px ${WIN.x}px round ${WIN.r}px)`;
+    gsap.set(photo, { clipPath: full, opacity: 1 });
+    BACKS.forEach((b) => gsap.set(q(`[data-back="${b}"]`), { opacity: b === "best" ? 1 : 0 }));
     LINES.forEach((_, i) => gsap.set(line(i), { opacity: 0, y: 16 }));
     KEYS.forEach((k) =>
       gsap.set(scene(k), { opacity: k === "badge" ? 1 : 0, scale: 1, y: OFFSET[k] }),
@@ -119,15 +128,22 @@ export default function StrongerReel() {
       tl.set(dot, { visibility: "hidden" }, at + 0.48);
     };
     const pan = (focus: number, at: number, d = 0.55) => tl.to(cam, { y: -focus, duration: d }, at);
+    /** The stage photo behind the phone follows the journey (list, product page, cart). */
+    const back = (from: string, to: string, at: number) => {
+      tl.to(q(`[data-back="${to}"]`), { opacity: 1, duration: 0.5, ease: ease.out }, at);
+      tl.set(q(`[data-back="${from}"]`), { opacity: 0 }, at + 0.5);
+    };
 
-    // Opener: the line alone, then the screen rises under it.
-    tl.to(line(0), { opacity: 1, y: 0, duration: 0.4, ease: ease.out }, 0);
-    tl.to(q("[data-win]"), { opacity: 1, y: 0, duration: 0.5, ease: ease.out }, 0.45);
+    // Opener: the photo full bleed and the line; then the photo's frame closes into
+    // the phone (the photo stays put, only its frame moves) and lets the list through.
+    tl.to(line(0), { opacity: 1, y: 0, duration: 0.4, ease: ease.out }, 0.1);
+    tl.to(photo, { clipPath: phone, duration: 0.75 }, 0.9);
+    tl.to(photo, { opacity: 0, duration: 0.25, ease: ease.out }, 1.55);
 
-    // 1. Badge: the scene's own hold covers the window entrance.
-    swap(0, 1, 1.1);
-    tl.add(child("badge"), 0.6);
-    const t1 = 2.3;
+    // 1. Badge on the list.
+    swap(0, 1, 1.9);
+    tl.add(child("badge"), 1.5);
+    const t1 = 3.2;
 
     // 2. Card opens into the product page: the list gives way to the page in
     // place (a short crossfade with a slight push), THEN the camera scrolls
@@ -146,6 +162,7 @@ export default function StrongerReel() {
       t1b + 0.06,
     );
     swap(1, 2, t1b);
+    back("best", "pdp", t1b);
     pan(FOCUS.delivery, t1b + 0.36, 0.5);
     tl.add(child("delivery"), t1b + 0.15);
 
@@ -170,6 +187,7 @@ export default function StrongerReel() {
     tap(195, OFFSET.similar + 95.3 + 600 * (390 / 374), t4);
     tl.set(scene("kit"), { visibility: "inherit" }, t4 + 0.3);
     tl.to(scene("kit"), { y: KIT_Y, duration: 0.5, ease: ease.out }, t4 + 0.3);
+    back("pdp", "cart", t4 + 0.3);
     swap(4, 5, t4 + 0.3);
     tl.add(child("kit", 1.5), t4 + 0.45);
     tl.to({}, { duration: 0.6 });
@@ -220,21 +238,25 @@ export default function StrongerReel() {
           overflow: "hidden",
         }}
       >
-        {/* The line: inside the 9:16 safe column so the same edit crops to a story. */}
+        {BACKS.map((b) => (
+          // eslint-disable-next-line @next/next/no-img-element -- fixed 1080 film stage, local media
+          <img key={b} data-back={b} src={`${MEDIA}/${b}-smear.jpg`} alt="" style={{ position: "absolute", inset: 0, width: SQ, height: SQ, opacity: 0 }} />
+        ))}
+        {/* The line, top-left over the photo's empty studio grey. */}
         {LINES.map((s, i) => (
           <p
             key={s}
             data-line={i}
             style={{
               position: "absolute",
-              left: (SQ - 620) / 2,
-              width: 620,
-              bottom: SQ - WIN.y + 44,
+              left: 64,
+              width: 440,
+              top: 76,
+              zIndex: 2,
               margin: 0,
-              textAlign: "center",
-              fontSize: 54,
+              fontSize: 50,
               fontWeight: 650,
-              lineHeight: "62px",
+              lineHeight: "58px",
               letterSpacing: "-0.01em",
               opacity: 0,
             }}
@@ -254,7 +276,6 @@ export default function StrongerReel() {
             borderRadius: WIN.r,
             overflow: "hidden",
             background: "#fff",
-            opacity: 0,
           }}
         >
           <div
@@ -306,17 +327,10 @@ export default function StrongerReel() {
               }}
             />
           </div>
-          {/* Hairline on top of the content, so nothing paints over it. */}
-          <div
-            style={{
-              position: "absolute",
-              inset: 0,
-              borderRadius: WIN.r,
-              boxShadow: "inset 0 0 0 2px #999994",
-              pointerEvents: "none",
-            }}
-          />
         </div>
+        {/* The opening photo, full bleed; its clip closes into the phone. */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- fixed 1080 film stage, local media */}
+        <img data-photo src={`${MEDIA}/best.jpg`} alt="" style={{ position: "absolute", inset: 0, width: SQ, height: SQ }} />
       </div>
     </div>
   );
