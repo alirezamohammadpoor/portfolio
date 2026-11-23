@@ -154,65 +154,23 @@
     animation: gsap-fallback 0s 3s forwards;
   }
 
-  /* The name, in the header and in the home intro: a block with no line
-     box slack so the intro's FLIP onto the header slot scales exactly. */
-  .intro-name {
-    display: inline-block;
-    line-height: 1;
-    white-space: nowrap;
-  }
-  /* While the intro plays the overlay name stands in for the header's and
-     the page content waits (opacity, so a child's visibility can't leak). */
+  /* While the home entry plays (src/lib/reel.ts) the page content waits
+     under its stage (opacity, so a child's visibility can't leak). */
   html[data-intro="pending"] main,
   html[data-intro="playing"] main {
     opacity: 0;
   }
-  html[data-intro="pending"] .intro-name-slot,
-  html[data-intro="playing"] .intro-name-slot {
-    visibility: hidden;
-  }
-  /* The nav arrives with the content, not under the overlay. */
-  .intro-nav {
-    transition: opacity var(--dur-ui) var(--ease-out);
-  }
-  html[data-intro="pending"] .intro-nav,
-  html[data-intro="playing"] .intro-nav {
-    opacity: 0;
-  }
-  /* Belt and braces: if the intro never reports "done" (a script error, a
-     killed tween), the page shows itself after 5 s anyway. */
+  /* Belt and braces: if the entry never reports "done" (a script error, a
+     killed tween, a first cover that never loads), the page shows itself
+     after 10 s anyway. */
   @keyframes intro-fallback {
     to {
       opacity: 1;
-      visibility: visible;
     }
   }
   html[data-intro="pending"] main,
-  html[data-intro="playing"] main,
-  html[data-intro="pending"] .intro-nav,
-  html[data-intro="playing"] .intro-nav,
-  html[data-intro="pending"] .intro-name-slot,
-  html[data-intro="playing"] .intro-name-slot {
-    animation: intro-fallback 0s 5s forwards;
-  }
-  /* The entry (src/lib/reel.ts) runs about 6 s and may wait for its first
-     cover: the page's fallback waits longer. */
-  html[data-reel] main,
-  html[data-reel] .intro-nav,
-  html[data-reel] .intro-name-slot {
-    animation-delay: 10s;
-  }
-  /* Over the entry the overlay is see-through and the name stays black the
-     whole way, over the covers as they fly out under it (Ali 11-04).
-     Important: the overlay's bg-bg is a utility, a later layer. */
-  html[data-reel="playing"] .intro-overlay,
-  html[data-reel="done"] .intro-overlay {
-    background: transparent !important;
-  }
-
-  .parastoo-font {
-    font-family: var(--font-parastoo), serif;
-    font-size: 1.1em;
+  html[data-intro="playing"] main {
+    animation: intro-fallback 0s 10s forwards;
   }
 
   /* Room for descenders inside a SplitText line mask (overflow: clip). The
