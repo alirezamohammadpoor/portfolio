@@ -160,16 +160,25 @@
   html[data-intro="playing"] main {
     opacity: 0;
   }
+  /* The Pebble waits for the first project too: HomeReel brings it in as
+     the dive lands (inline styles win over this once it has). */
+  html[data-intro="pending"] [data-site-bar],
+  html[data-intro="playing"] [data-site-bar] {
+    visibility: hidden;
+  }
   /* Belt and braces: if the entry never reports "done" (a script error, a
      killed tween, a first cover that never loads), the page shows itself
      after 10 s anyway. */
   @keyframes intro-fallback {
     to {
       opacity: 1;
+      visibility: visible;
     }
   }
   html[data-intro="pending"] main,
-  html[data-intro="playing"] main {
+  html[data-intro="playing"] main,
+  html[data-intro="pending"] [data-site-bar],
+  html[data-intro="playing"] [data-site-bar] {
     animation: intro-fallback 0s 10s forwards;
   }
 

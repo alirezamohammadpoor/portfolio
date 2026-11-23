@@ -4,8 +4,8 @@
  * next to the intro's mark. The entry waits for its first cover to show a
  * frame, then every project flies out of the middle onto an oval, the oval
  * turns, and the view dives into the first project, landing on its slot at
- * the top of the home. No name plays in the middle (Ali 11-23): the bar,
- * with the name in it, stays put above the stage. The page content is held
+ * the top of the home. No name plays in the middle (Ali 11-23); the bar
+ * (the Pebble) is hidden over the ring and enters with the first project. The page content is held
  * back (src/lib/intro.ts) until the entry has landed.
  *
  * `?reel` in the URL forces it on any load; `?reel=scrub` (or `&scrub`)
@@ -34,6 +34,8 @@ export const SCATTER_BEAT = {
   /** Dive into the first project: it grows into its slot at the top of the
    *  home while the rest of the field drifts out of frame and fades. */
   dive: 1.4,
+  /** The Pebble's entrance, ending as the dive lands. */
+  barIn: 0.6,
   /** Crossfade from the stage to the page; the page's second row fades up
    *  here. */
   handOver: 0.5,

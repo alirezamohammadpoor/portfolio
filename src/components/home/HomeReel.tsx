@@ -426,6 +426,25 @@ function ringTimeline(
   );
   tl.to(world, { x: dx, y: dy, scale: K, duration: SCATTER_BEAT.dive, ease: ease.inOut }, diveAt);
   tl.to(dive, { p: 1, duration: SCATTER_BEAT.dive, ease: ease.inOut, onUpdate: render }, diveAt);
+  // The Pebble arrives with the first project (Ali 11-23): hidden over the
+  // ring (globals.css), it settles in from just above as the dive lands.
+  const bar = document.querySelector<HTMLElement>("[data-site-bar]");
+  if (bar) {
+    tl.fromTo(
+      bar,
+      { autoAlpha: 0, y: -8, scale: 0.96 },
+      {
+        autoAlpha: 1,
+        y: 0,
+        scale: 1,
+        transformOrigin: "50% 0%",
+        duration: SCATTER_BEAT.barIn,
+        ease: ease.out,
+        clearProps: "opacity,visibility,transform",
+      },
+      diveAt + SCATTER_BEAT.dive - SCATTER_BEAT.barIn,
+    );
+  }
 }
 
 function HeroMedia({ project, sizes }: { project: Project; sizes: string }) {
