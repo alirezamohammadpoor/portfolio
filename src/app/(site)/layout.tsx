@@ -2,7 +2,6 @@ import { Suspense } from "react";
 import type { Metadata, Viewport } from "next";
 import { ViewTransitions } from "@/lib/viewTransitions";
 import { Analytics } from "@vercel/analytics/next";
-import { parastoo } from "@/lib/fonts";
 import Header from "@/components/layout/Header";
 import GsapProvider from "@/components/layout/GsapProvider";
 import { TransitionProvider } from "@/context/TransitionContext";
@@ -44,11 +43,7 @@ export const viewport: Viewport = {
   themeColor: "#f7f7f7",
 };
 
-export default async function SiteLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const [about, bar] = await Promise.all([getAbout().catch(() => null), getBarData()]);
 
   const sameAs = [about?.linkedinUrl, about?.githubUrl].filter(
@@ -75,20 +70,19 @@ export default async function SiteLayout({
 
   return (
     <ViewTransitions>
-      <html lang="en" className={`${parastoo.variable}`} suppressHydrationWarning>
+      <html lang="en" suppressHydrationWarning>
         <head>
           <link rel="preconnect" href="https://cdn.sanity.io" />
           <link rel="dns-prefetch" href="https://i.scdn.co" />
           <JsonLd data={[personLd, websiteLd]} />
-          {/* Home intro gate, before hydration: a fresh load of the home
-              keeps the page content hidden until the name has landed in the
-              header (src/lib/intro.ts); the first such load in a browser session
-              also plays the entry reel (src/lib/reel.ts). Reduced motion
-              skips both. */}
+          {/* Home entry gate, before hydration: the first load of the home in
+              a browser session (or any load with ?reel) plays the entry
+              (src/lib/reel.ts) and keeps the page content hidden until it
+              has landed (src/lib/intro.ts). Reduced motion skips it. */}
           <script
             dangerouslySetInnerHTML={{
               __html:
-                '(function(){try{if(location.pathname==="/"&&!matchMedia("(prefers-reduced-motion: reduce)").matches){document.documentElement.dataset.intro="pending";if(/[?&]reel/.test(location.search)||!sessionStorage.getItem("home-reel")){document.documentElement.dataset.reel="pending"}}}catch(e){}})()',
+                '(function(){try{if(location.pathname==="/"&&!matchMedia("(prefers-reduced-motion: reduce)").matches){if(/[?&]reel/.test(location.search)||!sessionStorage.getItem("home-reel")){document.documentElement.dataset.intro="pending";document.documentElement.dataset.reel="pending"}}}catch(e){}})()',
             }}
           />
         </head>
@@ -96,7 +90,9 @@ export default async function SiteLayout({
           <GsapProvider>
             <TransitionProvider>
               <Header bar={bar} />
-              <main className="pt-[var(--header-height)] min-h-[calc(100dvh-var(--header-height))]">{children}</main>
+              <main className="pt-[var(--header-height)] min-h-[calc(100dvh-var(--header-height))]">
+                {children}
+              </main>
               <TransitionOverlay />
             </TransitionProvider>
           </GsapProvider>

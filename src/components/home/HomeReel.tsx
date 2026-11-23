@@ -9,10 +9,10 @@ import { useGSAP } from "@gsap/react";
 import { useLenis } from "lenis/react";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
-import { dur, ease } from "@/lib/motion";
+import { ease } from "@/lib/motion";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { DESKTOP_QUERY } from "@/hooks/useIsDesktop";
-import { holdIntro, releaseIntro } from "@/lib/intro";
+import { setIntroState } from "@/lib/intro";
 import {
   SCATTER_BEAT,
   getReelState,
@@ -39,13 +39,12 @@ interface HomeReelProps {
 }
 
 /**
- * Home entry: while the name is written every project's cover flies out of
- * the middle onto an oval around the name, the oval turns, and the view dives into the
- * first project (see ringTimeline). The last frame is the page itself, so
- * the stage just fades.
+ * Home entry: every project's cover flies out of the middle onto an oval,
+ * the oval turns, and the view dives into the first project (see
+ * ringTimeline). The last frame is the page itself, so the stage just fades.
  *
- * The stage is a fixed layer outside <main> (which is hidden until the name
- * lands) and only moves transforms: nothing on the page lays out twice. Each
+ * The stage is a fixed layer outside <main> (which is hidden until the entry
+ * lands), under the bar, and only moves transforms: nothing on the page lays out twice. Each
  * hero is a box the size of its cover on the page, so the landing is pixel
  * exact.
  */
@@ -103,12 +102,7 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
         // covers are in the same boxes, only at another moment of their
         // clips (seeking the page's videos to match stalls for up to a
         // second on sparse keyframes), so a short crossfade bridges them.
-        // The landed name sits in the header, which the stage covers until
-        // it has faded: drop the stage under the header first. Its header
-        // band is plain background by now (the first cover sits in its
-        // page slot, the others have faded).
-        if (stage) stage.style.zIndex = "45";
-        releaseIntro();
+        setIntroState("done");
         // Lenis wakes after the fade, and only once the wheel that skipped
         // the reel has run dry: started under the flick's inertia tail it
         // would scroll the page off the top the reel lands on.
@@ -127,12 +121,17 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
           wake();
         };
         if (cancelled || !stage) return done();
-        gsap.to(stage, { autoAlpha: 0, duration: SCATTER_BEAT.handOver, ease: ease.out, onComplete: done });
+        gsap.to(stage, {
+          autoAlpha: 0,
+          duration: SCATTER_BEAT.handOver,
+          ease: ease.out,
+          onComplete: done,
+        });
       }
 
       function onInput() {
         if (getReelState() === "waiting") {
-          // Input before the first frame: no reel, the name plays alone.
+          // Input before the first frame: no reel, the page shows at once.
           cancelled = true;
           setReelState("off");
           return;
@@ -173,9 +172,8 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
         offs.push(() => window.clearTimeout(id));
       });
 
-      // A slow first cover no longer cancels the entry (Ali 11-05: no scatter
-      // on the phone, where the first frame took longer than the wait): the
-      // name writes on an empty page for the first second anyway, and the
+      // A slow first cover doesn't cancel the entry (Ali 11-05: no scatter on
+      // the phone, where the first frame took longer than the wait): the
       // covers keep loading behind their placeholder colour.
       Promise.race([ready, timeout]).then(() => {
         if (cancelled) return;
@@ -190,7 +188,7 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
         ringTimeline(tl, heroes, world, rects);
 
         lenisRef.current?.stop();
-        holdIntro();
+        setIntroState("playing");
         setReelState("playing");
         if (!scrubbing) tl.play();
         if (scrubbing) setScrub(tl);
@@ -215,11 +213,18 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
 
   return createPortal(
     <>
-      <div ref={stageRef} aria-hidden="true" className="fixed inset-0 z-[55] overflow-hidden bg-bg">
+      <div ref={stageRef} aria-hidden="true" className="fixed inset-0 z-[45] overflow-hidden bg-bg">
         <div ref={worldRef} className="invisible absolute left-0 top-0 will-change-transform">
           {stageProjects(projects).map((project, i) => (
-            <div key={`${project._id}-${i}`} data-hero className="absolute left-0 top-0 overflow-hidden bg-tertiary will-change-transform">
-              <HeroMedia project={project} sizes={coverSizes[i % projects.length] ?? "(min-width: 75rem) 66vw, 100vw"} />
+            <div
+              key={`${project._id}-${i}`}
+              data-hero
+              className="absolute left-0 top-0 overflow-hidden bg-tertiary will-change-transform"
+            >
+              <HeroMedia
+                project={project}
+                sizes={coverSizes[i % projects.length] ?? "(min-width: 75rem) 66vw, 100vw"}
+              />
             </div>
           ))}
         </div>
@@ -280,11 +285,16 @@ function ovalPath(a: number, b: number) {
  * The ring (Ali 11-16): every cover the same size, evenly spaced on
  * an oval fitted to the field, so any number of projects fits without
  * overlap (the six hand-placed spots it replaced overlapped past six
- * projects); the cards shrink as the count grows. The middle stays clear for
- * the name. While the field holds the oval turns, cards upright, carrying
+ * projects); the cards shrink as the count grows. The middle stays open.
+ * While the field holds the oval turns, cards upright, carrying
  * the first project up to 12 o'clock, and the view dives into it from there.
  */
-function ringTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: HTMLElement, rects: Rect[]) {
+function ringTimeline(
+  tl: gsap.core.Timeline,
+  heroes: HTMLElement[],
+  world: HTMLElement,
+  rects: Rect[],
+) {
   const VW = window.innerWidth;
   const VH = window.innerHeight;
   const laptop = window.matchMedia(DESKTOP_QUERY).matches;
@@ -298,8 +308,8 @@ function ringTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: HTML
   const oy = top + fh / 2;
   // Every cover is 16:10 on the page; the card keeps its own cover's shape.
   const aspect = rects[0].h / rects[0].w;
-  // The ring stays clear of the name in the middle: on the laptop the card
-  // is at most a quarter of the field, on the phone just under half of it.
+  // The middle stays open: on the laptop the card is at most a quarter of
+  // the field, on the phone just under half of it.
   const maxW = laptop ? fw * 0.24 : fw * 0.46;
 
   // The largest card for which N of them, evenly spaced, clear each other
@@ -316,7 +326,8 @@ function ringTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: HTML
       const pts = Array.from({ length: N }, (_, i) => at((i + shift) / N));
       for (let i = 0; i < N; i++) {
         for (let j = i + 1; j < N; j++) {
-          if (Math.abs(pts[i].x - pts[j].x) < cw + gap && Math.abs(pts[i].y - pts[j].y) < ch + gap) return false;
+          if (Math.abs(pts[i].x - pts[j].x) < cw + gap && Math.abs(pts[i].y - pts[j].y) < ch + gap)
+            return false;
         }
       }
     }
@@ -325,11 +336,12 @@ function ringTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: HTML
   let lo = 8;
   let hi = maxW;
   if (clears(hi)) lo = hi;
-  else for (let k = 0; k < 24; k++) {
-    const mid = (lo + hi) / 2;
-    if (clears(mid)) lo = mid;
-    else hi = mid;
-  }
+  else
+    for (let k = 0; k < 24; k++) {
+      const mid = (lo + hi) / 2;
+      if (clears(mid)) lo = mid;
+      else hi = mid;
+    }
   const { cw, at } = layout(lo);
 
   // The turn: the oval starts a little short of home and ends with the first
@@ -394,18 +406,45 @@ function ringTimeline(tl: gsap.core.Timeline, heroes: HTMLElement[], world: HTML
 
   const at0 = SCATTER_BEAT.start;
   heroes.forEach((_, i) => {
-    tl.to(fly[i], { p: 1, duration: SCATTER_BEAT.scatter, ease: ease.out, onUpdate: render }, at0 + i * SCATTER_BEAT.stagger);
+    tl.to(
+      fly[i],
+      { p: 1, duration: SCATTER_BEAT.scatter, ease: ease.out, onUpdate: render },
+      at0 + i * SCATTER_BEAT.stagger,
+    );
   });
   const holdAt = at0 + SCATTER_BEAT.scatter + SCATTER_BEAT.stagger * (N - 1);
-  const diveAt = Math.max(holdAt + SCATTER_BEAT.hold, SCATTER_BEAT.write + dur.page + SCATTER_BEAT.afterName);
+  const diveAt = holdAt + SCATTER_BEAT.hold;
   // The oval turns from the moment the covers leave the middle and settles
   // just into the dive, so the hold never stands still and the first
   // project is home before the camera gets close.
   const turnStart = at0 + SCATTER_BEAT.scatter * 0.4;
   const turnEnd = diveAt + SCATTER_BEAT.dive * 0.3;
-  tl.to(ring, { u: 0, duration: turnEnd - turnStart, ease: "power1.inOut", onUpdate: render }, turnStart);
+  tl.to(
+    ring,
+    { u: 0, duration: turnEnd - turnStart, ease: "power1.inOut", onUpdate: render },
+    turnStart,
+  );
   tl.to(world, { x: dx, y: dy, scale: K, duration: SCATTER_BEAT.dive, ease: ease.inOut }, diveAt);
   tl.to(dive, { p: 1, duration: SCATTER_BEAT.dive, ease: ease.inOut, onUpdate: render }, diveAt);
+  // The Pebble arrives with the first project (Ali 11-23): hidden over the
+  // ring (globals.css), it settles in from just above as the dive lands.
+  const bar = document.querySelector<HTMLElement>("[data-site-bar]");
+  if (bar) {
+    tl.fromTo(
+      bar,
+      { autoAlpha: 0, y: -8, scale: 0.96 },
+      {
+        autoAlpha: 1,
+        y: 0,
+        scale: 1,
+        transformOrigin: "50% 0%",
+        duration: SCATTER_BEAT.barIn,
+        ease: ease.out,
+        clearProps: "opacity,visibility,transform",
+      },
+      diveAt + SCATTER_BEAT.dive - SCATTER_BEAT.barIn,
+    );
+  }
 }
 
 function HeroMedia({ project, sizes }: { project: Project; sizes: string }) {
@@ -492,7 +531,7 @@ function Scrubber({ tl }: { tl: gsap.core.Timeline }) {
         onClick={() => {
           // The same hand-over as finish(): Lenis was stopped for the reel.
           tl.progress(1);
-          releaseIntro();
+          setIntroState("done");
           lenis?.start();
           setReelState("done");
           ScrollTrigger.refresh();
