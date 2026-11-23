@@ -77,7 +77,7 @@ const MEDIA = "/lab-media/stronger";
 const STILLS = "/lab/morph";
 
 const LINES = [
-  "Designed five A/B tests.",
+  "Five A/B tests for Stronger.",
   "A bestseller badge.",
   "A delivery promise.",
   "Sold out? Other colours.",
@@ -98,7 +98,6 @@ export default function StrongerReel() {
     const q = (s: string) => el.querySelector<HTMLElement>(s)!;
     const scene = (k: Key) => q(`[data-scene="${k}"]`);
     const line = (i: number) => q(`[data-line="${i}"]`);
-    const count = (i: number) => q(`[data-count="${i}"]`);
     const cam = q("[data-cam]");
     const dot = q("[data-dot]");
     const hero = q("[data-hero]");
@@ -118,11 +117,7 @@ export default function StrongerReel() {
     gsap.set(photo, { clipPath: full, opacity: 1 });
     gsap.set(q('[data-back="best"]'), { opacity: 1 });
     gsap.set(q('[data-back="cart"]'), { opacity: 0 });
-    gsap.set(q("[data-eyebrow]"), { opacity: 0, y: 16 });
-    LINES.forEach((_, i) => {
-      gsap.set(line(i), { opacity: 0, y: 16 });
-      if (i > 0) gsap.set(count(i), { opacity: 0, y: 12 });
-    });
+    LINES.forEach((_, i) => gsap.set(line(i), { opacity: 0, y: 16 }));
     gsap.set(scene("badge"), { y: TOP.badge, opacity: 1 });
     (["delivery", "soldout", "similar"] as const).forEach((k) =>
       gsap.set(scene(k), { y: TOP[k], opacity: 0, visibility: "hidden" }),
@@ -147,12 +142,11 @@ export default function StrongerReel() {
       return at + d;
     };
     /** The line above the screen: the old one leaves up, the new one rises in,
-     * overlapping slightly so the swap reads as one move. The count follows. */
+     * overlapping slightly so the swap reads as one move. */
     const swap = (from: number, to: number, at: number) => {
-      const out = from > 0 ? [line(from), count(from)] : [line(from)];
-      tl.to(out, { opacity: 0, y: -10, duration: 0.2, ease: ease.out }, at);
+      tl.to(line(from), { opacity: 0, y: -10, duration: 0.2, ease: ease.out }, at);
       tl.fromTo(
-        [line(to), count(to)],
+        line(to),
         { opacity: 0, y: 12 },
         { opacity: 1, y: 0, duration: 0.32, ease: ease.out, immediateRender: false },
         at + 0.12,
@@ -184,11 +178,7 @@ export default function StrongerReel() {
     // closes into the screen (the photo stays put, only its frame moves) and
     // lets the product list through.
     let t = 0.15;
-    tl.to(
-      [q("[data-eyebrow]"), line(0)],
-      { opacity: 1, y: 0, duration: 0.45, ease: ease.out, stagger: 0.06 },
-      t,
-    );
+    tl.to(line(0), { opacity: 1, y: 0, duration: 0.45, ease: ease.out }, t);
     t = 0.95;
     tl.to(photo, { clipPath: closed, duration: 0.8 }, t);
     tl.to(photo, { opacity: 0, duration: 0.25, ease: ease.out }, t + 0.7);
@@ -429,21 +419,7 @@ export default function StrongerReel() {
         style={{ position: "absolute", inset: 0, width: SQ, height: SQ }}
       />
 
-      {/* The text block sits above the screen on the photo's studio grey. */}
-      <p
-        data-eyebrow
-        style={{
-          position: "absolute",
-          left: COL.x,
-          top: 56,
-          margin: 0,
-          fontSize: 30,
-          fontWeight: 650,
-          lineHeight: "36px",
-        }}
-      >
-        Stronger
-      </p>
+      {/* The line sits above the screen on the photo's studio grey. */}
       {LINES.map((s, i) => (
         <p
           key={s}
@@ -451,35 +427,16 @@ export default function StrongerReel() {
           style={{
             position: "absolute",
             left: COL.x,
-            top: 100,
+            top: 72,
             width: COL.w,
             margin: 0,
-            fontSize: 52,
+            fontSize: 56,
             fontWeight: 650,
-            lineHeight: "58px",
+            lineHeight: "62px",
             letterSpacing: "-0.015em",
           }}
         >
           {s}
-        </p>
-      ))}
-      {LINES.slice(1).map((_, i) => (
-        <p
-          key={i}
-          data-count={i + 1}
-          style={{
-            position: "absolute",
-            right: SQ - COL.x - COL.w,
-            top: 56,
-            margin: 0,
-            fontSize: 30,
-            fontWeight: 350,
-            lineHeight: "36px",
-            fontVariantNumeric: "tabular-nums",
-            color: "rgba(0, 0, 0, 0.55)",
-          }}
-        >
-          {i + 1}/{LINES.length - 1}
         </p>
       ))}
     </ReelStage>
