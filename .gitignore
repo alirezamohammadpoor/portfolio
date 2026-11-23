@@ -49,4 +49,7 @@ schema.json
 
 # claude
 .claude/
-.agents/
+.agents/# TRY brand fonts for the lab films: licensed, local only
+/public/lab-fonts/
+# Client campaign photos for the lab films: local only, not committed
+/public/lab-media/
