@@ -202,7 +202,7 @@ export default function ScatterHome({ projects, contact }: ScatterHomeProps) {
       {/* Opening statement, cols 1-7 on the laptop. */}
       <section className="pt-8 desktop:grid desktop:grid-cols-12 desktop:gap-4 desktop:pt-12">
         <h2 data-statement className="text-h2 desktop:col-start-1 desktop:col-end-8 desktop:text-h1">
-          Frontend developer at the intersection of product and design. Currently at TRY, Stockholm.
+          Frontend developer at the intersection of product and design. Currently at TRY Stockholm.
         </h2>
       </section>
 
