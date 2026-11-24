@@ -32,8 +32,17 @@ import { usePageTransition } from "@/context/TransitionContext";
 import PhonesRow, { PHONE_ASPECT } from "@/components/PhonesRow";
 import MediaFrame from "@/components/MediaFrame";
 import { resolveFrame, resolveLandingFrame } from "@/lib/mediaFrame";
-import { LANDING_ASPECT, LANDING_SIZES, imageAspect, landingKind, storedVideoAspect, videoAspect } from "@/lib/landing";
-import ProjectDetailsOverlay, { ProjectDetailsText } from "@/components/project/ProjectDetailsOverlay";
+import {
+  LANDING_ASPECT,
+  LANDING_SIZES,
+  imageAspect,
+  landingKind,
+  storedVideoAspect,
+  videoAspect,
+} from "@/lib/landing";
+import ProjectDetailsOverlay, {
+  ProjectDetailsText,
+} from "@/components/project/ProjectDetailsOverlay";
 import { setBarProject, useBarState } from "@/lib/barProject";
 import GalleryProgress from "@/components/project/GalleryProgress";
 import TestReplay from "@/components/project/TestReplay";
@@ -65,6 +74,8 @@ const OVERLAP = 44;
 const NEIGHBOUR_SCALE = 0.92;
 const NEIGHBOUR_OPACITY = 0.6;
 const SETTLE_MS = 200;
+// Gap kept between the pill's excerpt and the centred card.
+const EXCERPT_CLEAR = 16;
 const ITEM_W = "calc(100vw - 2 * var(--grid-margin))";
 // Phone: the band a card may fill, the viewport less the header, the pill
 // row (h-14), the room kept under the strip for the filmstrip (pb-[76px]:
@@ -98,7 +109,11 @@ function measureDeskGrid(): DeskGrid {
   const gutter = parseFloat(cs.getPropertyValue("--grid-gutter")) || 16;
   const header = parseFloat(cs.getPropertyValue("--header-height")) || 40;
   const vw = document.documentElement.clientWidth;
-  return { col: (vw - 2 * margin - 11 * gutter) / 12, gutter, h: Math.min(DESK_MAX_H, window.innerHeight - header - 200) };
+  return {
+    col: (vw - 2 * margin - 11 * gutter) / 12,
+    gutter,
+    h: Math.min(DESK_MAX_H, window.innerHeight - header - 200),
+  };
 }
 // Vertical wheel → one card per gesture (see the wheel effect).
 const WHEEL_STEP = 40;
@@ -136,7 +151,9 @@ export default function ProjectStage({
   const gallery = project.gallery ?? [];
   const nextProject = project.nextProject;
   const allProjects = project.allProjects ?? [];
-  const hasPreview = Boolean(nextProject?.firstMedia && nextProject?.slug?.current && onNavigateNext);
+  const hasPreview = Boolean(
+    nextProject?.firstMedia && nextProject?.slug?.current && onNavigateNext,
+  );
   const stripRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const firstVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -145,7 +162,10 @@ export default function ProjectStage({
   const { isTransitioning, inPlace, sourceVideoElement } = usePageTransition();
   const [adopted] = useState(() => {
     const first = gallery[0];
-    const src = first?._type === "galleryVideo" && first.video?.asset?._ref ? fileUrl(first.video.asset._ref) : undefined;
+    const src =
+      first?._type === "galleryVideo" && first.video?.asset?._ref
+        ? fileUrl(first.video.asset._ref)
+        : undefined;
     return adoptableVideo(sourceVideoElement, inPlace, src);
   });
   const adoptHostRef = useRef<HTMLDivElement>(null);
@@ -187,7 +207,9 @@ export default function ProjectStage({
     if (!isDesktop) return;
     const measure = () => {
       const g = measureDeskGrid();
-      setGrid((prev) => (prev && prev.col === g.col && prev.gutter === g.gutter && prev.h === g.h ? prev : g));
+      setGrid((prev) =>
+        prev && prev.col === g.col && prev.gutter === g.gutter && prev.h === g.h ? prev : g,
+      );
     };
     measure();
     window.addEventListener("resize", measure);
@@ -223,8 +245,12 @@ export default function ProjectStage({
       if (hidden) return;
       const cards = itemRefs.current.slice(1).filter((el): el is HTMLDivElement => Boolean(el));
       const rise = reduceMotion ? 0 : 40;
-      const tl = gsap.timeline({ defaults: { duration: dur.text, ease: ease.out }, onComplete: () => setEntering(false) });
-      if (pill.length && !arrivedInPlace) tl.fromTo(pill, { yPercent: rise, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1 }, 0);
+      const tl = gsap.timeline({
+        defaults: { duration: dur.text, ease: ease.out },
+        onComplete: () => setEntering(false),
+      });
+      if (pill.length && !arrivedInPlace)
+        tl.fromTo(pill, { yPercent: rise, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1 }, 0);
       if (cards.length) {
         // Phone: the neighbours rest at NEIGHBOUR_OPACITY behind card 1 and
         // the scroll loop owns their transform, so they only fade, to the
@@ -242,7 +268,13 @@ export default function ProjectStage({
           stagger,
         );
       }
-      if (film.length && !arrivedInPlace) tl.fromTo(film, { yPercent: rise, autoAlpha: 0 }, { yPercent: 0, autoAlpha: 1 }, 2 * stagger);
+      if (film.length && !arrivedInPlace)
+        tl.fromTo(
+          film,
+          { yPercent: rise, autoAlpha: 0 },
+          { yPercent: 0, autoAlpha: 1 },
+          2 * stagger,
+        );
     },
     { scope: rootRef, dependencies: [hidden] },
   );
@@ -254,14 +286,32 @@ export default function ProjectStage({
   // the project again over the details or the switcher and on the next
   // project's card.
   const pillFree = !atPreview && !detailsOpen && !switcherOpen;
-  const testName = pillFree && current?._type === "galleryPhones" ? (current.testName ?? null) : null;
+  const testName =
+    pillFree && current?._type === "galleryPhones" ? (current.testName ?? null) : null;
   // Any other clip can name itself in the pill too (Sanity `label`, e.g.
   // "Prototype – Shop the Look"); it loops as usual, so no replay slot.
   const clipLabel =
-    pillFree && !testName && (current?._type === "galleryPhones" || current?._type === "galleryVideo")
+    pillFree &&
+    !testName &&
+    (current?._type === "galleryPhones" || current?._type === "galleryVideo")
       ? current.label?.trim() || null
       : null;
   const pillLabel = testName ? `A/B test – ${testName}` : clipLabel;
+  // A short line under the pill while the clip is centred (Sanity
+  // `excerpt`; Figma "Pill excerpt · 11-10", Ali picked A in black).
+  const excerpt =
+    pillFree && (current?._type === "galleryPhones" || current?._type === "galleryVideo")
+      ? current.excerpt?.trim() || null
+      : null;
+  // Every clip's excerpt, stacked in one slot as tall as the longest, so
+  // the room under the Pebble never changes between clips (Ali 11-20: the
+  // strip jumped when the first excerpt arrived).
+  const excerpts = gallery.map((g) =>
+    g._type === "galleryPhones" || g._type === "galleryVideo"
+      ? { key: g._key, text: g.excerpt?.trim() || null }
+      : null,
+  );
+  const excerptSlot = excerpts.some((e) => e?.text);
   // Either overlay covers the strip: no wheel, keys, swipes or auto-advance
   // under it, and the centred clip pauses.
   const covered = detailsOpen || switcherOpen;
@@ -285,9 +335,12 @@ export default function ProjectStage({
   // open (the bar still says what you are looking at).
   const { chrome } = useBarState();
   const capsule = chrome !== "pill";
-  const barTest = !atPreview && current?._type === "galleryPhones" ? (current.testName ?? null) : null;
+  const barTest =
+    !atPreview && current?._type === "galleryPhones" ? (current.testName ?? null) : null;
   const barClipLabel =
-    !atPreview && !barTest && (current?._type === "galleryPhones" || current?._type === "galleryVideo")
+    !atPreview &&
+    !barTest &&
+    (current?._type === "galleryPhones" || current?._type === "galleryVideo")
       ? current.label?.trim() || null
       : null;
   const barLabel = barTest ? `A/B test – ${barTest}` : barClipLabel;
@@ -306,7 +359,9 @@ export default function ProjectStage({
           name={barTest}
           ended={barEnded}
           reduceMotion={reduceMotion}
-          getVideo={() => itemRefs.current[index]?.querySelector<HTMLVideoElement>("video[data-once]") ?? null}
+          getVideo={() =>
+            itemRefs.current[index]?.querySelector<HTMLVideoElement>("video[data-once]") ?? null
+          }
           onReplay={() => setReplay((r) => r + 1)}
         />
       ) : null,
@@ -315,7 +370,20 @@ export default function ProjectStage({
       closeDetails,
       details: <ProjectDetailsText project={project} compact />,
     });
-  }, [capsule, hidden, project, barLabel, barTest, barEnded, current?._key, reduceMotion, index, detailsOpen, toggleDetails, closeDetails]);
+  }, [
+    capsule,
+    hidden,
+    project,
+    barLabel,
+    barTest,
+    barEnded,
+    current?._key,
+    reduceMotion,
+    index,
+    detailsOpen,
+    toggleDetails,
+    closeDetails,
+  ]);
   useEffect(() => () => setBarProject(null), []);
   // While the finger is down the cards track scroll 1:1 (no CSS transition
   // fighting the per-frame transform); the 200 ms settle applies once idle.
@@ -371,7 +439,9 @@ export default function ProjectStage({
           // Same stacking rule as the gallery cards. Without it the preview
           // stayed at z-index auto, and the last gallery card (overlapping it
           // by 44 px, z-index 5 when one card away) painted over its left edge.
-          el.style.zIndex = reduceMotion ? String(t < 0.5 ? 10 : 5) : String(10 - Math.round(t * 5));
+          el.style.zIndex = reduceMotion
+            ? String(t < 0.5 ? 10 : 5)
+            : String(10 - Math.round(t * 5));
           return;
         }
         const c = el.offsetLeft + el.offsetWidth / 2;
@@ -446,7 +516,8 @@ export default function ProjectStage({
       const current = itemRefs.current[posRef.current];
       // This write scrolls too (the flag goes up until the strip settles), so
       // a second change in the same breath is left to the snap.
-      if (current) strip.scrollLeft = current.offsetLeft - (strip.clientWidth - current.offsetWidth) / 2;
+      if (current)
+        strip.scrollLeft = current.offsetLeft - (strip.clientWidth - current.offsetWidth) / 2;
     };
     apply();
     const ro = new ResizeObserver(apply);
@@ -517,7 +588,9 @@ export default function ProjectStage({
     // again after browser back may sit somewhere else than posRef says).
     const strip = stripRef.current;
     const from =
-      strip && gsap.isTweening(strip) && glideTargetRef.current !== null ? glideTargetRef.current : nearest();
+      strip && gsap.isTweening(strip) && glideTargetRef.current !== null
+        ? glideTargetRef.current
+        : nearest();
     const target = from + dir;
     if (target > maxPos) {
       // Once: a second flick on the way out must not start a second hand-off.
@@ -597,7 +670,10 @@ export default function ProjectStage({
       const now = e.timeStamp;
       const magnitude = Math.abs(delta);
       const reflick =
-        decaying && magnitude >= REFLICK_MIN && magnitude > trough * 4 && now - lastStepAt > REFLICK_MS;
+        decaying &&
+        magnitude >= REFLICK_MIN &&
+        magnitude > trough * 4 &&
+        now - lastStepAt > REFLICK_MS;
       const newGesture =
         now - lastWheelAt > GESTURE_SILENCE_MS ||
         (lastAxis !== null && axis !== lastAxis) ||
@@ -683,7 +759,10 @@ export default function ProjectStage({
       const t = e.touches[0];
       // posRef: the next project's card is the centred one, even while the
       // strip is still settling from the swipe that brought it in.
-      start = e.touches.length === 1 && t && (atEnd() || posRef.current > last) && !gsap.isTweening(strip) ? { x: t.clientX, y: t.clientY } : null;
+      start =
+        e.touches.length === 1 && t && (atEnd() || posRef.current > last) && !gsap.isTweening(strip)
+          ? { x: t.clientX, y: t.clientY }
+          : null;
     };
     const onEnd = (e: TouchEvent) => {
       const t = e.changedTouches[0];
@@ -784,7 +863,8 @@ export default function ProjectStage({
     return span(n);
   };
   const deskBox = (boxAspect: number, i: number) => {
-    if (!grid) return { height: DESK_H, aspectRatio: boxAspect, marginLeft: i === 0 ? 0 : DESK_GAP };
+    if (!grid)
+      return { height: DESK_H, aspectRatio: boxAspect, marginLeft: i === 0 ? 0 : DESK_GAP };
     const width = snapWidth(grid.h * boxAspect);
     return { width, height: width / boxAspect, marginLeft: i === 0 ? 0 : DESK_GAP };
   };
@@ -802,8 +882,38 @@ export default function ProjectStage({
     // (1280×720) would then outgrow the height budget and run into the test
     // pill, so with tests on the page it keeps its natural width instead.
     const width = hasTests ? Math.min(snapWidth(natural), natural) : snapWidth(natural);
-    return { width, height: (width - gaps) / (screens * PHONE_ASPECT), marginLeft: i === 0 ? 0 : DESK_GAP };
+    return {
+      width,
+      height: (width - gaps) / (screens * PHONE_ASPECT),
+      marginLeft: i === 0 ? 0 : DESK_GAP,
+    };
   };
+
+  // The excerpt hangs under the pill row, over the room above the card. Where
+  // it would reach the centred card, the strip scales down from the card's
+  // bottom edge just enough to clear it, so the filmstrip keeps its place.
+  const stripWrapRef = useRef<HTMLDivElement>(null);
+  const excerptRef = useRef<HTMLElement | null>(null);
+  const setExcerptEl = useCallback((el: HTMLElement | null) => {
+    excerptRef.current = el;
+  }, []);
+  useLayoutEffect(() => {
+    const wrap = stripWrapRef.current;
+    if (!wrap) return;
+    const ex = excerptRef.current;
+    const card = itemRefs.current[index];
+    let transform = "";
+    if (ex && card) {
+      const h = card.offsetHeight;
+      const need =
+        ex.offsetTop + ex.offsetHeight + EXCERPT_CLEAR - (wrap.offsetTop + card.offsetTop);
+      if (need > 0 && h > 0) {
+        wrap.style.transformOrigin = `50% ${card.offsetTop + h}px`;
+        transform = `scale(${Math.max(0.7, (h - need) / h).toFixed(4)})`;
+      }
+    }
+    wrap.style.transform = transform;
+  }, [excerptSlot, index, grid, isDesktop]);
 
   return (
     <div
@@ -815,74 +925,116 @@ export default function ProjectStage({
           project → project clone lands on the previous page's y). */}
       <h1 className="sr-only">{project.title}</h1>
       {capsule ? (
-        // The capsule's second row stands where the pill stood: the cards
-        // keep their y.
-        <div className="relative h-14 shrink-0">
-          {/* "title": the bar holds only the title; the test or clip label is
-              a caption under it, just above the card (the phone has no room
-              between the card and the filmstrip). */}
-          {chrome === "title" && barLabel && (
-            <p className="pointer-events-none absolute inset-x-0 bottom-1 truncate px-margin text-center text-sub desktop:text-body text-secondary">{barLabel}</p>
+        <>
+          {/* The capsule's second row stands where the pill stood: the cards
+            keep their y. */}
+          <div className="relative h-14 shrink-0">
+            {chrome === "title" && barLabel && (
+              <p className="pointer-events-none absolute inset-x-0 bottom-1 truncate px-margin text-center text-sub desktop:text-body text-secondary">
+                {barLabel}
+              </p>
+            )}
+          </div>
+          {/* The centred clip's excerpt (Sanity `excerpt`) under the Pebble's
+            project row, in the flow: the strip below gives up the room. */}
+          {excerptSlot && (
+            <div
+              ref={setExcerptEl}
+              className="mx-auto grid w-full shrink-0 px-margin pt-3 desktop:w-[480px] desktop:px-0"
+            >
+              {excerpts.map(
+                (e) =>
+                  e?.text && (
+                    <p
+                      key={e.key}
+                      aria-hidden={!excerpt || e.key !== current?._key}
+                      className="[grid-area:1/1] text-center text-[0.875rem] leading-5 text-balance text-primary motion-safe:transition-opacity motion-safe:duration-200"
+                      style={{ opacity: excerpt && e.key === current?._key ? 1 : 0 }}
+                    >
+                      {e.text}
+                    </p>
+                  ),
+              )}
+            </div>
           )}
-        </div>
+        </>
       ) : (
-      <div className="relative z-50 flex h-14 shrink-0 items-start justify-center pt-2">
-        {/* With an A/B test centred (Figma "Test pill · placement · 11-09",
+        <div className="relative z-50 flex h-14 shrink-0 items-start justify-center pt-2">
+          {/* With an A/B test centred (Figma "Test pill · placement · 11-09",
             Ali picked C + R3) the pill carries it: the replay slot on the
             left, the test's name after the title. A phone has room for one,
             so there the test's name stands in for the title. */}
-        <div
-          data-stage-chrome="pill"
-          className={`frost-soft invisible inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center rounded-full text-sub desktop:text-body text-primary ${testName ? "pl-1" : ""}`}
-        >
-          {testName && (
-            <TestReplay
-              key={current?._key}
-              name={testName}
-              ended={Boolean(current && endedKey === current._key)}
-              reduceMotion={reduceMotion}
-              getVideo={() => itemRefs.current[index]?.querySelector<HTMLVideoElement>("video[data-once]") ?? null}
-              onReplay={() => setReplay((r) => r + 1)}
-            />
-          )}
-          <button
-            type="button"
-            aria-expanded={detailsOpen}
-            aria-controls="project-details"
-            onClick={() => {
-              setSwitcherOpen(false);
-              setDetailsOpen((o) => !o);
-            }}
-            className={`inline-flex h-full min-w-0 cursor-pointer items-center gap-2 rounded-full pr-4 transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97] ${testName ? "pl-2" : "pl-4"}`}
+          <div
+            data-stage-chrome="pill"
+            className={`frost-soft invisible inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center rounded-full text-sub desktop:text-body text-primary ${testName ? "pl-1" : ""}`}
           >
-            <span className="truncate">
-              {pillLabel ? (
-                <>
-                  {isDesktop && (
-                    <>
-                      {project.title} <span className="text-secondary">·</span>{" "}
-                    </>
-                  )}
-                  {pillLabel}
-                </>
-              ) : (
-                project.title
-              )}
-            </span>
-            <span
-              aria-hidden="true"
-              className="shrink-0 text-[0.5rem]"
-              style={{ transform: detailsOpen ? "rotate(180deg)" : "none", transition: reduceMotion ? "none" : `transform 200ms ${EASE_OUT_CSS}` }}
+            {testName && (
+              <TestReplay
+                key={current?._key}
+                name={testName}
+                ended={Boolean(current && endedKey === current._key)}
+                reduceMotion={reduceMotion}
+                getVideo={() =>
+                  itemRefs.current[index]?.querySelector<HTMLVideoElement>("video[data-once]") ??
+                  null
+                }
+                onReplay={() => setReplay((r) => r + 1)}
+              />
+            )}
+            <button
+              type="button"
+              aria-expanded={detailsOpen}
+              aria-controls="project-details"
+              onClick={() => {
+                setSwitcherOpen(false);
+                setDetailsOpen((o) => !o);
+              }}
+              className={`inline-flex h-full min-w-0 cursor-pointer items-center gap-2 rounded-full pr-4 transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] select-none active:scale-[0.97] ${testName ? "pl-2" : "pl-4"}`}
             >
-              ▼
-            </span>
-          </button>
+              <span className="truncate">
+                {pillLabel ? (
+                  <>
+                    {isDesktop && (
+                      <>
+                        {project.title} <span className="text-secondary">·</span>{" "}
+                      </>
+                    )}
+                    {pillLabel}
+                  </>
+                ) : (
+                  project.title
+                )}
+              </span>
+              <span
+                aria-hidden="true"
+                className="shrink-0 text-[0.5rem]"
+                style={{
+                  transform: detailsOpen ? "rotate(180deg)" : "none",
+                  transition: reduceMotion ? "none" : `transform 200ms ${EASE_OUT_CSS}`,
+                }}
+              >
+                ▼
+              </span>
+            </button>
+          </div>
+          {excerpt && (
+            <p
+              key={current?._key}
+              ref={setExcerptEl}
+              className="absolute top-12 left-1/2 w-max max-w-[min(440px,calc(100vw-2*var(--grid-margin)))] -translate-x-1/2 text-center text-[0.875rem] leading-5 text-balance text-primary transition-opacity duration-200 starting:opacity-0"
+            >
+              {excerpt}
+            </p>
+          )}
         </div>
-      </div>
       )}
 
       {/* Strip, vertically centred in the remaining space */}
-      <div className={`flex flex-1 items-center pb-[76px] desktop:pb-[72px] ${hidden && arrivedInPlace ? "opacity-0" : ""}`}>
+      <div
+        ref={stripWrapRef}
+        className={`relative flex flex-1 items-center pb-[76px] desktop:pb-[72px] ${hidden && arrivedInPlace ? "opacity-0" : ""}`}
+        style={{ transition: reduceMotion ? "none" : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}` }}
+      >
         <div
           ref={stripRef}
           // A lone card is centred by the strip itself; with the next project's
@@ -891,7 +1043,11 @@ export default function ProjectStage({
           // as tall as its tallest card, so top-aligned cards moved a
           // landscape clip up whenever the project also had phone clips.
           className={`flex w-full items-center overflow-x-auto py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${single && !hasPreview ? "justify-center" : "snap-x snap-mandatory"}`}
-          style={isDesktop ? undefined : { scrollPaddingInline: "var(--grid-margin)", paddingInline: "var(--grid-margin)" }}
+          style={
+            isDesktop
+              ? undefined
+              : { scrollPaddingInline: "var(--grid-margin)", paddingInline: "var(--grid-margin)" }
+          }
           data-lenis-prevent
           data-stage-strip
           role="region"
@@ -906,7 +1062,10 @@ export default function ProjectStage({
             const el = itemRefs.current[next];
             const strip = stripRef.current;
             if (!el || !strip) return;
-            strip.scrollTo({ left: el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2, behavior: "auto" });
+            strip.scrollTo({
+              left: el.offsetLeft - (strip.clientWidth - el.offsetWidth) / 2,
+              behavior: "auto",
+            });
           }}
         >
           {gallery.map((item, i) => {
@@ -939,7 +1098,9 @@ export default function ProjectStage({
                             : phoneCardWidth(screens * PHONE_ASPECT, (screens - 1) * 8),
                           marginLeft: i === 0 ? 0 : -OVERLAP,
                           transition:
-                            reduceMotion || scrolling || entering ? "none" : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}`,
+                            reduceMotion || scrolling || entering
+                              ? "none"
+                              : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}, opacity ${SETTLE_MS}ms ${EASE_OUT_CSS}`,
                         }
                   }
                   role="group"
@@ -955,7 +1116,9 @@ export default function ProjectStage({
                     sizes="50vw"
                     once={Boolean(item.testName)}
                     replay={replay}
-                    onEndedChange={(ended) => setEndedKey((k) => (ended ? item._key : k === item._key ? null : k))}
+                    onEndedChange={(ended) =>
+                      setEndedKey((k) => (ended ? item._key : k === item._key ? null : k))
+                    }
                   />
                 </div>
               );
@@ -968,12 +1131,15 @@ export default function ProjectStage({
             // The card's shape from Sanity (exact before anything loads),
             // else from the clip once it reports, else the stage default.
             const aspect =
-              (isImage ? imageAspect(item.image) : (storedVideoAspect(item) ?? videoAspects[item._key])) ??
-              LANDING_ASPECT.stage;
+              (isImage
+                ? imageAspect(item.image)
+                : (storedVideoAspect(item) ?? videoAspects[item._key])) ?? LANDING_ASPECT.stage;
             // The clip's first frame as a still: what the card shows before
             // its video mounts or has a frame, so no swipe meets a black card.
             const poster =
-              !isImage && item.poster?.asset ? imageUrl(item.poster, isDesktop ? 1600 : 900) : undefined;
+              !isImage && item.poster?.asset
+                ? imageUrl(item.poster, isDesktop ? 1600 : 900)
+                : undefined;
             // Card 1 is the landing media (the clone lands on it): a laptop-shaped
             // box, the clone landing on the media inside its background.
             const frame =
@@ -996,9 +1162,18 @@ export default function ProjectStage({
                     onLoad={i === 0 ? onFirstReady : undefined}
                   />
                 )}
-                {!isImage && i === 0 && adopted && <div ref={adoptHostRef} className="absolute inset-0" />}
+                {!isImage && i === 0 && adopted && (
+                  <div ref={adoptHostRef} className="absolute inset-0" />
+                )}
                 {poster && !(i === 0 && adopted) && (
-                  <Image src={poster} unoptimized alt="" fill className="object-cover" sizes={LANDING_SIZES.stage} />
+                  <Image
+                    src={poster}
+                    unoptimized
+                    alt=""
+                    fill
+                    className="object-cover"
+                    sizes={LANDING_SIZES.stage}
+                  />
                 )}
                 {!isImage && item.video?.asset?._ref && near && !(i === 0 && adopted) && (
                   <video
@@ -1020,7 +1195,9 @@ export default function ProjectStage({
                     playsInline
                     preload="metadata"
                     autoPlay={i === 0}
-                    onLoadedMetadata={(e) => setVideoAspect(item._key, videoAspect(e.currentTarget))}
+                    onLoadedMetadata={(e) =>
+                      setVideoAspect(item._key, videoAspect(e.currentTarget))
+                    }
                   />
                 )}
               </>
@@ -1043,7 +1220,9 @@ export default function ProjectStage({
                         aspectRatio: framed ? undefined : aspect,
                         marginLeft: i === 0 ? 0 : -OVERLAP,
                       }),
-                  ...(frame && !framed && frame.background?.colour ? { backgroundColor: frame.background.colour } : null),
+                  ...(frame && !framed && frame.background?.colour
+                    ? { backgroundColor: frame.background.colour }
+                    : null),
                   boxShadow: i === index && !flat ? "0 8px 24px rgba(0,0,0,0.18)" : "none",
                   transition:
                     reduceMotion || scrolling || entering
@@ -1082,7 +1261,11 @@ export default function ProjectStage({
                 itemRefs.current[gallery.length] = el;
               }}
               className="relative shrink-0 snap-center will-change-transform"
-              style={isDesktop ? deskBox(LANDING_ASPECT[landingKind(nextProject.hasChapters)], gallery.length) : { width: ITEM_W, marginLeft: -OVERLAP }}
+              style={
+                isDesktop
+                  ? deskBox(LANDING_ASPECT[landingKind(nextProject.hasChapters)], gallery.length)
+                  : { width: ITEM_W, marginLeft: -OVERLAP }
+              }
               role="group"
               aria-roledescription="slide"
               aria-label="Next project"
@@ -1123,7 +1306,12 @@ export default function ProjectStage({
       />
 
       {(chrome === "pill" || chrome === "overlay") && (
-        <ProjectDetailsOverlay project={project} open={detailsOpen} onClose={closeDetails} reduceMotion={reduceMotion} />
+        <ProjectDetailsOverlay
+          project={project}
+          open={detailsOpen}
+          onClose={closeDetails}
+          reduceMotion={reduceMotion}
+        />
       )}
     </div>
   );

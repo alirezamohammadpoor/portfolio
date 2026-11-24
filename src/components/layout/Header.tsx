@@ -189,7 +189,7 @@ export default function Header({ bar }: { bar: BarData }) {
               is behind from showing through as a soft grey block. */}
           <span
             aria-hidden
-            className={`pointer-events-none absolute inset-0 -z-10 rounded-[inherit] bg-bg/70 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`}
+            className={`pointer-events-none absolute inset-0 -z-10 rounded-[inherit] bg-bg/90 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`}
           />
           <nav
             aria-label="Site"
