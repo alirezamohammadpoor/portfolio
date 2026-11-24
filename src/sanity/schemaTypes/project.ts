@@ -1,7 +1,6 @@
 import { defineType, defineField } from "sanity";
 import { paletteField, defaultBackgroundField } from "./mediaFrame";
 
-
 // Shared by chapters and the tests inside a test switcher.
 const chapterTextField = defineField({
   name: "text",
@@ -27,7 +26,8 @@ const chapterTextField = defineField({
                 name: "href",
                 title: "URL",
                 type: "url",
-                validation: (rule) => rule.required().uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
+                validation: (rule) =>
+                  rule.required().uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
               }),
             ],
           },
@@ -95,9 +95,20 @@ function mediaField({ phones }: { phones: boolean }) {
             defineField({
               name: "phones",
               title: "Screens",
-              description: "One to three phone screens side by side, each a still or a clip. Record at the phone's own ratio (390×844 or 1080×2340), flush, no device frame.",
+              description:
+                "One to three phone screens side by side, each a still or a clip. Record at the phone's own ratio (390×844 or 1080×2340), flush, no device frame.",
               type: "array",
-              of: [{ type: "object", name: "phoneSlot", fields: phoneSlotFields, preview: { select: { type: "type" }, prepare: ({ type }) => ({ title: type === "image" ? "Still" : "Clip" }) } }],
+              of: [
+                {
+                  type: "object",
+                  name: "phoneSlot",
+                  fields: phoneSlotFields,
+                  preview: {
+                    select: { type: "type" },
+                    prepare: ({ type }) => ({ title: type === "image" ? "Still" : "Clip" }),
+                  },
+                },
+              ],
               validation: (rule) => rule.max(3),
               hidden: ({ parent }) => parent?.type !== "phones",
             }),
@@ -183,7 +194,9 @@ export const project = defineType({
                     title: "URL",
                     type: "url",
                     validation: (rule) =>
-                      rule.required().uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
+                      rule
+                        .required()
+                        .uri({ allowRelative: true, scheme: ["http", "https", "mailto"] }),
                   }),
                 ],
               },
@@ -198,8 +211,7 @@ export const project = defineType({
                     title: "ELI5 Explanation",
                     type: "text",
                     rows: 2,
-                    description:
-                      "Simple explanation a non-technical person would understand",
+                    description: "Simple explanation a non-technical person would understand",
                     validation: (rule) => rule.required(),
                   }),
                 ],
@@ -222,8 +234,7 @@ export const project = defineType({
                     title: "Image",
                     type: "image",
                     options: { hotspot: true },
-                    description:
-                      "Image to show in the preview. Used if no video URL is provided.",
+                    description: "Image to show in the preview. Used if no video URL is provided.",
                     fields: [
                       defineField({
                         name: "alt",
@@ -281,7 +292,8 @@ export const project = defineType({
     defineField({
       name: "sitePassword",
       title: "Site Password",
-      description: "Optional password for Shopify dev-store gate. Shown as a copy button; user pastes it into Shopify's password prompt after clicking Visit.",
+      description:
+        "Optional password for Shopify dev-store gate. Shown as a copy button; user pastes it into Shopify's password prompt after clicking Visit.",
       type: "string",
     }),
     defineField({
@@ -293,7 +305,8 @@ export const project = defineType({
     defineField({
       name: "coverMedia",
       title: "Cover Media",
-      description: "Cover on the home and the first frame of the morph, drawn 16:10 on every row. Export flush at 16:10 (1920×1200), no bars; a phone recording goes in the gallery, not here.",
+      description:
+        "Cover on the home and the first frame of the morph, drawn 16:10 on every row. Export flush at 16:10 (1920×1200), no bars; a phone recording goes in the gallery, not here.",
       type: "object",
       fields: [
         defineField({
@@ -344,7 +357,8 @@ export const project = defineType({
     defineField({
       name: "homeTextAlign",
       title: "Home text position",
-      description: "Where the text hangs on the media's edge: top, middle or bottom. Not used by the full bleed layout.",
+      description:
+        "Where the text hangs on the media's edge: top, middle or bottom. Not used by the full bleed layout.",
       type: "string",
       options: {
         layout: "radio",
@@ -363,7 +377,8 @@ export const project = defineType({
       description:
         "Which side the landing media takes on the project page. Leave empty to alternate per project. Case-study (chapter) projects only: the gallery page has no opener.",
       type: "string",
-      hidden: ({ document }) => !(Array.isArray(document?.chapters) && document.chapters.length > 0),
+      hidden: ({ document }) =>
+        !(Array.isArray(document?.chapters) && document.chapters.length > 0),
       options: {
         layout: "radio",
         direction: "horizontal",
@@ -381,7 +396,9 @@ export const project = defineType({
       type: "array",
       validation: (rule) =>
         rule.custom((items) =>
-          Array.isArray(items) && items[0] && (items[0] as { _type?: string })._type === "galleryPhones"
+          Array.isArray(items) &&
+          items[0] &&
+          (items[0] as { _type?: string })._type === "galleryPhones"
             ? "The first item opens the page (the home cover morphs onto it): make it an image or a video."
             : true,
         ),
@@ -430,7 +447,8 @@ export const project = defineType({
               title: "Clip width",
               type: "number",
               readOnly: true,
-              description: "Pixels, read from the clip by scripts/sanity/video-posters.mjs, so the card has its shape before the clip loads.",
+              description:
+                "Pixels, read from the clip by scripts/sanity/video-posters.mjs, so the card has its shape before the clip loads.",
             }),
             defineField({
               name: "videoHeight",
@@ -439,11 +457,37 @@ export const project = defineType({
               readOnly: true,
             }),
             defineField({
+              name: "phoneVideo",
+              title: "Phone clip",
+              type: "file",
+              options: { accept: "video/*" },
+              description:
+                "Optional. A cut of the same clip made for phones (e.g. 4:5 portrait), played below the desktop breakpoint instead of the clip above.",
+            }),
+            defineField({
+              name: "phonePoster",
+              title: "Phone poster",
+              type: "image",
+              description: "The phone clip's first frame, shown until it has loaded.",
+            }),
+            defineField({
+              name: "phoneVideoWidth",
+              title: "Phone clip width",
+              type: "number",
+              readOnly: true,
+            }),
+            defineField({
+              name: "phoneVideoHeight",
+              title: "Phone clip height",
+              type: "number",
+              readOnly: true,
+            }),
+            defineField({
               name: "label",
               title: "Pill label",
               type: "string",
               description:
-                "Optional. Names this clip in the pill above the filmstrip while it is centred, e.g. \"Prototype – Shop the Look\". The clip loops as usual. An A/B test name takes its place when both are set.",
+                'Optional. Names this clip in the pill above the filmstrip while it is centred, e.g. "Prototype – Shop the Look". The clip loops as usual. An A/B test name takes its place when both are set.',
             }),
           ],
           preview: {
@@ -455,13 +499,24 @@ export const project = defineType({
           type: "object",
           name: "galleryPhones",
           title: "Phones",
-          description: "Two or three phone screens side by side on the page, each a still or a clip, e.g. a product page still next to a menu clip. Record at the phone's own ratio, flush, no device frame.",
+          description:
+            "Two or three phone screens side by side on the page, each a still or a clip, e.g. a product page still next to a menu clip. Record at the phone's own ratio, flush, no device frame.",
           fields: [
             defineField({
               name: "phones",
               title: "Screens",
               type: "array",
-              of: [{ type: "object", name: "phoneSlot", fields: phoneSlotFields, preview: { select: { type: "type" }, prepare: ({ type }) => ({ title: type === "image" ? "Still" : "Clip" }) } }],
+              of: [
+                {
+                  type: "object",
+                  name: "phoneSlot",
+                  fields: phoneSlotFields,
+                  preview: {
+                    select: { type: "type" },
+                    prepare: ({ type }) => ({ title: type === "image" ? "Still" : "Clip" }),
+                  },
+                },
+              ],
               validation: (rule) => rule.required().min(1).max(3),
             }),
             defineField({ name: "frame", title: "Background", type: "mediaFrame" }),
@@ -470,20 +525,22 @@ export const project = defineType({
               title: "A/B test",
               type: "string",
               description:
-                "The test this clip shows, e.g. Bestseller badge. When set, the clip plays once each time it is centred and holds on its last frame (the design), and a pill above the filmstrip reads \"A/B test – <name>\" with a replay button.",
+                'The test this clip shows, e.g. Bestseller badge. When set, the clip plays once each time it is centred and holds on its last frame (the design), and a pill above the filmstrip reads "A/B test – <name>" with a replay button.',
             }),
             defineField({
               name: "label",
               title: "Pill label",
               type: "string",
               description:
-                "Optional. Names this clip in the pill above the filmstrip while it is centred, e.g. \"Prototype – Shop the Look\". The clip loops as usual. An A/B test name takes its place when both are set.",
+                'Optional. Names this clip in the pill above the filmstrip while it is centred, e.g. "Prototype – Shop the Look". The clip loops as usual. An A/B test name takes its place when both are set.',
             }),
           ],
           preview: {
             select: { phones: "phones", testName: "testName", label: "label" },
             prepare: ({ phones, testName, label }) => ({
-              title: testName ? `A/B test – ${testName}` : label || `Phones (${Array.isArray(phones) ? phones.length : 0})`,
+              title: testName
+                ? `A/B test – ${testName}`
+                : label || `Phones (${Array.isArray(phones) ? phones.length : 0})`,
             }),
           },
         },
@@ -505,7 +562,8 @@ export const project = defineType({
               name: "title",
               title: "Title",
               type: "string",
-              description: "A written title, e.g. \"Every test had been off since 1 July\". Numbers go inside the sentence.",
+              description:
+                'A written title, e.g. "Every test had been off since 1 July". Numbers go inside the sentence.',
               validation: (rule) => rule.required(),
             }),
             chapterTextField,
@@ -550,7 +608,8 @@ export const project = defineType({
           preview: {
             select: { title: "title", layout: "layout", side: "side", media: "media.image" },
             prepare({ title, layout, side, media }) {
-              const place = layout === "beside" ? `beside · ${side ?? "right"}` : (layout ?? "full");
+              const place =
+                layout === "beside" ? `beside · ${side ?? "right"}` : (layout ?? "full");
               return { title: title || "Chapter", subtitle: place, media };
             },
           },
@@ -583,7 +642,7 @@ export const project = defineType({
                       name: "label",
                       title: "Pill label",
                       type: "string",
-                      description: "Short, e.g. \"Bestseller badge\".",
+                      description: 'Short, e.g. "Bestseller badge".',
                       validation: (rule) => rule.required(),
                     }),
                     defineField({
@@ -596,7 +655,7 @@ export const project = defineType({
                       name: "status",
                       title: "Status",
                       type: "string",
-                      description: "One line, e.g. \"Live since 20 Oct · final read 3 Nov\".",
+                      description: 'One line, e.g. "Live since 20 Oct · final read 3 Nov".',
                     }),
                     chapterTextField,
                     defineField({
@@ -610,14 +669,15 @@ export const project = defineType({
                       name: "metric",
                       title: "Primary metric",
                       type: "string",
-                      description: "e.g. \"Add to cart rate (GrowthBook)\".",
+                      description: 'e.g. "Add to cart rate (GrowthBook)".',
                     }),
                     defineField({
                       name: "result",
                       title: "Result",
                       type: "text",
                       rows: 3,
-                      description: "The real numbers: control → variant, lift, chance to beat control.",
+                      description:
+                        "The real numbers: control → variant, lift, chance to beat control.",
                     }),
                     defineField({
                       name: "decision",
@@ -677,8 +737,7 @@ export const project = defineType({
           name: "title",
           title: "SEO Title",
           type: "string",
-          description:
-            "Defaults to the project title. Keep under 60 characters.",
+          description: "Defaults to the project title. Keep under 60 characters.",
           validation: (rule) => rule.max(60),
         }),
         defineField({
@@ -686,24 +745,21 @@ export const project = defineType({
           title: "SEO Description",
           type: "text",
           rows: 3,
-          description:
-            "Defaults to the project short description. Keep under 160 characters.",
+          description: "Defaults to the project short description. Keep under 160 characters.",
           validation: (rule) => rule.max(160),
         }),
         defineField({
           name: "ogImage",
           title: "Open Graph Image",
           type: "image",
-          description:
-            "Optional. If empty, the auto-generated OG image is used.",
+          description: "Optional. If empty, the auto-generated OG image is used.",
           options: { hotspot: true },
         }),
         defineField({
           name: "noIndex",
           title: "Hide from search engines",
           type: "boolean",
-          description:
-            "If enabled, the page is excluded via robots meta tag.",
+          description: "If enabled, the page is excluded via robots meta tag.",
           initialValue: false,
         }),
       ],
