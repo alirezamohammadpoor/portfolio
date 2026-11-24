@@ -1,0 +1,488 @@
+{
+  "_meta": {
+    "externalHosts": [
+      "consent.cookiebot.com",
+      "cdn.sanity.io",
+      "consentcdn.cookiebot.com",
+      "87p5dw9a.api.sanity.io"
+    ],
+    "units": "CSS px; multiply by 4 for PNG px",
+    "bottomBar": "hidden while the drawer is open",
+    "drawerScroller": "the drawer's step body (overflow-y:auto); header and price footer stay put"
+  },
+  "p01-site-top.png": {
+    "file": "p01-site-top.png",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 4
+    },
+    "url": "http://localhost:3210/se/sv/forrad-att-hyra/skelleftea/hantverkarvagen-133",
+    "scrollY": 0,
+    "time": "2026-11-24T16:08:40.957Z",
+    "next": {
+      "label": "Boka nu (sticky bar)",
+      "rect": {
+        "x": 262.5,
+        "y": 784,
+        "width": 111.5,
+        "height": 44
+      }
+    },
+    "header": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 80
+    },
+    "bottomBar": {
+      "x": 0,
+      "y": 768,
+      "width": 390,
+      "height": 76
+    },
+    "note": "page top"
+  },
+  "p02-header.png": {
+    "file": "p02-header.png",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 4
+    },
+    "url": "http://localhost:3210/se/sv/forrad-att-hyra/skelleftea/hantverkarvagen-133",
+    "scrollY": 1200,
+    "time": "2026-11-24T16:08:42.253Z",
+    "next": null,
+    "header": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 80
+    },
+    "bottomBar": {
+      "x": 0,
+      "y": 768,
+      "width": 390,
+      "height": 76
+    },
+    "note": "sticky header alone at scrollY 1200"
+  },
+  "p02-bottombar.png": {
+    "file": "p02-bottombar.png",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 4
+    },
+    "url": "http://localhost:3210/se/sv/forrad-att-hyra/skelleftea/hantverkarvagen-133",
+    "scrollY": 1200,
+    "time": "2026-11-24T16:08:42.735Z",
+    "next": null,
+    "header": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 80
+    },
+    "bottomBar": {
+      "x": 0,
+      "y": 768,
+      "width": 390,
+      "height": 76
+    },
+    "note": "sticky bottom bar alone at scrollY 1200"
+  },
+  "p02-site-full.png": {
+    "file": "p02-site-full.png",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 4
+    },
+    "url": "http://localhost:3210/se/sv/forrad-att-hyra/skelleftea/hantverkarvagen-133",
+    "scrollY": 0,
+    "time": "2026-11-24T16:08:50.839Z",
+    "next": null,
+    "hidden": {
+      "header": {
+        "x": 0,
+        "y": 0,
+        "width": 390,
+        "height": 80
+      },
+      "bottomBar": {
+        "x": 0,
+        "y": 768,
+        "width": 390,
+        "height": 76
+      },
+      "how": "display:none on header[data-section=header] (sticky, 80 px in flow, so the page is 80 px shorter and starts with the hero) and on the fixed bottom bar"
+    },
+    "pageHeight": 7722
+  },
+  "p03-units.png": {
+    "file": "p03-units.png",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 4
+    },
+    "url": "http://localhost:3210/se/sv/forrad-att-hyra/skelleftea/hantverkarvagen-133",
+    "scrollY": 558,
+    "time": "2026-11-24T16:08:52.899Z",
+    "next": {
+      "label": "Boka nu (sticky bar)",
+      "rect": {
+        "x": 262.5,
+        "y": 784,
+        "width": 111.5,
+        "height": 44
+      }
+    },
+    "header": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 80
+    },
+    "bottomBar": {
+      "x": 0,
+      "y": 768,
+      "width": 390,
+      "height": 76
+    },
+    "heading": {
+      "x": 20,
+      "y": 95.7,
+      "width": 350,
+      "height": 33
+    }
+  },
+  "p04-unit-card.png": {
+    "file": "p04-unit-card.png",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 4
+    },
+    "url": "http://localhost:3210/se/sv/forrad-att-hyra/skelleftea/hantverkarvagen-133",
+    "scrollY": 710,
+    "time": "2026-11-24T16:08:54.452Z",
+    "next": {
+      "label": "Boka 7 m²",
+      "rect": {
+        "x": 38,
+        "y": 699.2,
+        "width": 314,
+        "height": 45
+      }
+    },
+    "header": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 80
+    },
+    "bottomBar": {
+      "x": 0,
+      "y": 768,
+      "width": 390,
+      "height": 76
+    }
+  },
+  "p05a-drawer-opening.png": {
+    "file": "p05a-drawer-opening.png",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 4
+    },
+    "url": "http://localhost:3210/se/sv/forrad-att-hyra/skelleftea/hantverkarvagen-133",
+    "scrollY": 710,
+    "time": "2026-11-24T16:08:59.927Z",
+    "next": null,
+    "bottomBar": null,
+    "drawerPanel": {
+      "x": 0,
+      "y": 350.8,
+      "width": 390,
+      "height": 844
+    },
+    "drawerScroller": {
+      "rect": {
+        "x": 0,
+        "y": 465.9,
+        "width": 390,
+        "height": 589.5
+      },
+      "scrollTop": 0,
+      "scrollHeight": 761,
+      "clientHeight": 590
+    },
+    "note": "drawer mid-slide (CSS transition slowed 100x via CDP), panel top recorded in drawerPanel",
+    "headerBehindDrawer": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 80
+    }
+  },
+  "p05-drawer-open.png": {
+    "file": "p05-drawer-open.png",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 4
+    },
+    "url": "http://localhost:3210/se/sv/forrad-att-hyra/skelleftea/hantverkarvagen-133",
+    "scrollY": 710,
+    "time": "2026-11-24T16:09:01.979Z",
+    "next": {
+      "label": "Ändra datum ↓",
+      "rect": {
+        "x": 257.1,
+        "y": 193.5,
+        "width": 91.9,
+        "height": 19.5
+      }
+    },
+    "bottomBar": null,
+    "drawerPanel": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 844
+    },
+    "drawerScroller": {
+      "rect": {
+        "x": 0,
+        "y": 117,
+        "width": 390,
+        "height": 589.5
+      },
+      "scrollTop": 0,
+      "scrollHeight": 761,
+      "clientHeight": 590
+    },
+    "byt": {
+      "x": 259.9,
+      "y": 49.3,
+      "width": 110.1,
+      "height": 41.5
+    },
+    "headerBehindDrawer": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 80
+    }
+  },
+  "p06-size-picker.png": {
+    "file": "p06-size-picker.png",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 4
+    },
+    "url": "http://localhost:3210/se/sv/forrad-att-hyra/skelleftea/hantverkarvagen-133",
+    "scrollY": 710,
+    "time": "2026-11-24T16:09:03.841Z",
+    "next": null,
+    "drawerPanel": {
+      "x": 0,
+      "y": 280.5,
+      "width": 390,
+      "height": 563.5
+    },
+    "note": "Byt storlek sheet, 7 m² current; closed again without a change",
+    "sizePickerSheet": {
+      "x": 0,
+      "y": 280.5,
+      "width": 390,
+      "height": 563.5
+    },
+    "bottomBar": null,
+    "headerBehindDrawer": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 80
+    }
+  },
+  "p07-move-in-date.png": {
+    "file": "p07-move-in-date.png",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 4
+    },
+    "url": "http://localhost:3210/se/sv/forrad-att-hyra/skelleftea/hantverkarvagen-133",
+    "scrollY": 710,
+    "time": "2026-11-24T16:09:06.469Z",
+    "next": {
+      "label": "Ändra datum ↓ (closes the field, date unchanged)",
+      "rect": {
+        "x": 257.1,
+        "y": 193.5,
+        "width": 91.9,
+        "height": 19.5
+      }
+    },
+    "bottomBar": null,
+    "drawerPanel": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 844
+    },
+    "drawerScroller": {
+      "rect": {
+        "x": 0,
+        "y": 117,
+        "width": 390,
+        "height": 589.5
+      },
+      "scrollTop": 0,
+      "scrollHeight": 819,
+      "clientHeight": 590
+    },
+    "dateField": {
+      "x": 41,
+      "y": 226.5,
+      "width": 308,
+      "height": 46
+    },
+    "headerBehindDrawer": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 80
+    }
+  },
+  "p08-insurance.png": {
+    "file": "p08-insurance.png",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 4
+    },
+    "url": "http://localhost:3210/se/sv/forrad-att-hyra/skelleftea/hantverkarvagen-133",
+    "scrollY": 710,
+    "time": "2026-11-24T16:09:08.382Z",
+    "next": null,
+    "bottomBar": null,
+    "drawerPanel": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 844
+    },
+    "drawerScroller": {
+      "rect": {
+        "x": 0,
+        "y": 117,
+        "width": 390,
+        "height": 589.5
+      },
+      "scrollTop": 111,
+      "scrollHeight": 761,
+      "clientHeight": 590
+    },
+    "insuranceHeading": {
+      "x": 24,
+      "y": 136.5,
+      "width": 342,
+      "height": 22
+    },
+    "checked": "10 000 kr INGÅR",
+    "headerBehindDrawer": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 80
+    }
+  },
+  "p09-details-continue.png": {
+    "file": "p09-details-continue.png",
+    "viewport": {
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 4
+    },
+    "url": "http://localhost:3210/se/sv/forrad-att-hyra/skelleftea/hantverkarvagen-133",
+    "scrollY": 710,
+    "time": "2026-11-24T16:09:09.531Z",
+    "next": {
+      "label": "Fortsätt till betalning → (NOT pressed)",
+      "rect": {
+        "x": 20,
+        "y": 773,
+        "width": 350,
+        "height": 53
+      }
+    },
+    "bottomBar": null,
+    "drawerPanel": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 844
+    },
+    "drawerScroller": {
+      "rect": {
+        "x": 0,
+        "y": 117,
+        "width": 390,
+        "height": 589.5
+      },
+      "scrollTop": 171,
+      "scrollHeight": 761,
+      "clientHeight": 590
+    },
+    "headerBehindDrawer": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 80
+    }
+  },
+  "p09-drawer-full.png": {
+    "file": "p09-drawer-full.png",
+    "viewport": {
+      "width": 390,
+      "height": 1015,
+      "deviceScaleFactor": 4
+    },
+    "url": "http://localhost:3210/se/sv/forrad-att-hyra/skelleftea/hantverkarvagen-133",
+    "scrollY": 710,
+    "time": "2026-11-24T16:09:10.924Z",
+    "next": {
+      "label": "Fortsätt till betalning → (NOT pressed)",
+      "rect": {
+        "x": 20,
+        "y": 944,
+        "width": 350,
+        "height": 53
+      }
+    },
+    "drawerPanel": {
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 1015
+    },
+    "drawerScroller": {
+      "rect": {
+        "x": 0,
+        "y": 117,
+        "width": 390,
+        "height": 760.5
+      },
+      "scrollTop": 0,
+      "scrollHeight": 761,
+      "clientHeight": 761
+    },
+    "note": "viewport made 1015 px tall so the drawer content shows whole"
+  }
+}
