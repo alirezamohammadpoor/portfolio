@@ -489,6 +489,15 @@ export const project = defineType({
               description:
                 'Optional. Names this clip in the pill above the filmstrip while it is centred, e.g. "Prototype – Shop the Look". The clip loops as usual. An A/B test name takes its place when both are set.',
             }),
+            defineField({
+              name: "excerpt",
+              title: "Excerpt",
+              type: "text",
+              rows: 2,
+              description:
+                "Optional. One or two short sentences shown under the pill while this clip is centred, e.g. what the prototype or the test does.",
+              validation: (rule) => rule.max(140),
+            }),
           ],
           preview: {
             select: { label: "label" },
@@ -533,6 +542,15 @@ export const project = defineType({
               type: "string",
               description:
                 'Optional. Names this clip in the pill above the filmstrip while it is centred, e.g. "Prototype – Shop the Look". The clip loops as usual. An A/B test name takes its place when both are set.',
+            }),
+            defineField({
+              name: "excerpt",
+              title: "Excerpt",
+              type: "text",
+              rows: 2,
+              description:
+                "Optional. One or two short sentences shown under the pill while this clip is centred, e.g. what the prototype or the test does.",
+              validation: (rule) => rule.max(140),
             }),
           ],
           preview: {
