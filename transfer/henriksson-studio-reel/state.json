@@ -1,0 +1,15 @@
+{
+  "addSeconds": 10,
+  "siteUrl": "http://localhost:3210/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA",
+  "sitePageUrl": "http://localhost:3210/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA;landingPage-booking-pitch-se-skelleftea-sv-se",
+  "texts": {
+    "title": "Förråd att hyra på Hantverkarvägen 133, Skellefteå",
+    "intro": "Hos Henriksson kan du hyra containerförråd på Hantverkarvägen 133 i Skellefteå. Kör fram till förrådet i markplan och boka digitalt utan bindningstid.",
+    "about": "About text\nOne entry per paragraph, shown in the template's About section. Templates without one (most town pages) don't show it.\nAdd item"
+  },
+  "siteDocUrl": "http://localhost:3210/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA;facility-booking-pitch-se-skelleftea",
+  "scheduledFor": "2026-11-24T14:11:00.000Z",
+  "publishSeconds": 4,
+  "publishedText": "Skellefteå launch\nPublished 24 nov. 2026 15:09 · just now\nAdd 2\nSITES · 2\nAdd\nSite\nHenriksson Skellefteå\njust now\nAdd\nSite page\nFörråd att hyra på Hantverkarvägen 133, Skellefteå\n/se/sv/forrad-att-hyra/skelleftea/hantverkarvagen-133\njust now",
+  "runSeconds": 23
+}
