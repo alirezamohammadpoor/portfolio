@@ -1,0 +1,1832 @@
+{
+  "01-todo-before@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync",
+    "takenAt": "2026-11-24T15:11:22.762Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 673,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 1305,
+            "clientHeight": 539
+          }
+        ]
+      }
+    ],
+    "next": {
+      "label": "Sync now",
+      "x": 371,
+      "y": 161,
+      "width": 105.9,
+      "height": 33
+    },
+    "notice": null
+  },
+  "02-after-sync@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync",
+    "takenAt": "2026-11-24T15:11:28.807Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 673,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 1813,
+            "clientHeight": 539
+          }
+        ]
+      }
+    ],
+    "next": {
+      "label": "Add (Henriksson Skellefteå)",
+      "x": 932.8,
+      "y": 700.2,
+      "width": 41.2,
+      "height": 25
+    },
+    "notice": {
+      "label": "sync summary: new sites from booking",
+      "x": 371,
+      "y": 225.9,
+      "width": 633,
+      "height": 91
+    }
+  },
+  "02b-new-from-booking@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync",
+    "takenAt": "2026-11-24T15:11:30.319Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 673,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 304,
+            "scrollHeight": 1813,
+            "clientHeight": 539
+          }
+        ]
+      }
+    ],
+    "next": {
+      "label": "Add (Henriksson Skellefteå)",
+      "x": 932.8,
+      "y": 396.2,
+      "width": 41.2,
+      "height": 25
+    },
+    "notice": {
+      "label": "New from booking heading",
+      "x": 392,
+      "y": 116.9,
+      "width": 591,
+      "height": 23
+    }
+  },
+  "03-site-added@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync",
+    "takenAt": "2026-11-24T15:11:41.631Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 673,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 2039,
+            "clientHeight": 539
+          }
+        ]
+      }
+    ],
+    "next": {
+      "label": "Henriksson Skellefteå row",
+      "x": 405,
+      "y": 866.7,
+      "width": 300.9,
+      "height": 19
+    },
+    "notice": {
+      "label": "notice: 1 site added, with AI texts",
+      "x": 371,
+      "y": 329.9,
+      "width": 633,
+      "height": 35
+    }
+  },
+  "03a-adding@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync",
+    "takenAt": "2026-11-24T15:11:32.695Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 673,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 181,
+            "scrollHeight": 1690,
+            "clientHeight": 539
+          }
+        ]
+      }
+    ],
+    "next": null,
+    "notice": {
+      "label": "Skellefteå row while adding (writing texts)",
+      "x": 401,
+      "y": 391.8,
+      "width": 573,
+      "height": 34
+    }
+  },
+  "04-site-view@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA",
+    "takenAt": "2026-11-24T15:11:46.203Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 342,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 2477,
+            "clientHeight": 539
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 683,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 554,
+            "clientHeight": 539
+          }
+        ]
+      }
+    ],
+    "next": {
+      "label": "site page document row",
+      "x": 716.3,
+      "y": 495.8,
+      "width": 159.7,
+      "height": 57
+    },
+    "notice": {
+      "label": "Before it goes live",
+      "x": 703.3,
+      "y": 203.9,
+      "width": 300.7,
+      "height": 23
+    }
+  },
+  "05a-site-page-top@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA;landingPage-booking-pitch-se-skelleftea-sv-se",
+    "takenAt": "2026-11-24T15:11:52.920Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": true,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 51,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": true,
+        "rect": {
+          "x": 52,
+          "y": 52,
+          "width": 51,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 104,
+          "y": 52,
+          "width": 320,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 573,
+            "clientHeight": 539
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "id": "landingPage-booking-pitch-se-skelleftea-sv-se-landingPage-booking-pitch-se-skelleftea-sv-se-0",
+        "title": "Förråd att hyra på Hantverkarvägen 133, Skellefteå",
+        "collapsed": false,
+        "rect": {
+          "x": 425,
+          "y": 52,
+          "width": 599,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "document-panel-scroller",
+            "scrollTop": 0,
+            "scrollHeight": 2452,
+            "clientHeight": 432
+          },
+          {
+            "el": "TextArea__input",
+            "scrollTop": 0,
+            "scrollHeight": 219,
+            "clientHeight": 196
+          },
+          {
+            "el": "TextArea__input",
+            "scrollTop": 0,
+            "scrollHeight": 173,
+            "clientHeight": 104
+          },
+          {
+            "el": "TextArea__input",
+            "scrollTop": 0,
+            "scrollHeight": 150,
+            "clientHeight": 104
+          }
+        ]
+      }
+    ],
+    "next": null,
+    "notice": {
+      "label": "title field",
+      "x": 445,
+      "y": 443.9,
+      "width": 559,
+      "height": 35
+    }
+  },
+  "05b-site-page-intro@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA;landingPage-booking-pitch-se-skelleftea-sv-se",
+    "takenAt": "2026-11-24T15:11:54.894Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": true,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 51,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": true,
+        "rect": {
+          "x": 52,
+          "y": 52,
+          "width": 51,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 104,
+          "y": 52,
+          "width": 320,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 573,
+            "clientHeight": 539
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "id": "landingPage-booking-pitch-se-skelleftea-sv-se-landingPage-booking-pitch-se-skelleftea-sv-se-0",
+        "title": "Förråd att hyra på Hantverkarvägen 133, Skellefteå",
+        "collapsed": false,
+        "rect": {
+          "x": 425,
+          "y": 52,
+          "width": 599,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "document-panel-scroller",
+            "scrollTop": 845,
+            "scrollHeight": 2452,
+            "clientHeight": 432
+          },
+          {
+            "el": "TextArea__input",
+            "scrollTop": 0,
+            "scrollHeight": 219,
+            "clientHeight": 196
+          },
+          {
+            "el": "TextArea__input",
+            "scrollTop": 0,
+            "scrollHeight": 173,
+            "clientHeight": 104
+          },
+          {
+            "el": "TextArea__input",
+            "scrollTop": 0,
+            "scrollHeight": 150,
+            "clientHeight": 104
+          }
+        ]
+      }
+    ],
+    "next": null,
+    "notice": {
+      "label": "intro field (AI)",
+      "x": 445,
+      "y": 182.8,
+      "width": 559,
+      "height": 166
+    }
+  },
+  "05c-site-page-about@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA;landingPage-booking-pitch-se-skelleftea-sv-se",
+    "takenAt": "2026-11-24T15:11:56.633Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": true,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 51,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": true,
+        "rect": {
+          "x": 52,
+          "y": 52,
+          "width": 51,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 104,
+          "y": 52,
+          "width": 320,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 573,
+            "clientHeight": 539
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "id": "landingPage-booking-pitch-se-skelleftea-sv-se-landingPage-booking-pitch-se-skelleftea-sv-se-0",
+        "title": "Förråd att hyra på Hantverkarvägen 133, Skellefteå",
+        "collapsed": false,
+        "rect": {
+          "x": 425,
+          "y": 52,
+          "width": 599,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "document-panel-scroller",
+            "scrollTop": 1063,
+            "scrollHeight": 2452,
+            "clientHeight": 432
+          },
+          {
+            "el": "TextArea__input",
+            "scrollTop": 0,
+            "scrollHeight": 219,
+            "clientHeight": 196
+          },
+          {
+            "el": "TextArea__input",
+            "scrollTop": 0,
+            "scrollHeight": 173,
+            "clientHeight": 104
+          },
+          {
+            "el": "TextArea__input",
+            "scrollTop": 0,
+            "scrollHeight": 150,
+            "clientHeight": 104
+          }
+        ]
+      }
+    ],
+    "next": null,
+    "notice": {
+      "label": "About field (AI)",
+      "x": 445,
+      "y": 182.8,
+      "width": 559,
+      "height": 355.9
+    }
+  },
+  "06a-images-empty@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA;facility-booking-pitch-se-skelleftea",
+    "takenAt": "2026-11-24T15:12:11.898Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": true,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 51,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": true,
+        "rect": {
+          "x": 52,
+          "y": 52,
+          "width": 51,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 104,
+          "y": 52,
+          "width": 320,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 573,
+            "clientHeight": 539
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "id": "facility-booking-pitch-se-skelleftea-facility-booking-pitch-se-skelleftea-0",
+        "title": "Henriksson Skellefteå",
+        "collapsed": false,
+        "rect": {
+          "x": 425,
+          "y": 52,
+          "width": 599,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "document-panel-scroller",
+            "scrollTop": 1590,
+            "scrollHeight": 2054,
+            "clientHeight": 440
+          }
+        ]
+      }
+    ],
+    "next": {
+      "label": "Add item",
+      "x": 445,
+      "y": 360.6,
+      "width": 559,
+      "height": 33
+    },
+    "notice": {
+      "label": "Images field",
+      "x": 445,
+      "y": 225.7,
+      "width": 559,
+      "height": 167.9
+    }
+  },
+  "06c-image-uploaded@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA;facility-booking-pitch-se-skelleftea%2Cpath%3Dimages%255B_key%253D%253D%2522cb87d6070245%2522%255D",
+    "takenAt": "2026-11-24T15:12:20.826Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": true,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 51,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": true,
+        "rect": {
+          "x": 52,
+          "y": 52,
+          "width": 51,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 104,
+          "y": 52,
+          "width": 320,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 573,
+            "clientHeight": 539
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "id": "facility-booking-pitch-se-skelleftea-facility-booking-pitch-se-skelleftea-0",
+        "title": "Henriksson Skellefteå",
+        "collapsed": false,
+        "rect": {
+          "x": 425,
+          "y": 52,
+          "width": 599,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "document-panel-scroller",
+            "scrollTop": 1571,
+            "scrollHeight": 2086,
+            "clientHeight": 440
+          },
+          {
+            "el": "DialogContent",
+            "scrollTop": 0,
+            "scrollHeight": 482,
+            "clientHeight": 361
+          }
+        ]
+      }
+    ],
+    "next": {
+      "label": "Close dialog",
+      "x": 975,
+      "y": 175,
+      "width": 25,
+      "height": 25
+    },
+    "notice": {
+      "label": "image dialog with photo",
+      "x": 425,
+      "y": 151,
+      "width": 599,
+      "height": 440
+    }
+  },
+  "06d-images-added@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA;facility-booking-pitch-se-skelleftea",
+    "takenAt": "2026-11-24T15:12:34.305Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": true,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 51,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": true,
+        "rect": {
+          "x": 52,
+          "y": 52,
+          "width": 51,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 104,
+          "y": 52,
+          "width": 320,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 573,
+            "clientHeight": 539
+          }
+        ]
+      },
+      {
+        "index": 3,
+        "id": "facility-booking-pitch-se-skelleftea-facility-booking-pitch-se-skelleftea-0",
+        "title": "Henriksson Skellefteå",
+        "collapsed": false,
+        "rect": {
+          "x": 425,
+          "y": 52,
+          "width": 599,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "document-panel-scroller",
+            "scrollTop": 1641,
+            "scrollHeight": 2149,
+            "clientHeight": 440
+          }
+        ]
+      }
+    ],
+    "next": null,
+    "notice": {
+      "label": "Images field with two photos",
+      "x": 445,
+      "y": 174.7,
+      "width": 559,
+      "height": 262.9
+    }
+  },
+  "07a-site-view-ready@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA",
+    "takenAt": "2026-11-24T15:12:42.629Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 342,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 2325,
+            "clientHeight": 539
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 683,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 554,
+            "clientHeight": 539
+          }
+        ]
+      }
+    ],
+    "next": {
+      "label": "Add to release…",
+      "x": 703.3,
+      "y": 316.9,
+      "width": 125.6,
+      "height": 33
+    },
+    "notice": {
+      "label": "Before it goes live (checklist)",
+      "x": 703.3,
+      "y": 203.9,
+      "width": 300.7,
+      "height": 23
+    }
+  },
+  "07b-release-menu@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA",
+    "takenAt": "2026-11-24T15:12:44.337Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 342,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 2325,
+            "clientHeight": 539
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 683,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 554,
+            "clientHeight": 539
+          }
+        ]
+      }
+    ],
+    "next": {
+      "label": "New release…",
+      "x": 712.1,
+      "y": 357.9,
+      "width": 112.8,
+      "height": 33
+    },
+    "notice": {
+      "label": "release menu",
+      "x": 708.1,
+      "y": 353.9,
+      "width": 120.8,
+      "height": 41
+    }
+  },
+  "07c-new-release-dialog@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA",
+    "takenAt": "2026-11-24T15:12:46.203Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 342,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 2325,
+            "clientHeight": 539
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 683,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 554,
+            "clientHeight": 539
+          }
+        ]
+      }
+    ],
+    "next": null,
+    "notice": {
+      "label": "New release dialog",
+      "x": 0,
+      "y": 0,
+      "width": 420,
+      "height": 164.9
+    }
+  },
+  "07d-new-release-named@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA",
+    "takenAt": "2026-11-24T15:12:48.791Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 342,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 2325,
+            "clientHeight": 539
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 683,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 554,
+            "clientHeight": 539
+          }
+        ]
+      }
+    ],
+    "next": {
+      "label": "Create",
+      "x": 328,
+      "y": 107.6,
+      "width": 71,
+      "height": 36.3
+    },
+    "notice": {
+      "label": "New release dialog",
+      "x": 0,
+      "y": 0,
+      "width": 420,
+      "height": 164.9
+    }
+  },
+  "07e-in-release@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA",
+    "takenAt": "2026-11-24T15:12:54.082Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 342,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 2075,
+            "clientHeight": 539
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 683,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 635,
+            "clientHeight": 539
+          }
+        ]
+      }
+    ],
+    "next": null,
+    "notice": {
+      "label": "In the release “Skellefteå launch”",
+      "x": 703.3,
+      "y": 311.9,
+      "width": 204.9,
+      "height": 19
+    }
+  },
+  "08a-releases-tab@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync",
+    "takenAt": "2026-11-24T15:12:59.063Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 673,
+          "height": 588
+        },
+        "scrollers": []
+      }
+    ],
+    "next": {
+      "label": "Schedule…",
+      "x": 769.5,
+      "y": 501.9,
+      "width": 115,
+      "height": 33
+    },
+    "notice": {
+      "label": "release card Skellefteå launch",
+      "x": 371,
+      "y": 311.9,
+      "width": 633,
+      "height": 243.9
+    }
+  },
+  "09a-schedule-input@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync",
+    "takenAt": "2026-11-24T15:13:00.787Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 673,
+          "height": 588
+        },
+        "scrollers": []
+      }
+    ],
+    "next": {
+      "label": "Schedule",
+      "x": 802.3,
+      "y": 503.9,
+      "width": 82.1,
+      "height": 33
+    },
+    "notice": {
+      "label": "date/time input",
+      "x": 475.1,
+      "y": 501.9,
+      "width": 244,
+      "height": 37
+    }
+  },
+  "09b-schedule-filled@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync",
+    "takenAt": "2026-11-24T15:13:02.207Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 673,
+          "height": 588
+        },
+        "scrollers": []
+      }
+    ],
+    "next": {
+      "label": "Schedule",
+      "x": 802.3,
+      "y": 503.9,
+      "width": 82.1,
+      "height": 33
+    },
+    "notice": {
+      "label": "date/time input 2026-11-24T16:20",
+      "x": 474.1,
+      "y": 501.9,
+      "width": 245,
+      "height": 37
+    }
+  },
+  "09c-schedule-refused@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync",
+    "takenAt": "2026-11-24T15:14:42.411Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 673,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 542,
+            "clientHeight": 539
+          }
+        ]
+      }
+    ],
+    "next": null,
+    "notice": {
+      "label": "schedule refused card",
+      "x": 371,
+      "y": 225.9,
+      "width": 633,
+      "height": 35
+    }
+  },
+  "09e-before-publish@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync",
+    "takenAt": "2026-11-24T15:14:48.242Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 673,
+          "height": 588
+        },
+        "scrollers": []
+      }
+    ],
+    "next": {
+      "label": "Publish",
+      "x": 892.4,
+      "y": 501.9,
+      "width": 90.6,
+      "height": 33
+    },
+    "notice": {
+      "label": "release card Skellefteå launch",
+      "x": 371,
+      "y": 311.9,
+      "width": 633,
+      "height": 243.9
+    }
+  },
+  "09f-publish-confirm@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync",
+    "takenAt": "2026-11-24T15:14:50.054Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 673,
+          "height": 588
+        },
+        "scrollers": []
+      }
+    ],
+    "next": {
+      "label": "Publish (confirm)",
+      "x": 323.8,
+      "y": 55.3,
+      "width": 75.2,
+      "height": 36.3
+    },
+    "notice": {
+      "label": "publish confirm dialog",
+      "x": 0,
+      "y": 0,
+      "width": 420,
+      "height": 112.6
+    }
+  },
+  "09g-live-notice@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync",
+    "takenAt": "2026-11-24T15:16:41.225Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 673,
+          "height": 588
+        },
+        "scrollers": []
+      }
+    ],
+    "next": null,
+    "notice": {
+      "label": "notice: Skellefteå launch is live.",
+      "x": 371,
+      "y": 225.9,
+      "width": 633,
+      "height": 35
+    }
+  },
+  "09h-published-tab@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync",
+    "takenAt": "2026-11-24T15:16:44.154Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 673,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 939,
+            "clientHeight": 539
+          }
+        ]
+      }
+    ],
+    "next": null,
+    "notice": {
+      "label": "Published: Skellefteå launch",
+      "x": 371,
+      "y": 378.9,
+      "width": 633,
+      "height": 185
+    }
+  },
+  "09i-site-live@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA",
+    "takenAt": "2026-11-24T15:16:52.025Z",
+    "windowScrollY": 0,
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": []
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 342,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": [
+          {
+            "el": "Box",
+            "scrollTop": 0,
+            "scrollHeight": 2075,
+            "clientHeight": 539
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 683,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        },
+        "scrollers": []
+      }
+    ],
+    "next": null,
+    "notice": {
+      "label": "Live badge",
+      "x": 970.9,
+      "y": 121,
+      "width": 33.1,
+      "height": 17
+    }
+  },
+  "10a-live-top@1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "deviceScaleFactor": 4,
+    "url": "/se/sv/forrad-att-hyra/skelleftea/hantverkarvagen-133",
+    "takenAt": "2026-11-24T15:17:06.318Z",
+    "windowScrollY": 0,
+    "panes": [],
+    "next": null,
+    "notice": {
+      "label": "h1",
+      "x": 20,
+      "y": 296,
+      "width": 984,
+      "height": 39.6
+    }
+  }
+}

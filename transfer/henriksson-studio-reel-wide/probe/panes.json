@@ -1,0 +1,812 @@
+{
+  "a-todo-1440x900.png": {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "url": "/studio/structure/booking-sync",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 848
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 1089,
+          "height": 848
+        }
+      }
+    ]
+  },
+  "b-site-view-1440x900.png": {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 848
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 544,
+          "height": 848
+        }
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 896,
+          "y": 52,
+          "width": 544,
+          "height": 848
+        }
+      }
+    ]
+  },
+  "c-site-page-1440x900.png": {
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA;landingPage-booking-pitch-se-skelleftea-sv-se",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": true,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 51,
+          "height": 848
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 52,
+          "y": 52,
+          "width": 320,
+          "height": 848
+        }
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 373,
+          "y": 52,
+          "width": 320,
+          "height": 848
+        }
+      },
+      {
+        "index": 3,
+        "id": "landingPage-booking-pitch-se-skelleftea-sv-se-landingPage-booking-pitch-se-skelleftea-sv-se-0",
+        "title": "Förråd att hyra på Hantverkarvägen 133, Skellefteå",
+        "collapsed": false,
+        "rect": {
+          "x": 694,
+          "y": 52,
+          "width": 746,
+          "height": 848
+        }
+      }
+    ]
+  },
+  "a-todo-1280x800.png": {
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "url": "/studio/structure/booking-sync",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 748
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 929,
+          "height": 748
+        }
+      }
+    ]
+  },
+  "b-site-view-1280x800.png": {
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 748
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 464,
+          "height": 748
+        }
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 816,
+          "y": 52,
+          "width": 464,
+          "height": 748
+        }
+      }
+    ]
+  },
+  "c-site-page-1280x800.png": {
+    "viewport": {
+      "width": 1280,
+      "height": 800
+    },
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA;landingPage-booking-pitch-se-skelleftea-sv-se",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": true,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 51,
+          "height": 748
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": true,
+        "rect": {
+          "x": 52,
+          "y": 52,
+          "width": 51,
+          "height": 748
+        }
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 104,
+          "y": 52,
+          "width": 336,
+          "height": 748
+        }
+      },
+      {
+        "index": 3,
+        "id": "landingPage-booking-pitch-se-skelleftea-sv-se-landingPage-booking-pitch-se-skelleftea-sv-se-0",
+        "title": "Förråd att hyra på Hantverkarvägen 133, Skellefteå",
+        "collapsed": false,
+        "rect": {
+          "x": 441,
+          "y": 52,
+          "width": 839,
+          "height": 748
+        }
+      }
+    ]
+  },
+  "a-todo-1152x720.png": {
+    "viewport": {
+      "width": 1152,
+      "height": 720
+    },
+    "url": "/studio/structure/booking-sync",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 668
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 801,
+          "height": 668
+        }
+      }
+    ]
+  },
+  "b-site-view-1152x720.png": {
+    "viewport": {
+      "width": 1152,
+      "height": 720
+    },
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 668
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 400,
+          "height": 668
+        }
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 752,
+          "y": 52,
+          "width": 400,
+          "height": 668
+        }
+      }
+    ]
+  },
+  "c-site-page-1152x720.png": {
+    "viewport": {
+      "width": 1152,
+      "height": 720
+    },
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA;landingPage-booking-pitch-se-skelleftea-sv-se",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": true,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 51,
+          "height": 668
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": true,
+        "rect": {
+          "x": 52,
+          "y": 52,
+          "width": 51,
+          "height": 668
+        }
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 104,
+          "y": 52,
+          "width": 320,
+          "height": 668
+        }
+      },
+      {
+        "index": 3,
+        "id": "landingPage-booking-pitch-se-skelleftea-sv-se-landingPage-booking-pitch-se-skelleftea-sv-se-0",
+        "title": "Förråd att hyra på Hantverkarvägen 133, Skellefteå",
+        "collapsed": false,
+        "rect": {
+          "x": 425,
+          "y": 52,
+          "width": 727,
+          "height": 668
+        }
+      }
+    ]
+  },
+  "a-todo-1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "url": "/studio/structure/booking-sync",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 588
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 673,
+          "height": 588
+        }
+      }
+    ]
+  },
+  "b-site-view-1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 342,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        }
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 683,
+          "y": 52,
+          "width": 341,
+          "height": 588
+        }
+      }
+    ]
+  },
+  "c-site-page-1024x640.png": {
+    "viewport": {
+      "width": 1024,
+      "height": 640
+    },
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA;landingPage-booking-pitch-se-skelleftea-sv-se",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": true,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 51,
+          "height": 588
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": true,
+        "rect": {
+          "x": 52,
+          "y": 52,
+          "width": 51,
+          "height": 588
+        }
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 104,
+          "y": 52,
+          "width": 320,
+          "height": 588
+        }
+      },
+      {
+        "index": 3,
+        "id": "landingPage-booking-pitch-se-skelleftea-sv-se-landingPage-booking-pitch-se-skelleftea-sv-se-0",
+        "title": "Förråd att hyra på Hantverkarvägen 133, Skellefteå",
+        "collapsed": false,
+        "rect": {
+          "x": 425,
+          "y": 52,
+          "width": 599,
+          "height": 588
+        }
+      }
+    ]
+  },
+  "a-todo-960x600.png": {
+    "viewport": {
+      "width": 960,
+      "height": 600
+    },
+    "url": "/studio/structure/booking-sync",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 548
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 609,
+          "height": 548
+        }
+      }
+    ]
+  },
+  "b-site-view-960x600.png": {
+    "viewport": {
+      "width": 960,
+      "height": 600
+    },
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 320,
+          "height": 548
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 321,
+          "y": 52,
+          "width": 320,
+          "height": 548
+        }
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 642,
+          "y": 52,
+          "width": 320,
+          "height": 548
+        }
+      }
+    ]
+  },
+  "c-site-page-960x600.png": {
+    "viewport": {
+      "width": 960,
+      "height": 600
+    },
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA;landingPage-booking-pitch-se-skelleftea-sv-se",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": true,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 51,
+          "height": 548
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": true,
+        "rect": {
+          "x": 52,
+          "y": 52,
+          "width": 51,
+          "height": 548
+        }
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": true,
+        "rect": {
+          "x": 104,
+          "y": 52,
+          "width": 51,
+          "height": 548
+        }
+      },
+      {
+        "index": 3,
+        "id": "landingPage-booking-pitch-se-skelleftea-sv-se-landingPage-booking-pitch-se-skelleftea-sv-se-0",
+        "title": "Förråd att hyra på Hantverkarvägen 133, Skellefteå",
+        "collapsed": false,
+        "rect": {
+          "x": 156,
+          "y": 52,
+          "width": 804,
+          "height": 548
+        }
+      }
+    ]
+  },
+  "a-todo-900x562.png": {
+    "viewport": {
+      "width": 900,
+      "height": 562
+    },
+    "url": "/studio/structure/booking-sync",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": false,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 350,
+          "height": 510
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 351,
+          "y": 52,
+          "width": 549,
+          "height": 510
+        }
+      }
+    ]
+  },
+  "b-site-view-900x562.png": {
+    "viewport": {
+      "width": 900,
+      "height": 562
+    },
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": true,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 51,
+          "height": 510
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": false,
+        "rect": {
+          "x": 52,
+          "y": 52,
+          "width": 424,
+          "height": 510
+        }
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": false,
+        "rect": {
+          "x": 477,
+          "y": 52,
+          "width": 424,
+          "height": 510
+        }
+      }
+    ]
+  },
+  "c-site-page-900x562.png": {
+    "viewport": {
+      "width": 900,
+      "height": 562
+    },
+    "url": "/studio/structure/booking-sync;PITCH-SE-SKELLEFTEA;landingPage-booking-pitch-se-skelleftea-sv-se",
+    "panes": [
+      {
+        "index": 0,
+        "id": "content-root-0",
+        "title": "Content",
+        "collapsed": true,
+        "rect": {
+          "x": 0,
+          "y": 52,
+          "width": 51,
+          "height": 510
+        }
+      },
+      {
+        "index": 1,
+        "id": "booking-sync-booking-sync-0",
+        "title": "To do",
+        "collapsed": true,
+        "rect": {
+          "x": 52,
+          "y": 52,
+          "width": 51,
+          "height": 510
+        }
+      },
+      {
+        "index": 2,
+        "id": "PITCH-SE-SKELLEFTEA-PITCH-SE-SKELLEFTEA-0",
+        "title": "Site",
+        "collapsed": true,
+        "rect": {
+          "x": 104,
+          "y": 52,
+          "width": 51,
+          "height": 510
+        }
+      },
+      {
+        "index": 3,
+        "id": "landingPage-booking-pitch-se-skelleftea-sv-se-landingPage-booking-pitch-se-skelleftea-sv-se-0",
+        "title": "Förråd att hyra på Hantverkarvägen 133, Skellefteå",
+        "collapsed": false,
+        "rect": {
+          "x": 156,
+          "y": 52,
+          "width": 744,
+          "height": 510
+        }
+      }
+    ]
+  }
+}
