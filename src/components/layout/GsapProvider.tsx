@@ -3,7 +3,6 @@
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
-import { ScrambleTextPlugin } from "gsap/ScrambleTextPlugin";
 import { useGSAP } from "@gsap/react";
 import { ReactLenis, useLenis } from "lenis/react";
 import type { LenisRef } from "lenis/react";
@@ -12,7 +11,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { registerMotion } from "@/lib/motion";
 
-gsap.registerPlugin(ScrollTrigger, SplitText, ScrambleTextPlugin, useGSAP);
+gsap.registerPlugin(ScrollTrigger, SplitText, useGSAP);
 registerMotion();
 gsap.ticker.lagSmoothing(0);
 
@@ -68,12 +67,7 @@ export default function GsapProvider({ children }: { children: ReactNode }) {
   }, [pathname]);
 
   return (
-    <ReactLenis
-      ref={lenisRef}
-      root
-      autoRaf={false}
-      options={{ lerp: 0.06, smoothWheel: true }}
-    >
+    <ReactLenis ref={lenisRef} root autoRaf={false} options={{ lerp: 0.06, smoothWheel: true }}>
       <ScrollTriggerSync />
       <ReducedMotionSync />
       {children}

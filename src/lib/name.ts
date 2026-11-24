@@ -1,4 +1,3 @@
 export const ENGLISH_NAME = "Ali Reza Mohammad Poor";
-export const PERSIAN_NAME = "علیرضا محمدپور";
-/** Scramble alphabet for the Persian form. */
-export const PERSIAN_CHARS = "ابپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی";
+/** The name in the bar (Ali, 11-23: Latin, no Persian, no scramble). */
+export const SHORT_NAME = "Ali Reza";
