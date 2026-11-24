@@ -75,6 +75,8 @@ const OVERLAP = 44;
 const NEIGHBOUR_SCALE = 0.92;
 const NEIGHBOUR_OPACITY = 0.6;
 const SETTLE_MS = 200;
+// Gap kept between the pill's excerpt and the centred card.
+const EXCERPT_CLEAR = 16;
 const ITEM_W = "calc(100vw - 2 * var(--grid-margin))";
 // Phone: the band a card may fill, the viewport less the header, the pill
 // row (h-14), the room kept under the strip for the filmstrip (pb-[76px]:
@@ -295,6 +297,21 @@ export default function ProjectStage({
       ? current.label?.trim() || null
       : null;
   const pillLabel = testName ? `A/B test – ${testName}` : clipLabel;
+  // A short line under the pill while the clip is centred (Sanity
+  // `excerpt`; Figma "Pill excerpt · 11-10", Ali picked A in black).
+  const excerpt =
+    pillFree && (current?._type === "galleryPhones" || current?._type === "galleryVideo")
+      ? current.excerpt?.trim() || null
+      : null;
+  // Every clip's excerpt, stacked in one slot as tall as the longest, so
+  // the room under the Pebble never changes between clips (Ali 11-20: the
+  // strip jumped when the first excerpt arrived).
+  const excerpts = gallery.map((g) =>
+    g._type === "galleryPhones" || g._type === "galleryVideo"
+      ? { key: g._key, text: g.excerpt?.trim() || null }
+      : null,
+  );
+  const excerptSlot = excerpts.some((e) => e?.text);
   // Either overlay covers the strip: no wheel, keys, swipes or auto-advance
   // under it, and the centred clip pauses.
   const covered = detailsOpen || switcherOpen;
@@ -872,6 +889,32 @@ export default function ProjectStage({
     };
   };
 
+  // The excerpt hangs under the pill row, over the room above the card. Where
+  // it would reach the centred card, the strip scales down from the card's
+  // bottom edge just enough to clear it, so the filmstrip keeps its place.
+  const stripWrapRef = useRef<HTMLDivElement>(null);
+  const excerptRef = useRef<HTMLElement | null>(null);
+  const setExcerptEl = useCallback((el: HTMLElement | null) => {
+    excerptRef.current = el;
+  }, []);
+  useLayoutEffect(() => {
+    const wrap = stripWrapRef.current;
+    if (!wrap) return;
+    const ex = excerptRef.current;
+    const card = itemRefs.current[index];
+    let transform = "";
+    if (ex && card) {
+      const h = card.offsetHeight;
+      const need =
+        ex.offsetTop + ex.offsetHeight + EXCERPT_CLEAR - (wrap.offsetTop + card.offsetTop);
+      if (need > 0 && h > 0) {
+        wrap.style.transformOrigin = `50% ${card.offsetTop + h}px`;
+        transform = `scale(${Math.max(0.7, (h - need) / h).toFixed(4)})`;
+      }
+    }
+    wrap.style.transform = transform;
+  }, [excerptSlot, index, grid, isDesktop]);
+
   return (
     <div
       ref={rootRef}
@@ -882,18 +925,39 @@ export default function ProjectStage({
           project → project clone lands on the previous page's y). */}
       <h1 className="sr-only">{project.title}</h1>
       {capsule ? (
-        // The capsule's second row stands where the pill stood: the cards
-        // keep their y.
-        <div className="relative h-14 shrink-0">
-          {/* "title": the bar holds only the title; the test or clip label is
-              a caption under it, just above the card (the phone has no room
-              between the card and the filmstrip). */}
-          {chrome === "title" && barLabel && (
-            <p className="pointer-events-none absolute inset-x-0 bottom-1 truncate px-margin text-center text-sub desktop:text-body text-secondary">
-              {barLabel}
-            </p>
+        <>
+          {/* The capsule's second row stands where the pill stood: the cards
+            keep their y. */}
+          <div className="relative h-14 shrink-0">
+            {chrome === "title" && barLabel && (
+              <p className="pointer-events-none absolute inset-x-0 bottom-1 truncate px-margin text-center text-sub desktop:text-body text-secondary">
+                {barLabel}
+              </p>
+            )}
+          </div>
+          {/* The centred clip's excerpt (Sanity `excerpt`) under the Pebble's
+            project row, in the flow: the strip below gives up the room. */}
+          {excerptSlot && (
+            <div
+              ref={setExcerptEl}
+              className="mx-auto grid w-full shrink-0 px-margin pt-3 desktop:w-[480px] desktop:px-0"
+            >
+              {excerpts.map(
+                (e) =>
+                  e?.text && (
+                    <p
+                      key={e.key}
+                      aria-hidden={!excerpt || e.key !== current?._key}
+                      className="[grid-area:1/1] text-center text-[0.875rem] leading-5 text-balance text-primary motion-safe:transition-opacity motion-safe:duration-200"
+                      style={{ opacity: excerpt && e.key === current?._key ? 1 : 0 }}
+                    >
+                      {e.text}
+                    </p>
+                  ),
+              )}
+            </div>
           )}
-        </div>
+        </>
       ) : (
         <div className="relative z-50 flex h-14 shrink-0 items-start justify-center pt-2">
           {/* With an A/B test centred (Figma "Test pill · placement · 11-09",
@@ -953,12 +1017,23 @@ export default function ProjectStage({
               </span>
             </button>
           </div>
+          {excerpt && (
+            <p
+              key={current?._key}
+              ref={setExcerptEl}
+              className="absolute top-12 left-1/2 w-max max-w-[min(440px,calc(100vw-2*var(--grid-margin)))] -translate-x-1/2 text-center text-[0.875rem] leading-5 text-balance text-primary transition-opacity duration-200 starting:opacity-0"
+            >
+              {excerpt}
+            </p>
+          )}
         </div>
       )}
 
       {/* Strip, vertically centred in the remaining space */}
       <div
-        className={`flex flex-1 items-center pb-[76px] desktop:pb-[72px] ${hidden && arrivedInPlace ? "opacity-0" : ""}`}
+        ref={stripWrapRef}
+        className={`relative flex flex-1 items-center pb-[76px] desktop:pb-[72px] ${hidden && arrivedInPlace ? "opacity-0" : ""}`}
+        style={{ transition: reduceMotion ? "none" : `transform ${SETTLE_MS}ms ${EASE_OUT_CSS}` }}
       >
         <div
           ref={stripRef}
