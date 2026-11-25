@@ -907,9 +907,6 @@ export default function ProjectStage({
       const end = v && Number.isFinite(v.duration) ? v.duration - IN_ORDER_EARLY_S : 0;
       const p = v && end > 0 ? Math.min(1, v.currentTime / end) : 0;
       root.style.setProperty("--clip-p", p.toFixed(4));
-      const left = root.querySelector<HTMLElement>("[data-clip-left]");
-      if (left && v && end > 0)
-        left.textContent = `${Math.max(0, Math.ceil(end - v.currentTime))}s`;
       if (card) {
         const r = card.getBoundingClientRect();
         const o = root.getBoundingClientRect();

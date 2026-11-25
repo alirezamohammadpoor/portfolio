@@ -4,13 +4,12 @@
  * The clip meter for a gallery that plays in order (Ali 11-25: "some sort of
  * meter or loading bar that shows the duration of the video", thin and
  * pistachio). Prototyped in two rounds in /lab/progress; Ali picked E3 + D4:
- * a 3 px pistachio line on the clip's bottom edge over a faint dark track,
- * and the seconds left before the stage glides on, under the clip's end.
+ * a 3 px pistachio line on the clip's bottom edge over a faint dark track
+ * (the seconds-left label went, Ali 11-25: "remove the seconds").
  *
  * ProjectStage writes the centred clip's progress (0 to 1, measured to the
  * glide) as `--clip-p` on its root each frame, the centred card's box as
- * `--card-x/y/w/h`, and the seconds into `[data-clip-left]`, so nothing
- * re-renders per frame. Handed back to the visitor, the meter fades out.
+ * `--card-x/y/w/h`, so nothing re-renders per frame. Handed back to the visitor, the meter fades out.
  */
 const WEIGHT = 3;
 
@@ -43,11 +42,6 @@ export default function ClipMeter({
           style={{ transform: "scaleX(var(--clip-p, 0))" }}
         />
       </div>
-      <span
-        data-clip-left
-        className="absolute right-0 text-sub text-secondary tabular-nums"
-        style={{ top: WEIGHT + 8 }}
-      />
     </div>
   );
 }
