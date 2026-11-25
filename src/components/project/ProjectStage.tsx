@@ -1192,7 +1192,13 @@ export default function ProjectStage({
               LANDING_ASPECT.stage;
             // The clip's first frame as a still: what the card shows before
             // its video mounts or has a frame, so no swipe meets a black card.
-            const poster = clip?.poster ? imageUrl(clip.poster, isDesktop ? 1600 : 900) : undefined;
+            // Not on a gallery that plays in order: its stills are each clip's
+            // result (they read best as thumbnails), and a phone draws no frame
+            // of a clip until it plays, so the glide met the end of the next
+            // clip before its start (Ali, 11-25). Those clips open on the
+            // card's own ground, so the bare card is their first frame.
+            const poster =
+              clip?.poster && !inOrder ? imageUrl(clip.poster, isDesktop ? 1600 : 900) : undefined;
             // Card 1 is the landing media (the clone lands on it): a laptop-shaped
             // box, the clone landing on the media inside its background.
             const frame =
