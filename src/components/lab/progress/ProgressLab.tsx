@@ -8,14 +8,15 @@ import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 
-// The picker sits under the header here: the filmstrip owns the bottom.
-const PLACE = `.proto-picker{bottom:auto;top:calc(var(--header-height) + 64px)}`;
+// The picker sits under the header on a laptop (the filmstrip owns the
+// bottom); on a phone it goes under the filmstrip, small, so all ten fit.
+const PLACE = `.proto-picker{bottom:auto;top:calc(var(--header-height) + 64px)}@media (max-width:600px){.proto-picker{top:auto;bottom:8px}.proto-picker-item{padding:0 7px;font-size:12px}}`;
 
 /**
  * The real TRY Devops stage with each clip meter look (AutoProgress). Picking
  * a look, or ↻ / R, starts the gallery from its first clip again: any click
  * or key on the page hands the stage back to the visitor, the picker's own
- * included, so every pick remounts it. `?v=1..5` opens on a look.
+ * included, so every pick remounts it. `?v=1..10` opens on a look.
  */
 export default function ProgressLab({ project }: { project: Project }) {
   const [current, setCurrent] = useState(0);
@@ -61,7 +62,7 @@ export default function ProgressLab({ project }: { project: Project }) {
       const t = e.target as HTMLElement | null;
       if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      const n = parseInt(e.key, 10);
+      const n = e.key === "0" ? 10 : parseInt(e.key, 10);
       if (n >= 1 && n <= AUTO_BARS.length) select(n - 1);
       else if (e.key === "r" || e.key === "R") setMountKey((k) => k + 1);
     };
@@ -89,7 +90,7 @@ export default function ProgressLab({ project }: { project: Project }) {
             aria-current={i === current ? "true" : undefined}
             onClick={() => select(i)}
           >
-            {b.name}
+            {b.id}
           </button>
         ))}
         <span className="proto-picker-divider" aria-hidden="true" />

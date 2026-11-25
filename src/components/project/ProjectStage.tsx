@@ -900,6 +900,9 @@ export default function ProjectStage({
       const end = v && Number.isFinite(v.duration) ? v.duration - IN_ORDER_EARLY_S : 0;
       const p = v && end > 0 ? Math.min(1, v.currentTime / end) : 0;
       root.style.setProperty("--clip-p", p.toFixed(4));
+      const left = root.querySelector<HTMLElement>("[data-clip-left]");
+      if (left && v && end > 0)
+        left.textContent = `${Math.max(0, Math.ceil(end - v.currentTime))}s`;
       if (card) {
         const r = card.getBoundingClientRect();
         const o = root.getBoundingClientRect();
@@ -1363,12 +1366,18 @@ export default function ProjectStage({
         {single ? "" : `${index + 1} of ${gallery.length}`}
       </p>
 
-      {bar && inOrder && <CardBar look={bar} shown={autoOn} reduceMotion={reduceMotion} />}
+      {bar && inOrder && (
+        <CardBar
+          look={bar}
+          shown={autoOn}
+          reduceMotion={reduceMotion}
+          count={gallery.length}
+          index={index}
+        />
+      )}
 
       {/* Progress: a filmstrip at the bottom centre (Ali, 11-04). */}
       <GalleryProgress
-        bar={inOrder ? bar : null}
-        barOn={autoOn}
         gallery={gallery}
         index={index}
         onEnd={onEnd}
