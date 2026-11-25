@@ -135,11 +135,19 @@ const REFLICK_MS = 350;
  * still is an image under the clip and the clip stays invisible until it has
  * presented a frame, so a swipe goes still → moving picture with nothing between.
  */
-function revealOnFirstFrame(video: HTMLVideoElement | null): (() => void) | undefined {
-  if (!video) return;
+// Once per element: the ref callback below is inline, so React runs its
+// cleanup and calls it again on every render of the stage. Cancelling the
+// wait there (as this first did) could leave a clip at opacity 0 for good,
+// its still showing while the film played unseen underneath, until a later
+// render happened to find it ready (Ali, 11-25: the clip "starts and then
+// restarts" after the glide).
+const revealing = new WeakSet<HTMLVideoElement>();
+function revealOnFirstFrame(video: HTMLVideoElement | null) {
+  if (!video || revealing.has(video)) return;
+  revealing.add(video);
   if (video.readyState >= 2) return;
   video.style.opacity = "0";
-  return onFirstVideoFrame(video, () => {
+  onFirstVideoFrame(video, () => {
     video.style.opacity = "";
   });
 }
@@ -1226,9 +1234,8 @@ export default function ProjectStage({
                       if (i === 0) firstVideoRef.current = el;
                       // The still under the clip stays until the clip has
                       // presented a frame of its own (see revealOnFirstFrame).
-                      const stop = poster ? revealOnFirstFrame(el) : undefined;
+                      if (poster) revealOnFirstFrame(el);
                       return () => {
-                        stop?.();
                         if (i === 0 && firstVideoRef.current === el) firstVideoRef.current = null;
                       };
                     }}
