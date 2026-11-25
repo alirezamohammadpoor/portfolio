@@ -46,7 +46,7 @@ import ProjectDetailsOverlay, {
 } from "@/components/project/ProjectDetailsOverlay";
 import { setBarProject, useBarState } from "@/lib/barProject";
 import GalleryProgress from "@/components/project/GalleryProgress";
-import { CardBar, useAutoBar } from "@/components/project/AutoProgress";
+import ClipMeter from "@/components/project/ClipMeter";
 import TestReplay from "@/components/project/TestReplay";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
@@ -885,14 +885,13 @@ export default function ProjectStage({
     v.addEventListener("timeupdate", onTime);
     return () => v.removeEventListener("timeupdate", onTime);
   }, [autoOn, index, covered, hidden, last]);
-  // The clip meter (AutoProgress; prototype in /lab/progress): the centred
+  // The clip meter (ClipMeter, Ali picked it 11-25): the centred
   // clip's progress up to the glide, and its card's box, as CSS variables on
   // the root, per frame while the stage plays in order. Handed back, the
   // meter fades where it stands.
-  const bar = useAutoBar();
   useEffect(() => {
     const root = rootRef.current;
-    if (!bar || !autoOn || covered || hidden || !root) return;
+    if (!autoOn || covered || hidden || !root) return;
     let raf = 0;
     const tick = () => {
       const card = itemRefs.current[index];
@@ -915,7 +914,7 @@ export default function ProjectStage({
     };
     tick();
     return () => cancelAnimationFrame(raf);
-  }, [bar, autoOn, covered, hidden, index]);
+  }, [autoOn, covered, hidden, index]);
 
   // Handed back: a clip held on its result (the last one) loops again.
   useEffect(() => {
@@ -1366,15 +1365,7 @@ export default function ProjectStage({
         {single ? "" : `${index + 1} of ${gallery.length}`}
       </p>
 
-      {bar && inOrder && (
-        <CardBar
-          look={bar}
-          shown={autoOn}
-          reduceMotion={reduceMotion}
-          count={gallery.length}
-          index={index}
-        />
-      )}
+      {inOrder && <ClipMeter shown={autoOn} reduceMotion={reduceMotion} />}
 
       {/* Progress: a filmstrip at the bottom centre (Ali, 11-04). */}
       <GalleryProgress
