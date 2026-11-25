@@ -389,6 +389,14 @@ export const project = defineType({
       },
     }),
     defineField({
+      name: "playInOrder",
+      title: "Play the gallery in order",
+      description:
+        "Each clip plays once and the gallery moves on to the next by itself; the last one holds its result. Any swipe, scroll, key or tap hands control back to the visitor, and the clips loop as usual. For a gallery that tells one story in order (e.g. TRY Devops).",
+      type: "boolean",
+      initialValue: false,
+    }),
+    defineField({
       name: "gallery",
       title: "Gallery",
       description:

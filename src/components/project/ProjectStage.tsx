@@ -46,6 +46,7 @@ import ProjectDetailsOverlay, {
 } from "@/components/project/ProjectDetailsOverlay";
 import { setBarProject, useBarState } from "@/lib/barProject";
 import GalleryProgress from "@/components/project/GalleryProgress";
+import ClipMeter from "@/components/project/ClipMeter";
 import TestReplay from "@/components/project/TestReplay";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
@@ -99,6 +100,11 @@ const DESK_GAP = 48;
 const DESK_MAX_H = 760;
 // Hold on the next project's cover before it opens.
 const AUTO_NEXT_MS = 1500;
+// Play in order: a clip moves on this long before its end. The DevOps clips
+// fade back to white over their last 40 frames (0.67 s) so they loop without
+// a seam; in order they leave, or hold, on their result instead. timeupdate
+// fires about every 250 ms, hence the margin.
+const IN_ORDER_EARLY_S = 1;
 // Phone: how far a fresh swipe on the next project's card travels before it opens it.
 const SWIPE_NEXT_PX = 40;
 
@@ -130,11 +136,19 @@ const REFLICK_MS = 350;
  * still is an image under the clip and the clip stays invisible until it has
  * presented a frame, so a swipe goes still → moving picture with nothing between.
  */
-function revealOnFirstFrame(video: HTMLVideoElement | null): (() => void) | undefined {
-  if (!video) return;
+// Once per element: the ref callback below is inline, so React runs its
+// cleanup and calls it again on every render of the stage. Cancelling the
+// wait there (as this first did) could leave a clip at opacity 0 for good,
+// its still showing while the film played unseen underneath, until a later
+// render happened to find it ready (Ali, 11-25: the clip "starts and then
+// restarts" after the glide).
+const revealing = new WeakSet<HTMLVideoElement>();
+function revealOnFirstFrame(video: HTMLVideoElement | null) {
+  if (!video || revealing.has(video)) return;
+  revealing.add(video);
   if (video.readyState >= 2) return;
   video.style.opacity = "0";
-  return onFirstVideoFrame(video, () => {
+  onFirstVideoFrame(video, () => {
     video.style.opacity = "";
   });
 }
@@ -849,6 +863,74 @@ export default function ProjectStage({
     return () => current?.querySelectorAll("video").forEach((v) => v.pause());
   }, [index]);
 
+  // Play the gallery in order (Sanity playInOrder; Ali 11-25, for TRY Devops,
+  // whose clips tell one story): the centred clip plays once and the stage
+  // glides on to the next card; the last one holds its result instead of
+  // leaving the project. The first wheel, key, touch or click hands control
+  // back to the visitor for this visit, and the clips loop as usual. Off under
+  // reduced motion (no glides then).
+  const inOrder = Boolean(project.playInOrder) && !reduceMotion;
+  const [auto, setAuto] = useState(true);
+  const autoOn = inOrder && auto;
+  useEffect(() => {
+    if (!inOrder) return;
+    const stop = () => setAuto(false);
+    const events = ["wheel", "keydown", "touchstart", "pointerdown"] as const;
+    events.forEach((t) => window.addEventListener(t, stop, { capture: true, passive: true }));
+    return () => events.forEach((t) => window.removeEventListener(t, stop, { capture: true }));
+  }, [inOrder]);
+  useEffect(() => {
+    if (!autoOn || covered || hidden) return;
+    const v = itemRefs.current[index]?.querySelector("video");
+    if (!v) return;
+    let done = false;
+    const onTime = () => {
+      if (done || !v.duration || v.currentTime < v.duration - IN_ORDER_EARLY_S) return;
+      done = true;
+      if (index >= last) v.pause();
+      else stepRef.current(1);
+    };
+    v.addEventListener("timeupdate", onTime);
+    return () => v.removeEventListener("timeupdate", onTime);
+  }, [autoOn, index, covered, hidden, last]);
+  // The clip meter (ClipMeter, Ali picked it 11-25): the centred
+  // clip's progress up to the glide, and its card's box, as CSS variables on
+  // the root, per frame while the stage plays in order. Handed back, the
+  // meter fades where it stands.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!autoOn || covered || hidden || !root) return;
+    let raf = 0;
+    const tick = () => {
+      const card = itemRefs.current[index];
+      const v = card?.querySelector("video");
+      const end = v && Number.isFinite(v.duration) ? v.duration - IN_ORDER_EARLY_S : 0;
+      const p = v && end > 0 ? Math.min(1, v.currentTime / end) : 0;
+      root.style.setProperty("--clip-p", p.toFixed(4));
+      if (card) {
+        const r = card.getBoundingClientRect();
+        const o = root.getBoundingClientRect();
+        root.style.setProperty("--card-x", `${r.left - o.left}px`);
+        root.style.setProperty("--card-y", `${r.top - o.top}px`);
+        root.style.setProperty("--card-w", `${r.width}px`);
+        root.style.setProperty("--card-h", `${r.height}px`);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => cancelAnimationFrame(raf);
+  }, [autoOn, covered, hidden, index]);
+
+  // Handed back: a clip held on its result (the last one) loops again.
+  useEffect(() => {
+    if (!inOrder || auto || covered || hidden) return;
+    itemRefs.current[index]?.querySelectorAll("video").forEach((v) => {
+      if (v.dataset.once || !v.paused) return;
+      const p = v.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    });
+  }, [inOrder, auto, index, covered, hidden]);
+
   const onEnd = index >= last && Boolean(nextSlug && onNavigateNext);
   // Desktop card box (Ali, 11-04: "use the columns"): the widest even
   // column span that fits the card height at the box's ratio, so the
@@ -1139,7 +1221,13 @@ export default function ProjectStage({
               LANDING_ASPECT.stage;
             // The clip's first frame as a still: what the card shows before
             // its video mounts or has a frame, so no swipe meets a black card.
-            const poster = clip?.poster ? imageUrl(clip.poster, isDesktop ? 1600 : 900) : undefined;
+            // Not on a gallery that plays in order: its stills are each clip's
+            // result (they read best as thumbnails), and a phone draws no frame
+            // of a clip until it plays, so the glide met the end of the next
+            // clip before its start (Ali, 11-25). Those clips open on the
+            // card's own ground, so the bare card is their first frame.
+            const poster =
+              clip?.poster && !inOrder ? imageUrl(clip.poster, isDesktop ? 1600 : 900) : undefined;
             // Card 1 is the landing media (the clone lands on it): a laptop-shaped
             // box, the clone landing on the media inside its background.
             const frame =
@@ -1181,9 +1269,8 @@ export default function ProjectStage({
                       if (i === 0) firstVideoRef.current = el;
                       // The still under the clip stays until the clip has
                       // presented a frame of its own (see revealOnFirstFrame).
-                      const stop = poster ? revealOnFirstFrame(el) : undefined;
+                      if (poster) revealOnFirstFrame(el);
                       return () => {
-                        stop?.();
                         if (i === 0 && firstVideoRef.current === el) firstVideoRef.current = null;
                       };
                     }}
@@ -1191,7 +1278,7 @@ export default function ProjectStage({
                     className="relative h-full w-full object-cover"
                     aria-label={`${project.title} — ${i + 1}`}
                     muted
-                    loop
+                    loop={!autoOn}
                     playsInline
                     preload="metadata"
                     autoPlay={i === 0}
@@ -1287,6 +1374,8 @@ export default function ProjectStage({
       <p className="sr-only" aria-live="polite">
         {single ? "" : `${index + 1} of ${gallery.length}`}
       </p>
+
+      {inOrder && <ClipMeter shown={autoOn} reduceMotion={reduceMotion} />}
 
       {/* Progress: a filmstrip at the bottom centre (Ali, 11-04). */}
       <GalleryProgress
