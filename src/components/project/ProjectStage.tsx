@@ -99,6 +99,11 @@ const DESK_GAP = 48;
 const DESK_MAX_H = 760;
 // Hold on the next project's cover before it opens.
 const AUTO_NEXT_MS = 1500;
+// Play in order: a clip moves on this long before its end. The DevOps clips
+// fade back to white over their last 40 frames (0.67 s) so they loop without
+// a seam; in order they leave, or hold, on their result instead. timeupdate
+// fires about every 250 ms, hence the margin.
+const IN_ORDER_EARLY_S = 1;
 // Phone: how far a fresh swipe on the next project's card travels before it opens it.
 const SWIPE_NEXT_PX = 40;
 
@@ -849,6 +854,46 @@ export default function ProjectStage({
     return () => current?.querySelectorAll("video").forEach((v) => v.pause());
   }, [index]);
 
+  // Play the gallery in order (Sanity playInOrder; Ali 11-25, for TRY Devops,
+  // whose clips tell one story): the centred clip plays once and the stage
+  // glides on to the next card; the last one holds its result instead of
+  // leaving the project. The first wheel, key, touch or click hands control
+  // back to the visitor for this visit, and the clips loop as usual. Off under
+  // reduced motion (no glides then).
+  const inOrder = Boolean(project.playInOrder) && !reduceMotion;
+  const [auto, setAuto] = useState(true);
+  const autoOn = inOrder && auto;
+  useEffect(() => {
+    if (!inOrder) return;
+    const stop = () => setAuto(false);
+    const events = ["wheel", "keydown", "touchstart", "pointerdown"] as const;
+    events.forEach((t) => window.addEventListener(t, stop, { capture: true, passive: true }));
+    return () => events.forEach((t) => window.removeEventListener(t, stop, { capture: true }));
+  }, [inOrder]);
+  useEffect(() => {
+    if (!autoOn || covered || hidden) return;
+    const v = itemRefs.current[index]?.querySelector("video");
+    if (!v) return;
+    let done = false;
+    const onTime = () => {
+      if (done || !v.duration || v.currentTime < v.duration - IN_ORDER_EARLY_S) return;
+      done = true;
+      if (index >= last) v.pause();
+      else stepRef.current(1);
+    };
+    v.addEventListener("timeupdate", onTime);
+    return () => v.removeEventListener("timeupdate", onTime);
+  }, [autoOn, index, covered, hidden, last]);
+  // Handed back: a clip held on its result (the last one) loops again.
+  useEffect(() => {
+    if (!inOrder || auto || covered || hidden) return;
+    itemRefs.current[index]?.querySelectorAll("video").forEach((v) => {
+      if (v.dataset.once || !v.paused) return;
+      const p = v.play();
+      if (p && typeof p.catch === "function") p.catch(() => {});
+    });
+  }, [inOrder, auto, index, covered, hidden]);
+
   const onEnd = index >= last && Boolean(nextSlug && onNavigateNext);
   // Desktop card box (Ali, 11-04: "use the columns"): the widest even
   // column span that fits the card height at the box's ratio, so the
@@ -1191,7 +1236,7 @@ export default function ProjectStage({
                     className="relative h-full w-full object-cover"
                     aria-label={`${project.title} — ${i + 1}`}
                     muted
-                    loop
+                    loop={!autoOn}
                     playsInline
                     preload="metadata"
                     autoPlay={i === 0}

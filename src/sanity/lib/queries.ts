@@ -15,6 +15,7 @@ const PROJECT_FIELDS = `
   heroLayout,
   palette,
   mediaBackground,
+  playInOrder,
   gallery[]{
     ...,
     _type == "galleryImage" => {
@@ -168,18 +169,18 @@ export const JOURNAL_POST_BY_SLUG_QUERY = defineQuery(`
 `);
 
 export const PROJECT_SLUGS_QUERY = defineQuery(
-  `*[_type == "project" && defined(slug.current)]{ "slug": slug.current }`
+  `*[_type == "project" && defined(slug.current)]{ "slug": slug.current }`,
 );
 
 export const JOURNAL_POST_SLUGS_QUERY = defineQuery(
-  `*[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current }`
+  `*[_type == "journalPost" && defined(slug.current)]{ "slug": slug.current }`,
 );
 
 // A page hidden from search engines (seo.noIndex) is not advertised either.
 export const PROJECT_SITEMAP_QUERY = defineQuery(
-  `*[_type == "project" && defined(slug.current) && seo.noIndex != true]{ "slug": slug.current, _updatedAt }`
+  `*[_type == "project" && defined(slug.current) && seo.noIndex != true]{ "slug": slug.current, _updatedAt }`,
 );
 
 export const JOURNAL_POST_SITEMAP_QUERY = defineQuery(
-  `*[_type == "journalPost" && defined(slug.current) && seo.noIndex != true]{ "slug": slug.current, _updatedAt }`
+  `*[_type == "journalPost" && defined(slug.current) && seo.noIndex != true]{ "slug": slug.current, _updatedAt }`,
 );
