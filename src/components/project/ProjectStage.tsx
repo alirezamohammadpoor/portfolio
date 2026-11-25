@@ -46,6 +46,7 @@ import ProjectDetailsOverlay, {
 } from "@/components/project/ProjectDetailsOverlay";
 import { setBarProject, useBarState } from "@/lib/barProject";
 import GalleryProgress from "@/components/project/GalleryProgress";
+import { CardBar, useAutoBar } from "@/components/project/AutoProgress";
 import TestReplay from "@/components/project/TestReplay";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
@@ -884,6 +885,35 @@ export default function ProjectStage({
     v.addEventListener("timeupdate", onTime);
     return () => v.removeEventListener("timeupdate", onTime);
   }, [autoOn, index, covered, hidden, last]);
+  // The clip meter (AutoProgress; prototype in /lab/progress): the centred
+  // clip's progress up to the glide, and its card's box, as CSS variables on
+  // the root, per frame while the stage plays in order. Handed back, the
+  // meter fades where it stands.
+  const bar = useAutoBar();
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!bar || !autoOn || covered || hidden || !root) return;
+    let raf = 0;
+    const tick = () => {
+      const card = itemRefs.current[index];
+      const v = card?.querySelector("video");
+      const end = v && Number.isFinite(v.duration) ? v.duration - IN_ORDER_EARLY_S : 0;
+      const p = v && end > 0 ? Math.min(1, v.currentTime / end) : 0;
+      root.style.setProperty("--clip-p", p.toFixed(4));
+      if (card) {
+        const r = card.getBoundingClientRect();
+        const o = root.getBoundingClientRect();
+        root.style.setProperty("--card-x", `${r.left - o.left}px`);
+        root.style.setProperty("--card-y", `${r.top - o.top}px`);
+        root.style.setProperty("--card-w", `${r.width}px`);
+        root.style.setProperty("--card-h", `${r.height}px`);
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => cancelAnimationFrame(raf);
+  }, [bar, autoOn, covered, hidden, index]);
+
   // Handed back: a clip held on its result (the last one) loops again.
   useEffect(() => {
     if (!inOrder || auto || covered || hidden) return;
@@ -1333,8 +1363,12 @@ export default function ProjectStage({
         {single ? "" : `${index + 1} of ${gallery.length}`}
       </p>
 
+      {bar && inOrder && <CardBar look={bar} shown={autoOn} reduceMotion={reduceMotion} />}
+
       {/* Progress: a filmstrip at the bottom centre (Ali, 11-04). */}
       <GalleryProgress
+        bar={inOrder ? bar : null}
+        barOn={autoOn}
         gallery={gallery}
         index={index}
         onEnd={onEnd}
