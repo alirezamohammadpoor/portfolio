@@ -53,7 +53,7 @@ export type PhoneMode = (typeof PHONE_MODES)[number];
 export const PhoneContext = createContext<PhoneMode>("photo");
 /** Which of Stronger's campaign photos sits behind its phone (1-4, `?photo=`). */
 export const STRONGER_PHOTOS = 4;
-export const PhotoPickContext = createContext(1);
+export const PhotoPickContext = createContext(3);
 
 interface PhoneCover {
   /** The phone in the 2880x1800 film: clip-path inset (top right bottom

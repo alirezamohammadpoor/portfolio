@@ -50,7 +50,7 @@ async function Lab({
       initial={Number(v) || 1}
       initialFrame={frame === "flush" ? "flush" : "inset"}
       initialNewClips={clips !== "old"}
-      initialPhoto={Math.min(4, Math.max(1, Number(photo) || 1))}
+      initialPhoto={Math.min(4, Math.max(1, Number(photo) || 3))}
       initialPhone={
         (["now", "photo", "soft", "desktop", "colour"] as const).find((m) => m === phone) ?? "photo"
       }
