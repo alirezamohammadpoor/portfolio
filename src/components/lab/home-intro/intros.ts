@@ -299,7 +299,7 @@ const flatRing =
       n += 1;
     });
     tl.to(away, { p: 1, duration: dur, ease: "none", onUpdate: render }, landAt);
-    if (!(o.planet && pebblePlanet(tl, { centreY: oy, rise: landAt - 0.2 })))
+    if (!(o.planet && pebblePlanet(tl, world, { centreX: ox, centreY: oy, rise: landAt - 0.2 })))
       barEntrance(tl, landAt + Math.max(0, n - 1) * step + dur);
   };
 

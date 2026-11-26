@@ -121,6 +121,6 @@ export const crossingIntro: IntroBuilder = (tl, heroes, world, rects) => {
   tl.to(away, { p: 1, duration: dur, ease: "none", onUpdate: render }, landAt);
   // 5. The planet goes home: as the ring closes the Pebble rises out of the
   // middle to its place at the top.
-  if (!pebblePlanet(tl, { centreY: oy, rise: closeAt + closeDur * 0.4 }))
+  if (!pebblePlanet(tl, world, { centreX: ox, centreY: oy, rise: closeAt + closeDur * 0.4 }))
     barEntrance(tl, landAt + 0.9);
 };
