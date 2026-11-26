@@ -15,6 +15,8 @@ import {
   type VariantProps,
 } from "@/components/lab/home-layouts/shared";
 
+import Order, { type OrderMode } from "./Order";
+
 export type Axis = "x" | "y";
 
 // A release past this share of the strip, or faster than FLICK px/ms, goes
@@ -40,8 +42,11 @@ export default function FlushHome({
   projects,
   rootRef,
   axis = "x",
+  order = "rail",
   reserve = 0,
 }: VariantProps & {
+  /** How the place in the order shows, under the strip. */
+  order?: OrderMode;
   /** Lab only: px kept free at the foot for the prototype picker. */
   reserve?: number;
   axis?: Axis;
@@ -77,8 +82,13 @@ export default function FlushHome({
         if (p === count - 1 && (d > 0 || count > 2)) p = -1;
         el.style.transform = prop.replace("VAL", `calc(${p * 100}% + ${d}px)`);
       });
+      // The place in the order, fractional while the strip moves.
+      const strip = stripRef.current;
+      const size = strip ? (axis === "x" ? strip.offsetWidth : strip.offsetHeight) : 0;
+      const pos = size ? (((i - d / size) % count) + count) % count : i;
+      rootRef.current?.style.setProperty("--pos", String(pos));
     },
-    [count, prop],
+    [axis, count, prop, rootRef],
   );
 
   useLayoutEffect(() => {
@@ -265,27 +275,14 @@ export default function FlushHome({
 
       <div className="min-h-6 flex-1" />
 
-      {/* The project above the strip: counter, title, line. Keyed, so each
+      {/* The project above the strip: title and line. Keyed, so each
           swap rises in out of its mask. */}
       <div data-item className="px-margin pb-3">
-        <div data-text className="flex items-baseline justify-between text-sub text-secondary">
-          <span className="tabular-nums">
-            {String(title + 1).padStart(2, "0")} / {String(count).padStart(2, "0")}
-          </span>
-          <span aria-hidden="true" className="flex gap-1">
-            {projects.map((p, k) => (
-              <span
-                key={p._id}
-                className={`h-[3px] w-3 rounded-full transition-colors duration-300 ${k === title ? "bg-primary" : "bg-tertiary"}`}
-              />
-            ))}
-          </span>
-        </div>
         <Link
           data-text
           href={href(shown)}
           onClick={(e) => open(e, shown)}
-          className="mt-2 block"
+          className="block"
           aria-live="polite"
         >
           <span key={shown._id} className="block overflow-hidden">
@@ -344,10 +341,16 @@ export default function FlushHome({
         </div>
       </div>
 
+      <div data-item className="pt-3">
+        <div data-text>
+          <Order mode={order} projects={projects} active={title} />
+        </div>
+      </div>
+
       {/* How to use it; each hint leaves once it has been done. */}
       <div
         data-item
-        className="flex justify-between px-margin pb-4 pt-2 text-sub uppercase text-secondary"
+        className="flex justify-between px-margin pb-4 pt-3 text-sub uppercase text-secondary"
       >
         <span ref={swipeHintRef} data-text>
           {axis === "x" ? "Swipe ← →" : "Swipe ↕"}

@@ -11,6 +11,7 @@ import { labHero, type Contact } from "@/components/lab/home-layouts/shared";
 import ScatterHome from "@/components/home/ScatterHome";
 import { DESKTOP_QUERY, useIsDesktop } from "@/hooks/useIsDesktop";
 import FlushHome, { type Axis } from "@/components/lab/home-mobile/FlushHome";
+import { ORDER_MODES, type OrderMode } from "@/components/lab/home-mobile/Order";
 import PhoneCarousel from "@/components/lab/home-mobile/PhoneCarousel";
 import { flatRingIntro, ringIntro } from "./intros";
 import "@/components/lab/home-layouts/proto-picker.css";
@@ -53,6 +54,7 @@ export default function HomeIntroLab({
   count,
   phoneHome,
   axis,
+  order: orderParam,
 }: {
   projects: PROJECTS_QUERY_RESULT;
   contact?: Contact | null;
@@ -66,7 +68,10 @@ export default function HomeIntroLab({
   phoneHome: PhoneHome;
   /** `?axis=y`: the flush strip swipes up and down, like the old home. */
   axis: Axis;
+  /** `?order=`: how the phone pages show which project is up (O). */
+  order?: string;
 }) {
+  const order: OrderMode = ORDER_MODES.find((m) => m.key === orderParam)?.key ?? "rail";
   // Repeats get their own ids, so each copy is its own cover on the page.
   const page =
     count > projects.length
@@ -98,10 +103,12 @@ export default function HomeIntroLab({
       else if (e.key === "r" || e.key === "R") select(current);
       else if ((e.key === "h" || e.key === "H") && !matchMedia(DESKTOP_QUERY).matches)
         cycleHome(phoneHome);
+      else if ((e.key === "o" || e.key === "O") && !matchMedia(DESKTOP_QUERY).matches)
+        cycleOrder(order);
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [current, select, phoneHome]);
+  }, [current, select, phoneHome, order]);
 
   // The laptop lands on the carousel, the phone on today's phone home. Client
   // only, so one tree (and one reel) mounts.
@@ -213,6 +220,7 @@ export default function HomeIntroLab({
                 contact={contact}
                 rootRef={rootRef}
                 axis={axis}
+                order={order}
                 reserve={PICKER_SPACE}
               />
             ) : (
@@ -220,6 +228,7 @@ export default function HomeIntroLab({
                 projects={page}
                 contact={contact}
                 rootRef={rootRef}
+                order={order}
                 reserve={PICKER_SPACE}
                 entry={stagger ? "stagger" : "glide"}
               />
@@ -247,6 +256,7 @@ export default function HomeIntroLab({
         phone={mounted && !desktop}
         phoneHome={phoneHome}
         axis={axis}
+        order={order}
       />
     </>
   );
@@ -267,6 +277,14 @@ function cycleHome(now: PhoneHome) {
   const i = PHONE_HOMES.findIndex((h) => h.key === now);
   const url = new URL(location.href);
   url.searchParams.set("home", PHONE_HOMES[(i + 1) % PHONE_HOMES.length].key);
+  location.assign(url.toString());
+}
+
+/** Reloads with the next way of showing the order (`?order=`). */
+function cycleOrder(now: OrderMode) {
+  const i = ORDER_MODES.findIndex((m) => m.key === now);
+  const url = new URL(location.href);
+  url.searchParams.set("order", ORDER_MODES[(i + 1) % ORDER_MODES.length].key);
   location.assign(url.toString());
 }
 
@@ -294,6 +312,7 @@ function Picker({
   phone,
   phoneHome,
   axis,
+  order,
 }: {
   current: number;
   onSelect: (i: number) => void;
@@ -301,6 +320,7 @@ function Picker({
   phone: boolean;
   phoneHome: PhoneHome;
   axis: Axis;
+  order: OrderMode;
 }) {
   const navRef = useRef<HTMLElement>(null);
   const highlightRef = useRef<HTMLSpanElement>(null);
@@ -356,6 +376,16 @@ function Picker({
           >
             Home: {PHONE_HOMES.find((h) => h.key === phoneHome)?.name}
           </button>
+          {phoneHome !== "live" && (
+            <button
+              type="button"
+              className="proto-picker-item"
+              aria-label="Order indicator (O)"
+              onClick={() => cycleOrder(order)}
+            >
+              Order: {ORDER_MODES.find((m) => m.key === order)?.name}
+            </button>
+          )}
           {phoneHome === "flush" && (
             <button
               type="button"

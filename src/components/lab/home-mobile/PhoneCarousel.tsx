@@ -6,6 +6,7 @@ import { Link } from "@/lib/viewTransitions";
 import { getReelState } from "@/lib/reel";
 import { ease, prefersReducedMotion } from "@/lib/motion";
 import { ClosingLine } from "@/components/home/ScatterHome";
+import Order, { type OrderMode } from "./Order";
 import {
   Cover,
   STATEMENT,
@@ -40,8 +41,11 @@ export default function PhoneCarousel({
   contact,
   rootRef,
   entry = "glide",
+  order = "rail",
   reserve = 0,
 }: VariantProps & {
+  /** How the place in the order shows, under the row. */
+  order?: OrderMode;
   /** Lab only: px kept free at the foot for the prototype picker. */
   reserve?: number;
   entry?: "glide" | "stagger";
@@ -168,6 +172,10 @@ export default function PhoneCarousel({
             best = k % count;
           }
         }
+        // The place in the order, fractional as the row moves (every window
+        // is the same width).
+        const pos = (((-(x + glide) / w) % count) + count) % count;
+        rootRef.current?.style.setProperty("--pos", String(pos));
         if (best !== leadNow) {
           leadNow = best;
           setLead(best);
@@ -184,7 +192,7 @@ export default function PhoneCarousel({
       track.removeEventListener("pointercancel", onUp);
       track.removeEventListener("wheel", onWheel);
     };
-  }, [entry, count]);
+  }, [entry, count, rootRef]);
 
   const shown = projects[lead] ?? projects[0];
 
@@ -270,10 +278,16 @@ export default function PhoneCarousel({
         </div>
       </div>
 
+      <div data-item className="pt-3">
+        <div data-text>
+          <Order mode={order} projects={projects} active={lead} />
+        </div>
+      </div>
+
       <div
         ref={hintRef}
         data-item
-        className="flex justify-between px-margin pb-4 pt-1 text-sub uppercase text-secondary"
+        className="flex justify-between px-margin pb-4 pt-3 text-sub uppercase text-secondary"
       >
         <span data-text>Drag ← →</span>
         <span data-text>Tap to view</span>

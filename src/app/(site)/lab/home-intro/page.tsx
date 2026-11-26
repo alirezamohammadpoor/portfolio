@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type Params = { v?: string; n?: string; home?: string; axis?: string };
+type Params = { v?: string; n?: string; home?: string; axis?: string; order?: string };
 
 export default function HomeIntroLabPage({ searchParams }: { searchParams: Promise<Params> }) {
   return (
@@ -20,7 +20,7 @@ export default function HomeIntroLabPage({ searchParams }: { searchParams: Promi
 }
 
 async function Lab({ searchParams }: { searchParams: Promise<Params> }) {
-  const [{ v, n, home, axis }, projects, about] = await Promise.all([
+  const [{ v, n, home, axis, order }, projects, about] = await Promise.all([
     searchParams,
     getProjects(),
     getAbout().catch(() => null),
@@ -33,6 +33,7 @@ async function Lab({ searchParams }: { searchParams: Promise<Params> }) {
       count={Math.min(40, Math.max(0, Math.floor(Number(n) || 0)))}
       phoneHome={home === "live" || home === "carousel" ? home : "flush"}
       axis={axis === "y" ? "y" : "x"}
+      order={order}
     />
   );
 }
