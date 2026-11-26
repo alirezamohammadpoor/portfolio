@@ -301,11 +301,12 @@ function ringTimeline(
   landing: "dive" | "settle" = "dive",
 ) {
   const settleAll = landing === "settle";
-  // Settle: where on the oval (fraction clockwise from 12 o'clock) each card
-  // drops out of the ring into its slot: low on the right. The first card
-  // crosses an empty row to the far left; every later one lands to the right
-  // of the last, so no card crosses a landed one.
-  const RELEASE = 0.4;
+  // Settle (Ali 11-26, "ring unrolls into the row"): the ring is one track.
+  // It opens low on the left (EXIT, a fraction clockwise from 12 o'clock)
+  // and runs on along the row to the right; the projects ride it one behind
+  // the other, so none can cross. The last project leads and travels
+  // furthest, the first comes off last into the first slot.
+  const EXIT = 0.6;
   const VW = window.innerWidth;
   const VH = window.innerHeight;
   const laptop = window.matchMedia(DESKTOP_QUERY).matches;
@@ -363,13 +364,20 @@ function ringTimeline(
   const ring = { u: settleAll ? turn : -turn };
   const fly = heroes.map(() => ({ p: 0 }));
   const dive = { p: 0 };
-  const settle = heroes.map(() => ({ p: 0 }));
-  const lift = { q: 0 };
-  // The band above the row: its middle, and the oval's vertical squash that
-  // keeps a card inside it.
-  const rowTop = Math.min(...rects.map((r) => r.y));
-  const liftY = (top + rowTop) / 2;
-  const liftB = Math.max(0.1, Math.min(1, (rowTop - top - cw * aspect - 16) / 2 / Math.max(1, fh / 2)));
+  // How far the train has run: card i sits at track position i + chain.d;
+  // below 0 it is still on the ring, 0 to 1 it leaves the ring for the first
+  // slot, from 1 it is on the row (slot = position - 1).
+  const chain = { d: -(N - 1) };
+  const slotCentres = rects.map((r) => ({ x: r.x + r.w / 2, y: r.y + r.h / 2 }));
+  function rowPoint(k: number) {
+    if (N < 2) return slotCentres[0];
+    const j = Math.max(0, Math.min(N - 2, Math.floor(k)));
+    const t = k - j;
+    const a0 = slotCentres[j];
+    const a1 = slotCentres[j + 1];
+    return { x: a0.x + (a1.x - a0.x) * t, y: a0.y + (a1.y - a0.y) * t };
+  }
+  const smooth = (t: number) => t * t * (3 - 2 * t);
 
   const base = heroes.map((_, i) => {
     const { x, y, w, h } = rects[i];
@@ -396,33 +404,33 @@ function ringTimeline(
   function render() {
     heroes.forEach((hero, i) => {
       const { cx0, cy0, scale } = base[i];
-      const spot = at(i / N + ring.u + (settleAll ? RELEASE : 0));
+      // Settle numbers the ring anticlockwise, so the train runs in order.
+      const q = i + chain.d;
+      const spot = settleAll ? at(EXIT - Math.min(q, 0) / N + ring.u) : at(i / N + ring.u);
       let cx = ox + spot.x;
       let cy = oy + spot.y;
-      if (settleAll && lift.q > 0) {
-        // While the cards drop out, the ring rises into the band above the
-        // row and flattens there, so it never passes over a landed card.
-        const q = lift.q;
-        cx = ox + spot.x * (1 - 0.3 * q);
-        cy = oy + (liftY - oy) * q + spot.y * (1 - (1 - liftB) * q);
-      }
       const p = fly[i].p;
       // Out of the middle of the screen.
       cx = VW / 2 + (cx - VW / 2) * p;
       cy = VH / 2 + (cy - VH / 2) * p;
       let alpha = Math.min(1, p * 1.4);
       if (settleAll) {
-        // Every card leaves the ring for its own slot on the page.
-        const sp = settle[i].p;
         const ringScale = scale * (0.35 + 0.65 * p);
+        let sc = ringScale;
+        if (q > 0) {
+          const off = q < 1 ? smooth(q) : 1;
+          const target = rowPoint(Math.max(0, q - 1));
+          cx += (target.x - cx) * off;
+          cy += (target.y - cy) * off;
+          sc = ringScale + (1 - ringScale) * off;
+        }
         gsap.set(hero, {
-          x: (cx - cx0) * (1 - sp),
-          y: (cy - cy0) * (1 - sp),
-          scale: ringScale + (1 - ringScale) * sp,
-          autoAlpha: alpha + (1 - alpha) * sp,
-          // The row is the table: landed cards lie under the ring, a card on
-          // its way down flies over everything.
-          zIndex: sp >= 1 ? 0 : sp > 0 ? 10 + i : 1,
+          x: cx - cx0,
+          y: cy - cy0,
+          scale: sc,
+          autoAlpha: q > 0 ? 1 : alpha,
+          // The car in front rides on top; the next comes out from under it.
+          zIndex: i + 1,
         });
         return;
       }
@@ -467,28 +475,8 @@ function ringTimeline(
     turnStart,
   );
   if (settleAll) {
-    // The ring keeps turning past home (over-rotation) and speeds up; each
-    // card leaves it as it passes the release point, so they fall into the
-    // row one after another in order instead of crossing each other.
-    const spin = 0.3 * N;
-    const uEnd = -(N - 1) / N - 0.06;
-    const spinEase = gsap.parseEase("power1.in");
-    tl.to(ring, { u: uEnd, duration: spin, ease: spinEase, onUpdate: render }, diveAt);
-    tl.to(lift, { q: 1, duration: spin * 0.35, ease: ease.inOut, onUpdate: render }, diveAt + 0.1);
-    heroes.forEach((_, i) => {
-      // When ring.u reaches -i/N, card i is at the release point.
-      const target = -i / N;
-      let t = 0;
-      for (let k = 0; k <= 200; k++) {
-        t = k / 200;
-        if (uEnd * spinEase(t) <= target) break;
-      }
-      tl.to(
-        settle[i],
-        { p: 1, duration: SCATTER_BEAT.dive * 0.6, ease: ease.inOut, onUpdate: render },
-        diveAt + t * spin,
-      );
-    });
+    // One move from the ring into the row: the train runs N track units.
+    tl.to(chain, { d: 1, duration: 0.42 * N, ease: "power1.inOut", onUpdate: render }, diveAt);
   } else {
     tl.to(world, { x: dx, y: dy, scale: K, duration: SCATTER_BEAT.dive, ease: ease.inOut }, diveAt);
     tl.to(dive, { p: 1, duration: SCATTER_BEAT.dive, ease: ease.inOut, onUpdate: render }, diveAt);
