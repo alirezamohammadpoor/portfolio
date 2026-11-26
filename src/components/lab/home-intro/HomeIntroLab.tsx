@@ -10,10 +10,8 @@ import CarouselHome from "@/components/lab/home-layouts/CarouselHome";
 import { labHero, type Contact } from "@/components/lab/home-layouts/shared";
 import { DESKTOP_QUERY, useIsDesktop } from "@/hooks/useIsDesktop";
 import FlushHome from "@/components/lab/home-mobile/FlushHome";
-import { ORDER_MODES, type OrderMode } from "@/components/lab/home-mobile/Order";
 import PhoneCarousel from "@/components/lab/home-mobile/PhoneCarousel";
 import { flatRingIntro, ringIntro } from "./intros";
-import "@/components/lab/home-layouts/proto-picker.css";
 
 interface Variant {
   name: string;
@@ -42,9 +40,10 @@ const VARIANTS: Variant[] = [
 ];
 
 /**
- * Entries for the carousel home behind Emil Kowalski's prototype
- * picker. An entry only plays on a full load, so picking one (1-5, arrows)
- * reloads the page with `?v=N`; R plays the current one again.
+ * Entries for the carousel home. No picker on screen (Ali 11-26): the URL
+ * picks (`?v=1..5`, `?home=flush|carousel|auto`, `?n=`), and on a keyboard
+ * 1-5 or the arrows reload with another entry, R replays, H changes the
+ * phone home. An entry only plays on a full load.
  */
 export default function HomeIntroLab({
   projects,
@@ -52,7 +51,6 @@ export default function HomeIntroLab({
   initial,
   count,
   phoneHome,
-  order: orderParam,
 }: {
   projects: PROJECTS_QUERY_RESULT;
   contact?: Contact | null;
@@ -64,10 +62,7 @@ export default function HomeIntroLab({
    *  edge-to-edge strip, one project at a time; "carousel" the laptop's
    *  drifting row; "auto" the same row moving on one window at a time. */
   phoneHome: PhoneHome;
-  /** `?order=`: how the phone pages show which project is up (O). */
-  order?: string;
 }) {
-  const order: OrderMode = ORDER_MODES.find((m) => m.key === orderParam)?.key ?? "rail";
   // Repeats get their own ids, so each copy is its own cover on the page.
   const page =
     count > projects.length
@@ -99,12 +94,10 @@ export default function HomeIntroLab({
       else if (e.key === "r" || e.key === "R") select(current);
       else if ((e.key === "h" || e.key === "H") && !matchMedia(DESKTOP_QUERY).matches)
         cycleHome(phoneHome);
-      else if ((e.key === "o" || e.key === "O") && !matchMedia(DESKTOP_QUERY).matches)
-        cycleOrder(order);
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [current, select, phoneHome, order]);
+  }, [current, select, phoneHome]);
 
   // The laptop lands on the carousel, the phone on today's phone home. Client
   // only, so one tree (and one reel) mounts.
@@ -209,14 +202,13 @@ export default function HomeIntroLab({
         ) : (
           <>
             {phoneHome === "flush" ? (
-              <FlushHome projects={page} contact={contact} rootRef={rootRef} order={order} />
+              <FlushHome projects={page} contact={contact} rootRef={rootRef} />
             ) : (
               <PhoneCarousel
                 projects={page}
                 contact={contact}
                 rootRef={rootRef}
                 motion={phoneHome === "auto" ? "step" : "drift"}
-                order={order}
                 entry={stagger ? "stagger" : "glide"}
               />
             )}
@@ -234,14 +226,6 @@ export default function HomeIntroLab({
             )}
           </>
         ))}
-      <Picker
-        current={current}
-        onSelect={select}
-        count={count || projects.length}
-        phone={mounted && !desktop}
-        phoneHome={phoneHome}
-        order={order}
-      />
     </>
   );
 }
@@ -259,127 +243,4 @@ function cycleHome(now: PhoneHome) {
   const url = new URL(location.href);
   url.searchParams.set("home", PHONE_HOMES[(i + 1) % PHONE_HOMES.length].key);
   location.assign(url.toString());
-}
-
-/** Reloads with the next way of showing the order (`?order=`). */
-function cycleOrder(now: OrderMode) {
-  const i = ORDER_MODES.findIndex((m) => m.key === now);
-  const url = new URL(location.href);
-  url.searchParams.set("order", ORDER_MODES[(i + 1) % ORDER_MODES.length].key);
-  location.assign(url.toString());
-}
-
-const COUNTS = [6, 10, 15];
-
-/** Reloads with `?n=`; the live count drops the param. */
-function setCount(n: number, live: boolean) {
-  const url = new URL(location.href);
-  if (live) url.searchParams.delete("n");
-  else url.searchParams.set("n", String(n));
-  location.assign(url.toString());
-}
-
-function Picker({
-  current,
-  onSelect,
-  count,
-  phone,
-  phoneHome,
-  order,
-}: {
-  current: number;
-  onSelect: (i: number) => void;
-  count: number;
-  phone: boolean;
-  phoneHome: PhoneHome;
-  order: OrderMode;
-}) {
-  const navRef = useRef<HTMLElement>(null);
-  const highlightRef = useRef<HTMLSpanElement>(null);
-  const itemsRef = useRef<(HTMLButtonElement | null)[]>([]);
-
-  useLayoutEffect(() => {
-    const move = () => {
-      const el = itemsRef.current[current];
-      const hl = highlightRef.current;
-      if (!el || !hl) return;
-      hl.style.width = `${el.offsetWidth}px`;
-      hl.style.transform = `translateX(${el.offsetLeft}px)`;
-    };
-    move();
-    window.addEventListener("resize", move);
-    return () => window.removeEventListener("resize", move);
-  }, [current]);
-
-  useEffect(() => {
-    const id = requestAnimationFrame(() =>
-      requestAnimationFrame(() => navRef.current?.setAttribute("data-ready", "")),
-    );
-    return () => cancelAnimationFrame(id);
-  }, []);
-
-  return (
-    <nav ref={navRef} className="proto-picker" aria-label="Prototype variants">
-      <span ref={highlightRef} className="proto-picker-highlight" aria-hidden="true" />
-      {VARIANTS.map((v, i) => (
-        <button
-          key={v.name}
-          ref={(el) => {
-            itemsRef.current[i] = el;
-          }}
-          type="button"
-          className="proto-picker-item"
-          data-active={i === current ? "" : undefined}
-          aria-current={i === current ? "true" : undefined}
-          onClick={() => onSelect(i)}
-        >
-          {v.name}
-        </button>
-      ))}
-      {phone && (
-        <>
-          <span className="proto-picker-divider" aria-hidden="true" />
-          {/* The page the phone lands on (H). */}
-          <button
-            type="button"
-            className="proto-picker-item"
-            aria-label="Phone home (H)"
-            onClick={() => cycleHome(phoneHome)}
-          >
-            Home: {PHONE_HOMES.find((h) => h.key === phoneHome)?.name}
-          </button>
-          <button
-            type="button"
-            className="proto-picker-item"
-            aria-label="Order indicator (O)"
-            onClick={() => cycleOrder(order)}
-          >
-            Order: {ORDER_MODES.find((m) => m.key === order)?.name}
-          </button>
-        </>
-      )}
-      <span className="proto-picker-divider" aria-hidden="true" />
-      {/* How many projects (N): today's list, or repeats up to 10 and 15. */}
-      <button
-        type="button"
-        className="proto-picker-item"
-        aria-label="Number of projects"
-        onClick={() => {
-          const next = COUNTS[(COUNTS.findIndex((c) => c >= count) + 1) % COUNTS.length];
-          setCount(next, next <= 6);
-        }}
-      >
-        {count} projects
-      </button>
-      <span className="proto-picker-divider" aria-hidden="true" />
-      <button
-        type="button"
-        className="proto-picker-item proto-picker-replay"
-        aria-label="Replay animation (R)"
-        onClick={() => onSelect(current)}
-      >
-        ↻
-      </button>
-    </nav>
-  );
 }

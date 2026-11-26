@@ -15,8 +15,6 @@ import {
   type VariantProps,
 } from "@/components/lab/home-layouts/shared";
 
-import Order, { type OrderMode } from "./Order";
-
 // A release past this share of the strip, or faster than FLICK px/ms, goes
 // to the next project; anything less springs back.
 const COMMIT = 0.22;
@@ -34,14 +32,7 @@ const SILENCE_MS = 150;
  * loops. A single nudge shows the next cover's edge if nobody has touched
  * it a moment after landing.
  */
-export default function FlushHome({
-  projects,
-  rootRef,
-  order = "rail",
-}: VariantProps & {
-  /** How the place in the order shows, under the strip. */
-  order?: OrderMode;
-}) {
+export default function FlushHome({ projects, rootRef }: VariantProps & {}) {
   useEntrance(rootRef);
   const open = useOpenProject(rootRef);
   const count = projects.length;
@@ -70,13 +61,8 @@ export default function FlushHome({
         if (p === count - 1 && (d > 0 || count > 2)) p = -1;
         el.style.transform = `translate3d(calc(${p * 100}% + ${d}px),0,0)`;
       });
-      // The place in the order, fractional while the strip moves.
-      const strip = stripRef.current;
-      const size = strip?.offsetWidth ?? 0;
-      const pos = size ? (((i - d / size) % count) + count) % count : i;
-      rootRef.current?.style.setProperty("--pos", String(pos));
     },
-    [count, rootRef],
+    [count],
   );
 
   useLayoutEffect(() => {
@@ -279,20 +265,15 @@ export default function FlushHome({
         </Link>
       </div>
 
-      <div data-item className="pb-3">
-        <div data-text>
-          <Order mode={order} projects={projects} active={title} />
-        </div>
-      </div>
-
-      {/* The strip: edge to edge and down to the bottom, 16:10 like every
-          cover. */}
+      {/* The strip: edge to edge and down to the bottom, 40 % of the screen
+          tall (Ali 11-26: more height), so the covers crop a little at the
+          sides. */}
       <div data-item>
         <div
           ref={stripRef}
           data-reveal
           data-lenis-prevent
-          className="relative aspect-[16/10] w-full touch-pan-y select-none overflow-hidden bg-tertiary"
+          className="relative h-[40svh] w-full touch-pan-y select-none overflow-hidden bg-tertiary"
         >
           {projects.map((project, k) => (
             <Link

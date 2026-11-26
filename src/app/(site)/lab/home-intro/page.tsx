@@ -20,7 +20,7 @@ export default function HomeIntroLabPage({ searchParams }: { searchParams: Promi
 }
 
 async function Lab({ searchParams }: { searchParams: Promise<Params> }) {
-  const [{ v, n, home, order }, projects, about] = await Promise.all([
+  const [{ v, n, home }, projects, about] = await Promise.all([
     searchParams,
     getProjects(),
     getAbout().catch(() => null),
@@ -32,7 +32,6 @@ async function Lab({ searchParams }: { searchParams: Promise<Params> }) {
       initial={Number(v) || 1}
       count={Math.min(40, Math.max(0, Math.floor(Number(n) || 0)))}
       phoneHome={home === "carousel" || home === "auto" ? home : "flush"}
-      order={order}
     />
   );
 }

@@ -227,7 +227,7 @@ export default function CarouselHome({
         </div>
       </section>
 
-      <div data-item className="h-[50svh] shrink-0 overflow-hidden">
+      <div data-item className="h-[60svh] shrink-0 overflow-hidden">
         <div
           ref={trackRef}
           data-reveal={entry === "glide" ? "" : undefined}

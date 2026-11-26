@@ -5,7 +5,6 @@ import { Link } from "@/lib/viewTransitions";
 import { getReelState } from "@/lib/reel";
 import { prefersReducedMotion } from "@/lib/motion";
 import { ClosingLine } from "@/components/home/ScatterHome";
-import Order, { type OrderMode } from "./Order";
 import {
   Cover,
   STATEMENT,
@@ -47,13 +46,10 @@ export default function PhoneCarousel({
   rootRef,
   entry = "glide",
   motion = "drift",
-  order = "rail",
 }: VariantProps & {
   /** "drift": the row glides on at a steady speed. "step": it rests on one
    *  window at a time and moves on by itself, one window per step. */
   motion?: "drift" | "step";
-  /** How the place in the order shows, under the row. */
-  order?: OrderMode;
   entry?: "glide" | "stagger";
 }) {
   useEntrance(rootRef);
@@ -230,10 +226,6 @@ export default function PhoneCarousel({
             best = k % count;
           }
         }
-        // The place in the order, fractional as the row moves (every window
-        // is the same width).
-        const pos = (((-(x + glide) / w) % count) + count) % count;
-        rootRef.current?.style.setProperty("--pos", String(pos));
         if (best !== leadNow) {
           leadNow = best;
           setLead(best);
@@ -250,7 +242,7 @@ export default function PhoneCarousel({
       track.removeEventListener("pointercancel", onUp);
       track.removeEventListener("wheel", onWheel);
     };
-  }, [entry, count, rootRef, motion]);
+  }, [entry, count, motion]);
 
   const shown = projects[lead] ?? projects[0];
 
@@ -293,16 +285,11 @@ export default function PhoneCarousel({
         </div>
       )}
 
-      <div data-item className="pb-3">
-        <div data-text>
-          <Order mode={order} projects={projects} active={lead} />
-        </div>
-      </div>
-
-      {/* The row, down to the bottom edge: windows 82 % of the screen wide,
-          recordings flush and touching (Ali 11-26: no gap), the next one in
-          view at the right. */}
-      <div data-item className="shrink-0 overflow-hidden" style={{ height: "calc(82vw * 0.625)" }}>
+      {/* The row, down to the bottom edge: windows 84 % of the screen wide
+          and 40 % of it tall (Ali 11-26: more height, so the covers crop a
+          little at the sides), flush and touching, the next one in view at
+          the right. */}
+      <div data-item className="mt-3 h-[40svh] shrink-0 overflow-hidden">
         <div
           ref={trackRef}
           data-reveal={entry === "glide" ? "" : undefined}
@@ -317,7 +304,7 @@ export default function PhoneCarousel({
               aria-hidden={i >= count || undefined}
               tabIndex={i >= count ? -1 : undefined}
               draggable={false}
-              className="block h-full shrink-0"
+              className="block h-full w-[84vw] shrink-0"
               onClick={(e) => {
                 if (dragged.current) {
                   dragged.current = false;
@@ -331,8 +318,8 @@ export default function PhoneCarousel({
                 project={project}
                 mark={i < count}
                 priority={i === 0}
-                frame="flush"
-                className="pointer-events-none h-full w-auto"
+                frame="bleed"
+                className="pointer-events-none h-full w-full"
               />
             </Link>
           ))}
