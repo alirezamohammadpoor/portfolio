@@ -37,11 +37,23 @@ export default function HomeIntroLab({
   projects,
   contact,
   initial,
+  count,
 }: {
   projects: PROJECTS_QUERY_RESULT;
   contact?: Contact | null;
   initial: number;
+  /** `?n=`: the projects repeated up to this many (6, 10, 15), to see how
+   *  an intro copes with a longer list. The ring reads the same param. */
+  count: number;
 }) {
+  // Repeats get their own ids, so each copy is its own cover on the page.
+  const page =
+    count > projects.length
+      ? Array.from({ length: count }, (_, i) => {
+          const p = projects[i % projects.length];
+          return i < projects.length ? p : { ...p, _id: `${p._id}~${i}` };
+        })
+      : projects;
   const current = initial >= 1 && initial <= VARIANTS.length ? initial - 1 : 0;
   const variant = VARIANTS[current];
   const rootRef = useRef<HTMLDivElement>(null);
@@ -76,21 +88,39 @@ export default function HomeIntroLab({
       <div className="hidden desktop:block">
         {/* The page first: its ref is set before the reel's layout effect
             looks for the covers (the reel renders into a portal anyway). */}
-        <CarouselHome projects={projects} contact={contact} rootRef={rootRef} />
+        <CarouselHome projects={page} contact={contact} rootRef={rootRef} />
         <HomeReel
           projects={projects}
           pageRef={rootRef}
-          coverSizes={projects.map(() => "50vw")}
+          coverSizes={page.map(() => "50vw")}
           build={variant.build}
           heroOverride={heroOverride}
         />
       </div>
-      <Picker current={current} onSelect={select} />
+      <Picker current={current} onSelect={select} count={count || projects.length} />
     </>
   );
 }
 
-function Picker({ current, onSelect }: { current: number; onSelect: (i: number) => void }) {
+const COUNTS = [6, 10, 15];
+
+/** Reloads with `?n=`; the live count drops the param. */
+function setCount(n: number, live: boolean) {
+  const url = new URL(location.href);
+  if (live) url.searchParams.delete("n");
+  else url.searchParams.set("n", String(n));
+  location.assign(url.toString());
+}
+
+function Picker({
+  current,
+  onSelect,
+  count,
+}: {
+  current: number;
+  onSelect: (i: number) => void;
+  count: number;
+}) {
   const navRef = useRef<HTMLElement>(null);
   const highlightRef = useRef<HTMLSpanElement>(null);
   const itemsRef = useRef<(HTMLButtonElement | null)[]>([]);
@@ -133,6 +163,19 @@ function Picker({ current, onSelect }: { current: number; onSelect: (i: number) 
           {v.name}
         </button>
       ))}
+      <span className="proto-picker-divider" aria-hidden="true" />
+      {/* How many projects (N): today's list, or repeats up to 10 and 15. */}
+      <button
+        type="button"
+        className="proto-picker-item"
+        aria-label="Number of projects"
+        onClick={() => {
+          const next = COUNTS[(COUNTS.findIndex((c) => c >= count) + 1) % COUNTS.length];
+          setCount(next, next <= 6);
+        }}
+      >
+        {count} projects
+      </button>
       <span className="proto-picker-divider" aria-hidden="true" />
       <button
         type="button"

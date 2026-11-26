@@ -122,7 +122,8 @@ export const ringIntro: IntroBuilder = (tl, heroes, world, rects) => {
   // Only the slots the screen shows take a card; the rest leave.
   const shown = slots.map((s) => s.x - s.w / 2 < VW);
   const push = Math.max(VW, VH) * 0.6;
-  const render = () =>
+  const poses: (Pose | null)[] = heroes.map(() => null);
+  const render = () => {
     heroes.forEach((_, i) => {
       // Behind project 1 in the direction of the turn: anticlockwise.
       const spot = at(ring.u - i / N);
@@ -131,6 +132,7 @@ export const ringIntro: IntroBuilder = (tl, heroes, world, rects) => {
       let y = VH / 2 + (oy + spot.y - VH / 2) * p;
       let a = Math.min(1, p * 1.4);
       if (!shown[i]) {
+        poses[i] = null;
         const e = inOutE(away.p);
         const dx = x - VW / 2;
         const dy = y - VH / 2;
@@ -142,8 +144,26 @@ export const ringIntro: IntroBuilder = (tl, heroes, world, rects) => {
         return;
       }
       const onRing: Pose = { x, y, w: cw * (0.35 + 0.65 * p), r: 0, a };
-      place(i, mix(onRing, slots[i], inOutE(land[i].p)), land[i].p > 0 ? 3 : 2);
+      poses[i] = mix(onRing, slots[i], inOutE(land[i].p));
     });
+    // Ali 11-26: a card growing into its slot must not slide over the one
+    // before it. Walking the row in order, a card that would overlap its
+    // left neighbour is held just to its right. The slots themselves never
+    // overlap, so the last frame is untouched; it holds for any count.
+    let prev: Pose | null = null;
+    heroes.forEach((_, i) => {
+      const q = poses[i];
+      if (!q) return;
+      if (prev) {
+        const h = (w: number) => (w * aspect) / 2;
+        const overlapY = Math.abs(q.y - prev.y) < h(q.w) + h(prev.w);
+        const minX = prev.x + prev.w / 2 + 8 + q.w / 2;
+        if (overlapY && q.x < minX) q.x = minX;
+      }
+      prev = q;
+      place(i, q, land[i].p > 0 ? 3 : 2);
+    });
+  };
   render();
 
   const at0 = SCATTER_BEAT.start;
