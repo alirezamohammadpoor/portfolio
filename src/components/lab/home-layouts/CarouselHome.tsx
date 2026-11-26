@@ -35,7 +35,17 @@ const glideEase = (t: number) => 1 - Math.pow(1 - t, 4);
  * project's line in one fixed spot top right. Click opens the project.
  * Ported from the parked carousel lab (11-17), now on the project window.
  */
-export default function CarouselHome({ projects, contact, rootRef }: VariantProps) {
+export default function CarouselHome({
+  projects,
+  contact,
+  rootRef,
+  entry = "glide",
+}: VariantProps & {
+  /** With no entry ring: "glide" slides the row in from the right; "stagger"
+   *  leaves the row in place for the caller to bring the cards in one by one
+   *  (/lab/home-intro, Ali 11-26). */
+  entry?: "glide" | "stagger";
+}) {
   useEntrance(rootRef);
   const open = useOpenProject(rootRef);
   const count = projects.length;
@@ -61,7 +71,7 @@ export default function CarouselHome({ projects, contact, rootRef }: VariantProp
     if (!track) return;
     const reduced = prefersReducedMotion();
     const top = reduced ? 0 : DRIFT;
-    const glideOn = !reduced && getReelState() === "off";
+    const glideOn = !reduced && entry === "glide" && getReelState() === "off";
     let x = 0;
     let speed = top;
     let last = performance.now();
@@ -170,7 +180,7 @@ export default function CarouselHome({ projects, contact, rootRef }: VariantProp
       track.removeEventListener("pointerup", onUp);
       track.removeEventListener("pointercancel", onUp);
     };
-  }, [hold]);
+  }, [hold, entry]);
 
   const held: Project | null = active === null ? null : items[active];
 
@@ -206,7 +216,7 @@ export default function CarouselHome({ projects, contact, rootRef }: VariantProp
       <div data-item className="h-[50svh] shrink-0 overflow-hidden pb-6">
         <div
           ref={trackRef}
-          data-reveal
+          data-reveal={entry === "glide" ? "" : undefined}
           className="flex h-full w-max cursor-grab touch-none select-none will-change-transform active:cursor-grabbing"
         >
           {items.map((project, i) => (

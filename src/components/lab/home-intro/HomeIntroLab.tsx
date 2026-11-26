@@ -1,7 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
+import gsap from "gsap";
 import HomeReel, { type IntroBuilder } from "@/components/home/HomeReel";
+import { setReelState } from "@/lib/reel";
+import { ease, prefersReducedMotion } from "@/lib/motion";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import CarouselHome from "@/components/lab/home-layouts/CarouselHome";
 import { LAB_CLIPS, type Contact } from "@/components/lab/home-layouts/shared";
@@ -16,6 +19,8 @@ interface Variant {
   build?: IntroBuilder;
   /** The ring sized with ringFit (whole oval on screen at any width). */
   fit?: boolean;
+  /** No ring at all: the page itself staggers in. */
+  stagger?: boolean;
 }
 
 const noop = () => () => {};
@@ -35,6 +40,8 @@ const VARIANTS: Variant[] = [
   { name: "Live" },
   { name: "Original", fit: true },
   { name: "Ring", build: ringIntro },
+  // Ali 11-26 13:51: no ring or oval, straight to the page, staggered in.
+  { name: "Stagger", stagger: true },
 ];
 
 /**
@@ -98,6 +105,48 @@ export default function HomeIntroLab({
   );
   const desktop = useIsDesktop();
   const reel = { build: variant.build, heroOverride, fit: variant.fit };
+  const stagger = variant.stagger === true;
+
+  // Stagger: no reel. Turning it off hands the page its own entrance (the
+  // statement and closing line rise line by line, on the phone the covers
+  // rise row by row); here the Pebble drops in with it and, on the laptop,
+  // the windows on screen drop into the row one after another.
+  useLayoutEffect(() => {
+    if (!mounted || !stagger) return;
+    setReelState("off");
+    if (prefersReducedMotion()) return;
+    const bar = document.querySelector("[data-site-bar]");
+    const tweens: gsap.core.Tween[] = [];
+    if (bar)
+      tweens.push(
+        gsap.fromTo(
+          bar,
+          { autoAlpha: 0, y: -8, scale: 0.96 },
+          { autoAlpha: 1, y: 0, scale: 1, duration: 0.6, ease: ease.out, delay: 0.1 },
+        ),
+      );
+    if (desktop) {
+      const cards = gsap.utils
+        .toArray<HTMLElement>("[data-card]")
+        .filter((c) => c.getBoundingClientRect().left < innerWidth);
+      tweens.push(
+        gsap.fromTo(
+          cards,
+          { autoAlpha: 0, y: -32 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: 0.9,
+            ease: ease.out,
+            stagger: 0.12,
+            delay: 0.3,
+            clearProps: "transform,opacity,visibility",
+          },
+        ),
+      );
+    }
+    return () => tweens.forEach((t) => t.revert());
+  }, [mounted, stagger, desktop]);
 
   return (
     <>
@@ -106,16 +155,23 @@ export default function HomeIntroLab({
           <>
             {/* The page first: its ref is set before the reel's layout effect
                 looks for the covers (the reel renders into a portal anyway). */}
-            <CarouselHome projects={page} contact={contact} rootRef={rootRef} />
-            <HomeReel
-              projects={projects}
-              pageRef={rootRef}
-              coverSizes={page.map(() => "50vw")}
-              {...reel}
+            <CarouselHome
+              projects={page}
+              contact={contact}
+              rootRef={rootRef}
+              entry={stagger ? "stagger" : "glide"}
             />
+            {!stagger && (
+              <HomeReel
+                projects={projects}
+                pageRef={rootRef}
+                coverSizes={page.map(() => "50vw")}
+                {...reel}
+              />
+            )}
           </>
         ) : (
-          <ScatterHome projects={page} contact={contact} reel={reel} />
+          <ScatterHome projects={page} contact={contact} reel={stagger ? "none" : reel} />
         ))}
       <Picker current={current} onSelect={select} count={count || projects.length} />
     </>

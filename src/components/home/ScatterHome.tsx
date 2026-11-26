@@ -84,7 +84,7 @@ interface ScatterHomeProps {
   projects: PROJECTS_QUERY_RESULT;
   contact?: Contact | null;
   /** Lab only (/lab/home-intro on the phone): passed through to the reel. */
-  reel?: Pick<ComponentProps<typeof HomeReel>, "build" | "heroOverride" | "fit">;
+  reel?: Pick<ComponentProps<typeof HomeReel>, "build" | "heroOverride" | "fit"> | "none";
 }
 
 export default function ScatterHome({ projects, contact, reel }: ScatterHomeProps) {
@@ -200,12 +200,14 @@ export default function ScatterHome({ projects, contact, reel }: ScatterHomeProp
 
   return (
     <div ref={rootRef} className="px-margin pb-24 desktop:pb-40">
-      <HomeReel
-        projects={projects}
-        pageRef={rootRef}
-        coverSizes={projects.map(coverSizes)}
-        {...reel}
-      />
+      {reel !== "none" && (
+        <HomeReel
+          projects={projects}
+          pageRef={rootRef}
+          coverSizes={projects.map(coverSizes)}
+          {...reel}
+        />
+      )}
       {/* Opening statement, cols 1-7 on the laptop. */}
       <section className="pt-8 desktop:grid desktop:grid-cols-12 desktop:gap-4 desktop:pt-12">
         <h2 data-statement className="text-h2 desktop:col-start-1 desktop:col-end-8 desktop:text-h1">
