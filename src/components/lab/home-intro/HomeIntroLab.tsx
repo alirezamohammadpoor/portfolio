@@ -10,7 +10,7 @@ import CarouselHome from "@/components/lab/home-layouts/CarouselHome";
 import { labHero, type Contact } from "@/components/lab/home-layouts/shared";
 import ScatterHome from "@/components/home/ScatterHome";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
-import { flatRingIntro, ringIntro } from "./intros";
+import { flatRingIntro, ringIntro, saturnIntro } from "./intros";
 import "@/components/lab/home-layouts/proto-picker.css";
 
 interface Variant {
@@ -35,6 +35,8 @@ const VARIANTS: Variant[] = [
   { name: "Ring", build: ringIntro },
   // Ali 11-26 14:29: Ring is very nice on the phone; try it laid sideways.
   { name: "Flat ring", build: flatRingIntro },
+  // Ali 11-26 14:33: even more horizontal, a rotating slideshow, Saturn.
+  { name: "Saturn", build: saturnIntro },
   // Ali 11-26 13:51: no ring or oval, straight to the page, staggered in.
   { name: "Stagger", stagger: true },
 ];
