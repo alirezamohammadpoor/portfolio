@@ -9,7 +9,9 @@ import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import CarouselHome from "@/components/lab/home-layouts/CarouselHome";
 import { labHero, type Contact } from "@/components/lab/home-layouts/shared";
 import ScatterHome from "@/components/home/ScatterHome";
-import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { DESKTOP_QUERY, useIsDesktop } from "@/hooks/useIsDesktop";
+import FlushHome, { type Axis } from "@/components/lab/home-mobile/FlushHome";
+import PhoneCarousel from "@/components/lab/home-mobile/PhoneCarousel";
 import { flatRingIntro, ringIntro } from "./intros";
 import "@/components/lab/home-layouts/proto-picker.css";
 
@@ -49,6 +51,8 @@ export default function HomeIntroLab({
   contact,
   initial,
   count,
+  phoneHome,
+  axis,
 }: {
   projects: PROJECTS_QUERY_RESULT;
   contact?: Contact | null;
@@ -56,6 +60,12 @@ export default function HomeIntroLab({
   /** `?n=`: the projects repeated up to this many (6, 10, 15), to see how
    *  an intro copes with a longer list. The ring reads the same param. */
   count: number;
+  /** `?home=`: the page the phone lands on (Ali 11-26). "live" is today's
+   *  phone home; "flush" the old edge-to-edge strip, one project at a time;
+   *  "carousel" the laptop's drifting row. */
+  phoneHome: PhoneHome;
+  /** `?axis=y`: the flush strip swipes up and down, like the old home. */
+  axis: Axis;
 }) {
   // Repeats get their own ids, so each copy is its own cover on the page.
   const page =
@@ -86,10 +96,12 @@ export default function HomeIntroLab({
       else if (e.key === "ArrowRight") select((current + 1) % VARIANTS.length);
       else if (e.key === "ArrowLeft") select((current - 1 + VARIANTS.length) % VARIANTS.length);
       else if (e.key === "r" || e.key === "R") select(current);
+      else if ((e.key === "h" || e.key === "H") && !matchMedia(DESKTOP_QUERY).matches)
+        cycleHome(phoneHome);
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [current, select]);
+  }, [current, select, phoneHome]);
 
   // The laptop lands on the carousel, the phone on today's phone home. Client
   // only, so one tree (and one reel) mounts.
@@ -99,6 +111,8 @@ export default function HomeIntroLab({
     () => false,
   );
   const desktop = useIsDesktop();
+  // The phone's own page (live keeps today's home).
+  const phonePage = !desktop && phoneHome !== "live";
   // The ring's cards match the covers they land on: the lab clips on the
   // carousel, the Sanity files on the phone home.
   const reel = { build: variant.build, fit: variant.fit };
@@ -125,7 +139,7 @@ export default function HomeIntroLab({
       tweens.push(
         gsap.fromTo(bar, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4, ease: ease.out }),
       );
-    if (desktop) {
+    if (desktop || phoneHome === "carousel") {
       const cards = gsap.utils
         .toArray<HTMLElement>("[data-card]")
         .filter((c) => c.getBoundingClientRect().left < innerWidth);
@@ -166,7 +180,7 @@ export default function HomeIntroLab({
       delete document.documentElement.dataset.entering;
       tweens.forEach((t) => t.revert());
     };
-  }, [mounted, stagger, desktop]);
+  }, [mounted, stagger, desktop, phoneHome]);
 
   return (
     <>
@@ -191,12 +205,76 @@ export default function HomeIntroLab({
               />
             )}
           </>
+        ) : phonePage ? (
+          <>
+            {phoneHome === "flush" ? (
+              <FlushHome
+                projects={page}
+                contact={contact}
+                rootRef={rootRef}
+                axis={axis}
+                reserve={PICKER_SPACE}
+              />
+            ) : (
+              <PhoneCarousel
+                projects={page}
+                contact={contact}
+                rootRef={rootRef}
+                reserve={PICKER_SPACE}
+                entry={stagger ? "stagger" : "glide"}
+              />
+            )}
+            {!stagger && (
+              <HomeReel
+                projects={projects}
+                pageRef={rootRef}
+                coverSizes={page.map(() => "100vw")}
+                heroOverride={labHero}
+                // The strip is the first project, full width: the ring dives
+                // into it. The row: every project flies to its own window.
+                landing={phoneHome === "carousel" ? "settle" : "dive"}
+                {...reel}
+              />
+            )}
+          </>
         ) : (
           <ScatterHome projects={page} contact={contact} reel={stagger ? "none" : reel} />
         ))}
-      <Picker current={current} onSelect={select} count={count || projects.length} />
+      <Picker
+        current={current}
+        onSelect={select}
+        count={count || projects.length}
+        phone={mounted && !desktop}
+        phoneHome={phoneHome}
+        axis={axis}
+      />
     </>
   );
+}
+
+/** The phone pages stop above the picker, so nothing they show sits under it. */
+const PICKER_SPACE = 64;
+
+type PhoneHome = "live" | "flush" | "carousel";
+const PHONE_HOMES: { key: PhoneHome; name: string }[] = [
+  { key: "flush", name: "Flush" },
+  { key: "carousel", name: "Carousel" },
+  { key: "live", name: "Live" },
+];
+
+/** Reloads with the next phone home (`?home=`), so the intro plays into it. */
+function cycleHome(now: PhoneHome) {
+  const i = PHONE_HOMES.findIndex((h) => h.key === now);
+  const url = new URL(location.href);
+  url.searchParams.set("home", PHONE_HOMES[(i + 1) % PHONE_HOMES.length].key);
+  location.assign(url.toString());
+}
+
+function setAxis(axis: Axis) {
+  const url = new URL(location.href);
+  if (axis === "x") url.searchParams.delete("axis");
+  else url.searchParams.set("axis", axis);
+  location.assign(url.toString());
 }
 
 const COUNTS = [6, 10, 15];
@@ -213,10 +291,16 @@ function Picker({
   current,
   onSelect,
   count,
+  phone,
+  phoneHome,
+  axis,
 }: {
   current: number;
   onSelect: (i: number) => void;
   count: number;
+  phone: boolean;
+  phoneHome: PhoneHome;
+  axis: Axis;
 }) {
   const navRef = useRef<HTMLElement>(null);
   const highlightRef = useRef<HTMLSpanElement>(null);
@@ -260,6 +344,30 @@ function Picker({
           {v.name}
         </button>
       ))}
+      {phone && (
+        <>
+          <span className="proto-picker-divider" aria-hidden="true" />
+          {/* The page the phone lands on (H). */}
+          <button
+            type="button"
+            className="proto-picker-item"
+            aria-label="Phone home (H)"
+            onClick={() => cycleHome(phoneHome)}
+          >
+            Home: {PHONE_HOMES.find((h) => h.key === phoneHome)?.name}
+          </button>
+          {phoneHome === "flush" && (
+            <button
+              type="button"
+              className="proto-picker-item"
+              aria-label="Swipe direction"
+              onClick={() => setAxis(axis === "x" ? "y" : "x")}
+            >
+              {axis === "x" ? "↔" : "↕"}
+            </button>
+          )}
+        </>
+      )}
       <span className="proto-picker-divider" aria-hidden="true" />
       {/* How many projects (N): today's list, or repeats up to 10 and 15. */}
       <button
