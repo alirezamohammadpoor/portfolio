@@ -122,6 +122,7 @@ export const ringIntro: IntroBuilder = (tl, heroes, world, rects) => {
   // Only the slots the screen shows take a card; the rest leave.
   const shown = slots.map((s) => s.x - s.w / 2 < VW);
   const push = Math.max(VW, VH) * 0.6;
+  const ROW_GAP = 31.5;
   const poses: (Pose | null)[] = heroes.map(() => null);
   const render = () => {
     heroes.forEach((_, i) => {
@@ -155,10 +156,10 @@ export const ringIntro: IntroBuilder = (tl, heroes, world, rects) => {
       const q = poses[i];
       if (!q) return;
       if (prev) {
-        const h = (w: number) => (w * aspect) / 2;
-        const overlapY = Math.abs(q.y - prev.y) < h(q.w) + h(prev.w);
-        const minX = prev.x + prev.w / 2 + 8 + q.w / 2;
-        if (overlapY && q.x < minX) q.x = minX;
+        // Ali 11-26: "much more room". Always fully to the right, at the
+        // row's own spacing (32 px between recordings), whatever the height.
+        const minX = prev.x + prev.w / 2 + ROW_GAP + q.w / 2;
+        if (q.x < minX) q.x = minX;
       }
       prev = q;
       place(i, q, land[i].p > 0 ? 3 : 2);
