@@ -8,10 +8,10 @@ import { ease, prefersReducedMotion } from "@/lib/motion";
 import "../home-layouts/proto-picker.css";
 
 /**
- * /lab/intro: a clean-slate round of home intros (Ali 11-26). Each variant
- * plays once over the same resting home, then hands the page over. Sources:
- * annnimate.com's Reveal Kit idea (the cover's release frame is the page's
- * first frame), rebuilt here with the site's own content and tokens.
+ * /lab/intro: home intros (Ali 11-26). Round 1 tried five ideas from
+ * annnimate.com's Reveal Kit (Count, Flash, Mosaic, Cut, Compose; in git at
+ * 8845aa8). Ali kept Flash, asked for it slower so the projects can be seen,
+ * and parked Compose for films (./compose.tsx). Round 2 is Flash variations.
  *
  * Picker: keys 1-5 or arrows switch, R replays. Any wheel, key or press on
  * the page skips to the end.
@@ -64,56 +64,44 @@ interface Variant {
 }
 
 /* ------------------------------------------------------------------ */
-/* 1 · Count: the cover counts the projects, then lifts off in columns  */
+/* Flash, round 2 (Ali 11-26): the work flashes round a word in the     */
+/* centre, then project 1 is left in its slot and the page comes up.    */
+/* Round 1 was too fast; these slow it down so the projects can be seen. */
 /* ------------------------------------------------------------------ */
 
-const count: Variant = {
-  name: "Count",
-  overlay: () => (
-    <div data-ov className="fixed inset-0 z-[100]">
-      <div className="absolute inset-0 flex">
-        {PROJECTS.map((p) => (
-          <div key={p.slug} data-col className="h-full flex-1 bg-[#111]" />
-        ))}
-      </div>
-      <div
-        data-num
-        className="absolute bottom-24 left-[var(--grid-margin)] flex items-end md:bottom-6 gap-4 text-white"
-      >
-        <span
-          data-digits
-          className="text-[clamp(7rem,22vw,19rem)] leading-[0.8] tabular-nums tracking-tight"
-        >
-          00
-        </span>
-        <span className="mb-3 text-body text-white/60">projects</span>
-      </div>
-    </div>
-  ),
-  build: (tl, q) => {
-    const digits = q("[data-digits]")[0];
-    const n = { v: 0 };
-    tl.to(n, {
-      v: PROJECTS.length,
-      duration: 0.9,
-      ease: "power1.out",
-      onUpdate: () => {
-        digits.textContent = String(Math.round(n.v)).padStart(2, "0");
-      },
-    })
-      .to(q("[data-num]"), { yPercent: -40, autoAlpha: 0, duration: 0.3, ease: ease.out }, 1.05)
-      .to(q("[data-col]"), { yPercent: -100, duration: 0.8, ease: ease.inOut, stagger: 0.06 }, 1.05)
-      .from(q("[data-win]"), { y: 48, duration: 0.9, ease: ease.out, stagger: 0.06 }, 1.25)
-      .set(q("[data-ov]"), { display: "none" });
-  },
-};
+type Cell = [col: number, row: number];
 
-/* ------------------------------------------------------------------ */
-/* 2 · Flash: craft words hold the centre while the work flashes round  */
-/* ------------------------------------------------------------------ */
+interface FlashOpts {
+  name: string;
+  /** Grid and cell order, laptop and phone. The word's cell stays clear. */
+  laptop: { cols: number; rows: number; cells: Cell[] };
+  phone: { cols: number; rows: number; cells: Cell[] };
+  /** Project index shown by each flash. */
+  seq: number[];
+  /** Flashes that come up together. */
+  group?: number;
+  /** Seconds between groups. */
+  step: number;
+  /** Seconds a flash stays up (ignored when they pile). */
+  hold: number;
+  /** Soft fade in and out; 0 cuts. */
+  fade?: number;
+  /** Image width as a share of its cell. */
+  size: number;
+  /** "craft" cycles the craft words, "titles" names each project. */
+  words: "craft" | "titles";
+  captions?: boolean;
+  /** Flashes stay up and pile, then clear together. */
+  pile?: boolean;
+  /** Pause on the full frame before the landing. */
+  endHold?: number;
+}
 
-// Grid cells (col, row) on a 6 x 4 field, the centre band left clear.
-const CELLS: [number, number][] = [
+const CRAFT = ["Product", "Design", "Frontend"];
+const CAPTION = 22;
+
+// 6 x 4 for the round-1 reference, the centre band left clear.
+const GRID_6x4: Cell[] = [
   [0, 0],
   [4, 3],
   [5, 1],
@@ -127,207 +115,195 @@ const CELLS: [number, number][] = [
   [5, 2],
   [0, 3],
 ];
-const WORDS = ["Product", "Design", "Frontend"];
+// 3 x 3 round the centre, each pair in opposite cells.
+const GRID_3x3: Cell[] = [
+  [0, 0],
+  [2, 2],
+  [2, 0],
+  [0, 2],
+  [1, 0],
+  [1, 2],
+  [0, 1],
+  [2, 1],
+];
+// Phone: 2 x 5, the middle row left for the word, pairs opposite.
+const GRID_2x5: Cell[] = [
+  [0, 0],
+  [1, 4],
+  [1, 0],
+  [0, 4],
+  [0, 1],
+  [1, 3],
+  [1, 1],
+  [0, 3],
+];
+const PHONE = { cols: 2, rows: 5, cells: GRID_2x5 };
+const REST = [1, 2, 3, 4, 5];
 
-const flash: Variant = {
-  name: "Flash",
-  overlay: () => (
-    <div data-ov className="fixed inset-0 z-[100]">
-      <div data-bg className="absolute inset-0 bg-[#f6f6f6]" />
-      {CELLS.map((_, i) => (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          key={i}
-          data-flash
-          src={poster(PROJECTS[(i + 1) % PROJECTS.length].slug)}
-          alt=""
-          className="invisible absolute aspect-[16/10] object-cover"
-        />
-      ))}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        data-final
-        src={poster(PROJECTS[0].slug)}
-        alt=""
-        className="invisible absolute object-cover"
-      />
-      <div className="absolute inset-0 grid place-items-center">
-        {WORDS.map((w) => (
-          <span key={w} data-word className="invisible col-start-1 row-start-1 text-h1">
-            {w}
-          </span>
+function makeFlash(o: FlashOpts): Variant {
+  const group = o.group ?? 1;
+  const fade = o.fade ?? 0;
+  const labels = o.words === "titles" ? o.seq.map((p) => PROJECTS[p].title) : CRAFT;
+  return {
+    name: o.name,
+    overlay: () => (
+      <div data-ov className="fixed inset-0 z-[100]">
+        <div data-bg className="absolute inset-0 bg-[#f6f6f6]" />
+        {o.seq.map((p, i) => (
+          <figure key={i} data-flash className="invisible absolute m-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={poster(PROJECTS[p].slug)}
+              alt=""
+              className="block aspect-[16/10] w-full object-cover"
+            />
+            {o.captions && (
+              <figcaption className="mt-1.5 text-[0.8125rem] leading-4 text-primary/60">
+                {PROJECTS[p].title}
+              </figcaption>
+            )}
+          </figure>
         ))}
-      </div>
-    </div>
-  ),
-  build: (tl, q, root) => {
-    const W = innerWidth;
-    const H = innerHeight;
-    const phone = W < 768;
-    const cols = phone ? 3 : 6;
-    const rows = phone ? 6 : 4;
-    const cw = W / cols;
-    const ch = H / rows;
-    const flashes = q("[data-flash]");
-    flashes.forEach((img, i) => {
-      const [c0, r0] = CELLS[i];
-      const c = phone ? c0 % 3 : c0;
-      const r = phone ? (r0 * 2 + (c0 > 2 ? 1 : 0)) % 6 : r0;
-      const w = cw * 0.72;
-      gsap.set(img, {
-        left: c * cw + (cw - w) / 2,
-        top: r * ch + (ch - (w * 10) / 16) / 2,
-        width: w,
-      });
-    });
-    const words = q("[data-word]");
-    const step = 0.12;
-    flashes.forEach((img, i) => {
-      tl.set(img, { visibility: "visible" }, i * step).set(
-        img,
-        { visibility: "hidden" },
-        i * step + step,
-      );
-    });
-    words.forEach((w, i) => {
-      tl.set(w, { visibility: "visible" }, i * 0.45).set(
-        w,
-        { visibility: "hidden" },
-        i * 0.45 + 0.45,
-      );
-    });
-    // The last flash is project 1, already in its slot on the page.
-    const win = root.querySelector<HTMLElement>("[data-win='0']");
-    const r = win?.getBoundingClientRect();
-    const final = q("[data-final]")[0];
-    if (r) gsap.set(final, { left: r.left, top: r.top, width: r.width, height: r.height });
-    const end = flashes.length * step;
-    tl.set(final, { visibility: "visible" }, end)
-      .to(q("[data-bg]"), { autoAlpha: 0, duration: 0.45, ease: ease.out }, end + 0.25)
-      .from(q("[data-statement]"), { y: 12, duration: 0.45, ease: ease.out }, end + 0.25)
-      .set(q("[data-ov]"), { display: "none" });
-  },
-};
-
-/* ------------------------------------------------------------------ */
-/* 3 · Mosaic: an ink cover dissolves tile by tile from project 1       */
-/* ------------------------------------------------------------------ */
-
-const mosaic: Variant = {
-  name: "Mosaic",
-  overlay: () => (
-    <div
-      data-ov
-      className="fixed inset-0 z-[100] grid grid-cols-8 grid-rows-[repeat(24,1fr)] md:grid-cols-16 md:grid-rows-[repeat(12,1fr)]"
-    >
-      {Array.from({ length: 192 }, (_, i) => (
-        <div key={i} data-tile className="bg-[#111]" />
-      ))}
-    </div>
-  ),
-  build: (tl, q) => {
-    const phone = innerWidth < 768;
-    tl.to(
-      q("[data-tile]"),
-      {
-        autoAlpha: 0,
-        duration: 0.16,
-        ease: "none",
-        stagger: { grid: phone ? [24, 8] : [12, 16], from: phone ? [0, 0.3] : [0, 1], amount: 1.1 },
-      },
-      0.25,
-    )
-      .from(q("[data-win]"), { scale: 1.04, duration: 1.2, ease: ease.out }, 0.25)
-      .set(q("[data-ov]"), { display: "none" });
-  },
-};
-
-/* ------------------------------------------------------------------ */
-/* 4 · Cut: the name, a line drawn through it, the cover splits on it   */
-/* ------------------------------------------------------------------ */
-
-const cut: Variant = {
-  name: "Cut",
-  overlay: () => (
-    <div data-ov className="fixed inset-0 z-[100] overflow-hidden">
-      <div
-        data-half="a"
-        className="absolute inset-0 bg-[#111] [clip-path:polygon(0_0,100%_0,0_100%)]"
-      />
-      <div
-        data-half="b"
-        className="absolute inset-0 bg-[#111] [clip-path:polygon(100%_0,100%_100%,0_100%)]"
-      />
-      <div className="absolute inset-0 grid place-items-center">
-        <span data-name className="text-h1 text-white">
-          Ali Reza
-        </span>
-      </div>
-      <div data-line className="absolute left-1/2 top-1/2 h-px bg-white" />
-    </div>
-  ),
-  build: (tl, q) => {
-    const W = innerWidth;
-    const H = innerHeight;
-    const len = Math.hypot(W, H);
-    // The cut runs from the bottom-left corner to the top-right corner.
-    const angle = (-Math.atan2(H, W) * 180) / Math.PI;
-    gsap.set(q("[data-line]"), { width: len, xPercent: -50, rotation: angle, scaleX: 0 });
-    // Each half leaves along the cut's normal.
-    const nx = H / len;
-    const ny = W / len;
-    const d = Math.max(W, H) * 0.9;
-    tl.fromTo(
-      q("[data-name]"),
-      { opacity: 0.15 },
-      { opacity: 1, duration: 0.5, ease: ease.out },
-      0.1,
-    )
-      .to(q("[data-line]"), { scaleX: 1, duration: 0.55, ease: ease.inOut }, 0.45)
-      .to(q("[data-name]"), { autoAlpha: 0, duration: 0.2, ease: ease.out }, 1.0)
-      .to(q("[data-line]"), { autoAlpha: 0, duration: 0.2, ease: ease.out }, 1.05)
-      .to(q("[data-half='a']"), { x: -nx * d, y: -ny * d, duration: 0.85, ease: ease.inOut }, 1.0)
-      .to(q("[data-half='b']"), { x: nx * d, y: ny * d, duration: 0.85, ease: ease.inOut }, 1.0)
-      .from(q("[data-win]"), { y: 40, duration: 0.9, ease: ease.out, stagger: 0.06 }, 1.15)
-      .set(q("[data-ov]"), { display: "none" });
-  },
-};
-
-/* ------------------------------------------------------------------ */
-/* 5 · Compose: the layout grid draws, then the page sets onto it       */
-/* ------------------------------------------------------------------ */
-
-const compose: Variant = {
-  name: "Compose",
-  overlay: () => (
-    <div data-ov className="pointer-events-none fixed inset-0 z-[100] grid-site px-margin">
-      {Array.from({ length: 12 }, (_, i) => (
-        <div
-          key={i}
-          data-band
-          className={`origin-top bg-[#ff3b30]/10 ${i >= 4 ? "hidden md:block" : ""}`}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          data-final
+          src={poster(PROJECTS[0].slug)}
+          alt=""
+          className="invisible absolute object-cover"
         />
-      ))}
-    </div>
-  ),
-  build: (tl, q) => {
-    tl.from(q("[data-band]"), { scaleY: 0, duration: 0.55, ease: ease.out, stagger: 0.03 }, 0)
-      .from(
-        q("[data-statement]"),
-        { clipPath: "inset(0 0 100% 0)", y: 16, duration: 0.6, ease: ease.out },
-        0.45,
-      )
-      .from(
-        q("[data-win]"),
-        { clipPath: "inset(0 100% 0 0)", duration: 0.75, ease: ease.inOut, stagger: 0.12 },
-        0.6,
-      )
-      .to(q("[data-band]"), { autoAlpha: 0, duration: 0.4, ease: ease.out }, 1.45)
-      .set(q("[data-ov]"), { display: "none" });
-  },
-};
+        <div className="absolute inset-0 grid place-items-center">
+          {labels.map((w, i) => (
+            <span key={i} data-word className="invisible col-start-1 row-start-1 text-h1">
+              {w}
+            </span>
+          ))}
+        </div>
+      </div>
+    ),
+    build: (tl, q, root) => {
+      const phone = innerWidth < 768;
+      const g = phone ? o.phone : o.laptop;
+      const cw = innerWidth / g.cols;
+      const ch = innerHeight / g.rows;
+      const cap = o.captions ? CAPTION : 0;
+      const w = Math.min(cw * o.size, (ch * o.size - cap) * 1.6);
+      const h = (w * 10) / 16 + cap;
+      const flashes = q("[data-flash]");
+      const starts = flashes.map((_, i) => Math.floor(i / group) * o.step);
+      const groups = Math.ceil(flashes.length / group);
+      const end = (o.pile ? (groups - 1) * o.step + o.hold : groups * o.step) + (o.endHold ?? 0);
 
-const VARIANTS: Variant[] = [count, flash, mosaic, cut, compose];
+      flashes.forEach((el, i) => {
+        const [c, r] = g.cells[i % g.cells.length];
+        gsap.set(el, { left: c * cw + (cw - w) / 2, top: r * ch + (ch - h) / 2, width: w });
+        const t = starts[i];
+        const out = o.pile ? end : t + o.hold;
+        if (fade) {
+          tl.fromTo(
+            el,
+            { autoAlpha: 0, scale: 0.97 },
+            { autoAlpha: 1, scale: 1, duration: fade, ease: ease.out },
+            t,
+          ).to(el, { autoAlpha: 0, duration: fade, ease: ease.out }, out - fade);
+        } else {
+          tl.set(el, { visibility: "visible" }, t).set(el, { visibility: "hidden" }, out);
+        }
+      });
+
+      // Titles follow their flash; craft words share the run evenly.
+      const words = q("[data-word]");
+      const wordAt = (i: number) =>
+        o.words === "titles" ? starts[i] : (i * (end - (o.endHold ?? 0))) / words.length;
+      words.forEach((el, i) => {
+        const next = i + 1 < words.length ? wordAt(i + 1) : end;
+        tl.set(el, { visibility: "visible" }, wordAt(i)).set(el, { visibility: "hidden" }, next);
+      });
+
+      // Project 1 is left in its slot on the page, then the cover lifts.
+      const r = root.querySelector<HTMLElement>("[data-win='0']")?.getBoundingClientRect();
+      const final = q("[data-final]")[0];
+      if (r) gsap.set(final, { left: r.left, top: r.top, width: r.width, height: r.height });
+      if (fade)
+        tl.fromTo(final, { autoAlpha: 0 }, { autoAlpha: 1, duration: fade, ease: ease.out }, end);
+      else tl.set(final, { visibility: "visible" }, end);
+      const lift = end + Math.max(0.25, fade + 0.15);
+      tl.to(q("[data-bg]"), { autoAlpha: 0, duration: 0.45, ease: ease.out }, lift)
+        .from(q("[data-statement]"), { y: 12, duration: 0.45, ease: ease.out }, lift)
+        .set(q("[data-ov]"), { display: "none" });
+    },
+  };
+}
+
+const VARIANTS: Variant[] = [
+  // 1 · Round 1 as it was, for reference: twelve hard cuts, 0.12 s apart.
+  makeFlash({
+    name: "Flash",
+    laptop: { cols: 6, rows: 4, cells: GRID_6x4 },
+    phone: {
+      cols: 3,
+      rows: 6,
+      cells: GRID_6x4.map(([c, r]) => [c % 3, (r * 2 + (c > 2 ? 1 : 0)) % 6]),
+    },
+    seq: GRID_6x4.map((_, i) => (i + 1) % PROJECTS.length),
+    step: 0.12,
+    hold: 0.12,
+    size: 0.72,
+    words: "craft",
+  }),
+  // 2 · Slow: one project at a time, big, with its name, half a second each.
+  makeFlash({
+    name: "Slow",
+    laptop: { cols: 3, rows: 3, cells: GRID_3x3 },
+    phone: PHONE,
+    seq: REST,
+    step: 0.6,
+    hold: 0.6,
+    fade: 0.15,
+    size: 0.86,
+    words: "craft",
+    captions: true,
+  }),
+  // 3 · Pairs: two at a time in opposite corners, a long look at each pair.
+  makeFlash({
+    name: "Pairs",
+    laptop: { cols: 3, rows: 3, cells: GRID_3x3 },
+    phone: PHONE,
+    seq: REST,
+    group: 2,
+    step: 0.75,
+    hold: 0.75,
+    fade: 0.12,
+    size: 0.86,
+    words: "craft",
+    captions: true,
+  }),
+  // 4 · Pile: each one stays, the frame fills, holds, then clears to project 1.
+  makeFlash({
+    name: "Pile",
+    laptop: { cols: 3, rows: 3, cells: GRID_3x3 },
+    phone: PHONE,
+    seq: REST,
+    step: 0.25,
+    hold: 0.25,
+    fade: 0.15,
+    size: 0.86,
+    words: "craft",
+    pile: true,
+    endHold: 0.7,
+  }),
+  // 5 · Names: the centre word is the project on screen, so you read what you see.
+  makeFlash({
+    name: "Names",
+    laptop: { cols: 3, rows: 3, cells: GRID_3x3 },
+    phone: PHONE,
+    seq: REST,
+    step: 0.5,
+    hold: 0.5,
+    fade: 0.1,
+    size: 0.86,
+    words: "titles",
+  }),
+];
 
 /* ------------------------------------------------------------------ */
 /* The resting home every variant lands on                              */
