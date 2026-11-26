@@ -3,11 +3,10 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import HomeReel from "@/components/home/HomeReel";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
-import type { Contact, VariantProps } from "./shared";
-import GridHome from "./GridHome";
-import StackHome from "./StackHome";
+import { FrameContext, type Contact, type FrameMode, type VariantProps } from "./shared";
 import IndexHome from "./IndexHome";
 import SplitHome from "./SplitHome";
+import CarouselHome from "./CarouselHome";
 import "./proto-picker.css";
 
 interface Variant {
@@ -18,10 +17,10 @@ interface Variant {
 }
 
 const VARIANTS: Variant[] = [
-  { name: "Grid", Component: GridHome, sizes: "50vw" },
-  { name: "Stack", Component: StackHome, sizes: "90vw" },
-  { name: "Index", Component: IndexHome, sizes: "66vw" },
+  { name: "Index full", Component: (p) => <IndexHome {...p} bleed />, sizes: "100vw" },
+  { name: "Index window", Component: (p) => <IndexHome {...p} bleed={false} />, sizes: "90vw" },
   { name: "Split", Component: SplitHome, sizes: "66vw" },
+  { name: "Carousel", Component: CarouselHome, sizes: "50vw" },
 ];
 
 interface Props {
@@ -29,6 +28,8 @@ interface Props {
   contact?: Contact | null;
   /** `?v`, 1-based. */
   initial: number;
+  /** `?frame=flush` starts on flush windows. */
+  initialFrame: FrameMode;
 }
 
 /**
@@ -38,7 +39,18 @@ interface Props {
  * Switching remounts the layout so its entrance runs again; the ring only
  * plays on a full load.
  */
-export default function HomeLayoutsLab({ projects, contact, initial }: Props) {
+export default function HomeLayoutsLab({ projects, contact, initial, initialFrame }: Props) {
+  const [frame, setFrame] = useState<FrameMode>(initialFrame);
+  const toggleFrame = useCallback(() => {
+    setFrame((f) => {
+      const next = f === "inset" ? "flush" : "inset";
+      const url = new URL(location.href);
+      if (next === "flush") url.searchParams.set("frame", "flush");
+      else url.searchParams.delete("frame");
+      history.replaceState(history.state, "", url);
+      return next;
+    });
+  }, []);
   const rootRef = useRef<HTMLDivElement>(null);
   const [current, setCurrent] = useState(() =>
     initial >= 1 && initial <= VARIANTS.length ? initial - 1 : 0,
@@ -76,10 +88,11 @@ export default function HomeLayoutsLab({ projects, contact, initial }: Props) {
       else if (e.key === "ArrowRight") select((current + 1) % VARIANTS.length);
       else if (e.key === "ArrowLeft") select((current - 1 + VARIANTS.length) % VARIANTS.length);
       else if (e.key === "r" || e.key === "R") replay();
+      else if (e.key === "f" || e.key === "F") toggleFrame();
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [current, select, replay]);
+  }, [current, select, replay, toggleFrame]);
 
   const { Component } = variant;
   return (
@@ -88,20 +101,28 @@ export default function HomeLayoutsLab({ projects, contact, initial }: Props) {
         These home layouts are for the laptop. Open this page in a window at least 1200 px wide; the
         phone keeps today&apos;s single column.
       </p>
-      <div className="hidden desktop:block">
-        <HomeReel
-          projects={projects}
-          pageRef={rootRef}
-          coverSizes={projects.map(() => variant.sizes)}
-        />
-        <Component
-          key={`${current}-${mountKey}`}
-          projects={projects}
-          contact={contact}
-          rootRef={rootRef}
-        />
-      </div>
-      <Picker current={current} onSelect={select} onReplay={replay} />
+      <FrameContext.Provider value={frame}>
+        <div className="hidden desktop:block">
+          <HomeReel
+            projects={projects}
+            pageRef={rootRef}
+            coverSizes={projects.map(() => variant.sizes)}
+          />
+          <Component
+            key={`${current}-${mountKey}`}
+            projects={projects}
+            contact={contact}
+            rootRef={rootRef}
+          />
+        </div>
+      </FrameContext.Provider>
+      <Picker
+        current={current}
+        onSelect={select}
+        onReplay={replay}
+        frame={frame}
+        onFrame={toggleFrame}
+      />
     </>
   );
 }
@@ -110,10 +131,14 @@ function Picker({
   current,
   onSelect,
   onReplay,
+  frame,
+  onFrame,
 }: {
   current: number;
   onSelect: (i: number) => void;
   onReplay: () => void;
+  frame: FrameMode;
+  onFrame: () => void;
 }) {
   const navRef = useRef<HTMLElement>(null);
   const highlightRef = useRef<HTMLSpanElement>(null);
@@ -157,6 +182,16 @@ function Picker({
           {v.name}
         </button>
       ))}
+      <span className="proto-picker-divider" aria-hidden="true" />
+      {/* The window switch (F): inset or flush recordings. */}
+      <button
+        type="button"
+        className="proto-picker-item"
+        aria-label="Window: inset or flush (F)"
+        onClick={onFrame}
+      >
+        {frame === "inset" ? "Inset" : "Flush"}
+      </button>
       <span className="proto-picker-divider" aria-hidden="true" />
       <button
         type="button"

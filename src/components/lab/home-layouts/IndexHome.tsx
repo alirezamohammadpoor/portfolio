@@ -13,18 +13,26 @@ import {
   type VariantProps,
 } from "./shared";
 
-/** How long a project holds the preview when nobody is pointing, ms. */
+/** How long a project holds the screen when nobody is pointing, ms. */
 const HOLD_MS = 6000;
 
 /**
- * Index: one screen, a list and one big preview. Every project's name sits
- * in a column on the left; the preview on the right plays the one you point
- * at (or focus), large, with its line under it. Nobody pointing: the preview
- * moves on by itself every few seconds, so a visitor who only watches still
- * sees the whole body of work. The overview is the list, the content is the
- * preview, so neither has to shrink.
+ * Index, round 2 (Ali 11-26): the content takes the screen and the index
+ * sits on top of it. One frosted panel, bottom left, holds the statement,
+ * every project's name and the line of the one showing; pointing at (or
+ * focusing) a name swaps the recording. Nobody pointing: it moves on by
+ * itself every few seconds.
+ *
+ * "bleed": the recording fills the whole screen, under the Pebble too.
+ * "window": the recording keeps its project window, as big as the screen's
+ * height allows, and the panel overlaps its lower left corner.
  */
-export default function IndexHome({ projects, contact, rootRef }: VariantProps) {
+export default function IndexHome({
+  projects,
+  contact,
+  rootRef,
+  bleed,
+}: VariantProps & { bleed: boolean }) {
   useEntrance(rootRef);
   const open = useOpenProject(rootRef);
   const [active, setActive] = useState(0);
@@ -39,20 +47,57 @@ export default function IndexHome({ projects, contact, rootRef }: VariantProps) 
 
   const current = projects[active];
 
+  const stage = projects.map((project, i) => (
+    <div
+      key={project._id}
+      className={`absolute inset-0 transition-opacity duration-200 ease-out ${i === active ? "opacity-100" : "opacity-0"}`}
+      aria-hidden={i === active ? undefined : true}
+    >
+      <Cover
+        project={project}
+        playing={i === active}
+        priority={i === 0}
+        frame={bleed ? "bleed" : undefined}
+        className={bleed ? "h-full w-full" : "h-full w-full"}
+      />
+    </div>
+  ));
+
   return (
-    <div ref={rootRef} className="px-margin pb-40">
+    <div ref={rootRef} className="pb-40">
       <section
-        className="grid h-[calc(100svh-var(--header-height))] grid-cols-12 gap-4 pb-8 pt-12"
-        onPointerEnter={() => setHeld(true)}
-        onPointerLeave={() => setHeld(false)}
+        className={
+          bleed
+            ? "relative -mt-[var(--header-height)] h-svh"
+            : "relative flex h-[calc(100svh-var(--header-height))] items-center justify-end px-margin pb-6 pt-6"
+        }
       >
-        <div className="col-start-1 col-end-5 flex min-h-0 flex-col justify-between">
-          <h2 data-statement className="text-h2">
+        <Link
+          href={current ? href(current) : "/"}
+          onClick={(e) => current && open(e, current)}
+          aria-label={`View ${current?.title ?? "project"}`}
+          data-item
+          className={
+            bleed ? "absolute inset-0 block" : "relative block aspect-[16/10] h-full max-w-full"
+          }
+        >
+          <div data-reveal className="absolute inset-0">
+            {stage}
+          </div>
+        </Link>
+
+        <div
+          data-item
+          className="frost-strong absolute bottom-6 left-[var(--spacing-margin,24px)] w-[26rem] rounded-3xl p-6 shadow-[0_10px_24px_-6px_rgb(0_0_0/0.14)] desktop:left-6"
+          onPointerEnter={() => setHeld(true)}
+          onPointerLeave={() => setHeld(false)}
+        >
+          <h2 data-text className="text-h3">
             {STATEMENT}
           </h2>
-          <ul data-item className="flex flex-col">
+          <ul data-text className="mt-8 flex flex-col">
             {projects.map((project, i) => (
-              <li key={project._id} data-text>
+              <li key={project._id}>
                 <Link
                   href={href(project)}
                   onClick={(e) => open(e, project)}
@@ -63,51 +108,22 @@ export default function IndexHome({ projects, contact, rootRef }: VariantProps) 
                   }}
                   onBlur={() => setHeld(false)}
                   aria-current={i === active ? "true" : undefined}
-                  className={`block text-h2 transition-colors duration-150 ease-out ${i === active ? "text-primary" : "text-secondary hover:text-primary"}`}
+                  className={`block text-h3 transition-colors duration-150 ease-out ${i === active ? "text-primary" : "text-secondary hover:text-primary"}`}
                 >
                   {project.title}
                 </Link>
               </li>
             ))}
           </ul>
-        </div>
-
-        <div data-item className="col-start-5 col-end-13 flex min-h-0 flex-col justify-start">
-          <Link
-            href={current ? href(current) : "/"}
-            onClick={(e) => current && open(e, current)}
-            aria-label={`View ${current?.title ?? "project"}`}
-            data-reveal
-            // The box takes the column's width unless the screen is too short
-            // for it, then its height decides (16:10 kept).
-            className="relative ml-auto block aspect-[16/10] w-[min(100%,calc((100svh-var(--header-height)-10rem)*1.6))]"
-          >
-            {projects.map((project, i) => (
-              <div
-                key={project._id}
-                className={`absolute inset-0 transition-opacity duration-200 ease-out ${i === active ? "opacity-100" : "opacity-0"}`}
-                aria-hidden={i === active ? undefined : true}
-              >
-                <Cover
-                  project={project}
-                  playing={i === active}
-                  priority={i === 0}
-                  sizes="66vw"
-                  className="h-full"
-                />
-              </div>
-            ))}
-          </Link>
-          <p
-            data-text
-            className="ml-auto mt-4 line-clamp-2 min-h-12 w-[min(100%,calc((100svh-var(--header-height)-10rem)*1.6))] max-w-full text-body text-primary"
-          >
+          <p data-text className="mt-6 line-clamp-3 min-h-18 text-body text-primary">
             {current?.shortDescription}
           </p>
         </div>
       </section>
 
-      <Closing contact={contact} className="mt-24" />
+      <div className="px-margin">
+        <Closing contact={contact} className="mt-24" />
+      </div>
     </div>
   );
 }

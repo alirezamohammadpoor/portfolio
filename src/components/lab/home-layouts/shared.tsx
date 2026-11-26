@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, type RefObject } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -26,6 +26,15 @@ export interface VariantProps {
   /** The variant's root: the entry ring lands on its `[data-cover]` boxes. */
   rootRef: RefObject<HTMLDivElement | null>;
 }
+
+/**
+ * The project window (Ali 11-26): every project sits in the same fixed 16:10
+ * box. "inset": the box is the page colour with a hairline edge and the
+ * recording sits 16 px in, so different projects line up side by side.
+ * "flush": the recording fills the box edge to edge.
+ */
+export type FrameMode = "inset" | "flush";
+export const FrameContext = createContext<FrameMode>("inset");
 
 export const STATEMENT =
   "Frontend developer at the intersection of product and design. Currently at TRY Stockholm.";
@@ -148,27 +157,33 @@ export function useEntrance(rootRef: RefObject<HTMLElement | null>) {
 
 interface CoverProps {
   project: Project;
-  /** Box classes; the ratio is the flush 16:10 of every cover. */
+  /** Classes on the window box (its width; the 16:10 ratio is fixed). */
   className?: string;
   /** Controlled playback (index preview). Unset: plays while in view. */
   playing?: boolean;
   priority?: boolean;
-  sizes?: string;
+  /** Mark the recording for the entry ring and the morph. A repeated copy
+   *  (the carousel's second set) leaves it off. */
+  mark?: boolean;
+  /** Overrides the lab's window mode (full bleed always fills). */
+  frame?: FrameMode | "bleed";
 }
 
 /**
- * A project's cover recording in a 16:10 box, marked for the entry ring and
- * the morph. Videos play while in view (or when `playing` says so) and keep
- * their position across visits.
+ * A project's recording in its window. Videos play while in view (or when
+ * `playing` says so) and keep their position across visits.
  */
 export function Cover({
   project,
-  className = "",
+  className = "w-full",
   playing,
   priority = false,
-  sizes = "66vw",
+  mark = true,
+  frame,
 }: CoverProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const labFrame = useContext(FrameContext);
+  const mode = frame ?? labFrame;
   const controlled = playing !== undefined;
   const media = project.coverMedia;
   const src =
@@ -208,46 +223,70 @@ export function Cover({
     };
   }, [controlled]);
 
-  const box = `relative aspect-[16/10] w-full overflow-hidden bg-tertiary ${className}`;
+  const markAttrs = mark ? { "data-cover": "", "data-project": project._id } : {};
+  let body: React.ReactNode;
   if (src) {
+    body = (
+      <video
+        ref={videoRef}
+        src={src}
+        className="absolute inset-0 h-full w-full object-cover"
+        aria-label={`${project.title ?? ""} cover video`}
+        muted
+        loop
+        playsInline
+        preload={priority ? "auto" : "metadata"}
+        onLoadedMetadata={(e) =>
+          restoreVideoPosition(e.currentTarget, e.currentTarget.getAttribute("src") ?? "")
+        }
+      />
+    );
+  } else if (media?.type === "image" && media.image?.asset) {
+    // eslint-disable-next-line @next/next/no-img-element -- lab stand-in
+    body = (
+      <img
+        src={imageUrl(media.image, 1600)}
+        alt={project.title ?? ""}
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+    );
+  } else {
+    body = (
+      <span className="absolute inset-0 flex items-center justify-center text-sub text-secondary">
+        {project.title}
+      </span>
+    );
+  }
+
+  if (mode === "bleed") {
     return (
-      <div data-cover data-project={project._id} className={box}>
-        <video
-          ref={videoRef}
-          src={src}
-          className="absolute inset-0 h-full w-full object-cover"
-          aria-label={`${project.title ?? ""} cover video`}
-          muted
-          loop
-          playsInline
-          preload={priority ? "auto" : "metadata"}
-          onLoadedMetadata={(e) =>
-            restoreVideoPosition(e.currentTarget, e.currentTarget.getAttribute("src") ?? "")
-          }
-        />
+      <div {...markAttrs} className={`relative overflow-hidden bg-tertiary ${className}`}>
+        {body}
       </div>
     );
   }
-  if (media?.type === "image" && media.image?.asset) {
+  if (mode === "flush") {
     return (
-      <div data-cover data-project={project._id} className={box}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imageUrl(media.image, 1600)}
-          alt={project.title ?? ""}
-          sizes={sizes}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+      <div
+        {...markAttrs}
+        className={`relative aspect-[16/10] overflow-hidden bg-tertiary ${className}`}
+      >
+        {body}
       </div>
     );
   }
+  // Inset: the window keeps 16:10 and the recording keeps 16:10 inside it,
+  // 16 px in at the top and bottom (a touch more at the sides).
   return (
     <div
-      data-cover
-      data-project={project._id}
-      className={`${box} flex items-center justify-center`}
+      className={`relative flex aspect-[16/10] items-center justify-center border border-black/10 bg-bg p-4 ${className}`}
     >
-      <span className="text-sub text-secondary">{project.title}</span>
+      <div
+        {...markAttrs}
+        className="relative aspect-[16/10] h-full max-w-full overflow-hidden bg-tertiary"
+      >
+        {body}
+      </div>
     </div>
   );
 }

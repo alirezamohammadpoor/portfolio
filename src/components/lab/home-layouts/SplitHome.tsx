@@ -93,7 +93,7 @@ export default function SplitHome({ projects, contact, rootRef }: VariantProps) 
                 className="block"
                 data-reveal
               >
-                <Cover project={project} priority={i === 0} sizes="66vw" />
+                <Cover project={project} priority={i === 0} />
               </Link>
             </article>
           ))}
