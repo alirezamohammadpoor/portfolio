@@ -12,7 +12,13 @@ export const metadata: Metadata = {
 export default function HomeLayoutsLabPage({
   searchParams,
 }: {
-  searchParams: Promise<{ v?: string; frame?: string; clips?: string; phone?: string }>;
+  searchParams: Promise<{
+    v?: string;
+    frame?: string;
+    clips?: string;
+    phone?: string;
+    photo?: string;
+  }>;
 }) {
   return (
     <Suspense fallback={null}>
@@ -24,9 +30,15 @@ export default function HomeLayoutsLabPage({
 async function Lab({
   searchParams,
 }: {
-  searchParams: Promise<{ v?: string; frame?: string; clips?: string; phone?: string }>;
+  searchParams: Promise<{
+    v?: string;
+    frame?: string;
+    clips?: string;
+    phone?: string;
+    photo?: string;
+  }>;
 }) {
-  const [{ v, frame, clips, phone }, projects, about] = await Promise.all([
+  const [{ v, frame, clips, phone, photo }, projects, about] = await Promise.all([
     searchParams,
     getProjects(),
     getAbout().catch(() => null),
@@ -38,6 +50,7 @@ async function Lab({
       initial={Number(v) || 1}
       initialFrame={frame === "flush" ? "flush" : "inset"}
       initialNewClips={clips !== "old"}
+      initialPhoto={Math.min(4, Math.max(1, Number(photo) || 1))}
       initialPhone={
         (["now", "photo", "soft", "desktop", "colour"] as const).find((m) => m === phone) ?? "photo"
       }

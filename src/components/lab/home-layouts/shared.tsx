@@ -51,6 +51,9 @@ export const FrameContext = createContext<FrameMode>("inset");
 export const PHONE_MODES = ["now", "photo", "soft", "desktop", "colour"] as const;
 export type PhoneMode = (typeof PHONE_MODES)[number];
 export const PhoneContext = createContext<PhoneMode>("photo");
+/** Which of Stronger's campaign photos sits behind its phone (1-4, `?photo=`). */
+export const STRONGER_PHOTOS = 4;
+export const PhotoPickContext = createContext(1);
 
 interface PhoneCover {
   /** The phone in the 2880x1800 film: clip-path inset (top right bottom
@@ -62,6 +65,8 @@ interface PhoneCover {
   desktop: string;
   colour: string;
   bg: string;
+  /** Has numbered campaign photos (`-photo-1.jpg` ...) to pick from. */
+  picks?: boolean;
 }
 
 export const LAB_CLIPS: Record<
@@ -98,6 +103,7 @@ export const LAB_CLIPS: Record<
       desktop: "28%, 14%",
       colour: "#4a68d6",
       bg: "/lab/project-window/stronger-bg",
+      picks: true,
     },
   },
 };
@@ -419,6 +425,8 @@ function PhoneStage({
   mode: Exclude<PhoneMode, "now">;
   children: React.ReactNode;
 }) {
+  const pick = useContext(PhotoPickContext);
+  const file = mode === "photo" && phone.picks ? `photo-${pick}` : mode;
   const transform =
     mode === "desktop"
       ? `translate(${phone.desktop}) scale(${0.82 * phone.fit})`
@@ -431,7 +439,7 @@ function PhoneStage({
       {mode !== "colour" && (
         // eslint-disable-next-line @next/next/no-img-element -- lab stand-in
         <img
-          src={`${phone.bg}-${mode}.jpg`}
+          src={`${phone.bg}-${file}.jpg`}
           alt=""
           className="absolute inset-0 h-full w-full object-cover"
         />

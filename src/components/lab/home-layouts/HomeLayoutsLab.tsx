@@ -8,6 +8,8 @@ import {
   FrameContext,
   PHONE_MODES,
   PhoneContext,
+  PhotoPickContext,
+  STRONGER_PHOTOS,
   type PhoneMode,
   type Contact,
   type FrameMode,
@@ -45,6 +47,8 @@ interface Props {
   initialNewClips: boolean;
   /** `?phone=now|photo|soft|desktop|colour`: the ground behind phone covers. */
   initialPhone: PhoneMode;
+  /** `?photo=1..4`: Stronger's campaign photo. */
+  initialPhoto: number;
 }
 
 const PHONE_LABELS: Record<PhoneMode, string> = {
@@ -69,7 +73,18 @@ export default function HomeLayoutsLab({
   initialFrame,
   initialNewClips,
   initialPhone,
+  initialPhoto,
 }: Props) {
+  const [photo, setPhoto] = useState(initialPhoto);
+  const cyclePhoto = useCallback(() => {
+    setPhoto((n) => {
+      const next = (n % STRONGER_PHOTOS) + 1;
+      const url = new URL(location.href);
+      url.searchParams.set("photo", String(next));
+      history.replaceState(history.state, "", url);
+      return next;
+    });
+  }, []);
   const [phone, setPhone] = useState<PhoneMode>(initialPhone);
   const cyclePhone = useCallback(() => {
     setPhone((m) => {
@@ -141,10 +156,11 @@ export default function HomeLayoutsLab({
       else if (e.key === "f" || e.key === "F") toggleFrame();
       else if (e.key === "c" || e.key === "C") toggleClips();
       else if (e.key === "p" || e.key === "P") cyclePhone();
+      else if (e.key === "s" || e.key === "S") cyclePhoto();
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [current, select, replay, toggleFrame, toggleClips, cyclePhone]);
+  }, [current, select, replay, toggleFrame, toggleClips, cyclePhone, cyclePhoto]);
 
   const { Component } = variant;
   return (
@@ -156,20 +172,22 @@ export default function HomeLayoutsLab({
       <FrameContext.Provider value={frame}>
         <ClipsContext.Provider value={newClips}>
           <PhoneContext.Provider value={phone}>
-            <div className="hidden desktop:block">
-              <HomeReel
-                projects={projects}
-                pageRef={rootRef}
-                coverSizes={projects.map(() => variant.sizes)}
-                landing={variant.landing}
-              />
-              <Component
-                key={`${current}-${mountKey}`}
-                projects={projects}
-                contact={contact}
-                rootRef={rootRef}
-              />
-            </div>
+            <PhotoPickContext.Provider value={photo}>
+              <div className="hidden desktop:block">
+                <HomeReel
+                  projects={projects}
+                  pageRef={rootRef}
+                  coverSizes={projects.map(() => variant.sizes)}
+                  landing={variant.landing}
+                />
+                <Component
+                  key={`${current}-${mountKey}`}
+                  projects={projects}
+                  contact={contact}
+                  rootRef={rootRef}
+                />
+              </div>
+            </PhotoPickContext.Provider>
           </PhoneContext.Provider>
         </ClipsContext.Provider>
       </FrameContext.Provider>
@@ -183,6 +201,8 @@ export default function HomeLayoutsLab({
         onFrame={toggleFrame}
         phone={phone}
         onPhone={cyclePhone}
+        photo={photo}
+        onPhoto={cyclePhoto}
       />
     </>
   );
@@ -198,7 +218,11 @@ function Picker({
   onClips,
   phone,
   onPhone,
+  photo,
+  onPhoto,
 }: {
+  photo: number;
+  onPhoto: () => void;
   phone: PhoneMode;
   onPhone: () => void;
   current: number;
@@ -279,6 +303,16 @@ function Picker({
       >
         {PHONE_LABELS[phone]}
       </button>
+      {phone === "photo" && (
+        <button
+          type="button"
+          className="proto-picker-item"
+          aria-label="Stronger campaign photo (S)"
+          onClick={onPhoto}
+        >
+          Stronger {photo}
+        </button>
+      )}
       <span className="proto-picker-divider" aria-hidden="true" />
       <button
         type="button"
