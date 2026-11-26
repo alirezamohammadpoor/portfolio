@@ -1,13 +1,12 @@
 "use client";
 
-import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@/lib/viewTransitions";
 import { getReelState } from "@/lib/reel";
 import { prefersReducedMotion } from "@/lib/motion";
 import { ClosingLine } from "@/components/home/ScatterHome";
 import {
   Cover,
-  FrameContext,
   STATEMENT,
   href,
   useEntrance,
@@ -16,9 +15,9 @@ import {
   type VariantProps,
 } from "./shared";
 
-// Drift speed in px/s; the rate the row eases to a stop on hover (or back up
+// Drift speed in px/s (Ali 11-26: a bit faster than 64); the rate the row eases to a stop on hover (or back up
 // to speed after); a flick's friction; the px that turn a press into a drag.
-const DRIFT = 64;
+const DRIFT = 96;
 const SETTLE = 5;
 const FRICTION = 3;
 const DRAG_SLOP = 6;
@@ -49,9 +48,8 @@ export default function CarouselHome({
   useEntrance(rootRef);
   const open = useOpenProject(rootRef);
   const count = projects.length;
-  // Inset windows already carry 16 px each side, so they sit edge to edge
-  // (32 px between recordings); flush ones get a 16 px gap.
-  const frame = useContext(FrameContext);
+  // The recordings run flush and touching, down to the bottom edge (Ali
+  // 11-26: no gap), whatever the lab's frame switch says.
   // Two copies: one set is wider than any screen, so the second covers the
   // gap while the first wraps round. Only the first set carries the marks
   // the entry ring and the morph look for.
@@ -229,7 +227,7 @@ export default function CarouselHome({
         </div>
       </section>
 
-      <div data-item className="h-[50svh] shrink-0 overflow-hidden pb-6">
+      <div data-item className="h-[50svh] shrink-0 overflow-hidden">
         <div
           ref={trackRef}
           data-reveal={entry === "glide" ? "" : undefined}
@@ -243,7 +241,7 @@ export default function CarouselHome({
               aria-hidden={i >= count || undefined}
               tabIndex={i >= count ? -1 : undefined}
               draggable={false}
-              className={`block h-full shrink-0 first:ml-2 ${frame === "flush" ? "mr-4" : ""}`}
+              className="block h-full shrink-0"
               onFocus={() => hold(i)}
               onBlur={() => hold(null)}
               onClick={(e) => {
@@ -261,7 +259,7 @@ export default function CarouselHome({
                 mark={i < count}
                 playing={active === null || active === i}
                 priority={i === 0}
-                hug
+                frame="flush"
                 className="pointer-events-none h-full w-auto"
               />
             </Link>

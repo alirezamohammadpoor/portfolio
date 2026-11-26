@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import gsap from "gsap";
 import { Link } from "@/lib/viewTransitions";
 import { getReelState } from "@/lib/reel";
-import { ease, prefersReducedMotion } from "@/lib/motion";
+import { prefersReducedMotion } from "@/lib/motion";
 import { ClosingLine } from "@/components/home/ScatterHome";
 import Order, { type OrderMode } from "./Order";
 import {
@@ -16,10 +15,10 @@ import {
   type VariantProps,
 } from "@/components/lab/home-layouts/shared";
 
-// Slower than the laptop's 64 px/s: a phone screen is a third as wide, so
+// Slower than the laptop's 96 px/s: a phone screen is a third as wide, so
 // the same speed reads as a rush. A touch holds the row; it picks up again
 // once the finger has been off it for RESUME_MS.
-const DRIFT = 26;
+const DRIFT = 40;
 const SETTLE = 4;
 const FRICTION = 2.6;
 const DRAG_SLOP = 6;
@@ -40,7 +39,7 @@ const SNAP_MS = 450;
  * finger holds it, a drag moves it, a flick throws it; tap opens the
  * project. The window nearest the left margin is the one being read: its
  * title and line sit above the row and swap as the next one takes its
- * place. Hints under the row say how and leave once used.
+ * place.
  */
 export default function PhoneCarousel({
   projects,
@@ -49,15 +48,12 @@ export default function PhoneCarousel({
   entry = "glide",
   motion = "drift",
   order = "rail",
-  reserve = 0,
 }: VariantProps & {
   /** "drift": the row glides on at a steady speed. "step": it rests on one
    *  window at a time and moves on by itself, one window per step. */
   motion?: "drift" | "step";
   /** How the place in the order shows, under the row. */
   order?: OrderMode;
-  /** Lab only: px kept free at the foot for the prototype picker. */
-  reserve?: number;
   entry?: "glide" | "stagger";
 }) {
   useEntrance(rootRef);
@@ -65,7 +61,6 @@ export default function PhoneCarousel({
   const count = projects.length;
   const items = [...projects, ...projects];
   const trackRef = useRef<HTMLDivElement>(null);
-  const hintRef = useRef<HTMLDivElement>(null);
   const dragged = useRef(false);
   const [lead, setLead] = useState(0);
 
@@ -92,12 +87,6 @@ export default function PhoneCarousel({
     let fling = 0;
     let heldUntil = 0;
     let leadNow = 0;
-    let hinted = false;
-    const used = () => {
-      if (hinted || !hintRef.current) return;
-      hinted = true;
-      gsap.to(hintRef.current, { autoAlpha: 0, duration: 0.3, ease: ease.out });
-    };
 
     let press: { id: number; x: number; t: number; moved: boolean } | null = null;
     // Where the row was when the finger went down (step mode's snap).
@@ -120,7 +109,6 @@ export default function PhoneCarousel({
         press.moved = true;
         dragged.current = true;
         track.setPointerCapture(e.pointerId);
-        used();
       }
       const t = performance.now();
       x += dx;
@@ -163,7 +151,6 @@ export default function PhoneCarousel({
       anim = null;
       heldUntil = performance.now() + RESUME_MS;
       nextStepAt = heldUntil;
-      used();
     };
     track.addEventListener("pointerdown", onDown);
     track.addEventListener("pointermove", onMove);
@@ -271,7 +258,7 @@ export default function PhoneCarousel({
     <div
       ref={rootRef}
       className="flex flex-col"
-      style={{ minHeight: "calc(100svh - var(--header-height))", paddingBottom: reserve }}
+      style={{ minHeight: "calc(100svh - var(--header-height))" }}
     >
       <section className="px-margin pt-8">
         <h2 data-statement className="text-h3">
@@ -306,13 +293,16 @@ export default function PhoneCarousel({
         </div>
       )}
 
-      {/* The row: windows 78 % of the screen wide (inset, so 16 px of page
-          colour round each recording), the next one in view at the right. */}
-      <div
-        data-item
-        className="shrink-0 overflow-hidden"
-        style={{ height: "calc(78vw * 0.625 + 32px)" }}
-      >
+      <div data-item className="pb-3">
+        <div data-text>
+          <Order mode={order} projects={projects} active={lead} />
+        </div>
+      </div>
+
+      {/* The row, down to the bottom edge: windows 82 % of the screen wide,
+          recordings flush and touching (Ali 11-26: no gap), the next one in
+          view at the right. */}
+      <div data-item className="shrink-0 overflow-hidden" style={{ height: "calc(82vw * 0.625)" }}>
         <div
           ref={trackRef}
           data-reveal={entry === "glide" ? "" : undefined}
@@ -341,7 +331,7 @@ export default function PhoneCarousel({
                 project={project}
                 mark={i < count}
                 priority={i === 0}
-                hug
+                frame="flush"
                 className="pointer-events-none h-full w-auto"
               />
             </Link>
@@ -349,20 +339,6 @@ export default function PhoneCarousel({
         </div>
       </div>
 
-      <div data-item className="pt-3">
-        <div data-text>
-          <Order mode={order} projects={projects} active={lead} />
-        </div>
-      </div>
-
-      <div
-        ref={hintRef}
-        data-item
-        className="flex justify-between px-margin pb-4 pt-3 text-sub uppercase text-secondary"
-      >
-        <span data-text>Drag ← →</span>
-        <span data-text>Tap to view</span>
-      </div>
       <style>{`@keyframes carousel-rise{from{transform:translateY(105%)}to{transform:none}}@keyframes carousel-fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}`}</style>
     </div>
   );

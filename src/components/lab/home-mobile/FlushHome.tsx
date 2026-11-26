@@ -31,20 +31,16 @@ const SILENCE_MS = 150;
  * time in a strip that runs edge to edge across the phone, its title and
  * line above it. You swipe inside the strip to the next one; the strip
  * follows the finger and the release decides (a short flick is enough). It
- * loops. Hints under the strip say how ("Swipe", "Tap to view") and leave
- * once each has been done; a single nudge shows the next cover's edge if
- * nobody has touched it a moment after landing.
+ * loops. A single nudge shows the next cover's edge if nobody has touched
+ * it a moment after landing.
  */
 export default function FlushHome({
   projects,
   rootRef,
   order = "rail",
-  reserve = 0,
 }: VariantProps & {
   /** How the place in the order shows, under the strip. */
   order?: OrderMode;
-  /** Lab only: px kept free at the foot for the prototype picker. */
-  reserve?: number;
 }) {
   useEntrance(rootRef);
   const open = useOpenProject(rootRef);
@@ -56,8 +52,6 @@ export default function FlushHome({
   const [title, setTitle] = useState(0);
   const stripRef = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<(HTMLAnchorElement | null)[]>([]);
-  const swipeHintRef = useRef<HTMLSpanElement>(null);
-  const tapHintRef = useRef<HTMLSpanElement>(null);
   const drag = useRef(0);
   const moved = useRef(false);
   const touched = useRef(false);
@@ -91,13 +85,6 @@ export default function FlushHome({
     layout(0);
   }, [current, layout]);
 
-  const hideHint = (el: HTMLElement | null) => {
-    if (el && !el.dataset.gone) {
-      el.dataset.gone = "";
-      gsap.to(el, { autoAlpha: 0, duration: 0.3, ease: ease.out });
-    }
-  };
-
   /** Animates the drag to `to` px, then (with a direction) moves on. */
   const settle = useCallback(
     (dir: -1 | 0 | 1, velocity = 0) => {
@@ -115,7 +102,6 @@ export default function FlushHome({
       tween.current?.kill();
       const proxy = { d: drag.current };
       if (dir !== 0) {
-        hideHint(swipeHintRef.current);
         // The title swaps as the strip starts to move, so the words and
         // the picture travel together.
         const next = (currentRef.current + dir + count) % count;
@@ -259,7 +245,7 @@ export default function FlushHome({
     <div
       ref={rootRef}
       className="flex flex-col"
-      style={{ minHeight: "calc(100svh - var(--header-height))", paddingBottom: reserve }}
+      style={{ minHeight: "calc(100svh - var(--header-height))" }}
     >
       <section className="px-margin pt-8">
         <h2 data-statement className="text-h3">
@@ -293,7 +279,14 @@ export default function FlushHome({
         </Link>
       </div>
 
-      {/* The strip: edge to edge, 16:10 like every cover. */}
+      <div data-item className="pb-3">
+        <div data-text>
+          <Order mode={order} projects={projects} active={title} />
+        </div>
+      </div>
+
+      {/* The strip: edge to edge and down to the bottom, 16:10 like every
+          cover. */}
       <div data-item>
         <div
           ref={stripRef}
@@ -319,7 +312,6 @@ export default function FlushHome({
                   e.preventDefault();
                   return;
                 }
-                hideHint(tapHintRef.current);
                 open(e, project);
               }}
             >
@@ -335,24 +327,6 @@ export default function FlushHome({
         </div>
       </div>
 
-      <div data-item className="pt-3">
-        <div data-text>
-          <Order mode={order} projects={projects} active={title} />
-        </div>
-      </div>
-
-      {/* How to use it; each hint leaves once it has been done. */}
-      <div
-        data-item
-        className="flex justify-between px-margin pb-4 pt-3 text-sub uppercase text-secondary"
-      >
-        <span ref={swipeHintRef} data-text>
-          Swipe ← →
-        </span>
-        <span ref={tapHintRef} data-text>
-          Tap to view
-        </span>
-      </div>
       <style>{`@keyframes flush-rise{from{transform:translateY(105%)}to{transform:none}}@keyframes flush-fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}`}</style>
     </div>
   );

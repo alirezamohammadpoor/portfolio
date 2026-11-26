@@ -209,13 +209,7 @@ export default function HomeIntroLab({
         ) : (
           <>
             {phoneHome === "flush" ? (
-              <FlushHome
-                projects={page}
-                contact={contact}
-                rootRef={rootRef}
-                order={order}
-                reserve={PICKER_SPACE}
-              />
+              <FlushHome projects={page} contact={contact} rootRef={rootRef} order={order} />
             ) : (
               <PhoneCarousel
                 projects={page}
@@ -223,7 +217,6 @@ export default function HomeIntroLab({
                 rootRef={rootRef}
                 motion={phoneHome === "auto" ? "step" : "drift"}
                 order={order}
-                reserve={PICKER_SPACE}
                 entry={stagger ? "stagger" : "glide"}
               />
             )}
@@ -252,9 +245,6 @@ export default function HomeIntroLab({
     </>
   );
 }
-
-/** The phone pages stop above the picker, so nothing they show sits under it. */
-const PICKER_SPACE = 64;
 
 type PhoneHome = "flush" | "carousel" | "auto";
 const PHONE_HOMES: { key: PhoneHome; name: string }[] = [
