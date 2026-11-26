@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import gsap from "gsap";
 import HomeReel, { type IntroBuilder } from "@/components/home/HomeReel";
 import { setReelState } from "@/lib/reel";
@@ -17,11 +10,9 @@ import CarouselHome from "@/components/lab/home-layouts/CarouselHome";
 import { labHero, labPhoneHero, type Contact } from "@/components/lab/home-layouts/shared";
 import ScatterHome from "@/components/home/ScatterHome";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
-import { flatRingIntro, ringIntro, saturnIntro } from "./intros";
+import { flatRingIntro, ringIntro, saturnIntro, saturnPebbleIntro } from "./intros";
 import { crossingIntro } from "@/components/lab/ring/crossing";
-import RingCursor from "@/components/lab/ring/RingCursor";
 import "@/components/lab/home-layouts/proto-picker.css";
-import "@/components/lab/ring/ring.css";
 
 interface Variant {
   name: string;
@@ -47,6 +38,9 @@ const VARIANTS: Variant[] = [
   { name: "Flat ring", build: flatRingIntro },
   // Ali 11-26 14:33: even more horizontal, a rotating slideshow, Saturn.
   { name: "Saturn", build: saturnIntro },
+  // Ali 11-26 16:52: Saturn is the pick; try the Pebble as the planet in the
+  // middle that rises into place, here and in Crossing.
+  { name: "Saturn + Pebble", build: saturnPebbleIntro },
   // Ring brief 11-26: the ring closes to edge-on and the line is the row.
   { name: "Crossing", build: crossingIntro },
   // Ali 11-26 13:51: no ring or oval, straight to the page, staggered in.
@@ -82,31 +76,6 @@ export default function HomeIntroLab({
   const current = initial >= 1 && initial <= VARIANTS.length ? initial - 1 : 0;
   const variant = VARIANTS[current];
   const rootRef = useRef<HTMLDivElement>(null);
-  // Ring brief 11-26: the Pebble's Cassini line and the cursor ring, on by
-  // default here; L and C (or ?line=0, ?cursor=0) switch them to compare.
-  const [ring, setRing] = useState({ line: true, cursor: true });
-  useEffect(() => {
-    const q = new URLSearchParams(location.search);
-    setRing({ line: q.get("line") !== "0", cursor: q.get("cursor") !== "0" });
-  }, []);
-  const toggleRing = useCallback((key: "line" | "cursor") => {
-    setRing((r) => {
-      const next = { ...r, [key]: !r[key] };
-      const url = new URL(location.href);
-      if (next[key]) url.searchParams.delete(key);
-      else url.searchParams.set(key, "0");
-      history.replaceState(history.state, "", url);
-      return next;
-    });
-  }, []);
-  useEffect(() => {
-    const html = document.documentElement;
-    if (ring.line) html.dataset.ringLine = "";
-    else delete html.dataset.ringLine;
-    return () => {
-      delete html.dataset.ringLine;
-    };
-  }, [ring.line]);
 
   const select = useCallback((i: number) => {
     if (i < 0 || i >= VARIANTS.length) return;
@@ -125,12 +94,10 @@ export default function HomeIntroLab({
       else if (e.key === "ArrowRight") select((current + 1) % VARIANTS.length);
       else if (e.key === "ArrowLeft") select((current - 1 + VARIANTS.length) % VARIANTS.length);
       else if (e.key === "r" || e.key === "R") select(current);
-      else if (e.key === "l" || e.key === "L") toggleRing("line");
-      else if (e.key === "c" || e.key === "C") toggleRing("cursor");
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [current, select, toggleRing]);
+  }, [current, select]);
 
   // The laptop lands on the carousel, the phone on today's phone home. Client
   // only, so one tree (and one reel) mounts.
@@ -239,14 +206,7 @@ export default function HomeIntroLab({
             reel={stagger ? "none" : { ...reel, heroOverride: labPhoneHero }}
           />
         ))}
-      {mounted && ring.cursor && <RingCursor />}
-      <Picker
-        current={current}
-        onSelect={select}
-        count={count || projects.length}
-        ring={ring}
-        onRing={toggleRing}
-      />
+      <Picker current={current} onSelect={select} count={count || projects.length} />
     </>
   );
 }
@@ -265,14 +225,10 @@ function Picker({
   current,
   onSelect,
   count,
-  ring,
-  onRing,
 }: {
   current: number;
   onSelect: (i: number) => void;
   count: number;
-  ring: { line: boolean; cursor: boolean };
-  onRing: (key: "line" | "cursor") => void;
 }) {
   const navRef = useRef<HTMLElement>(null);
   const highlightRef = useRef<HTMLSpanElement>(null);
@@ -328,23 +284,6 @@ function Picker({
         }}
       >
         {count} projects
-      </button>
-      <span className="proto-picker-divider" aria-hidden="true" />
-      <button
-        type="button"
-        className="proto-picker-item"
-        aria-pressed={ring.line}
-        onClick={() => onRing("line")}
-      >
-        Line {ring.line ? "on" : "off"}
-      </button>
-      <button
-        type="button"
-        className="proto-picker-item"
-        aria-pressed={ring.cursor}
-        onClick={() => onRing("cursor")}
-      >
-        Cursor {ring.cursor ? "on" : "off"}
       </button>
       <span className="proto-picker-divider" aria-hidden="true" />
       <button

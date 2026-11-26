@@ -3,6 +3,7 @@ import { SCATTER_BEAT } from "@/lib/reel";
 import { ease, registerMotion } from "@/lib/motion";
 import { DESKTOP_QUERY } from "@/hooks/useIsDesktop";
 import { barEntrance, ringFit, type IntroBuilder, type Rect } from "@/components/home/HomeReel";
+import { pebblePlanet } from "@/components/lab/ring/planet";
 
 /**
  * Entries for the carousel home (Ali 11-26), every one ending with each
@@ -192,6 +193,8 @@ interface FlatRingOpts {
   tilt?: number;
   /** Back cards' size against the front ones. */
   back?: number;
+  /** The Pebble waits in the middle as the planet, then rises into place. */
+  planet?: boolean;
 }
 
 const flatRing =
@@ -296,7 +299,8 @@ const flatRing =
       n += 1;
     });
     tl.to(away, { p: 1, duration: dur, ease: "none", onUpdate: render }, landAt);
-    barEntrance(tl, landAt + Math.max(0, n - 1) * step + dur);
+    if (!(o.planet && pebblePlanet(tl, { centreY: oy, rise: landAt - 0.2 })))
+      barEntrance(tl, landAt + Math.max(0, n - 1) * step + dur);
   };
 
 export const flatRingIntro = flatRing({ card: [0.22, 0.38], flat: [0.16, 0.15] });
@@ -314,6 +318,17 @@ export const saturnIntro = flatRing({
   wide: 0.62,
   tilt: 0,
   back: 0.4,
+});
+
+/** Saturn with the Pebble as the planet (Ali 11-26): it sits in the middle
+ *  of the ring while the cards go round, then rises to its place. */
+export const saturnPebbleIntro = flatRing({
+  card: [0.3, 0.62],
+  flat: [0.06, 0.05],
+  wide: 0.62,
+  tilt: 0,
+  back: 0.4,
+  planet: true,
 });
 
 /**
