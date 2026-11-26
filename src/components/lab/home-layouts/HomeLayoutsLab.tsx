@@ -6,6 +6,9 @@ import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import {
   ClipsContext,
   FrameContext,
+  PHONE_MODES,
+  PhoneContext,
+  type PhoneMode,
   type Contact,
   type FrameMode,
   type VariantProps,
@@ -40,7 +43,17 @@ interface Props {
   initialFrame: FrameMode;
   /** `?clips=old` starts on the Sanity covers instead of the re-shoot. */
   initialNewClips: boolean;
+  /** `?phone=now|photo|soft|desktop|colour`: the ground behind phone covers. */
+  initialPhone: PhoneMode;
 }
+
+const PHONE_LABELS: Record<PhoneMode, string> = {
+  now: "Phone: now",
+  photo: "Phone: photo",
+  soft: "Phone: soft photo",
+  desktop: "Phone: desktop",
+  colour: "Phone: colour",
+};
 
 /**
  * Laptop home layouts, behind Emil Kowalski's prototype picker. The entry
@@ -55,7 +68,18 @@ export default function HomeLayoutsLab({
   initial,
   initialFrame,
   initialNewClips,
+  initialPhone,
 }: Props) {
+  const [phone, setPhone] = useState<PhoneMode>(initialPhone);
+  const cyclePhone = useCallback(() => {
+    setPhone((m) => {
+      const next = PHONE_MODES[(PHONE_MODES.indexOf(m) + 1) % PHONE_MODES.length];
+      const url = new URL(location.href);
+      url.searchParams.set("phone", next);
+      history.replaceState(history.state, "", url);
+      return next;
+    });
+  }, []);
   const [newClips, setNewClips] = useState(initialNewClips);
   const toggleClips = useCallback(() => {
     setNewClips((on) => {
@@ -116,10 +140,11 @@ export default function HomeLayoutsLab({
       else if (e.key === "r" || e.key === "R") replay();
       else if (e.key === "f" || e.key === "F") toggleFrame();
       else if (e.key === "c" || e.key === "C") toggleClips();
+      else if (e.key === "p" || e.key === "P") cyclePhone();
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [current, select, replay, toggleFrame, toggleClips]);
+  }, [current, select, replay, toggleFrame, toggleClips, cyclePhone]);
 
   const { Component } = variant;
   return (
@@ -130,20 +155,22 @@ export default function HomeLayoutsLab({
       </p>
       <FrameContext.Provider value={frame}>
         <ClipsContext.Provider value={newClips}>
-          <div className="hidden desktop:block">
-            <HomeReel
-              projects={projects}
-              pageRef={rootRef}
-              coverSizes={projects.map(() => variant.sizes)}
-              landing={variant.landing}
-            />
-            <Component
-              key={`${current}-${mountKey}`}
-              projects={projects}
-              contact={contact}
-              rootRef={rootRef}
-            />
-          </div>
+          <PhoneContext.Provider value={phone}>
+            <div className="hidden desktop:block">
+              <HomeReel
+                projects={projects}
+                pageRef={rootRef}
+                coverSizes={projects.map(() => variant.sizes)}
+                landing={variant.landing}
+              />
+              <Component
+                key={`${current}-${mountKey}`}
+                projects={projects}
+                contact={contact}
+                rootRef={rootRef}
+              />
+            </div>
+          </PhoneContext.Provider>
         </ClipsContext.Provider>
       </FrameContext.Provider>
       <Picker
@@ -154,6 +181,8 @@ export default function HomeLayoutsLab({
         onReplay={replay}
         frame={frame}
         onFrame={toggleFrame}
+        phone={phone}
+        onPhone={cyclePhone}
       />
     </>
   );
@@ -167,7 +196,11 @@ function Picker({
   onFrame,
   newClips,
   onClips,
+  phone,
+  onPhone,
 }: {
+  phone: PhoneMode;
+  onPhone: () => void;
   current: number;
   onSelect: (i: number) => void;
   onReplay: () => void;
@@ -236,6 +269,15 @@ function Picker({
         onClick={onClips}
       >
         {newClips ? "New clips" : "Old clips"}
+      </button>
+      {/* The ground behind the phone covers (P): Sania and Stronger. */}
+      <button
+        type="button"
+        className="proto-picker-item"
+        aria-label="Phone covers: ground behind the phone (P)"
+        onClick={onPhone}
+      >
+        {PHONE_LABELS[phone]}
       </button>
       <span className="proto-picker-divider" aria-hidden="true" />
       <button
