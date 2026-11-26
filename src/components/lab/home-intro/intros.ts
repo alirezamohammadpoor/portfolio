@@ -63,45 +63,88 @@ const outE = gsap.parseEase(ease.out);
 const inOutE = gsap.parseEase(ease.inOut);
 
 /**
- * 2. Oval (Ali 11-26): the ring flies out with project 1 at 12 o'clock and
- * the others following it anticlockwise, then turns anticlockwise until
- * project 1 sits at 7 o'clock, 2 just after it along the bottom, 3 after
- * that. From there each card morphs into its slot, 1 first: the cards that
- * land first are already the ones nearest the row's start.
+ * 2. Ring (Ali 11-26): the home's ring, same cards, but the projects trail
+ * project 1 round the oval and the ring turns clockwise, slowly, carrying
+ * project 1 from 12 o'clock down past 6 to 7, with 2 and 3 behind it along
+ * the bottom. Then the projects whose slots are on screen morph into them,
+ * 1, 2, 3; the rest drift off the screen and fade, like the dive's
+ * neighbours.
  */
-export const ovalIntro: IntroBuilder = (tl, heroes, world, rects) => {
+export const ringIntro: IntroBuilder = (tl, heroes, world, rects) => {
   const { slots, place, aspect, VW, VH } = setup(heroes, world, rects);
   const N = heroes.length;
+  // The home ring's layout: the largest equal cards that clear each other
+  // at every turn of an oval fitted to the field.
   const top = 72;
-  const fw = VW - 48;
-  const fh = VH - top - 24;
-  const cw = Math.min(fw * 0.17, (fh * 0.3) / aspect);
-  const ch = cw * aspect;
-  const at = ovalPath(fw / 2 - cw / 2, fh / 2 - ch / 2);
-  const cx = VW / 2;
-  const cy = top + fh / 2;
-  // 0 = project 1 at 12 o'clock; -5/12 = a turn anticlockwise to 7 o'clock.
-  const SEVEN = -5 / 12;
+  const margin = 24;
+  const gap = 20;
+  const fw = VW - margin * 2;
+  const fh = VH - top - margin;
+  const ox = VW / 2;
+  const oy = top + fh / 2;
+  const layout = (cw: number) => {
+    const ch = cw * aspect;
+    return {
+      ch,
+      at: ovalPath(Math.max(fw / 2 - cw / 2, cw), Math.max(fh / 2 - ch / 2, ch)),
+    };
+  };
+  const clears = (cw: number) => {
+    const { ch, at } = layout(cw);
+    for (const shift of [0, 0.25, 0.5, 0.75]) {
+      const pts = Array.from({ length: N }, (_, i) => at((i + shift) / N));
+      for (let i = 0; i < N; i++)
+        for (let j = i + 1; j < N; j++)
+          if (Math.abs(pts[i].x - pts[j].x) < cw + gap && Math.abs(pts[i].y - pts[j].y) < ch + gap)
+            return false;
+    }
+    return true;
+  };
+  let lo = 8;
+  let hi = fw * 0.24;
+  if (clears(hi)) lo = hi;
+  else
+    for (let k = 0; k < 24; k++) {
+      const mid = (lo + hi) / 2;
+      if (clears(mid)) lo = mid;
+      else hi = mid;
+    }
+  const cw = lo;
+  const { at } = layout(cw);
+
+  // u is the turn, clockwise from 12 o'clock; 7/12 puts project 1 at 7.
+  const SEVEN = 7 / 12;
   const ring = { u: 0 };
   const fly = heroes.map(() => ({ p: 0 }));
   const land = heroes.map(() => ({ p: 0 }));
+  const away = { p: 0 };
+  // Only the slots the screen shows take a card; the rest leave.
+  const shown = slots.map((s) => s.x - s.w / 2 < VW);
+  const push = Math.max(VW, VH) * 0.6;
   const render = () =>
     heroes.forEach((_, i) => {
-      // Anticlockwise order: 2 trails 1 along the bottom towards the right.
+      // Behind project 1 in the direction of the turn: anticlockwise.
       const spot = at(ring.u - i / N);
       const p = fly[i].p;
-      const onRing: Pose = {
-        x: cx + spot.x * p,
-        y: VH / 2 + (cy + spot.y - VH / 2) * p,
-        w: cw * (0.35 + 0.65 * p),
-        r: 0,
-        a: Math.min(1, p * 1.4),
-      };
-      const f = inOutE(land[i].p);
-      // A card on its way to the row travels over the ones still turning.
-      place(i, mix(onRing, slots[i], f), land[i].p > 0 ? 2 : 1);
+      let x = ox + spot.x * p;
+      let y = VH / 2 + (oy + spot.y - VH / 2) * p;
+      let a = Math.min(1, p * 1.4);
+      if (!shown[i]) {
+        const e = inOutE(away.p);
+        const dx = x - VW / 2;
+        const dy = y - VH / 2;
+        const len = Math.hypot(dx, dy) || 1;
+        x += (dx / len) * push * e;
+        y += (dy / len) * push * e;
+        a *= 1 - e;
+        place(i, { x, y, w: cw * (0.35 + 0.65 * p), r: 0, a }, 1);
+        return;
+      }
+      const onRing: Pose = { x, y, w: cw * (0.35 + 0.65 * p), r: 0, a };
+      place(i, mix(onRing, slots[i], inOutE(land[i].p)), land[i].p > 0 ? 3 : 2);
     });
   render();
+
   const at0 = SCATTER_BEAT.start;
   heroes.forEach((_, i) =>
     tl.to(
@@ -110,23 +153,26 @@ export const ovalIntro: IntroBuilder = (tl, heroes, world, rects) => {
       at0 + i * SCATTER_BEAT.stagger,
     ),
   );
-  // The turn starts as the cards leave the middle and eases out just as
-  // project 1 reaches 7 o'clock; the landing overlaps its last moment so
-  // the ring never stands still.
+  // A slow, even turn that starts as the cards leave the middle.
   const turnStart = at0 + SCATTER_BEAT.scatter * 0.4;
-  const turnEnd = at0 + SCATTER_BEAT.scatter + SCATTER_BEAT.stagger * (N - 1) + 1.1;
+  const turnEnd = turnStart + 3.2;
   tl.to(
     ring,
     { u: SEVEN, duration: turnEnd - turnStart, ease: "power1.inOut", onUpdate: render },
     turnStart,
   );
-  const landAt = turnEnd - 0.25;
-  const step = 0.12;
-  const dur = 1.1;
-  heroes.forEach((_, i) =>
-    tl.to(land[i], { p: 1, duration: dur, ease: "none", onUpdate: render }, landAt + i * step),
-  );
-  barEntrance(tl, landAt + (N - 1) * step + dur);
+  // The landing overlaps the turn's last moment so the ring never stops dead.
+  const landAt = turnEnd - 0.3;
+  const step = 0.18;
+  const dur = 1.4;
+  let k = 0;
+  heroes.forEach((_, i) => {
+    if (!shown[i]) return;
+    tl.to(land[i], { p: 1, duration: dur, ease: "none", onUpdate: render }, landAt + k * step);
+    k += 1;
+  });
+  tl.to(away, { p: 1, duration: dur, ease: "none", onUpdate: render }, landAt);
+  barEntrance(tl, landAt + Math.max(0, k - 1) * step + dur);
 };
 
 /**

@@ -5,7 +5,7 @@ import HomeReel, { type IntroBuilder } from "@/components/home/HomeReel";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import CarouselHome from "@/components/lab/home-layouts/CarouselHome";
 import type { Contact } from "@/components/lab/home-layouts/shared";
-import { dropIntro, ovalIntro } from "./intros";
+import { dropIntro, ringIntro } from "./intros";
 import "@/components/lab/home-layouts/proto-picker.css";
 
 interface Variant {
@@ -17,7 +17,7 @@ interface Variant {
 // Ordered by how far the cards travel, biggest first.
 const VARIANTS: Variant[] = [
   { name: "Original" },
-  { name: "Oval", build: ovalIntro },
+  { name: "Ring", build: ringIntro },
   { name: "Drop", build: dropIntro },
 ];
 
