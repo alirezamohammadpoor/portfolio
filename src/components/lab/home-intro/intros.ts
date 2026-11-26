@@ -173,6 +173,112 @@ export const ringIntro: IntroBuilder = (tl, heroes, world, rects) => {
 };
 
 /**
+ * 3. Ring, horizontal (Ali 11-26: "ring but horizontal"): the ring laid on
+ * its side, a carousel seen from a little above. The cards go round a flat,
+ * wide oval across the middle of the screen; the ones at the front are big
+ * and on top, the ones at the back small and faint. The front moves right to
+ * left, the way the carousel drifts, and slows to put project 1 at the front
+ * with 2 and 3 to its right. Then the cards whose slots are on screen land
+ * in them, 1, 2, 3, as in Ring; the rest drift off and fade.
+ */
+export const flatRingIntro: IntroBuilder = (tl, heroes, world, rects) => {
+  const { slots, place, VW, VH } = setup(heroes, world, rects);
+  const N = heroes.length;
+  const laptop = window.matchMedia(DESKTOP_QUERY).matches;
+  const top = 72;
+  const margin = laptop ? 24 : 16;
+  const fw = VW - margin * 2;
+  const fh = VH - top - margin;
+  // The front card: a fifth of the laptop's width, over a third of the phone's.
+  const cw = fw * (laptop ? 0.22 : 0.38);
+  const ox = VW / 2;
+  const oy = top + fh / 2;
+  const a = fw / 2 - cw / 2;
+  // How flat the oval is: the back row sits a little above the front one.
+  const b = fh * (laptop ? 0.16 : 0.15);
+  const BACK = 0.55;
+
+  // spin is the turn in whole turns; at 0 project 1 is at the front.
+  const spin = { u: 0.8 };
+  const fly = heroes.map(() => ({ p: 0 }));
+  const land = heroes.map(() => ({ p: 0 }));
+  const away = { p: 0 };
+  const aspect = rects[0].h / rects[0].w;
+  const shown = slots.map((s) => s.x - s.w / 2 < VW && s.y - s.w * aspect * 0.5 < VH);
+  const push = Math.max(VW, VH) * 0.6;
+  const ROW_GAP = 31.5;
+  const poses: (Pose | null)[] = heroes.map(() => null);
+  const depths = heroes.map(() => 0);
+  const render = () => {
+    heroes.forEach((_, i) => {
+      const t = (i / N + spin.u) * Math.PI * 2;
+      // depth: 1 at the front, -1 at the back.
+      const d = Math.cos(t);
+      const k = (d + 1) / 2;
+      depths[i] = d;
+      const p = fly[i].p;
+      const w = cw * (BACK + (1 - BACK) * k) * (0.35 + 0.65 * p);
+      let x = ox + a * Math.sin(t) * p;
+      let y = VH / 2 + (oy + b * d - VH / 2) * p;
+      let alpha = Math.min(1, p * 1.4) * (0.45 + 0.55 * k);
+      if (!shown[i]) {
+        poses[i] = null;
+        const e = inOutE(away.p);
+        const dx = x - VW / 2;
+        const dy = y - VH / 2;
+        const len = Math.hypot(dx, dy) || 1;
+        x += (dx / len) * push * e;
+        y += (dy / len) * push * e;
+        alpha *= 1 - e;
+        place(i, { x, y, w, r: 0, a: alpha }, 1 + Math.round(k * 10));
+        return;
+      }
+      poses[i] = mix({ x, y, w, r: 0, a: alpha }, slots[i], inOutE(land[i].p));
+    });
+    let prev: Pose | null = null;
+    heroes.forEach((_, i) => {
+      const q = poses[i];
+      if (!q) return;
+      if (prev && laptop && land[i].p > 0) {
+        const minX = prev.x + prev.w / 2 + ROW_GAP + q.w / 2;
+        if (q.x < minX) q.x = minX;
+      }
+      prev = q;
+      place(i, q, land[i].p > 0 ? 20 : 1 + Math.round(((depths[i] + 1) / 2) * 10));
+    });
+  };
+  render();
+
+  const at0 = SCATTER_BEAT.start;
+  heroes.forEach((_, i) =>
+    tl.to(
+      fly[i],
+      { p: 1, duration: SCATTER_BEAT.scatter, ease: ease.out, onUpdate: render },
+      at0 + i * SCATTER_BEAT.stagger,
+    ),
+  );
+  // The same slow, even turn as Ring.
+  const turnStart = at0 + SCATTER_BEAT.scatter * 0.4;
+  const turnEnd = turnStart + 3.6;
+  tl.to(
+    spin,
+    { u: 0, duration: turnEnd - turnStart, ease: "power1.inOut", onUpdate: render },
+    turnStart,
+  );
+  const landAt = turnEnd - 0.3;
+  const step = 0.18;
+  const dur = 1.4;
+  let n = 0;
+  heroes.forEach((_, i) => {
+    if (!shown[i]) return;
+    tl.to(land[i], { p: 1, duration: dur, ease: "none", onUpdate: render }, landAt + n * step);
+    n += 1;
+  });
+  tl.to(away, { p: 1, duration: dur, ease: "none", onUpdate: render }, landAt);
+  barEntrance(tl, landAt + Math.max(0, n - 1) * step + dur);
+};
+
+/**
  * 5. Drop: no field at all. Each project appears a short way above its own
  * slot and settles into it, 1, 2, 3, a beat apart. The smallest move and the
  * quickest entry.
