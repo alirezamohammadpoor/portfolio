@@ -135,7 +135,12 @@ export default function CarouselHome({
       // The row holds still under the entry ring, which lands every project
       // in its slot; it starts drifting once the ring has handed over.
       const reel = getReelState();
-      if (reel === "waiting" || reel === "playing") {
+      // Stagger entry (Ali 11-26): the row stands still until the last
+      // window has dropped in (the lab clears data-entering), then eases
+      // up to speed from rest.
+      const entering = "entering" in document.documentElement.dataset;
+      if (entering) speed = 0;
+      if (reel === "waiting" || reel === "playing" || entering) {
         last = now;
         raf = requestAnimationFrame(frame);
         return;

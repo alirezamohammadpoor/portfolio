@@ -115,37 +115,59 @@ export default function HomeIntroLab({
     if (!mounted || !stagger) return;
     setReelState("off");
     if (prefersReducedMotion()) return;
+    // Choreography (Emil's choreograph skill): the statement is the lead and
+    // rises line by line from 0 (the page's own entrance), the closing line
+    // follows as support. The windows are support too: they overlap the
+    // statement's second line and rise less, with gaps that shrink (120, 90,
+    // 60 ms...) so the row reads as a wave, not a queue. The Pebble is
+    // decoration: it fades in place with the statement. The row's drift
+    // waits for the last window to settle. Any input jumps to the end.
     const bar = document.querySelector("[data-site-bar]");
     const tweens: gsap.core.Tween[] = [];
     if (bar)
       tweens.push(
-        gsap.fromTo(
-          bar,
-          { autoAlpha: 0, y: -8, scale: 0.96 },
-          { autoAlpha: 1, y: 0, scale: 1, duration: 0.6, ease: ease.out, delay: 0.1 },
-        ),
+        gsap.fromTo(bar, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4, ease: ease.out }),
       );
     if (desktop) {
+      document.documentElement.dataset.entering = "";
       const cards = gsap.utils
         .toArray<HTMLElement>("[data-card]")
         .filter((c) => c.getBoundingClientRect().left < innerWidth);
+      const starts = cards.map((_, i) =>
+        Array.from({ length: i }, (_, k) => Math.max(0.03, 0.12 - k * 0.03)).reduce(
+          (t, g) => t + g,
+          0,
+        ),
+      );
       tweens.push(
         gsap.fromTo(
           cards,
-          { autoAlpha: 0, y: -32 },
+          { autoAlpha: 0, y: 16 },
           {
             autoAlpha: 1,
             y: 0,
-            duration: 0.9,
+            duration: 0.6,
             ease: ease.out,
-            stagger: 0.12,
-            delay: 0.3,
+            delay: (i) => 0.25 + starts[i],
             clearProps: "transform,opacity,visibility",
+            onComplete: () => delete document.documentElement.dataset.entering,
           },
         ),
       );
     }
-    return () => tweens.forEach((t) => t.revert());
+    const skip = (e: Event) => {
+      if ((e.target as Element | null)?.closest?.(".proto-picker")) return;
+      tweens.forEach((t) => t.progress(1));
+    };
+    const opts = { passive: true, capture: true } as const;
+    for (const type of ["wheel", "pointerdown", "keydown"] as const)
+      addEventListener(type, skip, opts);
+    return () => {
+      for (const type of ["wheel", "pointerdown", "keydown"] as const)
+        removeEventListener(type, skip, opts);
+      delete document.documentElement.dataset.entering;
+      tweens.forEach((t) => t.revert());
+    };
   }, [mounted, stagger, desktop]);
 
   return (
