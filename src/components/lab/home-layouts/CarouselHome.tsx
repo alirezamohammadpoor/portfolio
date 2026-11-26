@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Link } from "@/lib/viewTransitions";
 import { getReelState } from "@/lib/reel";
 import { prefersReducedMotion } from "@/lib/motion";
 import { ClosingLine } from "@/components/home/ScatterHome";
 import {
   Cover,
+  FrameContext,
   STATEMENT,
   href,
   useEntrance,
@@ -38,6 +39,9 @@ export default function CarouselHome({ projects, contact, rootRef }: VariantProp
   useEntrance(rootRef);
   const open = useOpenProject(rootRef);
   const count = projects.length;
+  // Inset windows already carry 16 px each side, so they sit edge to edge
+  // (32 px between recordings); flush ones get a 16 px gap.
+  const frame = useContext(FrameContext);
   // Two copies: one set is wider than any screen, so the second covers the
   // gap while the first wraps round. Only the first set carries the marks
   // the entry ring and the morph look for.
@@ -203,7 +207,7 @@ export default function CarouselHome({ projects, contact, rootRef }: VariantProp
         <div
           ref={trackRef}
           data-reveal
-          className="flex h-full w-max cursor-grab touch-none select-none gap-4 will-change-transform active:cursor-grabbing"
+          className="flex h-full w-max cursor-grab touch-none select-none will-change-transform active:cursor-grabbing"
         >
           {items.map((project, i) => (
             <Link
@@ -213,7 +217,7 @@ export default function CarouselHome({ projects, contact, rootRef }: VariantProp
               aria-hidden={i >= count || undefined}
               tabIndex={i >= count ? -1 : undefined}
               draggable={false}
-              className="block h-full shrink-0 first:ml-6"
+              className={`block h-full shrink-0 first:ml-2 ${frame === "flush" ? "mr-4" : ""}`}
               onFocus={() => hold(i)}
               onBlur={() => hold(null)}
               onClick={(e) => {
@@ -231,6 +235,7 @@ export default function CarouselHome({ projects, contact, rootRef }: VariantProp
                 mark={i < count}
                 playing={active === null || active === i}
                 priority={i === 0}
+                hug
                 className="pointer-events-none h-full w-auto"
               />
             </Link>

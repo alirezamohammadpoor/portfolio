@@ -301,6 +301,11 @@ function ringTimeline(
   landing: "dive" | "settle" = "dive",
 ) {
   const settleAll = landing === "settle";
+  // Settle: where on the oval (fraction clockwise from 12 o'clock) each card
+  // drops out of the ring into its slot: low on the right. The first card
+  // crosses an empty row to the far left; every later one lands to the right
+  // of the last, so no card crosses a landed one.
+  const RELEASE = 0.4;
   const VW = window.innerWidth;
   const VH = window.innerHeight;
   const laptop = window.matchMedia(DESKTOP_QUERY).matches;
@@ -353,10 +358,18 @@ function ringTimeline(
   // The turn: the oval starts a little short of home and ends with the first
   // project at 12 o'clock. About two thirds of a step, at least ~25°.
   const turn = Math.max(0.66 / N, 0.07);
-  const ring = { u: -turn };
+  // Settle turns the other way (anticlockwise), so the cards reach the
+  // release point in project order: 1, 2, 3...
+  const ring = { u: settleAll ? turn : -turn };
   const fly = heroes.map(() => ({ p: 0 }));
   const dive = { p: 0 };
   const settle = heroes.map(() => ({ p: 0 }));
+  const lift = { q: 0 };
+  // The band above the row: its middle, and the oval's vertical squash that
+  // keeps a card inside it.
+  const rowTop = Math.min(...rects.map((r) => r.y));
+  const liftY = (top + rowTop) / 2;
+  const liftB = Math.max(0.1, Math.min(1, (rowTop - top - cw * aspect - 16) / 2 / Math.max(1, fh / 2)));
 
   const base = heroes.map((_, i) => {
     const { x, y, w, h } = rects[i];
@@ -383,9 +396,16 @@ function ringTimeline(
   function render() {
     heroes.forEach((hero, i) => {
       const { cx0, cy0, scale } = base[i];
-      const spot = at(i / N + ring.u);
+      const spot = at(i / N + ring.u + (settleAll ? RELEASE : 0));
       let cx = ox + spot.x;
       let cy = oy + spot.y;
+      if (settleAll && lift.q > 0) {
+        // While the cards drop out, the ring rises into the band above the
+        // row and flattens there, so it never passes over a landed card.
+        const q = lift.q;
+        cx = ox + spot.x * (1 - 0.3 * q);
+        cy = oy + (liftY - oy) * q + spot.y * (1 - (1 - liftB) * q);
+      }
       const p = fly[i].p;
       // Out of the middle of the screen.
       cx = VW / 2 + (cx - VW / 2) * p;
@@ -400,6 +420,9 @@ function ringTimeline(
           y: (cy - cy0) * (1 - sp),
           scale: ringScale + (1 - ringScale) * sp,
           autoAlpha: alpha + (1 - alpha) * sp,
+          // The row is the table: landed cards lie under the ring, a card on
+          // its way down flies over everything.
+          zIndex: sp >= 1 ? 0 : sp > 0 ? 10 + i : 1,
         });
         return;
       }
@@ -437,19 +460,33 @@ function ringTimeline(
   // just into the dive, so the hold never stands still and the first
   // project is home before the camera gets close.
   const turnStart = at0 + SCATTER_BEAT.scatter * 0.4;
-  const turnEnd = diveAt + SCATTER_BEAT.dive * 0.3;
+  const turnEnd = settleAll ? diveAt : diveAt + SCATTER_BEAT.dive * 0.3;
   tl.to(
     ring,
     { u: 0, duration: turnEnd - turnStart, ease: "power1.inOut", onUpdate: render },
     turnStart,
   );
   if (settleAll) {
-    // In ring order from 12 o'clock, so the row fills from its first slot.
+    // The ring keeps turning past home (over-rotation) and speeds up; each
+    // card leaves it as it passes the release point, so they fall into the
+    // row one after another in order instead of crossing each other.
+    const spin = 0.3 * N;
+    const uEnd = -(N - 1) / N - 0.06;
+    const spinEase = gsap.parseEase("power1.in");
+    tl.to(ring, { u: uEnd, duration: spin, ease: spinEase, onUpdate: render }, diveAt);
+    tl.to(lift, { q: 1, duration: spin * 0.35, ease: ease.inOut, onUpdate: render }, diveAt + 0.1);
     heroes.forEach((_, i) => {
+      // When ring.u reaches -i/N, card i is at the release point.
+      const target = -i / N;
+      let t = 0;
+      for (let k = 0; k <= 200; k++) {
+        t = k / 200;
+        if (uEnd * spinEase(t) <= target) break;
+      }
       tl.to(
         settle[i],
-        { p: 1, duration: SCATTER_BEAT.dive, ease: ease.inOut, onUpdate: render },
-        diveAt + i * SCATTER_BEAT.stagger,
+        { p: 1, duration: SCATTER_BEAT.dive * 0.6, ease: ease.inOut, onUpdate: render },
+        diveAt + t * spin,
       );
     });
   } else {

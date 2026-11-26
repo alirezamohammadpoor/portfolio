@@ -184,6 +184,9 @@ interface CoverProps {
   mark?: boolean;
   /** Overrides the lab's window mode (full bleed always fills). */
   frame?: FrameMode | "bleed";
+  /** Inset only: the window hugs the recording, 16 px on every side, and
+   *  takes its size from the height (carousel row). */
+  hug?: boolean;
 }
 
 /**
@@ -197,6 +200,7 @@ export function Cover({
   priority = false,
   mark = true,
   frame,
+  hug = false,
 }: CoverProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const labFrame = useContext(FrameContext);
@@ -301,7 +305,7 @@ export function Cover({
   // 16 px in at the top and bottom (a touch more at the sides).
   return (
     <div
-      className={`relative flex aspect-[16/10] items-center justify-center bg-bg p-4 ${className}`}
+      className={`relative flex items-center justify-center bg-bg p-4 ${hug ? "" : "aspect-[16/10]"} ${className}`}
     >
       <div
         {...markAttrs}
