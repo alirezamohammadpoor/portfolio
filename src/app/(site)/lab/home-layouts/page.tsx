@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function HomeLayoutsLabPage({
   searchParams,
 }: {
-  searchParams: Promise<{ v?: string; frame?: string }>;
+  searchParams: Promise<{ v?: string; frame?: string; clips?: string }>;
 }) {
   return (
     <Suspense fallback={null}>
@@ -21,8 +21,12 @@ export default function HomeLayoutsLabPage({
   );
 }
 
-async function Lab({ searchParams }: { searchParams: Promise<{ v?: string; frame?: string }> }) {
-  const [{ v, frame }, projects, about] = await Promise.all([
+async function Lab({
+  searchParams,
+}: {
+  searchParams: Promise<{ v?: string; frame?: string; clips?: string }>;
+}) {
+  const [{ v, frame, clips }, projects, about] = await Promise.all([
     searchParams,
     getProjects(),
     getAbout().catch(() => null),
@@ -33,6 +37,7 @@ async function Lab({ searchParams }: { searchParams: Promise<{ v?: string; frame
       contact={about}
       initial={Number(v) || 1}
       initialFrame={frame === "flush" ? "flush" : "inset"}
+      initialNewClips={clips !== "old"}
     />
   );
 }

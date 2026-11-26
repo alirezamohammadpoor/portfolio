@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import HomeReel from "@/components/home/HomeReel";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
-import { FrameContext, type Contact, type FrameMode, type VariantProps } from "./shared";
+import {
+  ClipsContext,
+  FrameContext,
+  type Contact,
+  type FrameMode,
+  type VariantProps,
+} from "./shared";
 import IndexHome from "./IndexHome";
 import SplitHome from "./SplitHome";
 import CarouselHome from "./CarouselHome";
@@ -32,6 +38,8 @@ interface Props {
   initial: number;
   /** `?frame=flush` starts on flush windows. */
   initialFrame: FrameMode;
+  /** `?clips=old` starts on the Sanity covers instead of the re-shoot. */
+  initialNewClips: boolean;
 }
 
 /**
@@ -41,7 +49,23 @@ interface Props {
  * Switching remounts the layout so its entrance runs again; the ring only
  * plays on a full load.
  */
-export default function HomeLayoutsLab({ projects, contact, initial, initialFrame }: Props) {
+export default function HomeLayoutsLab({
+  projects,
+  contact,
+  initial,
+  initialFrame,
+  initialNewClips,
+}: Props) {
+  const [newClips, setNewClips] = useState(initialNewClips);
+  const toggleClips = useCallback(() => {
+    setNewClips((on) => {
+      const url = new URL(location.href);
+      if (on) url.searchParams.set("clips", "old");
+      else url.searchParams.delete("clips");
+      history.replaceState(history.state, "", url);
+      return !on;
+    });
+  }, []);
   const [frame, setFrame] = useState<FrameMode>(initialFrame);
   const toggleFrame = useCallback(() => {
     setFrame((f) => {
@@ -91,10 +115,11 @@ export default function HomeLayoutsLab({ projects, contact, initial, initialFram
       else if (e.key === "ArrowLeft") select((current - 1 + VARIANTS.length) % VARIANTS.length);
       else if (e.key === "r" || e.key === "R") replay();
       else if (e.key === "f" || e.key === "F") toggleFrame();
+      else if (e.key === "c" || e.key === "C") toggleClips();
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [current, select, replay, toggleFrame]);
+  }, [current, select, replay, toggleFrame, toggleClips]);
 
   const { Component } = variant;
   return (
@@ -104,22 +129,26 @@ export default function HomeLayoutsLab({ projects, contact, initial, initialFram
         phone keeps today&apos;s single column.
       </p>
       <FrameContext.Provider value={frame}>
-        <div className="hidden desktop:block">
-          <HomeReel
-            projects={projects}
-            pageRef={rootRef}
-            coverSizes={projects.map(() => variant.sizes)}
-            landing={variant.landing}
-          />
-          <Component
-            key={`${current}-${mountKey}`}
-            projects={projects}
-            contact={contact}
-            rootRef={rootRef}
-          />
-        </div>
+        <ClipsContext.Provider value={newClips}>
+          <div className="hidden desktop:block">
+            <HomeReel
+              projects={projects}
+              pageRef={rootRef}
+              coverSizes={projects.map(() => variant.sizes)}
+              landing={variant.landing}
+            />
+            <Component
+              key={`${current}-${mountKey}`}
+              projects={projects}
+              contact={contact}
+              rootRef={rootRef}
+            />
+          </div>
+        </ClipsContext.Provider>
       </FrameContext.Provider>
       <Picker
+        newClips={newClips}
+        onClips={toggleClips}
         current={current}
         onSelect={select}
         onReplay={replay}
@@ -136,12 +165,16 @@ function Picker({
   onReplay,
   frame,
   onFrame,
+  newClips,
+  onClips,
 }: {
   current: number;
   onSelect: (i: number) => void;
   onReplay: () => void;
   frame: FrameMode;
   onFrame: () => void;
+  newClips: boolean;
+  onClips: () => void;
 }) {
   const navRef = useRef<HTMLElement>(null);
   const highlightRef = useRef<HTMLSpanElement>(null);
@@ -194,6 +227,15 @@ function Picker({
         onClick={onFrame}
       >
         {frame === "inset" ? "Inset" : "Flush"}
+      </button>
+      {/* The covers (C): the 11-26 re-shoot (Zone 2, Sania) or the Sanity files. */}
+      <button
+        type="button"
+        className="proto-picker-item"
+        aria-label="Covers: new or old (C)"
+        onClick={onClips}
+      >
+        {newClips ? "New clips" : "Old clips"}
       </button>
       <span className="proto-picker-divider" aria-hidden="true" />
       <button

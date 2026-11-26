@@ -36,6 +36,23 @@ export interface VariantProps {
 export type FrameMode = "inset" | "flush";
 export const FrameContext = createContext<FrameMode>("inset");
 
+/**
+ * Re-recorded covers (11-26, 1280x800 viewport at 2x, flush), served from
+ * public/lab until they go to Sanity. On by default; `?clips=old` (or the
+ * picker's Clips switch, C) shows the Sanity files for comparison.
+ */
+export const LAB_CLIPS: Record<string, { src: string; poster: string }> = {
+  "zone-2": {
+    src: "/lab/project-window/zone2-cover.mp4",
+    poster: "/lab/project-window/zone2-cover-poster.jpg",
+  },
+  "sania-d-mina": {
+    src: "/lab/project-window/sania-cover.mp4",
+    poster: "/lab/project-window/sania-cover-poster.jpg",
+  },
+};
+export const ClipsContext = createContext(true);
+
 export const STATEMENT =
   "Frontend developer at the intersection of product and design. Currently at TRY Stockholm.";
 
@@ -186,8 +203,11 @@ export function Cover({
   const mode = frame ?? labFrame;
   const controlled = playing !== undefined;
   const media = project.coverMedia;
+  const newClips = useContext(ClipsContext);
+  const lab = newClips ? LAB_CLIPS[project.slug?.current ?? ""] : undefined;
   const src =
-    media?.type === "video" && media.video?.asset?._ref ? fileUrl(media.video.asset._ref) : null;
+    lab?.src ??
+    (media?.type === "video" && media.video?.asset?._ref ? fileUrl(media.video.asset._ref) : null);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -205,14 +225,14 @@ export function Cover({
       saveVideoPosition(video, video.getAttribute("src") ?? "");
       video.pause();
     };
-  }, [controlled]);
+  }, [controlled, src]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !controlled) return;
     if (playing) video.play().catch(() => {});
     else video.pause();
-  }, [controlled, playing]);
+  }, [controlled, playing, src]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -221,7 +241,7 @@ export function Cover({
       saveVideoPosition(video, video.getAttribute("src") ?? "");
       video.pause();
     };
-  }, [controlled]);
+  }, [controlled, src]);
 
   const markAttrs = mark ? { "data-cover": "", "data-project": project._id } : {};
   let body: React.ReactNode;
@@ -229,7 +249,9 @@ export function Cover({
     body = (
       <video
         ref={videoRef}
+        key={src}
         src={src}
+        poster={lab?.poster}
         className="absolute inset-0 h-full w-full object-cover"
         aria-label={`${project.title ?? ""} cover video`}
         muted
