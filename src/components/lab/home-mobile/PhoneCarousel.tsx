@@ -46,7 +46,10 @@ export default function PhoneCarousel({
   rootRef,
   entry = "glide",
   motion = "drift",
+  gap = 0,
 }: VariantProps & {
+  /** Px between the windows (Ali 11-26 18:13: none, a pixel, less). */
+  gap?: number;
   /** "drift": the row glides on at a steady speed. "step": it rests on one
    *  window at a time and moves on by itself, one window per step. */
   motion?: "drift" | "step";
@@ -69,7 +72,11 @@ export default function PhoneCarousel({
     // Step mode: the move under way (x eases from `from` to `to`).
     let anim: { from: number; to: number; t0: number; ms: number } | null = null;
     let nextStepAt = performance.now() + STEP_REST_MS;
-    const cardW = () => (track.children[0] as HTMLElement | undefined)?.offsetWidth ?? 0;
+    // One window plus the gap: a step moves the row by exactly this.
+    const cardW = () => {
+      const [a, b] = track.children as unknown as HTMLElement[];
+      return a && b ? b.offsetLeft - a.offsetLeft : (a?.offsetWidth ?? 0);
+    };
     const moveTo = (to: number, ms: number, now: number) => {
       anim = reduced ? null : { from: x, to, t0: now, ms };
       if (reduced) x = to;
@@ -305,6 +312,7 @@ export default function PhoneCarousel({
               tabIndex={i >= count ? -1 : undefined}
               draggable={false}
               className="block h-full w-[84vw] shrink-0"
+              style={gap ? { marginRight: gap } : undefined}
               onClick={(e) => {
                 if (dragged.current) {
                   dragged.current = false;

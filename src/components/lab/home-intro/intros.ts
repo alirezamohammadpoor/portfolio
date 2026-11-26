@@ -114,7 +114,8 @@ const flatRing =
     const aspect = rects[0].h / rects[0].w;
     const shown = slots.map((s) => s.x - s.w / 2 < VW && s.y - s.w * aspect * 0.5 < VH);
     const push = Math.max(VW, VH) * 0.6;
-    const ROW_GAP = 31.5;
+    // The row's own gap, read off the slots, keeps landing cards apart.
+    const ROW_GAP = rects.length > 1 ? Math.max(0, rects[1].x - rects[0].x - rects[0].w) : 0;
     const poses: (Pose | null)[] = heroes.map(() => null);
     const depths = heroes.map(() => 0);
     const render = () => {

@@ -39,7 +39,10 @@ export default function CarouselHome({
   contact,
   rootRef,
   entry = "glide",
+  gap = 0,
 }: VariantProps & {
+  /** Px between the recordings (Ali 11-26 18:13: none, a pixel, less). */
+  gap?: number;
   /** With no entry ring: "glide" slides the row in from the right; "stagger"
    *  leaves the row in place for the caller to bring the cards in one by one
    *  (/lab/home-intro, Ali 11-26). */
@@ -242,6 +245,7 @@ export default function CarouselHome({
               tabIndex={i >= count ? -1 : undefined}
               draggable={false}
               className="block h-full shrink-0"
+              style={gap ? { marginRight: gap } : undefined}
               onFocus={() => hold(i)}
               onBlur={() => hold(null)}
               onClick={(e) => {

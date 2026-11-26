@@ -13,19 +13,26 @@ import { saturnIntro } from "./intros";
 interface Variant {
   name: string;
   build: IntroBuilder;
+  /** Px between the projects in the row. */
+  gap: number;
 }
 
 const noop = () => () => {};
 
-// Ali 11-26 18:07: "lets just run saturn cleanly, slow it down a bit and
-// remove all other prototypes".
-const VARIANTS: Variant[] = [{ name: "Saturn", build: saturnIntro }];
+// Ali 11-26 18:07: Saturn only, a quarter slower. 18:13: less gap between
+// the projects: none, a pixel, a little.
+const VARIANTS: Variant[] = [
+  { name: "No gap", build: saturnIntro, gap: 0 },
+  { name: "1 px", build: saturnIntro, gap: 1 },
+  { name: "8 px", build: saturnIntro, gap: 8 },
+  { name: "16 px", build: saturnIntro, gap: 16 },
+];
 
 /**
- * The Saturn entry into the carousel home. No picker on screen (Ali 11-26):
- * the URL picks the phone page (`?home=flush|carousel|auto`) and the count
- * (`?n=`); on a keyboard R replays and H changes the phone home. The entry
- * only plays on a full load.
+ * Entries for the carousel home. No picker on screen (Ali 11-26): the URL
+ * picks (`?v=1..4`, the gap, `?home=flush|carousel|auto`, `?n=`), and on a keyboard
+ * 1-4 or the arrows reload with another gap, R replays, H changes the
+ * phone home. An entry only plays on a full load.
  */
 export default function HomeIntroLab({
   projects,
@@ -100,7 +107,7 @@ export default function HomeIntroLab({
           <>
             {/* The page first: its ref is set before the reel's layout effect
                 looks for the covers (the reel renders into a portal anyway). */}
-            <CarouselHome projects={page} contact={contact} rootRef={rootRef} entry="glide" />
+            <CarouselHome projects={page} contact={contact} rootRef={rootRef} gap={variant.gap} />
             <HomeReel
               projects={projects}
               pageRef={rootRef}
@@ -119,7 +126,7 @@ export default function HomeIntroLab({
                 contact={contact}
                 rootRef={rootRef}
                 motion={phoneHome === "auto" ? "step" : "drift"}
-                entry="glide"
+                gap={variant.gap}
               />
             )}
             <HomeReel
