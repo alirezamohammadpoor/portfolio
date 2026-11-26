@@ -11,7 +11,7 @@ import { barEntrance, ringFit, type IntroBuilder, type Rect } from "@/components
  */
 
 /** A card's look at one moment: centre, on-screen width, turn, opacity. */
-interface Pose {
+export interface Pose {
   x: number;
   y: number;
   w: number;
@@ -20,7 +20,7 @@ interface Pose {
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-const mix = (p: Pose, q: Pose, t: number): Pose => ({
+export const mix = (p: Pose, q: Pose, t: number): Pose => ({
   x: lerp(p.x, q.x, t),
   y: lerp(p.y, q.y, t),
   w: lerp(p.w, q.w, t),
@@ -29,7 +29,7 @@ const mix = (p: Pose, q: Pose, t: number): Pose => ({
 });
 
 /** Places every hero on its slot's box and returns the slot poses. */
-function setup(heroes: HTMLElement[], world: HTMLElement, rects: Rect[]) {
+export function setup(heroes: HTMLElement[], world: HTMLElement, rects: Rect[]) {
   heroes.forEach((hero, i) => {
     const { x, y, w, h } = rects[i];
     gsap.set(hero, { left: x, top: y, width: w, height: h, transformOrigin: "50% 50%" });
