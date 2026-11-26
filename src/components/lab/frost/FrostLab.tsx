@@ -14,15 +14,7 @@ const TINTS = [
 
 type Frost = { tint: number; opacity: number; blur: number };
 
-function Controls({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: Frost;
-  onChange: (f: Frost) => void;
-}) {
+function Controls({ label, value, onChange }: { label: string; value: Frost; onChange: (f: Frost) => void }) {
   return (
     <fieldset className="flex flex-col gap-3">
       <legend className="text-body">{label}</legend>
@@ -42,27 +34,11 @@ function Controls({
       </div>
       <label className="flex items-center gap-3 text-sub">
         <span className="w-16">Fill {Math.round(value.opacity * 100)}%</span>
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={value.opacity}
-          onChange={(e) => onChange({ ...value, opacity: +e.target.value })}
-          className="flex-1"
-        />
+        <input type="range" min={0} max={1} step={0.01} value={value.opacity} onChange={(e) => onChange({ ...value, opacity: +e.target.value })} className="flex-1" />
       </label>
       <label className="flex items-center gap-3 text-sub">
         <span className="w-16">Blur {value.blur}px</span>
-        <input
-          type="range"
-          min={0}
-          max={80}
-          step={1}
-          value={value.blur}
-          onChange={(e) => onChange({ ...value, blur: +e.target.value })}
-          className="flex-1"
-        />
+        <input type="range" min={0} max={80} step={1} value={value.blur} onChange={(e) => onChange({ ...value, blur: +e.target.value })} className="flex-1" />
       </label>
     </fieldset>
   );
@@ -89,27 +65,18 @@ export default function FrostLab({ clip }: { clip: string }) {
   return (
     <div className="px-margin pt-8 pb-24">
       <h1 className="text-h2">Frost</h1>
-      <p className="mt-2 text-body text-secondary">
-        The overlay and pill frost over a real clip. Values start at the live tokens.
-      </p>
+      <p className="mt-2 text-body text-secondary">The overlay and pill frost over a real clip. Values start at the live tokens.</p>
 
       <div className="mt-10 grid grid-cols-1 gap-10 desktop:grid-cols-[1fr_20rem]">
         <div className="relative aspect-[16/10] overflow-hidden bg-bg" style={vars}>
-          <InlineClip
-            src={clip}
-            label="Stronger landing"
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+          <InlineClip src={clip} label="Stronger landing" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-x-0 top-3 z-50 flex justify-center">
             <button
               type="button"
               onClick={() => setOpen((o) => !o)}
               className="frost-soft inline-flex h-9 items-center gap-2 rounded-full px-4 text-body text-primary active:scale-[0.97]"
             >
-              Stronger{" "}
-              <span aria-hidden="true" className="text-[0.5rem]">
-                {open ? "▲" : "▼"}
-              </span>
+              Stronger <span aria-hidden="true" className="text-[0.5rem]">{open ? "▲" : "▼"}</span>
             </button>
           </div>
           <span className="frost-soft absolute bottom-3 left-3 z-50 inline-flex h-9 items-center rounded-full px-4 text-body tabular-nums">
@@ -128,9 +95,7 @@ export default function FrostLab({ clip }: { clip: string }) {
         <div className="flex flex-col gap-8">
           <Controls label="Strong (overlay)" value={strong} onChange={setStrong} />
           <Controls label="Soft (pills)" value={soft} onChange={setSoft} />
-          <pre className="whitespace-pre-wrap rounded-[4px] bg-tertiary/50 p-3 text-sub">
-            {tokens}
-          </pre>
+          <pre className="whitespace-pre-wrap rounded-[4px] bg-tertiary/50 p-3 text-sub">{tokens}</pre>
         </div>
       </div>
     </div>

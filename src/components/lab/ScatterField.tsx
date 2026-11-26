@@ -25,7 +25,11 @@ const LAYOUT = [
 
 const NEAR = 320; // px radius where cues react
 
-export default function ScatterField({ projects }: { projects: PROJECTS_QUERY_RESULT }) {
+export default function ScatterField({
+  projects,
+}: {
+  projects: PROJECTS_QUERY_RESULT;
+}) {
   const [cue, setCue] = useState<Cue>("reveal");
   const fieldRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -53,10 +57,8 @@ export default function ScatterField({ projects }: { projects: PROJECTS_QUERY_RE
     const W = () => window.innerWidth * 2;
     const H = () => window.innerHeight * 2.4;
     const apply = () => {
-      const maxX = 0,
-        minX = window.innerWidth - W();
-      const maxY = 0,
-        minY = window.innerHeight - H();
+      const maxX = 0, minX = window.innerWidth - W();
+      const maxY = 0, minY = window.innerHeight - H();
       pan.current.x = Math.min(maxX, Math.max(minX, pan.current.x));
       pan.current.y = Math.min(maxY, Math.max(minY, pan.current.y));
       field.style.transform = `translate3d(${pan.current.x}px, ${pan.current.y}px, 0)`;
@@ -80,12 +82,9 @@ export default function ScatterField({ projects }: { projects: PROJECTS_QUERY_RE
       if (!pan.current.dragging) return;
       const dx = e.clientX - pan.current.lastX;
       const dy = e.clientY - pan.current.lastY;
-      pan.current.vx = dx;
-      pan.current.vy = dy;
-      pan.current.x += dx;
-      pan.current.y += dy;
-      pan.current.lastX = e.clientX;
-      pan.current.lastY = e.clientY;
+      pan.current.vx = dx; pan.current.vy = dy;
+      pan.current.x += dx; pan.current.y += dy;
+      pan.current.lastX = e.clientX; pan.current.lastY = e.clientY;
       apply();
     };
     const onUp = () => {
@@ -94,25 +93,18 @@ export default function ScatterField({ projects }: { projects: PROJECTS_QUERY_RE
       // inertia
       let { vx, vy } = pan.current;
       const step = () => {
-        vx *= 0.92;
-        vy *= 0.92;
+        vx *= 0.92; vy *= 0.92;
         if (Math.abs(vx) < 0.3 && Math.abs(vy) < 0.3) return;
-        pan.current.x += vx;
-        pan.current.y += vy;
-        apply();
+        pan.current.x += vx; pan.current.y += vy; apply();
         requestAnimationFrame(step);
       };
       requestAnimationFrame(step);
     };
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      pan.current.x -= e.deltaX;
-      pan.current.y -= e.deltaY;
-      apply();
+      pan.current.x -= e.deltaX; pan.current.y -= e.deltaY; apply();
     };
-    const onLeave = () => {
-      pointer.current.active = false;
-    };
+    const onLeave = () => { pointer.current.active = false; };
     window.addEventListener("pointerdown", onDown);
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -135,8 +127,7 @@ export default function ScatterField({ projects }: { projects: PROJECTS_QUERY_RE
     const ctx = canvas?.getContext("2d") ?? null;
     const resize = () => {
       if (!canvas) return;
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      canvas.width = window.innerWidth; canvas.height = window.innerHeight;
     };
     resize();
     window.addEventListener("resize", resize);
@@ -145,16 +136,14 @@ export default function ScatterField({ projects }: { projects: PROJECTS_QUERY_RE
     let paintIdx = 0;
 
     const tick = () => {
-      const px = pointer.current.x,
-        py = pointer.current.y;
+      const px = pointer.current.x, py = pointer.current.y;
       let nearest = { d: Infinity, i: -1, cx: 0, cy: 0 };
       const edges = { left: Infinity, right: Infinity, top: Infinity, bottom: Infinity };
 
       tileRefs.current.forEach((el, i) => {
         if (!el) return;
         const r = el.getBoundingClientRect();
-        const cx = r.left + r.width / 2,
-          cy = r.top + r.height / 2;
+        const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
         const d = Math.hypot(px - cx, py - cy);
         if (d < nearest.d) nearest = { d, i, cx, cy };
         const t = Math.max(0, 1 - d / NEAR); // 0 far → 1 near
@@ -164,43 +153,28 @@ export default function ScatterField({ projects }: { projects: PROJECTS_QUERY_RE
           el.style.opacity = String(0.35 + 0.65 * t);
           el.style.filter = `grayscale(${1 - t})`;
           el.style.transform = `scale(${0.96 + 0.04 * t})`;
-          if (video) {
-            if (t > 0.5 && video.paused) video.play().catch(() => {});
-            else if (t <= 0.5 && !video.paused) video.pause();
-          }
+          if (video) { if (t > 0.5 && video.paused) video.play().catch(() => {}); else if (t <= 0.5 && !video.paused) video.pause(); }
         } else if (cue === "magnetic") {
-          el.style.opacity = "1";
-          el.style.filter = "none";
+          el.style.opacity = "1"; el.style.filter = "none";
           const pull = d < 150 ? (1 - d / 150) * 16 : 0;
           const ang = Math.atan2(py - cy, px - cx);
           el.style.transform = `translate(${Math.cos(ang) * pull}px, ${Math.sin(ang) * pull}px)`;
-          if (video) {
-            if (d < 150 && video.paused) video.play().catch(() => {});
-            else if (d >= 150 && !video.paused) video.pause();
-          }
+          if (video) { if (d < 150 && video.paused) video.play().catch(() => {}); else if (d >= 150 && !video.paused) video.pause(); }
         } else {
-          el.style.opacity = "1";
-          el.style.filter = "none";
-          el.style.transform = "none";
-          if (video) {
-            if (t > 0.3 && video.paused) video.play().catch(() => {});
-            else if (t <= 0.3 && !video.paused) video.pause();
-          }
+          el.style.opacity = "1"; el.style.filter = "none"; el.style.transform = "none";
+          if (video) { if (t > 0.3 && video.paused) video.play().catch(() => {}); else if (t <= 0.3 && !video.paused) video.pause(); }
         }
 
         // off-screen distance per edge, for chevrons
         if (r.right < 0) edges.left = Math.min(edges.left, -r.right);
-        if (r.left > window.innerWidth)
-          edges.right = Math.min(edges.right, r.left - window.innerWidth);
+        if (r.left > window.innerWidth) edges.right = Math.min(edges.right, r.left - window.innerWidth);
         if (r.bottom < 0) edges.top = Math.min(edges.top, -r.bottom);
-        if (r.top > window.innerHeight)
-          edges.bottom = Math.min(edges.bottom, r.top - window.innerHeight);
+        if (r.top > window.innerHeight) edges.bottom = Math.min(edges.bottom, r.top - window.innerHeight);
       });
 
       // chevrons brighten as the nearest off-screen tile gets closer (reveal + magnetic)
       (Object.keys(edges) as (keyof typeof edges)[]).forEach((k) => {
-        const el = chevronRefs.current[k];
-        if (!el) return;
+        const el = chevronRefs.current[k]; if (!el) return;
         const dist = edges[k];
         const show = cue !== "paint" && dist !== Infinity;
         el.style.opacity = show ? String(Math.max(0.15, 1 - dist / 900)) : "0";
@@ -228,9 +202,7 @@ export default function ScatterField({ projects }: { projects: PROJECTS_QUERY_RE
             g.addColorStop(0, `rgba(${col},${0.18 + near * 0.25})`);
             g.addColorStop(1, `rgba(${col},0)`);
             ctx.fillStyle = g;
-            ctx.beginPath();
-            ctx.arc(px, py, radius, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(px, py, radius, 0, Math.PI * 2); ctx.fill();
             if (Math.random() < 0.02) paintIdx++;
           }
         } else {
@@ -240,10 +212,7 @@ export default function ScatterField({ projects }: { projects: PROJECTS_QUERY_RE
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
-    };
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
   }, [cue, tiles]);
 
   return (
@@ -267,48 +236,25 @@ export default function ScatterField({ projects }: { projects: PROJECTS_QUERY_RE
           return (
             <a
               key={`${p._id}-${i}`}
-              ref={(el) => {
-                tileRefs.current[i] = el;
-              }}
+              ref={(el) => { tileRefs.current[i] = el; }}
               href={placeholder ? "#" : `/project/${p.slug?.current}`}
               draggable={false}
               className="relative block overflow-hidden bg-black transition-[opacity,filter,transform] duration-300 ease-out"
-              style={{
-                gridColumn: `${L.c} / span ${L.span}`,
-                gridRow: `${L.r} / span 5`,
-                aspectRatio: "16 / 10",
-                alignSelf: "start",
-              }}
+              style={{ gridColumn: `${L.c} / span ${L.span}`, gridRow: `${L.r} / span 5`, aspectRatio: "16 / 10", alignSelf: "start" }}
             >
               {cm?.type === "video" && cm.video?.asset?._ref ? (
-                <video
-                  src={fileUrl(cm.video.asset._ref)}
-                  muted
-                  loop
-                  playsInline
-                  preload="metadata"
-                  className="h-full w-full object-cover"
-                />
+                <video src={fileUrl(cm.video.asset._ref)} muted loop playsInline preload="metadata" className="h-full w-full object-cover" />
               ) : cm?.image?.asset ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={imageUrl(cm.image, 1200)}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  draggable={false}
-                />
+                <img src={imageUrl(cm.image, 1200)} alt="" className="h-full w-full object-cover" draggable={false} />
               ) : null}
               <span className="absolute bottom-2 left-2 text-sub uppercase text-white mix-blend-difference">
-                {String(i + 1).padStart(2, "0")} · {p.title}
-                {placeholder ? " · placeholder" : ""}
+                {String(i + 1).padStart(2, "0")} · {p.title}{placeholder ? " · placeholder" : ""}
               </span>
             </a>
           );
         })}
-        <div
-          className="col-start-9 col-span-8 row-start-10 self-center text-center text-primary pointer-events-none"
-          style={{ fontSize: "clamp(32px,3vw,48px)", lineHeight: 1.15 }}
-        >
+        <div className="col-start-9 col-span-8 row-start-10 self-center text-center text-primary pointer-events-none" style={{ fontSize: "clamp(32px,3vw,48px)", lineHeight: 1.15 }}>
           Ali Reza Mohammad Poor — Design engineer, Stockholm
         </div>
       </div>
@@ -316,9 +262,7 @@ export default function ScatterField({ projects }: { projects: PROJECTS_QUERY_RE
       {(["left", "right", "top", "bottom"] as const).map((k) => (
         <div
           key={k}
-          ref={(el) => {
-            chevronRefs.current[k] = el;
-          }}
+          ref={(el) => { chevronRefs.current[k] = el; }}
           className="pointer-events-none absolute text-sub uppercase text-primary transition-opacity duration-300"
           style={{
             opacity: 0,
@@ -333,10 +277,7 @@ export default function ScatterField({ projects }: { projects: PROJECTS_QUERY_RE
         </div>
       ))}
 
-      <div
-        ref={labelRef}
-        className="pointer-events-none fixed left-0 top-0 rounded-full bg-pistachio px-3 py-1 text-sub uppercase text-primary opacity-0"
-      />
+      <div ref={labelRef} className="pointer-events-none fixed left-0 top-0 rounded-full bg-pistachio px-3 py-1 text-sub uppercase text-primary opacity-0" />
 
       <div className="absolute right-4 top-4 flex gap-1 rounded-full bg-white p-1 text-sub uppercase">
         {(["reveal", "paint", "magnetic"] as Cue[]).map((c) => (

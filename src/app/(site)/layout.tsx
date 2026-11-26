@@ -79,7 +79,8 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
               a browser session (or any load with ?reel) plays the entry
               (src/lib/reel.ts) and keeps the page content hidden until it
               has landed (src/lib/intro.ts). Reduced motion skips it. The
-              home layouts lab plays it on every load at laptop width. */}
+              labs that borrow the entry play it on every load: the home
+              layouts lab at laptop width, the home intro lab at any width. */}
           <script
             dangerouslySetInnerHTML={{
               __html:

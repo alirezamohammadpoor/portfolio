@@ -1,6 +1,6 @@
 import gsap from "gsap";
 import { SCATTER_BEAT } from "@/lib/reel";
-import { ease } from "@/lib/motion";
+import { ease, registerMotion } from "@/lib/motion";
 import { DESKTOP_QUERY } from "@/hooks/useIsDesktop";
 import { barEntrance, ringFit, type IntroBuilder, type Rect } from "@/components/home/HomeReel";
 
@@ -60,6 +60,8 @@ function setup(heroes: HTMLElement[], world: HTMLElement, rects: Rect[]) {
   };
 }
 
+// The site eases must exist before they are parsed here at module load.
+registerMotion();
 const outE = gsap.parseEase(ease.out);
 const inOutE = gsap.parseEase(ease.inOut);
 

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@/lib/viewTransitions";
 import { prefersReducedMotion } from "@/lib/motion";
+import { useReelState } from "@/lib/reel";
 import {
   Closing,
   Cover,
@@ -40,11 +41,15 @@ export default function IndexHome({
   const [held, setHeld] = useState(false);
   const count = projects.length;
 
+  // The hold starts once the entry ring has handed over, so the project it
+  // lands on gets its full turn.
+  const reel = useReelState();
+  const underReel = reel === "waiting" || reel === "playing";
   useEffect(() => {
-    if (held || count < 2 || prefersReducedMotion()) return;
+    if (held || underReel || count < 2 || prefersReducedMotion()) return;
     const id = window.setTimeout(() => setActive((a) => (a + 1) % count), HOLD_MS);
     return () => window.clearTimeout(id);
-  }, [active, held, count]);
+  }, [active, held, underReel, count]);
 
   const current = projects[active];
 

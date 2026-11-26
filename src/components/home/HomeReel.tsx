@@ -105,9 +105,14 @@ export default function HomeReel({
       const page = pageRef.current;
       // The page's ref can still be unset when the reel mounts inside it on a
       // client-only render (lab phone): look again on the next frame.
-      if (!page && retry < 3 && getReelState() === "waiting") {
-        const id = requestAnimationFrame(() => setRetry((n) => n + 1));
-        return () => cancelAnimationFrame(id);
+      if (!page && getReelState() === "waiting") {
+        if (retry < 3) {
+          const id = requestAnimationFrame(() => setRetry((n) => n + 1));
+          return () => cancelAnimationFrame(id);
+        }
+        // Still no page to land on: give up and show it.
+        setReelState("off");
+        return;
       }
       if (!stage || !world || !page || getReelState() !== "waiting") return;
       const heroes = gsap.utils.toArray<HTMLElement>("[data-hero]", stage);

@@ -63,7 +63,9 @@ export function setReelState(next: ReelState) {
     else document.documentElement.dataset.reel = next;
   }
   if (next === "off") setIntroState("done");
-  if (next === "playing") {
+  // Only the home uses up the once-per-session entry; the labs that borrow
+  // the reel (/lab/home-layouts, /lab/home-intro) leave it for the home.
+  if (next === "playing" && typeof location !== "undefined" && location.pathname === "/") {
     try {
       sessionStorage.setItem(SESSION_KEY, "1");
     } catch {}

@@ -68,15 +68,7 @@ function Solo({ sceneKey }: { sceneKey: string }) {
       data-solo
       aria-label={`Replay ${scene.label}`}
       onClick={() => ref.current?.replay()}
-      style={{
-        position: "fixed",
-        left: 0,
-        top: 0,
-        width: 390,
-        zIndex: 100,
-        display: "block",
-        cursor: "pointer",
-      }}
+      style={{ position: "fixed", left: 0, top: 0, width: 390, zIndex: 100, display: "block", cursor: "pointer" }}
     >
       <TestMorph ref={ref} scene={scene} autoplay />
     </button>

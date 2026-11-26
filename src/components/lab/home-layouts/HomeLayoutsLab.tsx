@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import HomeReel from "@/components/home/HomeReel";
+import { getReelState, setReelState } from "@/lib/reel";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import {
   ClipsContext,
   FrameContext,
+  labHero,
   type Contact,
   type FrameMode,
   type VariantProps,
@@ -86,6 +88,9 @@ export default function HomeLayoutsLab({
 
   const select = useCallback((i: number) => {
     if (i < 0 || i >= VARIANTS.length) return;
+    // The ring landed on the layout before this one: the next mount plays
+    // its own entrance (covers fade up, the carousel glides in).
+    if (getReelState() === "done") setReelState("off");
     setCurrent(i);
     setMountKey((k) => k + 1);
     const url = new URL(location.href);
@@ -136,6 +141,7 @@ export default function HomeLayoutsLab({
               pageRef={rootRef}
               coverSizes={projects.map(() => variant.sizes)}
               landing={variant.landing}
+              heroOverride={newClips ? labHero : undefined}
             />
             <Component
               key={`${current}-${mountKey}`}

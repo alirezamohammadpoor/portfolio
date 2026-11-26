@@ -7,7 +7,7 @@ import { setReelState } from "@/lib/reel";
 import { ease, prefersReducedMotion } from "@/lib/motion";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import CarouselHome from "@/components/lab/home-layouts/CarouselHome";
-import { LAB_CLIPS, type Contact } from "@/components/lab/home-layouts/shared";
+import { labHero, type Contact } from "@/components/lab/home-layouts/shared";
 import ScatterHome from "@/components/home/ScatterHome";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { ringIntro } from "./intros";
@@ -24,13 +24,6 @@ interface Variant {
 }
 
 const noop = () => () => {};
-
-/** The ring's cards use the lab's re-recorded covers too. */
-function heroOverride(project: PROJECTS_QUERY_RESULT[number]) {
-  const lab = LAB_CLIPS[project.slug?.current ?? ""];
-  if (!lab) return undefined;
-  return lab.still ? { src: lab.poster, still: true } : { src: lab.src };
-}
 
 // The ring two first, then the fresh start (Ali 11-26 12:14).
 // Ali 11-26 13:37: Original or the oval (Ring) to work on, for laptop AND
@@ -104,7 +97,9 @@ export default function HomeIntroLab({
     () => false,
   );
   const desktop = useIsDesktop();
-  const reel = { build: variant.build, heroOverride, fit: variant.fit };
+  // The ring's cards match the covers they land on: the lab clips on the
+  // carousel, the Sanity files on the phone home.
+  const reel = { build: variant.build, fit: variant.fit };
   const stagger = variant.stagger === true;
 
   // Stagger: no reel. Turning it off hands the page its own entrance (the
@@ -129,10 +124,11 @@ export default function HomeIntroLab({
         gsap.fromTo(bar, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4, ease: ease.out }),
       );
     if (desktop) {
-      document.documentElement.dataset.entering = "";
       const cards = gsap.utils
         .toArray<HTMLElement>("[data-card]")
         .filter((c) => c.getBoundingClientRect().left < innerWidth);
+      // The row waits for the windows; with none to wait for it just drifts.
+      if (cards.length) document.documentElement.dataset.entering = "";
       const starts = cards.map((_, i) =>
         Array.from({ length: i }, (_, k) => Math.max(0.03, 0.12 - k * 0.03)).reduce(
           (t, g) => t + g,
@@ -188,6 +184,7 @@ export default function HomeIntroLab({
                 projects={projects}
                 pageRef={rootRef}
                 coverSizes={page.map(() => "50vw")}
+                heroOverride={labHero}
                 {...reel}
               />
             )}

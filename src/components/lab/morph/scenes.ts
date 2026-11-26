@@ -88,13 +88,7 @@ function pdp(designH: number) {
   const withPhoto = space >= 60;
   const y0 = withPhoto ? space : 0;
   const Y = (frameY: number) => y0 + frameY * K;
-  const slice = (
-    id: string,
-    still: Still,
-    from: [number, number],
-    frameY: number,
-    extra: Partial<Layer> = {},
-  ): Layer => ({
+  const slice = (id: string, still: Still, from: [number, number], frameY: number, extra: Partial<Layer> = {}): Layer => ({
     id,
     still,
     from,
@@ -271,13 +265,7 @@ const kitFull: Scene = {
     { kind: "hold", d: 0.4 },
     { kind: "tap", x: 195, y: 594 },
     /* One tap swaps the tights line for the kit and the drawer returns to the top. */
-    {
-      kind: "fade",
-      out: ["pickedC", "footer", "chrome"],
-      in: ["upC", "upFooter", "upTop"],
-      d: 0.45,
-      at: "-=0.15",
-    },
+    { kind: "fade", out: ["pickedC", "footer", "chrome"], in: ["upC", "upFooter", "upTop"], d: 0.45, at: "-=0.15" },
     { kind: "hold", d: 0.2 },
   ],
   poster: [{ still: t5Upgraded, x: 0, y: 0 }],

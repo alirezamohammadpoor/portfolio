@@ -63,6 +63,14 @@ export const LAB_CLIPS: Record<string, { src: string; poster: string; still?: bo
 };
 export const ClipsContext = createContext(true);
 
+/** The entry ring's cards for a page whose covers are the lab clips, so the
+ *  card and the cover it lands on show the same footage. */
+export function labHero(project: Project) {
+  const lab = LAB_CLIPS[project.slug?.current ?? ""];
+  if (!lab) return undefined;
+  return lab.still ? { src: lab.poster, still: true } : { src: lab.src };
+}
+
 export const STATEMENT =
   "Frontend developer at the intersection of product and design. Currently at TRY Stockholm.";
 
@@ -281,8 +289,8 @@ export function Cover({
       />
     );
   } else if (lab?.still) {
-    // eslint-disable-next-line @next/next/no-img-element -- lab stand-in
     body = (
+      // eslint-disable-next-line @next/next/no-img-element -- lab stand-in
       <img
         src={lab.poster}
         alt={project.title ?? ""}
@@ -290,8 +298,8 @@ export function Cover({
       />
     );
   } else if (media?.type === "image" && media.image?.asset) {
-    // eslint-disable-next-line @next/next/no-img-element -- lab stand-in
     body = (
+      // eslint-disable-next-line @next/next/no-img-element -- lab stand-in
       <img
         src={imageUrl(media.image, 1600)}
         alt={project.title ?? ""}

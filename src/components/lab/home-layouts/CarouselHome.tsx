@@ -89,6 +89,10 @@ export default function CarouselHome({
     let fling = 0;
     let movingUntil = 0;
     const onWheel = (e: WheelEvent) => {
+      // A wheel under the entry ring only skips it; the row stays on the
+      // slots the ring is landing on.
+      const reel = getReelState();
+      if (reel === "waiting" || reel === "playing") return;
       const unit = e.deltaMode === 1 ? 16 : 1;
       const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
       x -= d * unit;
@@ -153,7 +157,10 @@ export default function CarouselHome({
           .elementFromPoint(mouse.x, mouse.y)
           ?.closest<HTMLElement>("[data-card]");
         const i = card ? Number(card.dataset.card) : null;
-        if (i !== activeRef.current) hold(i);
+        // A card focused from the keyboard keeps the row held while the
+        // cursor rests somewhere else.
+        const focused = i === null && track.querySelector(":focus-visible") !== null;
+        if (i !== activeRef.current && !focused) hold(i);
       } else if (activeRef.current !== null && !track.contains(document.activeElement)) hold(null);
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
@@ -164,7 +171,11 @@ export default function CarouselHome({
         x += fling * dt;
         fling *= Math.exp(-FRICTION * dt);
       }
-      const set = track.scrollWidth / 2;
+      // One set's width, from the first card to its twin (the leading margin
+      // belongs to the first card only, so half the track is 4 px off).
+      const first = track.children[0] as HTMLElement | undefined;
+      const twin = track.children[count] as HTMLElement | undefined;
+      const set = first && twin ? twin.offsetLeft - first.offsetLeft : track.scrollWidth / 2;
       if (set > 0) {
         while (-x >= set) x += set;
         while (x > 0) x -= set;
@@ -185,7 +196,7 @@ export default function CarouselHome({
       track.removeEventListener("pointerup", onUp);
       track.removeEventListener("pointercancel", onUp);
     };
-  }, [hold, entry]);
+  }, [hold, entry, count]);
 
   const held: Project | null = active === null ? null : items[active];
 
