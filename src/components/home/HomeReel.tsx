@@ -43,7 +43,9 @@ interface HomeReelProps {
   /** Lab only: builds the whole entry instead of the ring (/lab/home-intro). */
   build?: IntroBuilder;
   /** Lab only: a project's stand-in cover file (re-recorded, not in Sanity). */
-  heroOverride?: (project: Project) => { src: string; still?: boolean } | undefined;
+  heroOverride?: (
+    project: Project,
+  ) => { src: string; still?: boolean; poster?: string } | undefined;
   /** Lab only (Ali 11-26, phone cards too big): the ring sizes its cards with
    *  `ringFit`, so the whole oval stays on screen at any width. */
   fit?: boolean;
@@ -599,7 +601,7 @@ function HeroMedia({
 }: {
   project: Project;
   sizes: string;
-  override?: { src: string; still?: boolean };
+  override?: { src: string; still?: boolean; poster?: string };
 }) {
   if (override) {
     return override.still ? (
@@ -608,6 +610,7 @@ function HeroMedia({
     ) : (
       <video
         src={override.src}
+        poster={override.poster}
         className="absolute inset-0 h-full w-full object-cover"
         muted
         loop

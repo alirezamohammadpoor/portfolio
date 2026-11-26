@@ -1,49 +1,31 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
-import gsap from "gsap";
+import { useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import HomeReel, { type IntroBuilder } from "@/components/home/HomeReel";
-import { setReelState } from "@/lib/reel";
-import { ease, prefersReducedMotion } from "@/lib/motion";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import CarouselHome from "@/components/lab/home-layouts/CarouselHome";
 import { labHero, type Contact } from "@/components/lab/home-layouts/shared";
 import { DESKTOP_QUERY, useIsDesktop } from "@/hooks/useIsDesktop";
 import FlushHome from "@/components/lab/home-mobile/FlushHome";
 import PhoneCarousel from "@/components/lab/home-mobile/PhoneCarousel";
-import { flatRingIntro, ringIntro } from "./intros";
+import { saturnIntro } from "./intros";
 
 interface Variant {
   name: string;
-  /** Unset: the home's own ring and dive. */
-  build?: IntroBuilder;
-  /** The ring sized with ringFit (whole oval on screen at any width). */
-  fit?: boolean;
-  /** No ring at all: the page itself staggers in. */
-  stagger?: boolean;
+  build: IntroBuilder;
 }
 
 const noop = () => () => {};
 
-// The ring two first, then the fresh start (Ali 11-26 12:14).
-// Ali 11-26 13:37: Original or the oval (Ring) to work on, for laptop AND
-// phone; Slideshow, Big to small and Slide in are out (builders kept in
-// intros.ts). Live is today's home, kept to compare the phone.
-const VARIANTS: Variant[] = [
-  { name: "Live" },
-  { name: "Original", fit: true },
-  { name: "Ring", build: ringIntro },
-  // Ali 11-26 14:29: Ring is very nice on the phone; try it laid sideways.
-  { name: "Flat ring", build: flatRingIntro },
-  // Ali 11-26 13:51: no ring or oval, straight to the page, staggered in.
-  { name: "Stagger", stagger: true },
-];
+// Ali 11-26 18:07: "lets just run saturn cleanly, slow it down a bit and
+// remove all other prototypes".
+const VARIANTS: Variant[] = [{ name: "Saturn", build: saturnIntro }];
 
 /**
- * Entries for the carousel home. No picker on screen (Ali 11-26): the URL
- * picks (`?v=1..5`, `?home=flush|carousel|auto`, `?n=`), and on a keyboard
- * 1-5 or the arrows reload with another entry, R replays, H changes the
- * phone home. An entry only plays on a full load.
+ * The Saturn entry into the carousel home. No picker on screen (Ali 11-26):
+ * the URL picks the phone page (`?home=flush|carousel|auto`) and the count
+ * (`?n=`); on a keyboard R replays and H changes the phone home. The entry
+ * only plays on a full load.
  */
 export default function HomeIntroLab({
   projects,
@@ -109,72 +91,7 @@ export default function HomeIntroLab({
   const desktop = useIsDesktop();
   // The ring's cards match the covers they land on: the lab clips on the
   // carousel, the Sanity files on the phone home.
-  const reel = { build: variant.build, fit: variant.fit };
-  const stagger = variant.stagger === true;
-
-  // Stagger: no reel. Turning it off hands the page its own entrance (the
-  // statement and closing line rise line by line, on the phone the covers
-  // rise row by row); here the Pebble drops in with it and, on the laptop,
-  // the windows on screen drop into the row one after another.
-  useLayoutEffect(() => {
-    if (!mounted || !stagger) return;
-    setReelState("off");
-    if (prefersReducedMotion()) return;
-    // Choreography (Emil's choreograph skill): the statement is the lead and
-    // rises line by line from 0 (the page's own entrance), the closing line
-    // follows as support. The windows are support too: they overlap the
-    // statement's second line and rise less, with gaps that shrink (120, 90,
-    // 60 ms...) so the row reads as a wave, not a queue. The Pebble is
-    // decoration: it fades in place with the statement. The row's drift
-    // waits for the last window to settle. Any input jumps to the end.
-    const bar = document.querySelector("[data-site-bar]");
-    const tweens: gsap.core.Tween[] = [];
-    if (bar)
-      tweens.push(
-        gsap.fromTo(bar, { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.4, ease: ease.out }),
-      );
-    if (desktop || phoneHome === "carousel") {
-      const cards = gsap.utils
-        .toArray<HTMLElement>("[data-card]")
-        .filter((c) => c.getBoundingClientRect().left < innerWidth);
-      // The row waits for the windows; with none to wait for it just drifts.
-      if (cards.length) document.documentElement.dataset.entering = "";
-      const starts = cards.map((_, i) =>
-        Array.from({ length: i }, (_, k) => Math.max(0.03, 0.12 - k * 0.03)).reduce(
-          (t, g) => t + g,
-          0,
-        ),
-      );
-      tweens.push(
-        gsap.fromTo(
-          cards,
-          { autoAlpha: 0, y: 16 },
-          {
-            autoAlpha: 1,
-            y: 0,
-            duration: 0.6,
-            ease: ease.out,
-            delay: (i) => 0.25 + starts[i],
-            clearProps: "transform,opacity,visibility",
-            onComplete: () => delete document.documentElement.dataset.entering,
-          },
-        ),
-      );
-    }
-    const skip = (e: Event) => {
-      if ((e.target as Element | null)?.closest?.(".proto-picker")) return;
-      tweens.forEach((t) => t.progress(1));
-    };
-    const opts = { passive: true, capture: true } as const;
-    for (const type of ["wheel", "pointerdown", "keydown"] as const)
-      addEventListener(type, skip, opts);
-    return () => {
-      for (const type of ["wheel", "pointerdown", "keydown"] as const)
-        removeEventListener(type, skip, opts);
-      delete document.documentElement.dataset.entering;
-      tweens.forEach((t) => t.revert());
-    };
-  }, [mounted, stagger, desktop, phoneHome]);
+  const reel = { build: variant.build };
 
   return (
     <>
@@ -183,21 +100,14 @@ export default function HomeIntroLab({
           <>
             {/* The page first: its ref is set before the reel's layout effect
                 looks for the covers (the reel renders into a portal anyway). */}
-            <CarouselHome
-              projects={page}
-              contact={contact}
-              rootRef={rootRef}
-              entry={stagger ? "stagger" : "glide"}
+            <CarouselHome projects={page} contact={contact} rootRef={rootRef} entry="glide" />
+            <HomeReel
+              projects={projects}
+              pageRef={rootRef}
+              coverSizes={page.map(() => "50vw")}
+              heroOverride={labHero}
+              {...reel}
             />
-            {!stagger && (
-              <HomeReel
-                projects={projects}
-                pageRef={rootRef}
-                coverSizes={page.map(() => "50vw")}
-                heroOverride={labHero}
-                {...reel}
-              />
-            )}
           </>
         ) : (
           <>
@@ -209,21 +119,19 @@ export default function HomeIntroLab({
                 contact={contact}
                 rootRef={rootRef}
                 motion={phoneHome === "auto" ? "step" : "drift"}
-                entry={stagger ? "stagger" : "glide"}
+                entry="glide"
               />
             )}
-            {!stagger && (
-              <HomeReel
-                projects={projects}
-                pageRef={rootRef}
-                coverSizes={page.map(() => "100vw")}
-                heroOverride={labHero}
-                // The strip is the first project, full width: the ring dives
-                // into it. The row: every project flies to its own window.
-                landing={phoneHome === "flush" ? "dive" : "settle"}
-                {...reel}
-              />
-            )}
+            <HomeReel
+              projects={projects}
+              pageRef={rootRef}
+              coverSizes={page.map(() => "100vw")}
+              heroOverride={labHero}
+              // The strip is the first project, full width: the ring dives
+              // into it. The row: every project flies to its own window.
+              landing={phoneHome === "flush" ? "dive" : "settle"}
+              {...reel}
+            />
           </>
         ))}
     </>
