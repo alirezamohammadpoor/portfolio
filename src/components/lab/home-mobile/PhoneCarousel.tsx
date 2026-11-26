@@ -25,12 +25,6 @@ const RESUME_MS = 2400;
 // With no entry ring, the row glides in from the right.
 const GLIDE_MS = 1400;
 const glideEase = (t: number) => 1 - Math.pow(1 - t, 4);
-// Step (Ali 11-26, "automatically moves"): the row rests on a window, then
-// moves one window on by itself. A rest long enough to take in a clip, a
-// move short enough to feel like a page turn; a release snaps to a window.
-const STEP_REST_MS = 3200;
-const STEP_MS = 800;
-const SNAP_MS = 450;
 
 /**
  * The laptop carousel on the phone: statement and closing line at the top,
@@ -45,14 +39,10 @@ export default function PhoneCarousel({
   contact,
   rootRef,
   entry = "glide",
-  motion = "drift",
   gap = 0,
 }: VariantProps & {
   /** Px between the windows (Ali 11-26 18:13: none, a pixel, less). */
   gap?: number;
-  /** "drift": the row glides on at a steady speed. "step": it rests on one
-   *  window at a time and moves on by itself, one window per step. */
-  motion?: "drift" | "step";
   entry?: "glide" | "stagger";
 }) {
   useEntrance(rootRef);
@@ -67,20 +57,7 @@ export default function PhoneCarousel({
     const track = trackRef.current;
     if (!track) return;
     const reduced = prefersReducedMotion();
-    const stepping = motion === "step";
-    const top = reduced || stepping ? 0 : DRIFT;
-    // Step mode: the move under way (x eases from `from` to `to`).
-    let anim: { from: number; to: number; t0: number; ms: number } | null = null;
-    let nextStepAt = performance.now() + STEP_REST_MS;
-    // One window plus the gap: a step moves the row by exactly this.
-    const cardW = () => {
-      const [a, b] = track.children as unknown as HTMLElement[];
-      return a && b ? b.offsetLeft - a.offsetLeft : (a?.offsetWidth ?? 0);
-    };
-    const moveTo = (to: number, ms: number, now: number) => {
-      anim = reduced ? null : { from: x, to, t0: now, ms };
-      if (reduced) x = to;
-    };
+    const top = reduced ? 0 : DRIFT;
     const glideOn = !reduced && entry === "glide" && getReelState() === "off";
     let x = 0;
     let speed = top;
@@ -92,8 +69,6 @@ export default function PhoneCarousel({
     let leadNow = 0;
 
     let press: { id: number; x: number; t: number; moved: boolean } | null = null;
-    // Where the row was when the finger went down (step mode's snap).
-    let pressX0 = 0;
     const onDown = (e: PointerEvent) => {
       const reel = getReelState();
       if (reel === "waiting" || reel === "playing") return;
@@ -101,8 +76,6 @@ export default function PhoneCarousel({
       press = { id: e.pointerId, x: e.clientX, t: performance.now(), moved: false };
       dragged.current = false;
       fling = 0;
-      anim = null;
-      pressX0 = x;
     };
     const onMove = (e: PointerEvent) => {
       if (!press || e.pointerId !== press.id) return;
@@ -123,25 +96,7 @@ export default function PhoneCarousel({
       if (!press || e.pointerId !== press.id) return;
       if (performance.now() - press.t > 80) fling = 0;
       press = null;
-      const now = performance.now();
-      heldUntil = now + RESUME_MS;
-      nextStepAt = now + RESUME_MS;
-      // Step mode: a release without a throw settles on the nearest window
-      // (a throw settles once it has slowed, in the frame loop).
-      const w = cardW();
-      if (stepping && w && Math.abs(fling) <= 300) {
-        fling = 0;
-        // A drag past a fifth of a window turns the page that way; less
-        // springs back to the window it started on.
-        const d = x - pressX0;
-        const k =
-          Math.abs(d) > w * 0.2
-            ? d < 0
-              ? Math.floor(x / w)
-              : Math.ceil(x / w)
-            : Math.round(x / w);
-        moveTo(k * w, SNAP_MS, now);
-      }
+      heldUntil = performance.now() + RESUME_MS;
     };
     const onWheel = (e: WheelEvent) => {
       const reel = getReelState();
@@ -151,9 +106,7 @@ export default function PhoneCarousel({
       const d = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
       x -= d * unit;
       fling = 0;
-      anim = null;
       heldUntil = performance.now() + RESUME_MS;
-      nextStepAt = heldUntil;
     };
     track.addEventListener("pointerdown", onDown);
     track.addEventListener("pointermove", onMove);
@@ -180,40 +133,15 @@ export default function PhoneCarousel({
         x += fling * dt;
         fling *= Math.exp(-FRICTION * dt);
       }
-      if (stepping && !press) {
-        const w = cardW();
-        if (Math.abs(fling) > 300) {
-          // still thrown
-        } else if (fling !== 0 && w) {
-          // A throw that has slowed settles on the window it is heading to.
-          const to = (fling < 0 ? Math.floor(x / w) : Math.ceil(x / w)) * w;
-          fling = 0;
-          moveTo(to, SNAP_MS, now);
-        } else if (anim) {
-          const a: { from: number; to: number; t0: number; ms: number } = anim;
-          const p = Math.min(1, (now - a.t0) / a.ms);
-          x = a.from + (a.to - a.from) * glideEase(p);
-          if (p >= 1) {
-            anim = null;
-            nextStepAt = Math.max(nextStepAt, now + STEP_REST_MS);
-          }
-        } else if (!held && now >= nextStepAt && w && !reduced) {
-          moveTo(Math.round(x / w) * w - w, STEP_MS, now);
-        } else if (!held && reduced && now >= nextStepAt && w) {
-          x = Math.round(x / w) * w - w;
-          nextStepAt = now + STEP_REST_MS;
-        }
-      }
       const first = track.children[0] as HTMLElement | undefined;
       const twin = track.children[count] as HTMLElement | undefined;
       const set = first && twin ? twin.offsetLeft - first.offsetLeft : track.scrollWidth / 2;
-      // Wrap (a move under way shifts with it, so it lands the same).
+      // Wrap.
       if (set > 0) {
         let shift = 0;
         while (-(x + shift) >= set) shift += set;
         while (x + shift > 0) shift -= set;
         x += shift;
-        if (anim && shift) anim = { ...anim, from: anim.from + shift, to: anim.to + shift };
       }
       const t = glideOn ? Math.min(1, (now - start) / GLIDE_MS) : 1;
       const glide = (1 - glideEase(t)) * window.innerWidth;
@@ -249,7 +177,7 @@ export default function PhoneCarousel({
       track.removeEventListener("pointercancel", onUp);
       track.removeEventListener("wheel", onWheel);
     };
-  }, [entry, count, motion]);
+  }, [entry, count]);
 
   const shown = projects[lead] ?? projects[0];
 

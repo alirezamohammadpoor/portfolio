@@ -5,8 +5,7 @@ import HomeReel, { type IntroBuilder } from "@/components/home/HomeReel";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import CarouselHome from "@/components/lab/home-layouts/CarouselHome";
 import { labHero, type Contact } from "@/components/lab/home-layouts/shared";
-import { DESKTOP_QUERY, useIsDesktop } from "@/hooks/useIsDesktop";
-import FlushHome from "@/components/lab/home-mobile/FlushHome";
+import { useIsDesktop } from "@/hooks/useIsDesktop";
 import PhoneCarousel from "@/components/lab/home-mobile/PhoneCarousel";
 import { saturnIntro } from "./intros";
 
@@ -30,16 +29,14 @@ const VARIANTS: Variant[] = [
 
 /**
  * Entries for the carousel home. No picker on screen (Ali 11-26): the URL
- * picks (`?v=1..4`, the gap, `?home=flush|carousel|auto`, `?n=`), and on a keyboard
- * 1-4 or the arrows reload with another gap, R replays, H changes the
- * phone home. An entry only plays on a full load.
+ * picks (`?v=1..4`, the gap, `?n=`), and on a keyboard
+ * 1-4 or the arrows reload with another gap, R replays. An entry only plays on a full load.
  */
 export default function HomeIntroLab({
   projects,
   contact,
   initial,
   count,
-  phoneHome,
 }: {
   projects: PROJECTS_QUERY_RESULT;
   contact?: Contact | null;
@@ -47,10 +44,6 @@ export default function HomeIntroLab({
   /** `?n=`: the projects repeated up to this many (6, 10, 15), to see how
    *  an intro copes with a longer list. The ring reads the same param. */
   count: number;
-  /** `?home=`: the page the phone lands on (Ali 11-26). "flush" the old
-   *  edge-to-edge strip, one project at a time; "carousel" the laptop's
-   *  drifting row; "auto" the same row moving on one window at a time. */
-  phoneHome: PhoneHome;
 }) {
   // Repeats get their own ids, so each copy is its own cover on the page.
   const page =
@@ -81,12 +74,10 @@ export default function HomeIntroLab({
       else if (e.key === "ArrowRight") select((current + 1) % VARIANTS.length);
       else if (e.key === "ArrowLeft") select((current - 1 + VARIANTS.length) % VARIANTS.length);
       else if (e.key === "r" || e.key === "R") select(current);
-      else if ((e.key === "h" || e.key === "H") && !matchMedia(DESKTOP_QUERY).matches)
-        cycleHome(phoneHome);
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [current, select, phoneHome]);
+  }, [current, select]);
 
   // The laptop lands on the carousel, the phone on today's phone home. Client
   // only, so one tree (and one reel) mounts.
@@ -118,44 +109,20 @@ export default function HomeIntroLab({
           </>
         ) : (
           <>
-            {phoneHome === "flush" ? (
-              <FlushHome projects={page} contact={contact} rootRef={rootRef} />
-            ) : (
-              <PhoneCarousel
-                projects={page}
-                contact={contact}
-                rootRef={rootRef}
-                motion={phoneHome === "auto" ? "step" : "drift"}
-                gap={variant.gap}
-              />
-            )}
+            {/* Ali 11-26 20:21: the laptop carousel on the phone too, drifting
+                on by itself; Flush and Auto are gone. */}
+            <PhoneCarousel projects={page} contact={contact} rootRef={rootRef} gap={variant.gap} />
             <HomeReel
               projects={projects}
               pageRef={rootRef}
               coverSizes={page.map(() => "100vw")}
               heroOverride={labHero}
-              // The strip is the first project, full width: the ring dives
-              // into it. The row: every project flies to its own window.
-              landing={phoneHome === "flush" ? "dive" : "settle"}
+              // Every project flies to its own window in the row.
+              landing="settle"
               {...reel}
             />
           </>
         ))}
     </>
   );
-}
-
-type PhoneHome = "flush" | "carousel" | "auto";
-const PHONE_HOMES: { key: PhoneHome; name: string }[] = [
-  { key: "flush", name: "Flush" },
-  { key: "carousel", name: "Carousel" },
-  { key: "auto", name: "Auto carousel" },
-];
-
-/** Reloads with the next phone home (`?home=`), so the intro plays into it. */
-function cycleHome(now: PhoneHome) {
-  const i = PHONE_HOMES.findIndex((h) => h.key === now);
-  const url = new URL(location.href);
-  url.searchParams.set("home", PHONE_HOMES[(i + 1) % PHONE_HOMES.length].key);
-  location.assign(url.toString());
 }
