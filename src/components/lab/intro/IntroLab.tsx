@@ -20,16 +20,40 @@ import "../home-layouts/proto-picker.css";
 const STATEMENT =
   "Frontend developer at the intersection of product and design. Currently at TRY Stockholm.";
 
+const W = "/lab/project-window";
+
+// The 1440 cover set (re-recorded 11-26, not in Sanity yet): films for the
+// four store projects, stills for TRY Skills and DevOps.
 const PROJECTS = [
-  { slug: "zone-2", title: "Zone 2", video: "/lab/project-window/zone2-cover.mp4" },
-  { slug: "sania-d-mina", title: "Sania D'mina" },
-  { slug: "paul-and-friends", title: "Paul & Friends" },
-  { slug: "stronger", title: "Stronger" },
-  { slug: "tryskills", title: "TRY Skills" },
-  { slug: "try-devops", title: "TRY DevOps" },
+  {
+    slug: "zone-2",
+    title: "Zone 2",
+    video: `${W}/zone2-cover.mp4`,
+    poster: `${W}/zone2-cover-poster.jpg`,
+  },
+  {
+    slug: "sania-d-mina",
+    title: "Sania D'mina",
+    video: `${W}/sania-cover.mp4`,
+    poster: `${W}/sania-cover-poster.jpg`,
+  },
+  {
+    slug: "paul-and-friends",
+    title: "Paul & Friends",
+    video: `${W}/pnf-cover.mp4`,
+    poster: `${W}/pnf-cover-poster.jpg`,
+  },
+  {
+    slug: "stronger",
+    title: "Stronger",
+    video: `${W}/stronger-cover.mp4`,
+    poster: `${W}/stronger-cover-poster.jpg`,
+  },
+  { slug: "tryskills", title: "TRY Skills", poster: "/lab/intro/tryskills.jpg" },
+  { slug: "try-devops", title: "TRY DevOps", poster: "/lab/intro/try-devops.jpg" },
 ] as const;
 
-const poster = (slug: string) => `/lab/intro/${slug}.jpg`;
+const poster = (slug: string) => PROJECTS.find((p) => p.slug === slug)?.poster ?? "";
 
 type Builder = (tl: gsap.core.Timeline, q: (s: string) => HTMLElement[], root: HTMLElement) => void;
 
