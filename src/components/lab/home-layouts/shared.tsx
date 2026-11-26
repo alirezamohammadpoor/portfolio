@@ -53,6 +53,11 @@ export const LAB_CLIPS: Record<string, { src: string; poster: string; still?: bo
     poster: "/lab/project-window/sania-cover.webp",
     still: true,
   },
+  stronger: {
+    src: "",
+    poster: "/lab/project-window/stronger-cover.webp",
+    still: true,
+  },
   "paul-and-friends": {
     src: "",
     poster: "/lab/project-window/pnf-cover.webp",
