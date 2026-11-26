@@ -17,8 +17,6 @@ import {
 
 import Order, { type OrderMode } from "./Order";
 
-export type Axis = "x" | "y";
-
 // A release past this share of the strip, or faster than FLICK px/ms, goes
 // to the next project; anything less springs back.
 const COMMIT = 0.22;
@@ -35,13 +33,11 @@ const SILENCE_MS = 150;
  * follows the finger and the release decides (a short flick is enough). It
  * loops. Hints under the strip say how ("Swipe", "Tap to view") and leave
  * once each has been done; a single nudge shows the next cover's edge if
- * nobody has touched it a moment after landing. `axis="y"` is the old
- * home's vertical version (Scroll ↕).
+ * nobody has touched it a moment after landing.
  */
 export default function FlushHome({
   projects,
   rootRef,
-  axis = "x",
   order = "rail",
   reserve = 0,
 }: VariantProps & {
@@ -49,7 +45,6 @@ export default function FlushHome({
   order?: OrderMode;
   /** Lab only: px kept free at the foot for the prototype picker. */
   reserve?: number;
-  axis?: Axis;
 }) {
   useEntrance(rootRef);
   const open = useOpenProject(rootRef);
@@ -69,7 +64,6 @@ export default function FlushHome({
   const tween = useRef<gsap.core.Tween | null>(null);
   // Set while a release is carrying the strip on to the next project.
   const committing = useRef(false);
-  const prop = axis === "x" ? "translate3d(VAL,0,0)" : "translate3d(0,VAL,0)";
 
   /** Every slide placed round the current one: the next ones after it, the
    *  one before it on the other side. `d` is the drag in px. */
@@ -80,15 +74,15 @@ export default function FlushHome({
         if (!el) return;
         let p = (((k - i) % count) + count) % count;
         if (p === count - 1 && (d > 0 || count > 2)) p = -1;
-        el.style.transform = prop.replace("VAL", `calc(${p * 100}% + ${d}px)`);
+        el.style.transform = `translate3d(calc(${p * 100}% + ${d}px),0,0)`;
       });
       // The place in the order, fractional while the strip moves.
       const strip = stripRef.current;
-      const size = strip ? (axis === "x" ? strip.offsetWidth : strip.offsetHeight) : 0;
+      const size = strip?.offsetWidth ?? 0;
       const pos = size ? (((i - d / size) % count) + count) % count : i;
       rootRef.current?.style.setProperty("--pos", String(pos));
     },
-    [axis, count, prop, rootRef],
+    [count, rootRef],
   );
 
   useLayoutEffect(() => {
@@ -109,7 +103,7 @@ export default function FlushHome({
     (dir: -1 | 0 | 1, velocity = 0) => {
       const strip = stripRef.current;
       if (!strip) return;
-      const size = axis === "x" ? strip.offsetWidth : strip.offsetHeight;
+      const size = strip.offsetWidth;
       const to = -dir * size;
       const reduce = prefersReducedMotion();
       const left = Math.abs(to - drag.current);
@@ -143,7 +137,7 @@ export default function FlushHome({
         },
       });
     },
-    [axis, count, layout],
+    [count, layout],
   );
 
   useEffect(() => {
@@ -154,7 +148,7 @@ export default function FlushHome({
       return r === "waiting" || r === "playing";
     };
     let press: { id: number; start: number; last: number; t: number; v: number } | null = null;
-    const pos = (e: PointerEvent) => (axis === "x" ? e.clientX : e.clientY);
+    const pos = (e: PointerEvent) => e.clientX;
     const onDown = (e: PointerEvent) => {
       if (blocked() || (e.pointerType === "mouse" && e.button !== 0)) return;
       // A move already on its way to the next project finishes first (it
@@ -185,7 +179,7 @@ export default function FlushHome({
     };
     const onUp = (e: PointerEvent) => {
       if (!press || e.pointerId !== press.id) return;
-      const size = axis === "x" ? strip.offsetWidth : strip.offsetHeight;
+      const size = strip.offsetWidth;
       // A finger that stopped before lifting carries no flick.
       const v = e.timeStamp - press.t > 80 ? 0 : press.v;
       press = null;
@@ -226,7 +220,7 @@ export default function FlushHome({
       strip.removeEventListener("wheel", onWheel);
       tween.current?.kill();
     };
-  }, [axis, layout, settle]);
+  }, [layout, settle]);
 
   // One nudge, once the page has landed and nobody has touched the strip:
   // the strip leans a little towards the next cover and comes back, so the
@@ -305,7 +299,7 @@ export default function FlushHome({
           ref={stripRef}
           data-reveal
           data-lenis-prevent
-          className={`relative aspect-[16/10] w-full select-none ${axis === "x" ? "touch-pan-y" : "touch-none"} overflow-hidden bg-tertiary`}
+          className="relative aspect-[16/10] w-full touch-pan-y select-none overflow-hidden bg-tertiary"
         >
           {projects.map((project, k) => (
             <Link
@@ -353,7 +347,7 @@ export default function FlushHome({
         className="flex justify-between px-margin pb-4 pt-3 text-sub uppercase text-secondary"
       >
         <span ref={swipeHintRef} data-text>
-          {axis === "x" ? "Swipe ← →" : "Swipe ↕"}
+          Swipe ← →
         </span>
         <span ref={tapHintRef} data-text>
           Tap to view

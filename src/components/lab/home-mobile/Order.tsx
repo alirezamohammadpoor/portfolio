@@ -10,14 +10,13 @@ import type { Project } from "@/components/lab/home-layouts/shared";
  * root: the position in projects, fractional while the strip or row moves
  * (0 = first project in place, 1.5 = halfway from the second to the third).
  */
-export type OrderMode = "rail" | "ticks" | "dots" | "names" | "next" | "none";
+export type OrderMode = "rail" | "ticks" | "dots" | "names" | "next";
 export const ORDER_MODES: { key: OrderMode; name: string }[] = [
   { key: "rail", name: "Rail" },
   { key: "ticks", name: "Ticks" },
   { key: "dots", name: "Dots" },
   { key: "names", name: "Names" },
   { key: "next", name: "Next up" },
-  { key: "none", name: "None" },
 ];
 
 const OUT = "cubic-bezier(0.23,1,0.32,1)";
@@ -33,7 +32,7 @@ export default function Order({
   active: number;
 }) {
   const count = projects.length;
-  if (mode === "none" || count < 2) return null;
+  if (count < 2) return null;
 
   if (mode === "rail") {
     // One thumb a project wide on a hairline track, carried by the finger

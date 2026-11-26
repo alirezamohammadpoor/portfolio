@@ -8,9 +8,8 @@ import { ease, prefersReducedMotion } from "@/lib/motion";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import CarouselHome from "@/components/lab/home-layouts/CarouselHome";
 import { labHero, type Contact } from "@/components/lab/home-layouts/shared";
-import ScatterHome from "@/components/home/ScatterHome";
 import { DESKTOP_QUERY, useIsDesktop } from "@/hooks/useIsDesktop";
-import FlushHome, { type Axis } from "@/components/lab/home-mobile/FlushHome";
+import FlushHome from "@/components/lab/home-mobile/FlushHome";
 import { ORDER_MODES, type OrderMode } from "@/components/lab/home-mobile/Order";
 import PhoneCarousel from "@/components/lab/home-mobile/PhoneCarousel";
 import { flatRingIntro, ringIntro } from "./intros";
@@ -53,7 +52,6 @@ export default function HomeIntroLab({
   initial,
   count,
   phoneHome,
-  axis,
   order: orderParam,
 }: {
   projects: PROJECTS_QUERY_RESULT;
@@ -62,12 +60,10 @@ export default function HomeIntroLab({
   /** `?n=`: the projects repeated up to this many (6, 10, 15), to see how
    *  an intro copes with a longer list. The ring reads the same param. */
   count: number;
-  /** `?home=`: the page the phone lands on (Ali 11-26). "live" is today's
-   *  phone home; "flush" the old edge-to-edge strip, one project at a time;
-   *  "carousel" the laptop's drifting row. */
+  /** `?home=`: the page the phone lands on (Ali 11-26). "flush" the old
+   *  edge-to-edge strip, one project at a time; "carousel" the laptop's
+   *  drifting row; "auto" the same row moving on one window at a time. */
   phoneHome: PhoneHome;
-  /** `?axis=y`: the flush strip swipes up and down, like the old home. */
-  axis: Axis;
   /** `?order=`: how the phone pages show which project is up (O). */
   order?: string;
 }) {
@@ -118,8 +114,6 @@ export default function HomeIntroLab({
     () => false,
   );
   const desktop = useIsDesktop();
-  // The phone's own page (live keeps today's home).
-  const phonePage = !desktop && phoneHome !== "live";
   // The ring's cards match the covers they land on: the lab clips on the
   // carousel, the Sanity files on the phone home.
   const reel = { build: variant.build, fit: variant.fit };
@@ -212,14 +206,13 @@ export default function HomeIntroLab({
               />
             )}
           </>
-        ) : phonePage ? (
+        ) : (
           <>
             {phoneHome === "flush" ? (
               <FlushHome
                 projects={page}
                 contact={contact}
                 rootRef={rootRef}
-                axis={axis}
                 order={order}
                 reserve={PICKER_SPACE}
               />
@@ -228,6 +221,7 @@ export default function HomeIntroLab({
                 projects={page}
                 contact={contact}
                 rootRef={rootRef}
+                motion={phoneHome === "auto" ? "step" : "drift"}
                 order={order}
                 reserve={PICKER_SPACE}
                 entry={stagger ? "stagger" : "glide"}
@@ -241,13 +235,11 @@ export default function HomeIntroLab({
                 heroOverride={labHero}
                 // The strip is the first project, full width: the ring dives
                 // into it. The row: every project flies to its own window.
-                landing={phoneHome === "carousel" ? "settle" : "dive"}
+                landing={phoneHome === "flush" ? "dive" : "settle"}
                 {...reel}
               />
             )}
           </>
-        ) : (
-          <ScatterHome projects={page} contact={contact} reel={stagger ? "none" : reel} />
         ))}
       <Picker
         current={current}
@@ -255,7 +247,6 @@ export default function HomeIntroLab({
         count={count || projects.length}
         phone={mounted && !desktop}
         phoneHome={phoneHome}
-        axis={axis}
         order={order}
       />
     </>
@@ -265,11 +256,11 @@ export default function HomeIntroLab({
 /** The phone pages stop above the picker, so nothing they show sits under it. */
 const PICKER_SPACE = 64;
 
-type PhoneHome = "live" | "flush" | "carousel";
+type PhoneHome = "flush" | "carousel" | "auto";
 const PHONE_HOMES: { key: PhoneHome; name: string }[] = [
   { key: "flush", name: "Flush" },
   { key: "carousel", name: "Carousel" },
-  { key: "live", name: "Live" },
+  { key: "auto", name: "Auto carousel" },
 ];
 
 /** Reloads with the next phone home (`?home=`), so the intro plays into it. */
@@ -285,13 +276,6 @@ function cycleOrder(now: OrderMode) {
   const i = ORDER_MODES.findIndex((m) => m.key === now);
   const url = new URL(location.href);
   url.searchParams.set("order", ORDER_MODES[(i + 1) % ORDER_MODES.length].key);
-  location.assign(url.toString());
-}
-
-function setAxis(axis: Axis) {
-  const url = new URL(location.href);
-  if (axis === "x") url.searchParams.delete("axis");
-  else url.searchParams.set("axis", axis);
   location.assign(url.toString());
 }
 
@@ -311,7 +295,6 @@ function Picker({
   count,
   phone,
   phoneHome,
-  axis,
   order,
 }: {
   current: number;
@@ -319,7 +302,6 @@ function Picker({
   count: number;
   phone: boolean;
   phoneHome: PhoneHome;
-  axis: Axis;
   order: OrderMode;
 }) {
   const navRef = useRef<HTMLElement>(null);
@@ -376,26 +358,14 @@ function Picker({
           >
             Home: {PHONE_HOMES.find((h) => h.key === phoneHome)?.name}
           </button>
-          {phoneHome !== "live" && (
-            <button
-              type="button"
-              className="proto-picker-item"
-              aria-label="Order indicator (O)"
-              onClick={() => cycleOrder(order)}
-            >
-              Order: {ORDER_MODES.find((m) => m.key === order)?.name}
-            </button>
-          )}
-          {phoneHome === "flush" && (
-            <button
-              type="button"
-              className="proto-picker-item"
-              aria-label="Swipe direction"
-              onClick={() => setAxis(axis === "x" ? "y" : "x")}
-            >
-              {axis === "x" ? "↔" : "↕"}
-            </button>
-          )}
+          <button
+            type="button"
+            className="proto-picker-item"
+            aria-label="Order indicator (O)"
+            onClick={() => cycleOrder(order)}
+          >
+            Order: {ORDER_MODES.find((m) => m.key === order)?.name}
+          </button>
         </>
       )}
       <span className="proto-picker-divider" aria-hidden="true" />
