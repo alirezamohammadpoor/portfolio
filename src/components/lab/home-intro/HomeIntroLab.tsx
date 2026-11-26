@@ -5,7 +5,7 @@ import HomeReel, { type IntroBuilder } from "@/components/home/HomeReel";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import CarouselHome from "@/components/lab/home-layouts/CarouselHome";
 import type { Contact } from "@/components/lab/home-layouts/shared";
-import { dropIntro, lineIntro, ovalIntro, stackIntro } from "./intros";
+import { dropIntro, ovalIntro } from "./intros";
 import "@/components/lab/home-layouts/proto-picker.css";
 
 interface Variant {
@@ -18,14 +18,12 @@ interface Variant {
 const VARIANTS: Variant[] = [
   { name: "Original" },
   { name: "Oval", build: ovalIntro },
-  { name: "Stack", build: stackIntro },
-  { name: "Line", build: lineIntro },
   { name: "Drop", build: dropIntro },
 ];
 
 /**
- * Five entries for the carousel home behind Emil Kowalski's prototype
- * picker. An entry only plays on a full load, so picking one (1-5, arrows)
+ * Entries for the carousel home behind Emil Kowalski's prototype
+ * picker. An entry only plays on a full load, so picking one (1-3, arrows)
  * reloads the page with `?v=N`; R plays the current one again.
  */
 export default function HomeIntroLab({
