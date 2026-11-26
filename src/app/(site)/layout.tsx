@@ -83,7 +83,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
           <script
             dangerouslySetInnerHTML={{
               __html:
-                '(function(){try{var lab=location.pathname==="/lab/home-layouts"&&innerWidth>=1200;if((lab||location.pathname==="/")&&!matchMedia("(prefers-reduced-motion: reduce)").matches){if(lab||/[?&]reel/.test(location.search)||!sessionStorage.getItem("home-reel")){document.documentElement.dataset.intro="pending";document.documentElement.dataset.reel="pending"}}}catch(e){}})()',
+                '(function(){try{var lab=(location.pathname==="/lab/home-layouts"||location.pathname==="/lab/home-intro")&&innerWidth>=1200;if((lab||location.pathname==="/")&&!matchMedia("(prefers-reduced-motion: reduce)").matches){if(lab||/[?&]reel/.test(location.search)||!sessionStorage.getItem("home-reel")){document.documentElement.dataset.intro="pending";document.documentElement.dataset.reel="pending"}}}catch(e){}})()',
             }}
           />
         </head>

@@ -40,7 +40,25 @@ interface HomeReelProps {
   landing?: "dive" | "settle";
   /** Each cover's `sizes` on the page, so a hero image shares its file. */
   coverSizes: string[];
+  /** Lab only: builds the whole entry instead of the ring (/lab/home-intro). */
+  build?: IntroBuilder;
 }
+
+export interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Fills the paused timeline: every hero starts placed on its cover's box
+ *  (left/top/width/height) and must end there with no transform left. */
+export type IntroBuilder = (
+  tl: gsap.core.Timeline,
+  heroes: HTMLElement[],
+  world: HTMLElement,
+  rects: Rect[],
+) => void;
 
 /**
  * Home entry: every project's cover flies out of the middle onto an oval,
@@ -52,7 +70,13 @@ interface HomeReelProps {
  * hero is a box the size of its cover on the page, so the landing is pixel
  * exact.
  */
-export default function HomeReel({ projects, pageRef, coverSizes, landing = "dive" }: HomeReelProps) {
+export default function HomeReel({
+  projects,
+  pageRef,
+  coverSizes,
+  landing = "dive",
+  build,
+}: HomeReelProps) {
   const reel = useReelState();
   const stageRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
@@ -189,7 +213,8 @@ export default function HomeReel({ projects, pageRef, coverSizes, landing = "div
         // `&n`: the extra heroes borrow the boxes of the covers they repeat.
         const rects = heroes.map((_, i) => coverRects[i % coverRects.length]);
         tl = gsap.timeline({ paused: true, onComplete: scrubbing ? undefined : finish });
-        ringTimeline(tl, heroes, world, rects, landing);
+        if (build) build(tl, heroes, world, rects);
+        else ringTimeline(tl, heroes, world, rects, landing);
 
         lenisRef.current?.stop();
         setIntroState("playing");
@@ -246,20 +271,13 @@ function stageProjects(projects: PROJECTS_QUERY_RESULT) {
   return Array.from({ length: n }, (_, i) => projects[i % projects.length]);
 }
 
-interface Rect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
 /**
  * An oval through the middle of a w × h box: equal arc-length steps around
  * it, so the covers are evenly spaced on screen (equal angles bunch them at
  * the ends of the long axis). `at(u)` gives the point at fraction u of the
  * way round, clockwise from 12 o'clock.
  */
-function ovalPath(a: number, b: number) {
+export function ovalPath(a: number, b: number) {
   const STEPS = 720;
   const ts: number[] = [];
   const lens: number[] = [0];
@@ -474,23 +492,27 @@ function ringTimeline(
   }
   // The Pebble arrives with the first project (Ali 11-23): hidden over the
   // ring (globals.css), it settles in from just above as the dive lands.
+  barEntrance(tl, diveAt + SCATTER_BEAT.dive);
+}
+
+/** The Pebble settles in from just above, landing at `end`. */
+export function barEntrance(tl: gsap.core.Timeline, end: number) {
   const bar = document.querySelector<HTMLElement>("[data-site-bar]");
-  if (bar) {
-    tl.fromTo(
-      bar,
-      { autoAlpha: 0, y: -8, scale: 0.96 },
-      {
-        autoAlpha: 1,
-        y: 0,
-        scale: 1,
-        transformOrigin: "50% 0%",
-        duration: SCATTER_BEAT.barIn,
-        ease: ease.out,
-        clearProps: "opacity,visibility,transform",
-      },
-      diveAt + SCATTER_BEAT.dive - SCATTER_BEAT.barIn,
-    );
-  }
+  if (!bar) return;
+  tl.fromTo(
+    bar,
+    { autoAlpha: 0, y: -8, scale: 0.96 },
+    {
+      autoAlpha: 1,
+      y: 0,
+      scale: 1,
+      transformOrigin: "50% 0%",
+      duration: SCATTER_BEAT.barIn,
+      ease: ease.out,
+      clearProps: "opacity,visibility,transform",
+    },
+    end - SCATTER_BEAT.barIn,
+  );
 }
 
 function HeroMedia({ project, sizes }: { project: Project; sizes: string }) {
