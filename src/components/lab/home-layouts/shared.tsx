@@ -29,7 +29,7 @@ export interface VariantProps {
 
 /**
  * The project window (Ali 11-26): every project sits in the same fixed 16:10
- * box. "inset": the box is the page colour with a hairline edge and the
+ * box. "inset": the box is the page colour (no hairline, Ali 11-26) and the
  * recording sits 16 px in, so different projects line up side by side.
  * "flush": the recording fills the box edge to edge.
  */
@@ -279,7 +279,7 @@ export function Cover({
   // 16 px in at the top and bottom (a touch more at the sides).
   return (
     <div
-      className={`relative flex aspect-[16/10] items-center justify-center border border-black/10 bg-bg p-4 ${className}`}
+      className={`relative flex aspect-[16/10] items-center justify-center bg-bg p-4 ${className}`}
     >
       <div
         {...markAttrs}

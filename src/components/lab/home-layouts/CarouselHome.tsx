@@ -118,6 +118,14 @@ export default function CarouselHome({ projects, contact, rootRef }: VariantProp
     track.addEventListener("pointercancel", onUp);
 
     const frame = (now: number) => {
+      // The row holds still under the entry ring, which lands every project
+      // in its slot; it starts drifting once the ring has handed over.
+      const reel = getReelState();
+      if (reel === "waiting" || reel === "playing") {
+        last = now;
+        raf = requestAnimationFrame(frame);
+        return;
+      }
       const moving = now < movingUntil || (press?.moved ?? false) || Math.abs(fling) > 30;
       if (moving) {
         if (activeRef.current !== null) hold(null);

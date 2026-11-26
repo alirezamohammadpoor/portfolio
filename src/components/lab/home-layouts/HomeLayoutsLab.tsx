@@ -14,13 +14,15 @@ interface Variant {
   Component: (props: VariantProps) => React.ReactNode;
   /** The `sizes` each cover asks for, so the ring's heroes load the same file. */
   sizes: string;
+  /** How the entry ring ends on this layout. */
+  landing?: "dive" | "settle";
 }
 
 const VARIANTS: Variant[] = [
   { name: "Index full", Component: (p) => <IndexHome {...p} bleed />, sizes: "100vw" },
   { name: "Index window", Component: (p) => <IndexHome {...p} bleed={false} />, sizes: "90vw" },
   { name: "Split", Component: SplitHome, sizes: "66vw" },
-  { name: "Carousel", Component: CarouselHome, sizes: "50vw" },
+  { name: "Carousel", Component: CarouselHome, sizes: "50vw", landing: "settle" },
 ];
 
 interface Props {
@@ -107,6 +109,7 @@ export default function HomeLayoutsLab({ projects, contact, initial, initialFram
             projects={projects}
             pageRef={rootRef}
             coverSizes={projects.map(() => variant.sizes)}
+            landing={variant.landing}
           />
           <Component
             key={`${current}-${mountKey}`}

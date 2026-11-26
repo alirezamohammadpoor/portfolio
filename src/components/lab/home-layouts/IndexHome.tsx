@@ -23,7 +23,8 @@ const HOLD_MS = 6000;
  * focusing) a name swaps the recording. Nobody pointing: it moves on by
  * itself every few seconds.
  *
- * "bleed": the recording fills the whole screen, under the Pebble too.
+ * "bleed": the recording fills the screen below the Pebble, to the margins
+ * (round 3: smaller, not under the Pebble).
  * "window": the recording keeps its project window, as big as the screen's
  * height allows, and the panel overlaps its lower left corner.
  */
@@ -68,7 +69,7 @@ export default function IndexHome({
       <section
         className={
           bleed
-            ? "relative -mt-[var(--header-height)] h-svh"
+            ? "relative h-[calc(100svh-var(--header-height))]"
             : "relative flex h-[calc(100svh-var(--header-height))] items-center justify-end px-margin pb-6 pt-6"
         }
       >
@@ -78,7 +79,9 @@ export default function IndexHome({
           aria-label={`View ${current?.title ?? "project"}`}
           data-item
           className={
-            bleed ? "absolute inset-0 block" : "relative block aspect-[16/10] h-full max-w-full"
+            bleed
+              ? "absolute inset-x-6 bottom-6 top-0 block"
+              : "relative block aspect-[16/10] h-full max-w-full"
           }
         >
           <div data-reveal className="absolute inset-0">
@@ -88,14 +91,14 @@ export default function IndexHome({
 
         <div
           data-item
-          className="frost-strong absolute bottom-6 left-[var(--spacing-margin,24px)] w-[26rem] rounded-3xl p-6 shadow-[0_10px_24px_-6px_rgb(0_0_0/0.14)] desktop:left-6"
+          className="frost-strong absolute bottom-10 left-10 w-[19rem] rounded-2xl p-5 shadow-[0_10px_24px_-6px_rgb(0_0_0/0.14)]"
           onPointerEnter={() => setHeld(true)}
           onPointerLeave={() => setHeld(false)}
         >
-          <h2 data-text className="text-h3">
+          <h2 data-text className="text-body">
             {STATEMENT}
           </h2>
-          <ul data-text className="mt-8 flex flex-col">
+          <ul data-text className="mt-5 flex flex-col">
             {projects.map((project, i) => (
               <li key={project._id}>
                 <Link
@@ -108,14 +111,14 @@ export default function IndexHome({
                   }}
                   onBlur={() => setHeld(false)}
                   aria-current={i === active ? "true" : undefined}
-                  className={`block text-h3 transition-colors duration-150 ease-out ${i === active ? "text-primary" : "text-secondary hover:text-primary"}`}
+                  className={`block text-lead transition-colors duration-150 ease-out ${i === active ? "text-primary" : "text-secondary hover:text-primary"}`}
                 >
                   {project.title}
                 </Link>
               </li>
             ))}
           </ul>
-          <p data-text className="mt-6 line-clamp-3 min-h-18 text-body text-primary">
+          <p data-text className="mt-4 line-clamp-2 min-h-10 text-sub text-primary">
             {current?.shortDescription}
           </p>
         </div>

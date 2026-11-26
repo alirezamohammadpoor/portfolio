@@ -34,6 +34,10 @@ interface HomeReelProps {
   projects: PROJECTS_QUERY_RESULT;
   /** The home canvas: its `[data-cover]` boxes are where the heroes land. */
   pageRef: RefObject<HTMLElement | null>;
+  /** How the ring ends. "dive" (the home): the view dives into the first
+   *  project while the rest drift off. "settle" (a row of covers, lab
+   *  carousel): every project flies from the ring into its own slot. */
+  landing?: "dive" | "settle";
   /** Each cover's `sizes` on the page, so a hero image shares its file. */
   coverSizes: string[];
 }
@@ -48,7 +52,7 @@ interface HomeReelProps {
  * hero is a box the size of its cover on the page, so the landing is pixel
  * exact.
  */
-export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProps) {
+export default function HomeReel({ projects, pageRef, coverSizes, landing = "dive" }: HomeReelProps) {
   const reel = useReelState();
   const stageRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
@@ -185,7 +189,7 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
         // `&n`: the extra heroes borrow the boxes of the covers they repeat.
         const rects = heroes.map((_, i) => coverRects[i % coverRects.length]);
         tl = gsap.timeline({ paused: true, onComplete: scrubbing ? undefined : finish });
-        ringTimeline(tl, heroes, world, rects);
+        ringTimeline(tl, heroes, world, rects, landing);
 
         lenisRef.current?.stop();
         setIntroState("playing");
@@ -294,7 +298,9 @@ function ringTimeline(
   heroes: HTMLElement[],
   world: HTMLElement,
   rects: Rect[],
+  landing: "dive" | "settle" = "dive",
 ) {
+  const settleAll = landing === "settle";
   const VW = window.innerWidth;
   const VH = window.innerHeight;
   const laptop = window.matchMedia(DESKTOP_QUERY).matches;
@@ -350,6 +356,7 @@ function ringTimeline(
   const ring = { u: -turn };
   const fly = heroes.map(() => ({ p: 0 }));
   const dive = { p: 0 };
+  const settle = heroes.map(() => ({ p: 0 }));
 
   const base = heroes.map((_, i) => {
     const { x, y, w, h } = rects[i];
@@ -384,6 +391,18 @@ function ringTimeline(
       cx = VW / 2 + (cx - VW / 2) * p;
       cy = VH / 2 + (cy - VH / 2) * p;
       let alpha = Math.min(1, p * 1.4);
+      if (settleAll) {
+        // Every card leaves the ring for its own slot on the page.
+        const sp = settle[i].p;
+        const ringScale = scale * (0.35 + 0.65 * p);
+        gsap.set(hero, {
+          x: (cx - cx0) * (1 - sp),
+          y: (cy - cy0) * (1 - sp),
+          scale: ringScale + (1 - ringScale) * sp,
+          autoAlpha: alpha + (1 - alpha) * sp,
+        });
+        return;
+      }
       if (i > 0 && dive.p > 0) {
         // The rest drifts away from the first project and fades with the
         // camera (Ali 11-04: neighbours' edges at the hand-over, too sudden).
@@ -424,8 +443,19 @@ function ringTimeline(
     { u: 0, duration: turnEnd - turnStart, ease: "power1.inOut", onUpdate: render },
     turnStart,
   );
-  tl.to(world, { x: dx, y: dy, scale: K, duration: SCATTER_BEAT.dive, ease: ease.inOut }, diveAt);
-  tl.to(dive, { p: 1, duration: SCATTER_BEAT.dive, ease: ease.inOut, onUpdate: render }, diveAt);
+  if (settleAll) {
+    // In ring order from 12 o'clock, so the row fills from its first slot.
+    heroes.forEach((_, i) => {
+      tl.to(
+        settle[i],
+        { p: 1, duration: SCATTER_BEAT.dive, ease: ease.inOut, onUpdate: render },
+        diveAt + i * SCATTER_BEAT.stagger,
+      );
+    });
+  } else {
+    tl.to(world, { x: dx, y: dy, scale: K, duration: SCATTER_BEAT.dive, ease: ease.inOut }, diveAt);
+    tl.to(dive, { p: 1, duration: SCATTER_BEAT.dive, ease: ease.inOut, onUpdate: render }, diveAt);
+  }
   // The Pebble arrives with the first project (Ali 11-23): hidden over the
   // ring (globals.css), it settles in from just above as the dive lands.
   const bar = document.querySelector<HTMLElement>("[data-site-bar]");
