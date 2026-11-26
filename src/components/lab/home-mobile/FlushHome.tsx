@@ -265,15 +265,14 @@ export default function FlushHome({ projects, rootRef }: VariantProps & {}) {
         </Link>
       </div>
 
-      {/* The strip: edge to edge and down to the bottom, 40 % of the screen
-          tall (Ali 11-26: more height), so the covers crop a little at the
-          sides. */}
+      {/* The strip: edge to edge and down to the bottom, the whole 16:10
+          cover (Ali 11-26: the full width must show). */}
       <div data-item>
         <div
           ref={stripRef}
           data-reveal
           data-lenis-prevent
-          className="relative h-[40svh] w-full touch-pan-y select-none overflow-hidden bg-tertiary"
+          className="relative aspect-[16/10] w-full touch-pan-y select-none overflow-hidden bg-tertiary"
         >
           {projects.map((project, k) => (
             <Link

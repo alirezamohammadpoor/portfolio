@@ -292,11 +292,10 @@ export default function PhoneCarousel({
         </div>
       )}
 
-      {/* The row, down to the bottom edge: windows 84 % of the screen wide
-          and 40 % of it tall (Ali 11-26: more height, so the covers crop a
-          little at the sides), flush and touching, the next one in view at
-          the right. */}
-      <div data-item className="mt-3 h-[40svh] shrink-0 overflow-hidden">
+      {/* The row, down to the bottom edge: whole 16:10 windows (Ali 11-26:
+          the full width must show, no crop), 90 % of the screen wide so they
+          stand tall, flush and touching, the next one peeking at the right. */}
+      <div data-item className="mt-3 h-[calc(90vw*0.625)] shrink-0 overflow-hidden">
         <div
           ref={trackRef}
           data-reveal={entry === "glide" ? "" : undefined}
@@ -311,7 +310,7 @@ export default function PhoneCarousel({
               aria-hidden={i >= count || undefined}
               tabIndex={i >= count ? -1 : undefined}
               draggable={false}
-              className="block h-full w-[84vw] shrink-0"
+              className="block h-full w-[90vw] shrink-0"
               style={gap ? { marginRight: gap } : undefined}
               onClick={(e) => {
                 if (dragged.current) {
