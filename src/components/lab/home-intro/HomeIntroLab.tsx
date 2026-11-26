@@ -69,13 +69,15 @@ export default function HomeIntroLab({
         These intros are for the laptop home. Open this page in a window at least 1200 px wide.
       </p>
       <div className="hidden desktop:block">
+        {/* The page first: its ref is set before the reel's layout effect
+            looks for the covers (the reel renders into a portal anyway). */}
+        <CarouselHome projects={projects} contact={contact} rootRef={rootRef} />
         <HomeReel
           projects={projects}
           pageRef={rootRef}
           coverSizes={projects.map(() => "50vw")}
           build={variant.build}
         />
-        <CarouselHome projects={projects} contact={contact} rootRef={rootRef} />
       </div>
       <Picker current={current} onSelect={select} />
     </>
