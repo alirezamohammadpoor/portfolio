@@ -303,8 +303,8 @@ export const flatRingIntro = flatRing({ card: [0.22, 0.38], flat: [0.16, 0.15] }
 
 /**
  * 4. Saturn (Ali 11-26: "even more horizontal, like a slideshow but
- * rotating, Saturn ring"): the ring almost edge-on and wider than the
- * screen, tilted a few degrees. Big cards slide across the front like a
+ * rotating, Saturn ring"; level, not tilted): the ring almost edge-on and wider than the
+ * screen. Big cards slide across the front like a
  * slideshow and leave past the edges; the back of the ring is a thin line
  * of small cards just above them.
  */
@@ -312,7 +312,7 @@ export const saturnIntro = flatRing({
   card: [0.3, 0.62],
   flat: [0.06, 0.05],
   wide: 0.62,
-  tilt: -6,
+  tilt: 0,
   back: 0.4,
 });
 
