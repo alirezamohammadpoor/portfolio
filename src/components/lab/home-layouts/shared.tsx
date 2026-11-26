@@ -41,7 +41,7 @@ export const FrameContext = createContext<FrameMode>("inset");
  * public/lab until they go to Sanity. On by default; `?clips=old` (or the
  * picker's Clips switch, C) shows the Sanity files for comparison.
  */
-export const LAB_CLIPS: Record<string, { src: string; poster: string }> = {
+export const LAB_CLIPS: Record<string, { src: string; poster: string; still?: boolean }> = {
   "zone-2": {
     src: "/lab/project-window/zone2-cover.mp4",
     poster: "/lab/project-window/zone2-cover-poster.jpg",
@@ -49,6 +49,9 @@ export const LAB_CLIPS: Record<string, { src: string; poster: string }> = {
   "sania-d-mina": {
     src: "/lab/project-window/sania-cover.mp4",
     poster: "/lab/project-window/sania-cover-poster.jpg",
+    // The store's announcement bar flips through messages in the clip; the
+    // home hero itself doesn't move, so the cover holds one frame (Ali 11-26).
+    still: true,
   },
 };
 export const ClipsContext = createContext(true);
@@ -209,9 +212,12 @@ export function Cover({
   const media = project.coverMedia;
   const newClips = useContext(ClipsContext);
   const lab = newClips ? LAB_CLIPS[project.slug?.current ?? ""] : undefined;
-  const src =
-    lab?.src ??
-    (media?.type === "video" && media.video?.asset?._ref ? fileUrl(media.video.asset._ref) : null);
+  const src = lab?.still
+    ? null
+    : (lab?.src ??
+      (media?.type === "video" && media.video?.asset?._ref
+        ? fileUrl(media.video.asset._ref)
+        : null));
 
   useEffect(() => {
     const video = videoRef.current;
@@ -265,6 +271,15 @@ export function Cover({
         onLoadedMetadata={(e) =>
           restoreVideoPosition(e.currentTarget, e.currentTarget.getAttribute("src") ?? "")
         }
+      />
+    );
+  } else if (lab?.still) {
+    // eslint-disable-next-line @next/next/no-img-element -- lab stand-in
+    body = (
+      <img
+        src={lab.poster}
+        alt={project.title ?? ""}
+        className="absolute inset-0 h-full w-full object-cover"
       />
     );
   } else if (media?.type === "image" && media.image?.asset) {

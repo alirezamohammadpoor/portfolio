@@ -65,7 +65,7 @@ const inOutE = gsap.parseEase(ease.inOut);
 /**
  * 2. Ring (Ali 11-26): the home's ring, same cards, but the projects trail
  * project 1 round the oval and the ring turns clockwise, slowly, carrying
- * project 1 from 12 o'clock down past 6 to 7, with 2 and 3 behind it along
+ * project 1 from half past 3 down past 6 to 7, with 2 and 3 behind it along
  * the bottom. Then the projects whose slots are on screen morph into them,
  * 1, 2, 3; the rest drift off the screen and fade, like the dive's
  * neighbours.
@@ -113,8 +113,9 @@ export const ringIntro: IntroBuilder = (tl, heroes, world, rects) => {
   const { at } = layout(cw);
 
   // u is the turn, clockwise from 12 o'clock; 7/12 puts project 1 at 7.
+  // Ali 11-26: a shorter turn, from half past 3 to 7, and slower.
   const SEVEN = 7 / 12;
-  const ring = { u: 0 };
+  const ring = { u: 3.5 / 12 };
   const fly = heroes.map(() => ({ p: 0 }));
   const land = heroes.map(() => ({ p: 0 }));
   const away = { p: 0 };
@@ -155,7 +156,7 @@ export const ringIntro: IntroBuilder = (tl, heroes, world, rects) => {
   );
   // A slow, even turn that starts as the cards leave the middle.
   const turnStart = at0 + SCATTER_BEAT.scatter * 0.4;
-  const turnEnd = turnStart + 3.2;
+  const turnEnd = turnStart + 3.6;
   tl.to(
     ring,
     { u: SEVEN, duration: turnEnd - turnStart, ease: "power1.inOut", onUpdate: render },
