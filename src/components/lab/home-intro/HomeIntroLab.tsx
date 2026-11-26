@@ -7,7 +7,7 @@ import { setReelState } from "@/lib/reel";
 import { ease, prefersReducedMotion } from "@/lib/motion";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import CarouselHome from "@/components/lab/home-layouts/CarouselHome";
-import { labHero, type Contact } from "@/components/lab/home-layouts/shared";
+import { labHero, labPhoneHero, type Contact } from "@/components/lab/home-layouts/shared";
 import ScatterHome from "@/components/home/ScatterHome";
 import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { flatRingIntro, ringIntro, saturnIntro } from "./intros";
@@ -194,7 +194,11 @@ export default function HomeIntroLab({
             )}
           </>
         ) : (
-          <ScatterHome projects={page} contact={contact} reel={stagger ? "none" : reel} />
+          <ScatterHome
+            projects={page}
+            contact={contact}
+            reel={stagger ? "none" : { ...reel, heroOverride: labPhoneHero }}
+          />
         ))}
       <Picker current={current} onSelect={select} count={count || projects.length} />
     </>

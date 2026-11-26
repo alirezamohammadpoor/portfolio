@@ -68,7 +68,18 @@ export const ClipsContext = createContext(true);
 export function labHero(project: Project) {
   const lab = LAB_CLIPS[project.slug?.current ?? ""];
   if (!lab) return undefined;
-  return lab.still ? { src: lab.poster, still: true } : { src: lab.src };
+  return lab.still ? { src: lab.poster, still: true } : { src: lab.src, poster: lab.poster };
+}
+
+/** The ring's cards over the phone home, whose covers are Sanity's files:
+ *  the same file as the cover, with the lab clip's first frame as a poster.
+ *  Ali 11-26: on the phone the six clips load at once and the cards sat on
+ *  their grey placeholder; the poster shows the shot until the clip plays. */
+export function labPhoneHero(project: Project) {
+  const lab = LAB_CLIPS[project.slug?.current ?? ""];
+  const ref = project.coverMedia?.type === "video" ? project.coverMedia.video?.asset?._ref : null;
+  if (!lab || !ref) return undefined;
+  return { src: fileUrl(ref), poster: lab.poster };
 }
 
 export const STATEMENT =
