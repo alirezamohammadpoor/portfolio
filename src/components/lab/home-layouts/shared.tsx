@@ -37,31 +37,28 @@ export type FrameMode = "inset" | "flush";
 export const FrameContext = createContext<FrameMode>("inset");
 
 /**
- * Re-recorded covers (11-26, 1280x800 viewport at 2x, flush), served from
+ * Re-recorded covers (11-26, 1440x900 window at 2x), served from
  * public/lab until they go to Sanity. On by default; `?clips=old` (or the
  * picker's Clips switch, C) shows the Sanity files for comparison.
  */
 export const LAB_CLIPS: Record<string, { src: string; poster: string; still?: boolean }> = {
+  // The 1440 set (11-26): every cover a 1440x900 window at 2x, like the
+  // gallery clips. Sania and Stronger are phone films on the page colour.
   "zone-2": {
     src: "/lab/project-window/zone2-cover.mp4",
     poster: "/lab/project-window/zone2-cover-poster.jpg",
   },
-  // Stills (Ali 11-26): the store's announcement bar flips in a clip, and
-  // neither home hero moves, so these covers hold one frame.
+  "paul-and-friends": {
+    src: "/lab/project-window/pnf-cover.mp4",
+    poster: "/lab/project-window/pnf-cover-poster.jpg",
+  },
   "sania-d-mina": {
-    src: "",
-    poster: "/lab/project-window/sania-cover.webp",
-    still: true,
+    src: "/lab/project-window/sania-cover.mp4",
+    poster: "/lab/project-window/sania-cover-poster.jpg",
   },
   stronger: {
-    src: "",
-    poster: "/lab/project-window/stronger-cover.webp",
-    still: true,
-  },
-  "paul-and-friends": {
-    src: "",
-    poster: "/lab/project-window/pnf-cover.webp",
-    still: true,
+    src: "/lab/project-window/stronger-cover.mp4",
+    poster: "/lab/project-window/stronger-cover-poster.jpg",
   },
 };
 export const ClipsContext = createContext(true);
