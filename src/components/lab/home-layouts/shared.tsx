@@ -41,38 +41,7 @@ export const FrameContext = createContext<FrameMode>("inset");
  * public/lab until they go to Sanity. On by default; `?clips=old` (or the
  * picker's Clips switch, C) shows the Sanity files for comparison.
  */
-/**
- * How a phone cover sits in its window (Ali 11-26: the lone phone looks off
- * next to the laptop windows). "now": the phone film as recorded, on the page
- * colour. The others cut the phone out of the film and put a ground behind
- * it: the brand's campaign photo, the same photo blurred, the project's
- * desktop page (phone overlapping on the right) or a flat brand colour.
- */
-export const PHONE_MODES = ["now", "photo", "soft", "desktop", "colour"] as const;
-export type PhoneMode = (typeof PHONE_MODES)[number];
-export const PhoneContext = createContext<PhoneMode>("photo");
-/** Which of Stronger's campaign photos sits behind its phone (1-4, `?photo=`). */
-export const STRONGER_PHOTOS = 4;
-export const PhotoPickContext = createContext(3);
-
-interface PhoneCover {
-  /** The phone in the 2880x1800 film: clip-path inset (top right bottom
-   *  left, in %) and corner radius (% of width / % of height). */
-  clip: string;
-  /** Scales this film's phone to the shared phone size (Sania's). */
-  fit: number;
-  /** Where the phone sits over the desktop page, as a translate in %. */
-  desktop: string;
-  colour: string;
-  bg: string;
-  /** Has numbered campaign photos (`-photo-1.jpg` ...) to pick from. */
-  picks?: boolean;
-}
-
-export const LAB_CLIPS: Record<
-  string,
-  { src: string; poster: string; still?: boolean; phone?: PhoneCover }
-> = {
+export const LAB_CLIPS: Record<string, { src: string; poster: string; still?: boolean }> = {
   // The 1440 set (11-26): every cover a 1440x900 window at 2x, like the
   // gallery clips. Sania and Stronger are phone films on the page colour.
   "zone-2": {
@@ -86,25 +55,10 @@ export const LAB_CLIPS: Record<
   "sania-d-mina": {
     src: "/lab/project-window/sania-cover.mp4",
     poster: "/lab/project-window/sania-cover-poster.jpg",
-    phone: {
-      clip: "inset(4.889% 37.29% 4.944% 37.29% round 4.1% / 6.56%)",
-      fit: 1,
-      desktop: "28%, 6%",
-      colour: "#cdd6aa",
-      bg: "/lab/project-window/sania-bg",
-    },
   },
   stronger: {
     src: "/lab/project-window/stronger-cover.mp4",
     poster: "/lab/project-window/stronger-cover-poster.jpg",
-    phone: {
-      clip: "inset(2.222% 36.49% 2.222% 36.56% round 4.34% / 6.94%)",
-      fit: 0.9436,
-      desktop: "28%, 14%",
-      colour: "#4a68d6",
-      bg: "/lab/project-window/stronger-bg",
-      picks: true,
-    },
   },
 };
 export const ClipsContext = createContext(true);
@@ -264,7 +218,6 @@ export function Cover({
   const controlled = playing !== undefined;
   const media = project.coverMedia;
   const newClips = useContext(ClipsContext);
-  const phoneMode = useContext(PhoneContext);
   const lab = newClips ? LAB_CLIPS[project.slug?.current ?? ""] : undefined;
   const src = lab?.still
     ? null
@@ -353,13 +306,6 @@ export function Cover({
     );
   }
 
-  if (lab?.phone && phoneMode !== "now")
-    body = (
-      <PhoneStage phone={lab.phone} mode={phoneMode}>
-        {body}
-      </PhoneStage>
-    );
-
   if (mode === "bleed") {
     return (
       <div {...markAttrs} className={`relative overflow-hidden bg-tertiary ${className}`}>
@@ -408,56 +354,5 @@ export function Closing({
         <ClosingLine contact={contact} />
       </p>
     </section>
-  );
-}
-
-/**
- * A phone film over a ground: the phone is cut out of the film with a
- * clip-path (the film is the phone on the page colour), scaled to the shared
- * phone size and lifted off the ground with a soft shadow.
- */
-function PhoneStage({
-  phone,
-  mode,
-  children,
-}: {
-  phone: PhoneCover;
-  mode: Exclude<PhoneMode, "now">;
-  children: React.ReactNode;
-}) {
-  const pick = useContext(PhotoPickContext);
-  const file = mode === "photo" && phone.picks ? `photo-${pick}` : mode;
-  const transform =
-    mode === "desktop"
-      ? `translate(${phone.desktop}) scale(${0.82 * phone.fit})`
-      : `scale(${phone.fit})`;
-  return (
-    <div
-      className="absolute inset-0 [container-type:size]"
-      style={{ backgroundColor: phone.colour }}
-    >
-      {mode !== "colour" && (
-        // eslint-disable-next-line @next/next/no-img-element -- lab stand-in
-        <img
-          src={`${phone.bg}-${file}.jpg`}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-      )}
-      <div
-        className="absolute inset-0"
-        style={{
-          transform,
-          filter: "drop-shadow(0 1.2cqw 2cqw rgb(0 0 0 / 0.28))",
-        }}
-      >
-        <div
-          className="absolute inset-0 [&>*]:[clip-path:var(--phone-clip)]"
-          style={{ ["--phone-clip" as string]: phone.clip }}
-        >
-          {children}
-        </div>
-      </div>
-    </div>
   );
 }
