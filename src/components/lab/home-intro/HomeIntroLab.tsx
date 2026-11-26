@@ -1,18 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import HomeReel, { type IntroBuilder } from "@/components/home/HomeReel";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import CarouselHome from "@/components/lab/home-layouts/CarouselHome";
 import { LAB_CLIPS, type Contact } from "@/components/lab/home-layouts/shared";
-import { bigRowIntro, ringIntro, slideInIntro, slideshowIntro } from "./intros";
+import ScatterHome from "@/components/home/ScatterHome";
+import { useIsDesktop } from "@/hooks/useIsDesktop";
+import { ringIntro } from "./intros";
 import "@/components/lab/home-layouts/proto-picker.css";
 
 interface Variant {
   name: string;
   /** Unset: the home's own ring and dive. */
   build?: IntroBuilder;
+  /** The ring sized with ringFit (whole oval on screen at any width). */
+  fit?: boolean;
 }
+
+const noop = () => () => {};
 
 /** The ring's cards use the lab's re-recorded covers too. */
 function heroOverride(project: PROJECTS_QUERY_RESULT[number]) {
@@ -22,12 +28,13 @@ function heroOverride(project: PROJECTS_QUERY_RESULT[number]) {
 }
 
 // The ring two first, then the fresh start (Ali 11-26 12:14).
+// Ali 11-26 13:37: Original or the oval (Ring) to work on, for laptop AND
+// phone; Slideshow, Big to small and Slide in are out (builders kept in
+// intros.ts). Live is today's home, kept to compare the phone.
 const VARIANTS: Variant[] = [
-  { name: "Original" },
+  { name: "Live" },
+  { name: "Original", fit: true },
   { name: "Ring", build: ringIntro },
-  { name: "Slideshow", build: slideshowIntro },
-  { name: "Big to small", build: bigRowIntro },
-  { name: "Slide in", build: slideInIntro },
 ];
 
 /**
@@ -82,23 +89,34 @@ export default function HomeIntroLab({
     return () => document.removeEventListener("keydown", onKey);
   }, [current, select]);
 
+  // The laptop lands on the carousel, the phone on today's phone home. Client
+  // only, so one tree (and one reel) mounts.
+  const mounted = useSyncExternalStore(
+    noop,
+    () => true,
+    () => false,
+  );
+  const desktop = useIsDesktop();
+  const reel = { build: variant.build, heroOverride, fit: variant.fit };
+
   return (
     <>
-      <p className="px-margin pt-12 text-h3 desktop:hidden">
-        These intros are for the laptop home. Open this page in a window at least 1200 px wide.
-      </p>
-      <div className="hidden desktop:block">
-        {/* The page first: its ref is set before the reel's layout effect
-            looks for the covers (the reel renders into a portal anyway). */}
-        <CarouselHome projects={page} contact={contact} rootRef={rootRef} />
-        <HomeReel
-          projects={projects}
-          pageRef={rootRef}
-          coverSizes={page.map(() => "50vw")}
-          build={variant.build}
-          heroOverride={heroOverride}
-        />
-      </div>
+      {mounted &&
+        (desktop ? (
+          <>
+            {/* The page first: its ref is set before the reel's layout effect
+                looks for the covers (the reel renders into a portal anyway). */}
+            <CarouselHome projects={page} contact={contact} rootRef={rootRef} />
+            <HomeReel
+              projects={projects}
+              pageRef={rootRef}
+              coverSizes={page.map(() => "50vw")}
+              {...reel}
+            />
+          </>
+        ) : (
+          <ScatterHome projects={page} contact={contact} reel={reel} />
+        ))}
       <Picker current={current} onSelect={select} count={count || projects.length} />
     </>
   );

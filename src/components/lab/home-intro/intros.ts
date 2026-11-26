@@ -1,7 +1,8 @@
 import gsap from "gsap";
 import { SCATTER_BEAT } from "@/lib/reel";
 import { ease } from "@/lib/motion";
-import { barEntrance, ovalPath, type IntroBuilder, type Rect } from "@/components/home/HomeReel";
+import { DESKTOP_QUERY } from "@/hooks/useIsDesktop";
+import { barEntrance, ringFit, type IntroBuilder, type Rect } from "@/components/home/HomeReel";
 
 /**
  * Entries for the carousel home (Ali 11-26), every one ending with each
@@ -73,44 +74,16 @@ const inOutE = gsap.parseEase(ease.inOut);
 export const ringIntro: IntroBuilder = (tl, heroes, world, rects) => {
   const { slots, place, aspect, VW, VH } = setup(heroes, world, rects);
   const N = heroes.length;
-  // The home ring's layout: the largest equal cards that clear each other
-  // at every turn of an oval fitted to the field.
+  // The fitted ring (ringFit): the same rule on the laptop and the phone.
+  const laptop = window.matchMedia(DESKTOP_QUERY).matches;
   const top = 72;
-  const margin = 24;
-  const gap = 20;
+  const margin = laptop ? 24 : 16;
+  const gap = laptop ? 20 : 12;
   const fw = VW - margin * 2;
   const fh = VH - top - margin;
   const ox = VW / 2;
   const oy = top + fh / 2;
-  const layout = (cw: number) => {
-    const ch = cw * aspect;
-    return {
-      ch,
-      at: ovalPath(Math.max(fw / 2 - cw / 2, cw), Math.max(fh / 2 - ch / 2, ch)),
-    };
-  };
-  const clears = (cw: number) => {
-    const { ch, at } = layout(cw);
-    for (const shift of [0, 0.25, 0.5, 0.75]) {
-      const pts = Array.from({ length: N }, (_, i) => at((i + shift) / N));
-      for (let i = 0; i < N; i++)
-        for (let j = i + 1; j < N; j++)
-          if (Math.abs(pts[i].x - pts[j].x) < cw + gap && Math.abs(pts[i].y - pts[j].y) < ch + gap)
-            return false;
-    }
-    return true;
-  };
-  let lo = 8;
-  let hi = fw * 0.24;
-  if (clears(hi)) lo = hi;
-  else
-    for (let k = 0; k < 24; k++) {
-      const mid = (lo + hi) / 2;
-      if (clears(mid)) lo = mid;
-      else hi = mid;
-    }
-  const cw = lo;
-  const { at } = layout(cw);
+  const { cw, at } = ringFit({ fw, fh, N, aspect, gap, laptop });
 
   // u is the turn, clockwise from 12 o'clock; 7/12 puts project 1 at 7.
   // Ali 11-26: a shorter turn, from half past 3 to 7, and slower.
@@ -120,7 +93,7 @@ export const ringIntro: IntroBuilder = (tl, heroes, world, rects) => {
   const land = heroes.map(() => ({ p: 0 }));
   const away = { p: 0 };
   // Only the slots the screen shows take a card; the rest leave.
-  const shown = slots.map((s) => s.x - s.w / 2 < VW);
+  const shown = slots.map((s) => s.x - s.w / 2 < VW && s.y - s.w * aspect * 0.5 < VH);
   const push = Math.max(VW, VH) * 0.6;
   const ROW_GAP = 31.5;
   const poses: (Pose | null)[] = heroes.map(() => null);
@@ -155,7 +128,7 @@ export const ringIntro: IntroBuilder = (tl, heroes, world, rects) => {
     heroes.forEach((_, i) => {
       const q = poses[i];
       if (!q) return;
-      if (prev) {
+      if (prev && laptop) {
         // Ali 11-26: "much more room". Always fully to the right, at the
         // row's own spacing (32 px between recordings), whatever the height.
         const minX = prev.x + prev.w / 2 + ROW_GAP + q.w / 2;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, type ComponentProps } from "react";
 import { useRouter } from "next/navigation";
 import { Link } from "@/lib/viewTransitions";
 import Image from "next/image";
@@ -83,9 +83,11 @@ type Contact = Pick<NonNullable<ABOUT_QUERY_RESULT>, "email" | "linkedinUrl" | "
 interface ScatterHomeProps {
   projects: PROJECTS_QUERY_RESULT;
   contact?: Contact | null;
+  /** Lab only (/lab/home-intro on the phone): passed through to the reel. */
+  reel?: Pick<ComponentProps<typeof HomeReel>, "build" | "heroOverride" | "fit">;
 }
 
-export default function ScatterHome({ projects, contact }: ScatterHomeProps) {
+export default function ScatterHome({ projects, contact, reel }: ScatterHomeProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const { startTransition } = usePageTransition();
@@ -198,7 +200,12 @@ export default function ScatterHome({ projects, contact }: ScatterHomeProps) {
 
   return (
     <div ref={rootRef} className="px-margin pb-24 desktop:pb-40">
-      <HomeReel projects={projects} pageRef={rootRef} coverSizes={projects.map(coverSizes)} />
+      <HomeReel
+        projects={projects}
+        pageRef={rootRef}
+        coverSizes={projects.map(coverSizes)}
+        {...reel}
+      />
       {/* Opening statement, cols 1-7 on the laptop. */}
       <section className="pt-8 desktop:grid desktop:grid-cols-12 desktop:gap-4 desktop:pt-12">
         <h2 data-statement className="text-h2 desktop:col-start-1 desktop:col-end-8 desktop:text-h1">

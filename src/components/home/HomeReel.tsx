@@ -44,6 +44,9 @@ interface HomeReelProps {
   build?: IntroBuilder;
   /** Lab only: a project's stand-in cover file (re-recorded, not in Sanity). */
   heroOverride?: (project: Project) => { src: string; still?: boolean } | undefined;
+  /** Lab only (Ali 11-26, phone cards too big): the ring sizes its cards with
+   *  `ringFit`, so the whole oval stays on screen at any width. */
+  fit?: boolean;
 }
 
 export interface Rect {
@@ -79,11 +82,13 @@ export default function HomeReel({
   landing = "dive",
   build,
   heroOverride,
+  fit = false,
 }: HomeReelProps) {
   const reel = useReelState();
   const stageRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
   const [scrub, setScrub] = useState<gsap.core.Timeline | null>(null);
+  const [retry, setRetry] = useState(0);
   const showStage = reel === "waiting" || reel === "playing";
   // Lenis stands still under the reel: a wheel only skips it, it doesn't
   // also scroll the page away from the top the reel lands on.
@@ -98,6 +103,12 @@ export default function HomeReel({
       const stage = stageRef.current;
       const world = worldRef.current;
       const page = pageRef.current;
+      // The page's ref can still be unset when the reel mounts inside it on a
+      // client-only render (lab phone): look again on the next frame.
+      if (!page && retry < 3 && getReelState() === "waiting") {
+        const id = requestAnimationFrame(() => setRetry((n) => n + 1));
+        return () => cancelAnimationFrame(id);
+      }
       if (!stage || !world || !page || getReelState() !== "waiting") return;
       const heroes = gsap.utils.toArray<HTMLElement>("[data-hero]", stage);
       const covers = gsap.utils.toArray<HTMLElement>("[data-cover]", page);
@@ -217,7 +228,7 @@ export default function HomeReel({
         const rects = heroes.map((_, i) => coverRects[i % coverRects.length]);
         tl = gsap.timeline({ paused: true, onComplete: scrubbing ? undefined : finish });
         if (build) build(tl, heroes, world, rects);
-        else ringTimeline(tl, heroes, world, rects, landing);
+        else ringTimeline(tl, heroes, world, rects, landing, fit);
 
         lenisRef.current?.stop();
         setIntroState("playing");
@@ -238,7 +249,7 @@ export default function HomeReel({
     // revertOnUpdate: the cleanup also runs when the reel ends (showStage
     // flips), so the window listeners and the timeline go with the stage
     // instead of living on for the whole home visit.
-    { scope: stageRef, dependencies: [showStage], revertOnUpdate: true },
+    { scope: stageRef, dependencies: [showStage, retry], revertOnUpdate: true },
   );
 
   if (!showStage || typeof document === "undefined") return null;
@@ -315,12 +326,64 @@ export function ovalPath(a: number, b: number) {
  * While the field holds the oval turns, cards upright, carrying
  * the first project up to 12 o'clock, and the view dives into it from there.
  */
+/**
+ * The oval's cards, sized for any screen (lab, Ali 11-26: on the phone the
+ * cards were too big and ran off the sides). The old rule capped a card at
+ * 46% of the phone's width and then forced the oval at least a card wide,
+ * which pushed the side cards past the edge. Here the card is a share of the
+ * field (a quarter on the laptop, under a third on the phone), the oval is
+ * inset by half a card so every card stays whole, and the card shrinks
+ * until N of them clear each other by `gap` at every turn.
+ */
+export function ringFit({
+  fw,
+  fh,
+  N,
+  aspect,
+  gap,
+  laptop,
+}: {
+  fw: number;
+  fh: number;
+  N: number;
+  aspect: number;
+  gap: number;
+  laptop: boolean;
+}) {
+  const layout = (cw: number) => {
+    const ch = cw * aspect;
+    return { cw, ch, at: ovalPath(fw / 2 - cw / 2, fh / 2 - ch / 2) };
+  };
+  const clears = (cw: number) => {
+    const { ch, at } = layout(cw);
+    for (const shift of [0, 0.25, 0.5, 0.75]) {
+      const pts = Array.from({ length: N }, (_, i) => at((i + shift) / N));
+      for (let i = 0; i < N; i++)
+        for (let j = i + 1; j < N; j++)
+          if (Math.abs(pts[i].x - pts[j].x) < cw + gap && Math.abs(pts[i].y - pts[j].y) < ch + gap)
+            return false;
+    }
+    return true;
+  };
+  let lo = 8;
+  let hi = fw * (laptop ? 0.24 : 0.3);
+  if (clears(hi)) lo = hi;
+  else
+    for (let k = 0; k < 24; k++) {
+      const mid = (lo + hi) / 2;
+      if (clears(mid)) lo = mid;
+      else hi = mid;
+    }
+  return layout(lo);
+}
+
 function ringTimeline(
   tl: gsap.core.Timeline,
   heroes: HTMLElement[],
   world: HTMLElement,
   rects: Rect[],
   landing: "dive" | "settle" = "dive",
+  fit = false,
 ) {
   const settleAll = landing === "settle";
   // Settle (Ali 11-26: "fall into place", subtle): instead of the oval the
@@ -340,41 +403,46 @@ function ringTimeline(
   const oy = top + fh / 2;
   // Every cover is 16:10 on the page; the card keeps its own cover's shape.
   const aspect = rects[0].h / rects[0].w;
-  // The middle stays open: on the laptop the card is at most a quarter of
-  // the field, on the phone just under half of it.
-  const maxW = laptop ? fw * 0.24 : fw * 0.46;
+  let cw: number;
+  let at: ReturnType<typeof ovalPath>;
+  if (fit) ({ cw, at } = ringFit({ fw, fh, N, aspect, gap, laptop }));
+  else {
+    // The middle stays open: on the laptop the card is at most a quarter of
+    // the field, on the phone just under half of it.
+    const maxW = laptop ? fw * 0.24 : fw * 0.46;
 
-  // The largest card for which N of them, evenly spaced, clear each other
-  // by `gap` at every turn of the oval.
-  function layout(cw: number) {
-    const ch = cw * aspect;
-    const a = Math.max(fw / 2 - cw / 2, cw);
-    const b = Math.max(fh / 2 - ch / 2, ch);
-    return { cw, ch, at: ovalPath(a, b) };
-  }
-  function clears(cw: number) {
-    const { ch, at } = layout(cw);
-    for (const shift of [0, 0.25, 0.5, 0.75]) {
-      const pts = Array.from({ length: N }, (_, i) => at((i + shift) / N));
-      for (let i = 0; i < N; i++) {
-        for (let j = i + 1; j < N; j++) {
-          if (Math.abs(pts[i].x - pts[j].x) < cw + gap && Math.abs(pts[i].y - pts[j].y) < ch + gap)
-            return false;
+    // The largest card for which N of them, evenly spaced, clear each other
+    // by `gap` at every turn of the oval.
+    const layout = (w: number) => {
+      const ch = w * aspect;
+      const a = Math.max(fw / 2 - w / 2, w);
+      const b = Math.max(fh / 2 - ch / 2, ch);
+      return { cw: w, ch, at: ovalPath(a, b) };
+    };
+    const clears = (w: number) => {
+      const { ch, at: path } = layout(w);
+      for (const shift of [0, 0.25, 0.5, 0.75]) {
+        const pts = Array.from({ length: N }, (_, i) => path((i + shift) / N));
+        for (let i = 0; i < N; i++) {
+          for (let j = i + 1; j < N; j++) {
+            if (Math.abs(pts[i].x - pts[j].x) < w + gap && Math.abs(pts[i].y - pts[j].y) < ch + gap)
+              return false;
+          }
         }
       }
-    }
-    return true;
+      return true;
+    };
+    let lo = 8;
+    let hi = maxW;
+    if (clears(hi)) lo = hi;
+    else
+      for (let k = 0; k < 24; k++) {
+        const mid = (lo + hi) / 2;
+        if (clears(mid)) lo = mid;
+        else hi = mid;
+      }
+    ({ cw, at } = layout(lo));
   }
-  let lo = 8;
-  let hi = maxW;
-  if (clears(hi)) lo = hi;
-  else
-    for (let k = 0; k < 24; k++) {
-      const mid = (lo + hi) / 2;
-      if (clears(mid)) lo = mid;
-      else hi = mid;
-    }
-  const { cw, at } = layout(lo);
 
   // The turn: the oval starts a little short of home and ends with the first
   // project at 12 o'clock. About two thirds of a step, at least ~25°.
