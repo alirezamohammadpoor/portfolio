@@ -42,6 +42,8 @@ interface HomeReelProps {
   coverSizes: string[];
   /** Lab only: builds the whole entry instead of the ring (/lab/home-intro). */
   build?: IntroBuilder;
+  /** Lab only: a project's stand-in cover file (re-recorded, not in Sanity). */
+  heroOverride?: (project: Project) => { src: string; still?: boolean } | undefined;
 }
 
 export interface Rect {
@@ -76,6 +78,7 @@ export default function HomeReel({
   coverSizes,
   landing = "dive",
   build,
+  heroOverride,
 }: HomeReelProps) {
   const reel = useReelState();
   const stageRef = useRef<HTMLDivElement>(null);
@@ -252,6 +255,7 @@ export default function HomeReel({
             >
               <HeroMedia
                 project={project}
+                override={heroOverride?.(project)}
                 sizes={coverSizes[i % projects.length] ?? "(min-width: 75rem) 66vw, 100vw"}
               />
             </div>
@@ -515,7 +519,31 @@ export function barEntrance(tl: gsap.core.Timeline, end: number) {
   );
 }
 
-function HeroMedia({ project, sizes }: { project: Project; sizes: string }) {
+function HeroMedia({
+  project,
+  sizes,
+  override,
+}: {
+  project: Project;
+  sizes: string;
+  override?: { src: string; still?: boolean };
+}) {
+  if (override) {
+    return override.still ? (
+      // eslint-disable-next-line @next/next/no-img-element -- lab stand-in
+      <img src={override.src} alt="" className="absolute inset-0 h-full w-full object-cover" />
+    ) : (
+      <video
+        src={override.src}
+        className="absolute inset-0 h-full w-full object-cover"
+        muted
+        loop
+        playsInline
+        autoPlay
+        preload="auto"
+      />
+    );
+  }
   const coverMedia = project.coverMedia;
   if (coverMedia?.type === "video" && coverMedia.video?.asset?._ref) {
     return (

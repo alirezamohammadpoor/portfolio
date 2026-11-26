@@ -10,7 +10,14 @@
  * before the timeline is built.
  */
 
-import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import gsap from "gsap";
 import { ease, registerMotion } from "@/lib/motion";
 import type { Layer, Scene } from "./scenes";
@@ -144,7 +151,11 @@ const TestMorph = forwardRef<TestMorphHandle, Props>(function TestMorph(
           const at = i * (s.stagger ?? 0);
           const open = l.reveal === "right" ? "inset(0% 0% 0% 0% round 3px)" : "inset(0% 0% 0% 0%)";
           tl.to(el, { clipPath: open, duration: s.d }, `${label}+=${at}`);
-          tl.to(content(id), { opacity: 1, y: 0, duration: s.d * 0.8, ease: ease.out }, `${label}+=${at + s.d * 0.2}`);
+          tl.to(
+            content(id),
+            { opacity: 1, y: 0, duration: s.d * 0.8, ease: ease.out },
+            `${label}+=${at + s.d * 0.2}`,
+          );
         });
         continue;
       }
@@ -155,7 +166,12 @@ const TestMorph = forwardRef<TestMorphHandle, Props>(function TestMorph(
         const label = `L${n++}`;
         tl.addLabel(label, s.at);
         tl.set(dot, { x: s.x - 22, y: s.y - 22, visibility: "inherit" }, label);
-        tl.fromTo(dot, { opacity: 0, scale: 1.25 }, { opacity: 1, scale: 1, duration: 0.18, ease: ease.out, immediateRender: false }, label);
+        tl.fromTo(
+          dot,
+          { opacity: 0, scale: 1.25 },
+          { opacity: 1, scale: 1, duration: 0.18, ease: ease.out, immediateRender: false },
+          label,
+        );
         tl.to(dot, { scale: 0.86, duration: 0.1, ease: ease.out }, `${label}+=0.2`);
         tl.to(dot, { opacity: 0, scale: 1, duration: 0.18, ease: ease.out }, `${label}+=0.3`);
         tl.set(dot, { visibility: "hidden" }, `${label}+=0.48`);
@@ -170,7 +186,17 @@ const TestMorph = forwardRef<TestMorphHandle, Props>(function TestMorph(
           // Chrome is replaced by the incoming chrome drawn on top: it never
           // fades, so the stage colour can't show through mid-dissolve.
           if (!chrome.has(id)) {
-            tl.to(el, { opacity: 0, y: s.dy ? `+=${s.dy}` : "+=0", duration: s.d, ease: ease.out, immediateRender: false }, label);
+            tl.to(
+              el,
+              {
+                opacity: 0,
+                y: s.dy ? `+=${s.dy}` : "+=0",
+                duration: s.d,
+                ease: ease.out,
+                immediateRender: false,
+              },
+              label,
+            );
           }
           tl.set(el, { visibility: "hidden" }, `${label}+=${s.d}`);
         }
@@ -227,7 +253,12 @@ const TestMorph = forwardRef<TestMorphHandle, Props>(function TestMorph(
     <div
       ref={boxRef}
       className={className}
-      style={{ position: "relative", aspectRatio: "390 / 844", overflow: "hidden", background: scene.bg }}
+      style={{
+        position: "relative",
+        aspectRatio: "390 / 844",
+        overflow: "hidden",
+        background: scene.bg,
+      }}
     >
       <div
         ref={stageRef}
@@ -246,8 +277,20 @@ const TestMorph = forwardRef<TestMorphHandle, Props>(function TestMorph(
         ) : (
           <>
             {clip && (
-              <div style={{ position: "absolute", left: 0, top: clip[0], width: 390, height: clip[1] - clip[0], overflow: "hidden", background: scene.clipBg }}>
-                <div style={{ position: "absolute", left: 0, top: -clip[0], width: 390, height: 844 }}>
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: clip[0],
+                  width: 390,
+                  height: clip[1] - clip[0],
+                  overflow: "hidden",
+                  background: scene.clipBg,
+                }}
+              >
+                <div
+                  style={{ position: "absolute", left: 0, top: -clip[0], width: 390, height: 844 }}
+                >
                   {inClip.map((l) => (
                     <LayerView key={l.id} layer={l} />
                   ))}

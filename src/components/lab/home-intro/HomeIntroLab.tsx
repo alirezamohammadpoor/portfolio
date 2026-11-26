@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import HomeReel, { type IntroBuilder } from "@/components/home/HomeReel";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import CarouselHome from "@/components/lab/home-layouts/CarouselHome";
-import type { Contact } from "@/components/lab/home-layouts/shared";
+import { LAB_CLIPS, type Contact } from "@/components/lab/home-layouts/shared";
 import { dropIntro, ringIntro } from "./intros";
 import "@/components/lab/home-layouts/proto-picker.css";
 
@@ -12,6 +12,13 @@ interface Variant {
   name: string;
   /** Unset: the home's own ring and dive. */
   build?: IntroBuilder;
+}
+
+/** The ring's cards use the lab's re-recorded covers too. */
+function heroOverride(project: PROJECTS_QUERY_RESULT[number]) {
+  const lab = LAB_CLIPS[project.slug?.current ?? ""];
+  if (!lab) return undefined;
+  return lab.still ? { src: lab.poster, still: true } : { src: lab.src };
 }
 
 // Ordered by how far the cards travel, biggest first.
@@ -75,6 +82,7 @@ export default function HomeIntroLab({
           pageRef={rootRef}
           coverSizes={projects.map(() => "50vw")}
           build={variant.build}
+          heroOverride={heroOverride}
         />
       </div>
       <Picker current={current} onSelect={select} />

@@ -46,11 +46,16 @@ export const LAB_CLIPS: Record<string, { src: string; poster: string; still?: bo
     src: "/lab/project-window/zone2-cover.mp4",
     poster: "/lab/project-window/zone2-cover-poster.jpg",
   },
+  // Stills (Ali 11-26): the store's announcement bar flips in a clip, and
+  // neither home hero moves, so these covers hold one frame.
   "sania-d-mina": {
-    src: "/lab/project-window/sania-cover.mp4",
-    poster: "/lab/project-window/sania-cover-poster.jpg",
-    // The store's announcement bar flips through messages in the clip; the
-    // home hero itself doesn't move, so the cover holds one frame (Ali 11-26).
+    src: "",
+    poster: "/lab/project-window/sania-cover.webp",
+    still: true,
+  },
+  "paul-and-friends": {
+    src: "",
+    poster: "/lab/project-window/pnf-cover.webp",
     still: true,
   },
 };
