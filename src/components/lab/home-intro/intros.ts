@@ -228,3 +228,105 @@ export const dropIntro: IntroBuilder = (tl, heroes, world, rects) => {
   );
   barEntrance(tl, at0 + (N - 1) * step + dur);
 };
+
+/**
+ * 3. Slideshow (Ali 11-26): the projects flick past one at a time, big in
+ * the middle of the screen, last to first, so the show ends on project 1.
+ * Project 1 then shrinks down into its slot while the rest of the row
+ * slides in from the right behind it.
+ */
+export const slideshowIntro: IntroBuilder = (tl, heroes, world, rects) => {
+  const { slots, place, VW, VH } = setup(heroes, world, rects);
+  const N = heroes.length;
+  const bigW = Math.min(VW * 0.62, slots[0].w * 1.5);
+  const big: Pose = { x: VW / 2, y: VH / 2, w: bigW, r: 0, a: 1 };
+  // Shown: which slide is up (N-1 down to 0); in: the shrink and slide.
+  const show = { k: 0 };
+  const settle = { p: 0 };
+  const order = heroes.map((_, i) => N - 1 - i); // slide k shows project order[k]
+  const shift = VW * 0.6;
+  const render = () => {
+    const e = inOutE(settle.p);
+    const k = Math.min(N - 1, Math.floor(show.k));
+    const up = order[k];
+    heroes.forEach((_, i) => {
+      if (i === 0 && (up === 0 || settle.p > 0)) {
+        place(i, mix(big, slots[0], e), 3);
+        return;
+      }
+      if (settle.p > 0) {
+        place(i, { ...slots[i], x: slots[i].x + shift * (1 - e), a: e }, 1);
+        return;
+      }
+      // A slide pops in a touch small and grows while it holds.
+      const t = show.k - k;
+      place(i, { ...big, w: bigW * (0.97 + 0.03 * Math.min(1, t)), a: i === up ? 1 : 0 }, 2);
+    });
+  };
+  render();
+  const step = 0.32;
+  tl.to(show, { k: N, duration: N * step, ease: "none", onUpdate: render }, 0.15);
+  const settleAt = 0.15 + N * step + 0.15;
+  const dur = 1.3;
+  tl.to(settle, { p: 1, duration: dur, ease: "none", onUpdate: render }, settleAt);
+  barEntrance(tl, settleAt + dur);
+};
+
+/**
+ * 4. Big to small (Ali 11-26): the row itself appears first, big and in the
+ * middle of the screen, project 1 centred, then the whole row shrinks down
+ * into its place at the bottom in one move. The row keeps its order and
+ * spacing the whole way, so no card ever crosses another, at any count.
+ */
+export const bigRowIntro: IntroBuilder = (tl, heroes, world, rects) => {
+  const { slots, place, VW, VH } = setup(heroes, world, rects);
+  const s = Math.min(1.6, (VW * 0.66) / slots[0].w);
+  const ax = slots[0].x;
+  const bigPose = (i: number): Pose => ({
+    x: VW / 2 + (slots[i].x - ax) * s,
+    y: VH / 2,
+    w: slots[i].w * s,
+    r: 0,
+    a: 1,
+  });
+  const enter = { p: 0 };
+  const shrink = { p: 0 };
+  const render = () => {
+    const r = outE(enter.p);
+    const e = inOutE(shrink.p);
+    heroes.forEach((_, i) => {
+      const b = bigPose(i);
+      const from: Pose = { ...b, y: b.y + 32 * (1 - r), a: r };
+      place(i, mix(from, slots[i], e));
+    });
+  };
+  render();
+  tl.to(enter, { p: 1, duration: 0.9, ease: "none", onUpdate: render }, 0.15);
+  const shrinkAt = 0.15 + 0.9 + 0.7;
+  const dur = 1.4;
+  tl.to(shrink, { p: 1, duration: dur, ease: "none", onUpdate: render }, shrinkAt);
+  barEntrance(tl, shrinkAt + dur);
+};
+
+/**
+ * 5. Slide in: the row is already at its height and size and glides in
+ * from the right, slowing into place, the cards a beat apart, like the
+ * carousel arriving at its own drift.
+ */
+export const slideInIntro: IntroBuilder = (tl, heroes, world, rects) => {
+  const { slots, place, VW } = setup(heroes, world, rects);
+  const N = heroes.length;
+  const go = heroes.map(() => ({ p: 0 }));
+  const render = () =>
+    heroes.forEach((_, i) => {
+      const e = outE(go[i].p);
+      place(i, { ...slots[i], x: slots[i].x + VW * (1 - e), a: Math.min(1, go[i].p * 3) });
+    });
+  render();
+  const step = 0.08;
+  const dur = 1.6;
+  heroes.forEach((_, i) =>
+    tl.to(go[i], { p: 1, duration: dur, ease: "none", onUpdate: render }, 0.15 + i * step),
+  );
+  barEntrance(tl, 0.15 + Math.min(2, N - 1) * step + dur);
+};

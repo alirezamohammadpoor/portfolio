@@ -5,7 +5,7 @@ import HomeReel, { type IntroBuilder } from "@/components/home/HomeReel";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import CarouselHome from "@/components/lab/home-layouts/CarouselHome";
 import { LAB_CLIPS, type Contact } from "@/components/lab/home-layouts/shared";
-import { dropIntro, ringIntro } from "./intros";
+import { bigRowIntro, ringIntro, slideInIntro, slideshowIntro } from "./intros";
 import "@/components/lab/home-layouts/proto-picker.css";
 
 interface Variant {
@@ -21,16 +21,18 @@ function heroOverride(project: PROJECTS_QUERY_RESULT[number]) {
   return lab.still ? { src: lab.poster, still: true } : { src: lab.src };
 }
 
-// Ordered by how far the cards travel, biggest first.
+// The ring two first, then the fresh start (Ali 11-26 12:14).
 const VARIANTS: Variant[] = [
   { name: "Original" },
   { name: "Ring", build: ringIntro },
-  { name: "Drop", build: dropIntro },
+  { name: "Slideshow", build: slideshowIntro },
+  { name: "Big to small", build: bigRowIntro },
+  { name: "Slide in", build: slideInIntro },
 ];
 
 /**
  * Entries for the carousel home behind Emil Kowalski's prototype
- * picker. An entry only plays on a full load, so picking one (1-3, arrows)
+ * picker. An entry only plays on a full load, so picking one (1-5, arrows)
  * reloads the page with `?v=N`; R plays the current one again.
  */
 export default function HomeIntroLab({
