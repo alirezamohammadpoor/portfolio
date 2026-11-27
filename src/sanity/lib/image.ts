@@ -14,7 +14,9 @@ const urlFor = (source: SanityImageSource) => {
 }
 
 /**
- * Standard Sanity image URL with our default quality (85).
+ * Standard Sanity image URL with our default quality (85), served as WebP or
+ * AVIF where the browser takes it (auto=format), so a still used without the
+ * next/image loader is not the original PNG or JPEG.
  * Replaces the repeated `urlFor(x).width(N).quality(85).url()` chain
  * that lived at 13 call sites — single place to tune quality policy.
  */
@@ -22,7 +24,7 @@ export const imageUrl = (
   source: SanityImageSource,
   width: number,
   quality = 85,
-): string => urlFor(source).width(width).quality(quality).url();
+): string => urlFor(source).width(width).quality(quality).auto("format").url();
 
 /**
  * A crop to exactly `width` × `height`: with both set, the builder cuts the
@@ -37,7 +39,7 @@ export const cropImageUrl = (
   format?: "jpg" | "png",
 ): string => {
   const b = urlFor(source).width(width).height(height).quality(85);
-  return (format ? b.format(format) : b).url();
+  return (format ? b.format(format) : b.auto("format")).url();
 };
 
 /**
