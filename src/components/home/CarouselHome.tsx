@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@/lib/viewTransitions";
 import { getReelState } from "@/lib/reel";
 import { prefersReducedMotion } from "@/lib/motion";
@@ -14,6 +14,10 @@ import {
   type Project,
   type CarouselProps,
 } from "./carousel";
+
+// Memoised here, not in carousel.tsx: a hover change re-renders only the
+// covers whose `playing` flips, not all 2N of them.
+const RowCover = memo(Cover);
 
 // Drift speed in px/s (Ali 11-26: a bit faster than 64); the rate the row eases to a stop on hover (or back up
 // to speed after); a flick's friction; the px that turn a press into a drag.
@@ -67,10 +71,53 @@ export default function CarouselHome({ projects, contact, rootRef }: CarouselPro
     const start = last;
     let raf = 0;
     // Hover is a hit test each frame: the row moves under a resting cursor,
-    // and the browser doesn't re-fire pointerenter for that.
+    // and the browser doesn't re-fire pointerenter for that. The test is
+    // arithmetic on measurements cached on resize (each card's offset and
+    // width, one set's width), not a layout read per frame; the row's band
+    // on screen is read on pointer moves only.
+    let lefts: number[] = [];
+    let widths: number[] = [];
+    let set = 0;
+    const measure = () => {
+      // Relative to the track: both carry its translate, so the difference
+      // is where a card sits in the row.
+      const cards = Array.from(track.children) as HTMLElement[];
+      const origin = track.getBoundingClientRect().left;
+      const rects = cards.map((c) => c.getBoundingClientRect());
+      lefts = rects.map((r) => r.left - origin);
+      widths = rects.map((r) => r.width);
+      set = cards[count] ? lefts[count] - lefts[0] : track.scrollWidth / 2;
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(track);
+    let band: DOMRect | null = null;
     let mouse: { x: number; y: number } | null = null;
+    // Whether the row is what the cursor is on, not something over it (the
+    // open Work or About panel and its scrim): one elementFromPoint on each
+    // move and every OCCLUDE_MS, not every frame.
+    let onRow = false;
+    let checkedAt = 0;
+    const OCCLUDE_MS = 200;
+    const checkOnRow = (now: number) => {
+      checkedAt = now;
+      const el = mouse && document.elementFromPoint(mouse.x, mouse.y);
+      onRow = Boolean(el && track.contains(el));
+    };
     const onMove = (e: PointerEvent) => {
-      if (e.pointerType === "mouse") mouse = { x: e.clientX, y: e.clientY };
+      if (e.pointerType !== "mouse") return;
+      mouse = { x: e.clientX, y: e.clientY };
+      band = track.parentElement?.getBoundingClientRect() ?? null;
+      checkOnRow(performance.now());
+    };
+    let shiftNow = 0;
+    const cardAt = (px: number, py: number): number | null => {
+      if (!onRow || !band || py < band.top || py >= band.bottom || px < band.left || px >= band.right) return null;
+      const local = px - band.left - shiftNow;
+      for (let k = 0; k < lefts.length; k++) {
+        if (local >= lefts[k] && local < lefts[k] + widths[k]) return k;
+      }
+      return null;
     };
     const onOut = (e: PointerEvent) => {
       if (!e.relatedTarget) mouse = null;
@@ -137,10 +184,8 @@ export default function CarouselHome({ projects, contact, rootRef }: CarouselPro
       if (moving) {
         if (activeRef.current !== null) hold(null);
       } else if (mouse) {
-        const card = document
-          .elementFromPoint(mouse.x, mouse.y)
-          ?.closest<HTMLElement>("[data-card]");
-        const i = card ? Number(card.dataset.card) : null;
+        if (now - checkedAt > OCCLUDE_MS) checkOnRow(now);
+        const i = cardAt(mouse.x, mouse.y);
         // A card focused from the keyboard keeps the row held while the
         // cursor rests somewhere else.
         const focused = i === null && track.querySelector(":focus-visible") !== null;
@@ -155,23 +200,22 @@ export default function CarouselHome({ projects, contact, rootRef }: CarouselPro
         x += fling * dt;
         fling *= Math.exp(-FRICTION * dt);
       }
-      // One set's width, from the first card to its twin (the leading margin
-      // belongs to the first card only, so half the track is 4 px off).
-      const first = track.children[0] as HTMLElement | undefined;
-      const twin = track.children[count] as HTMLElement | undefined;
-      const set = first && twin ? twin.offsetLeft - first.offsetLeft : track.scrollWidth / 2;
+      // One set's width (measured), from the first card to its twin: the
+      // leading margin belongs to the first card only.
       if (set > 0) {
         while (-x >= set) x += set;
         while (x > 0) x -= set;
       }
       const t = glideOn ? Math.min(1, (now - start) / GLIDE_MS) : 1;
       const glide = (1 - glideEase(t)) * window.innerWidth;
-      track.style.transform = `translate3d(${x + glide}px,0,0)`;
+      shiftNow = x + glide;
+      track.style.transform = `translate3d(${shiftNow}px,0,0)`;
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
     return () => {
       cancelAnimationFrame(raf);
+      ro.disconnect();
       window.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerout", onOut);
       window.removeEventListener("wheel", onWheel);
@@ -207,7 +251,7 @@ export default function CarouselHome({ projects, contact, rootRef }: CarouselPro
           {held && (
             <>
               <p className="text-h3">{held.title}</p>
-              <p className="mt-1 line-clamp-2 text-body text-primary">{held.shortDescription}</p>
+              <p className="mt-1 text-body text-primary">{held.shortDescription}</p>
             </>
           )}
         </div>
@@ -239,7 +283,7 @@ export default function CarouselHome({ projects, contact, rootRef }: CarouselPro
                 open(e, project);
               }}
             >
-              <Cover
+              <RowCover
                 project={project}
                 mark={i < count}
                 playing={active === null || active === i}

@@ -7,7 +7,6 @@ import GsapProvider from "@/components/layout/GsapProvider";
 import { TransitionProvider } from "@/context/TransitionContext";
 import TransitionOverlay from "@/components/layout/TransitionOverlay";
 import DraftModeTools from "@/components/layout/DraftModeTools";
-import { getAbout } from "@/sanity/lib/data";
 import { getBarData } from "@/sanity/lib/bar";
 import JsonLd from "@/components/seo/JsonLd";
 import "@/styles/globals.css";
@@ -44,7 +43,9 @@ export const viewport: Viewport = {
 };
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
-  const [about, bar] = await Promise.all([getAbout().catch(() => null), getBarData()]);
+  // The bar's own read carries the links too: no "about" tag on every page.
+  const bar = await getBarData();
+  const about = bar.about;
 
   const sameAs = [about?.linkedinUrl, about?.githubUrl].filter(
     (u): u is string => typeof u === "string" && u.length > 0,
@@ -73,7 +74,6 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <html lang="en" suppressHydrationWarning>
         <head>
           <link rel="preconnect" href="https://cdn.sanity.io" />
-          <link rel="dns-prefetch" href="https://i.scdn.co" />
           <JsonLd data={[personLd, websiteLd]} />
           {/* Home entry gate, before hydration: the first load of the home in
               a browser session (or any load with ?reel) plays the entry

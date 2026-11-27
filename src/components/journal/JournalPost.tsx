@@ -1,10 +1,8 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import Image from "next/image";
 import { Link } from "@/lib/viewTransitions";
-import type { PortableTextBlock } from "next-sanity";
-import { PortableText } from "next-sanity";
 import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { useTitleAnimation, useBodyAnimation } from "@/hooks/useTextAnimation";
@@ -15,15 +13,18 @@ import type {
 } from "@/sanity/types";
 import { hotspotPosition, imageUrl } from "@/sanity/lib/image";
 import { formatPostDate } from "@/lib/dates";
-import { portableTextComponents } from "@/components/portableText/components";
 import JournalCard from "./JournalCard";
 
 interface JournalPostProps {
-  post: NonNullable<JOURNAL_POST_BY_SLUG_QUERY_RESULT>;
+  /** The post without its body: the body arrives rendered, as `body`. */
+  post: Omit<NonNullable<JOURNAL_POST_BY_SLUG_QUERY_RESULT>, "body" | "relatedPosts">;
+  /** The body, rendered on the server (PortableText), so its blocks are not
+   *  sent to the browser a second time as props; this shell animates it. */
+  body: ReactNode;
   relatedPosts: JOURNAL_POSTS_QUERY_RESULT;
 }
 
-export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
+export default function JournalPost({ post, body, relatedPosts }: JournalPostProps) {
   const heroRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const excerptRef = useRef<HTMLParagraphElement>(null);
@@ -155,15 +156,12 @@ export default function JournalPost({ post, relatedPosts }: JournalPostProps) {
       </div>
       {/* Body content */}
       <article className="mx-auto desktop:max-w-[50vw] px-4 py-6 desktop:px-6">
-        {post.body && (
+        {body && (
           <div
             ref={bodyRef}
             className="gsap-hidden text-sub desktop:text-body text-primary space-y-4 mx-auto max-w-[75ch] [&>h2]:mt-12 [&>h3]:mt-10 [&>h4]:mt-8 [&_h2]:text-h2 desktop:[&_h2]:text-h1 [&_h3]:text-h3 desktop:[&_h3]:text-h2 [&_h4]:text-body desktop:[&_h4]:text-h3 [&_h5]:text-sub desktop:[&_h5]:text-lead [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
           >
-            <PortableText
-              value={post.body as PortableTextBlock[]}
-              components={portableTextComponents}
-            />
+            {body}
           </div>
         )}
       </article>

@@ -3,6 +3,11 @@
 // project page knows each card's shape before the clip loads (no shift) and
 // shows a still instead of a black card (no flicker).
 //
+// A cover video gets its first frame too, as `coverMedia.poster` (Ali,
+// 11-27): the home, the intro and the Work panel show it while the clip
+// loads, so a cover is never a grey box. `--covers` does only those and
+// leaves every gallery poster as it is.
+//
 // For each galleryVideo item that lacks them it reads the clip's pixel size
 // with ffprobe, grabs frame 0 with ffmpeg, uploads that as an image asset and
 // sets `videoWidth`, `videoHeight` and `poster` on the item. It patches the
@@ -15,6 +20,7 @@
 //   node scripts/sanity/video-posters.mjs --force     # redo items that already have them
 //                                                      (a swapped clip is redone without it)
 //   node scripts/sanity/video-posters.mjs --only zone-2
+//   node scripts/sanity/video-posters.mjs --covers    # cover posters only
 //
 // Needs ffmpeg + ffprobe on the PATH. Token (write access): SANITY_TOKEN, an
 // Editor token of its own, in the environment or in ./.env.local or
@@ -31,6 +37,7 @@ const API = `https://${PROJECT}.api.sanity.io/v2024-01-01`;
 const args = process.argv.slice(2);
 const DRY = args.includes("--dry-run");
 const FORCE = args.includes("--force");
+const COVERS = args.includes("--covers");
 const ONLY = args.includes("--only") ? args[args.indexOf("--only") + 1] : null;
 if (args.includes("--only") && (!ONLY || ONLY.startsWith("--") || !/^[a-z0-9-]+$/.test(ONLY))) {
   // Without a slug the filter would drop out and every project be patched.
@@ -71,7 +78,7 @@ async function query(groq) {
 }
 
 const docs = await query(
-  `*[_type == "project"${ONLY ? ` && slug.current == "${ONLY}"` : ""}]{ _id, "slug": slug.current, "videos": gallery[_type == "galleryVideo"]{ _key, video, poster, videoWidth, videoHeight, "posterFile": poster.asset->originalFilename } }`,
+  `*[_type == "project"${ONLY ? ` && slug.current == "${ONLY}"` : ""}]{ _id, "slug": slug.current, "videos": gallery[_type == "galleryVideo"]{ _key, video, poster, videoWidth, videoHeight, "posterFile": poster.asset->originalFilename }, "cover": coverMedia{ type, video, "posterFile": poster.asset->originalFilename } }`,
 );
 
 const tmp = mkdtempSync(join(tmpdir(), "video-posters-"));
@@ -107,7 +114,7 @@ async function uploadPoster(entry, ref) {
 let changed = 0;
 for (const doc of docs) {
   const set = {};
-  for (const item of doc.videos ?? []) {
+  for (const item of COVERS ? [] : (doc.videos ?? [])) {
     const ref = item.video?.asset?._ref;
     if (!ref) continue;
     // Posters are uploaded as `<clip asset id>-poster.jpg`: one made for
@@ -122,6 +129,16 @@ for (const doc of docs) {
     set[`${at}.videoWidth`] = entry.width;
     set[`${at}.videoHeight`] = entry.height;
     set[`${at}.poster`] = { _type: "image", asset: { _type: "reference", _ref: posterRef } };
+  }
+  const cover = doc.cover;
+  const coverRef = cover?.type === "video" ? cover.video?.asset?._ref : null;
+  if (coverRef && (FORCE || cover.posterFile !== `${coverRef}-poster.jpg`)) {
+    const entry = probe(coverRef);
+    console.log(`${doc._id} (${doc.slug}) cover: poster ${entry.jpg}`);
+    if (!DRY) {
+      const posterRef = await uploadPoster(entry, coverRef);
+      set["coverMedia.poster"] = { _type: "image", asset: { _type: "reference", _ref: posterRef } };
+    }
   }
   if (DRY || !Object.keys(set).length) continue;
   const res = await fetch(`${API}/data/mutate/${DATASET}`, {

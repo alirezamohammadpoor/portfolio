@@ -10,6 +10,17 @@ import { useSyncExternalStore, type ReactNode } from "react";
 
 export type StageChrome = "pill" | "docked" | "title" | "overlay";
 
+/** The next project, while its cover is centred on the stage. */
+export type BarNext = {
+  title: string;
+  /** Its cover's thumbnail. */
+  cover: { image?: string; video?: string };
+  /** The hold before the page moves on by itself is running. */
+  holding: boolean;
+  holdMs: number;
+  go: () => void;
+};
+
 export type BarProject = {
   title: string;
   /** The centred clip's A/B test or clip label, null on a plain clip. */
@@ -21,6 +32,8 @@ export type BarProject = {
   closeDetails: () => void;
   /** The project's text, for a bar that opens the details inside itself. */
   details: ReactNode;
+  /** Set while the next project's cover is centred: the row names it. */
+  next: BarNext | null;
 };
 
 /**
@@ -61,5 +74,9 @@ export function setWorkOpen(workOpen: WorkOpen) {
 }
 
 export function useBarState(): State {
-  return useSyncExternalStore(subscribe, () => state, () => SERVER);
+  return useSyncExternalStore(
+    subscribe,
+    () => state,
+    () => SERVER,
+  );
 }

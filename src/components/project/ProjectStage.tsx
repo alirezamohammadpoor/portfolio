@@ -45,7 +45,7 @@ import ProjectDetailsOverlay, {
   ProjectDetailsText,
 } from "@/components/project/ProjectDetailsOverlay";
 import { setBarProject, useBarState } from "@/lib/barProject";
-import GalleryProgress from "@/components/project/GalleryProgress";
+import GalleryProgress, { thumbSrc } from "@/components/project/GalleryProgress";
 import ClipMeter from "@/components/project/ClipMeter";
 import TestReplay from "@/components/project/TestReplay";
 
@@ -61,7 +61,7 @@ interface ProjectStageProps {
   onFirstReady?: () => void;
   /** The next project's preview card at the end of the strip: its media rect. */
   previewRef?: RefObject<HTMLDivElement | null>;
-  /** Run the in-place next-project transition (preview tap or pill). */
+  /** Run the in-place next-project transition (preview tap or the Pebble's arrow). */
   onNavigateNext?: () => void;
   /** Laptop layout: equal-height cards, flat neighbours, wheel steps. */
   isDesktop?: boolean;
@@ -221,7 +221,7 @@ export default function ProjectStage({
   // Key of the test clip holding its last frame (the pill's icon brightens).
   const [endedKey, setEndedKey] = useState<string | null>(null);
   // The next project's preview card is centred (it is not in `index`, which
-  // counts gallery clips only): the filmstrip hands over to the next pill.
+  // counts gallery clips only): the filmstrip steps aside and the Pebble names the next project.
   const [atPreview, setAtPreview] = useState(false);
   const current = gallery[index];
   // Video ratios as they report metadata (by item key); images carry theirs.
@@ -384,46 +384,6 @@ export default function ProjectStage({
       ? current.label?.trim() || null
       : null;
   const barLabel = barTest ? `A/B test – ${barTest}` : barClipLabel;
-  const barEnded = Boolean(current && endedKey === current._key);
-  useEffect(() => {
-    if (!capsule || hidden) {
-      setBarProject(null);
-      return;
-    }
-    setBarProject({
-      title: project.title ?? "Project",
-      label: barLabel,
-      replay: barTest ? (
-        <TestReplay
-          key={current?._key}
-          name={barTest}
-          ended={barEnded}
-          reduceMotion={reduceMotion}
-          getVideo={() =>
-            itemRefs.current[index]?.querySelector<HTMLVideoElement>("video[data-once]") ?? null
-          }
-          onReplay={() => setReplay((r) => r + 1)}
-        />
-      ) : null,
-      detailsOpen,
-      toggleDetails,
-      closeDetails,
-      details: <ProjectDetailsText project={project} compact />,
-    });
-  }, [
-    capsule,
-    hidden,
-    project,
-    barLabel,
-    barTest,
-    barEnded,
-    current?._key,
-    reduceMotion,
-    index,
-    detailsOpen,
-    toggleDetails,
-    closeDetails,
-  ]);
   useEffect(() => () => setBarProject(null), []);
   // While the finger is down the cards track scroll 1:1 (no CSS transition
   // fighting the per-frame transform); the 200 ms settle applies once idle.
@@ -784,6 +744,67 @@ export default function ProjectStage({
     return () => window.clearTimeout(t);
   }, [atPreview, scrolling, covered, hidden, onNavigateNext]);
 
+  // The next project in the Pebble (Ali picked C, 11-27): with its cover
+  // centred the row names it, and its arrow fills over the hold.
+  const nextFirst = nextProject?.firstMedia as Parameters<typeof thumbSrc>[0] | null | undefined;
+  const barEnded = Boolean(current && endedKey === current._key);
+  useEffect(() => {
+    if (!capsule || hidden) {
+      setBarProject(null);
+      return;
+    }
+    setBarProject({
+      title: project.title ?? "Project",
+      label: barLabel,
+      replay: barTest ? (
+        <TestReplay
+          key={current?._key}
+          name={barTest}
+          ended={barEnded}
+          reduceMotion={reduceMotion}
+          getVideo={() =>
+            itemRefs.current[index]?.querySelector<HTMLVideoElement>("video[data-once]") ?? null
+          }
+          onReplay={() => setReplay((r) => r + 1)}
+        />
+      ) : null,
+      detailsOpen,
+      toggleDetails,
+      closeDetails,
+      details: <ProjectDetailsText project={project} compact />,
+      next:
+        atPreview && hasPreview && onNavigateNext
+          ? {
+              title: nextProject?.title ?? "Next project",
+              cover: nextFirst ? thumbSrc(nextFirst) : {},
+              holding: !scrolling && !covered && !hidden,
+              holdMs: AUTO_NEXT_MS,
+              go: onNavigateNext,
+            }
+          : null,
+    });
+  }, [
+    capsule,
+    hidden,
+    project,
+    barLabel,
+    barTest,
+    barEnded,
+    current?._key,
+    reduceMotion,
+    index,
+    detailsOpen,
+    toggleDetails,
+    closeDetails,
+    atPreview,
+    hasPreview,
+    onNavigateNext,
+    nextProject?.title,
+    nextFirst,
+    scrolling,
+    covered,
+  ]);
+
   // Phone: a swipe on the next project's card opens it (Ali, 11-05: at the
   // end of the strip a swipe did nothing, only a tap or the hold moved on).
   // Only a NEW swipe that starts with the strip already at its end and goes
@@ -896,6 +917,13 @@ export default function ProjectStage({
   // back to the visitor for this visit, and the clips loop as usual. Off under
   // reduced motion (no glides then).
   const inOrder = Boolean(project.playInOrder) && !reduceMotion;
+  // A gallery in order has no stills (see the poster below), so a card whose
+  // clip has no frame yet shows the project's media background, the ground
+  // its clips open on, instead of a black box (Ali, 11-27: black screens
+  // scrolling DevOps on a phone).
+  const inOrderGround = project.playInOrder
+    ? (resolveFrame(null, project, "landscape").background?.colour ?? null)
+    : null;
   const [auto, setAuto] = useState(true);
   const autoOn = inOrder && auto;
   useEffect(() => {
@@ -919,20 +947,23 @@ export default function ProjectStage({
     v.addEventListener("timeupdate", onTime);
     return () => v.removeEventListener("timeupdate", onTime);
   }, [autoOn, index, covered, hidden, last]);
-  // The clip meter (ClipMeter, Ali picked it 11-25): the centred
-  // clip's progress up to the glide, and its card's box, as CSS variables on
-  // the root, per frame while the stage plays in order. Handed back, the
-  // meter fades where it stands.
+  // The clip meter (ClipMeter, Ali picked it 11-25; on every project and
+  // every clip since 11-27): the centred clip's progress and its card's box,
+  // as CSS variables on the root, per frame, so nothing re-renders. While a
+  // gallery plays in order the line fills up to the glide; otherwise it
+  // follows the loop. `--clip-on` is 0 on a card with no playing clip.
   useEffect(() => {
     const root = rootRef.current;
-    if (!autoOn || covered || hidden || !root) return;
+    if (covered || hidden || !root) return;
     let raf = 0;
     const tick = () => {
       const card = itemRefs.current[index];
       const v = card?.querySelector("video");
-      const end = v && Number.isFinite(v.duration) ? v.duration - IN_ORDER_EARLY_S : 0;
+      const d = v && Number.isFinite(v.duration) ? v.duration : 0;
+      const end = autoOn ? d - IN_ORDER_EARLY_S : d;
       const p = v && end > 0 ? Math.min(1, v.currentTime / end) : 0;
       root.style.setProperty("--clip-p", p.toFixed(4));
+      root.style.setProperty("--clip-on", d > 0 ? "1" : "0");
       if (card) {
         const r = card.getBoundingClientRect();
         const o = root.getBoundingClientRect();
@@ -1284,6 +1315,10 @@ export default function ProjectStage({
                     src={poster}
                     unoptimized
                     alt=""
+                    // The cards either side load their still up front: a
+                    // lazy one only started when it slid in, so a swipe met
+                    // a grey card (Ali, 11-27).
+                    loading={near ? "eager" : "lazy"}
                     fill
                     className="object-cover"
                     sizes={LANDING_SIZES.stage}
@@ -1295,7 +1330,9 @@ export default function ProjectStage({
                       if (i === 0) firstVideoRef.current = el;
                       // The still under the clip stays until the clip has
                       // presented a frame of its own (see revealOnFirstFrame).
-                      if (poster) revealOnFirstFrame(el);
+                      // A gallery that plays in order has no still: its clip
+                      // waits on the card's ground (inOrderGround) instead.
+                      if (poster || inOrderGround) revealOnFirstFrame(el);
                       return () => {
                         if (i === 0 && firstVideoRef.current === el) firstVideoRef.current = null;
                       };
@@ -1341,7 +1378,9 @@ export default function ProjectStage({
                       }),
                   ...(frame && !framed && frame.background?.colour
                     ? { backgroundColor: frame.background.colour }
-                    : null),
+                    : !framed && inOrderGround
+                      ? { backgroundColor: inOrderGround }
+                      : null),
                   boxShadow: i === index && !flat ? "0 8px 24px rgba(0,0,0,0.18)" : "none",
                   transition:
                     reduceMotion || scrolling || entering
@@ -1407,7 +1446,7 @@ export default function ProjectStage({
         {single ? "" : `${index + 1} of ${gallery.length}`}
       </p>
 
-      {inOrder && <ClipMeter shown={autoOn} reduceMotion={reduceMotion} />}
+      <ClipMeter shown={!covered && !atPreview} reduceMotion={reduceMotion} />
 
       {/* Progress: a filmstrip at the bottom centre (Ali, 11-04). */}
       <GalleryProgress

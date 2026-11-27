@@ -21,7 +21,11 @@ import { warmPreviewVideo } from "@/components/project/NextProjectPreview";
 import { DESKTOP_QUERY, useIsDesktop } from "@/hooks/useIsDesktop";
 import ScrollProgress from "@/components/project/ScrollProgress";
 import ProjectTextShell from "@/components/project/ProjectTextShell";
-import ProjectChapters from "@/components/project/ProjectChapters";
+import dynamic from "next/dynamic";
+
+// The chapter page is parked (CHAPTER_PAGE in lib/landing): loaded only if a
+// project renders it, so the gallery page doesn't ship it.
+const ProjectChapters = dynamic(() => import("@/components/project/ProjectChapters"));
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 

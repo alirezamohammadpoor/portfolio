@@ -19,14 +19,6 @@ export const about = defineType({
       of: [{ type: "block", styles: [{ title: "Normal", value: "normal" }], lists: [] }],
     }),
     defineField({
-      name: "portrait",
-      title: "Portrait",
-      type: "image",
-      options: {
-        hotspot: true,
-      },
-    }),
-    defineField({
       name: "email",
       title: "Email",
       type: "string",

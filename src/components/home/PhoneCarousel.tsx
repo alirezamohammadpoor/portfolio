@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { Link } from "@/lib/viewTransitions";
 import { getReelState } from "@/lib/reel";
 import { prefersReducedMotion } from "@/lib/motion";
@@ -13,6 +13,10 @@ import {
   useOpenProject,
   type CarouselProps,
 } from "./carousel";
+
+// Memoised here, not in carousel.tsx: a lead change doesn't re-render all
+// 2N covers.
+const RowCover = memo(Cover);
 
 // Slower than the laptop's 96 px/s: a phone screen is a third as wide, so
 // the same speed reads as a rush. A touch holds the row; it picks up again
@@ -57,6 +61,20 @@ export default function PhoneCarousel({ projects, contact, rootRef }: CarouselPr
     let fling = 0;
     let heldUntil = 0;
     let leadNow = 0;
+    // Card offsets and widths, cached on resize instead of read for all 2N
+    // cards every frame.
+    let lefts: number[] = [];
+    let widths: number[] = [];
+    let set = 0;
+    const measure = () => {
+      const cards = Array.from(track.children) as HTMLElement[];
+      lefts = cards.map((c) => c.offsetLeft);
+      widths = cards.map((c) => c.offsetWidth);
+      set = cards[count] ? lefts[count] - lefts[0] : track.scrollWidth / 2;
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(track);
 
     let press: { id: number; x: number; t: number; moved: boolean } | null = null;
     const onDown = (e: PointerEvent) => {
@@ -121,9 +139,6 @@ export default function PhoneCarousel({ projects, contact, rootRef }: CarouselPr
         x += fling * dt;
         fling *= Math.exp(-FRICTION * dt);
       }
-      const first = track.children[0] as HTMLElement | undefined;
-      const twin = track.children[count] as HTMLElement | undefined;
-      const set = first && twin ? twin.offsetLeft - first.offsetLeft : track.scrollWidth / 2;
       // Wrap.
       if (set > 0) {
         let shift = 0;
@@ -136,13 +151,12 @@ export default function PhoneCarousel({ projects, contact, rootRef }: CarouselPr
       track.style.transform = `translate3d(${x + glide}px,0,0)`;
       // The lead: the window whose middle is closest to a window's width in
       // from the left edge, i.e. the one sitting where the first one starts.
-      if (first) {
-        const w = first.offsetWidth;
+      if (lefts.length) {
+        const w = widths[0];
         let best = 0;
         let bestD = Infinity;
-        for (let k = 0; k < track.children.length; k++) {
-          const c = track.children[k] as HTMLElement;
-          const mid = c.offsetLeft + x + glide + c.offsetWidth / 2;
+        for (let k = 0; k < lefts.length; k++) {
+          const mid = lefts[k] + x + glide + widths[k] / 2;
           const d = Math.abs(mid - w / 2);
           if (d < bestD) {
             bestD = d;
@@ -159,6 +173,7 @@ export default function PhoneCarousel({ projects, contact, rootRef }: CarouselPr
     raf = requestAnimationFrame(frame);
     return () => {
       cancelAnimationFrame(raf);
+      ro.disconnect();
       track.removeEventListener("pointerdown", onDown);
       track.removeEventListener("pointermove", onMove);
       track.removeEventListener("pointerup", onUp);
@@ -200,7 +215,7 @@ export default function PhoneCarousel({ projects, contact, rootRef }: CarouselPr
             </span>
             <span
               key={`${shown._id}-line`}
-              className="mt-1 line-clamp-2 min-h-[2lh] animate-[carousel-fade_420ms_cubic-bezier(0.23,1,0.32,1)_60ms_both] text-sub text-primary"
+              className="mt-1 min-h-[2lh] animate-[carousel-fade_420ms_cubic-bezier(0.23,1,0.32,1)_60ms_both] text-sub text-primary"
             >
               {shown.shortDescription}
             </span>
@@ -236,7 +251,7 @@ export default function PhoneCarousel({ projects, contact, rootRef }: CarouselPr
                 open(e, project);
               }}
             >
-              <Cover
+              <RowCover
                 project={project}
                 mark={i < count}
                 priority={i === 0}

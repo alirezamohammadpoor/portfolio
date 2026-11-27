@@ -98,7 +98,6 @@ export const ABOUT_QUERY = defineQuery(`
   *[_type == "about"][0] {
     heading,
     bio,
-    portrait,
     email,
     linkedinUrl,
     githubUrl
@@ -119,6 +118,18 @@ export const PROJECTS_QUERY = defineQuery(`
     slug,
     shortDescription,
     coverMedia,
+    // A cover clip's still: its own poster, else the first gallery clip's
+    // when that is the same file (a cover that is also slide one). The
+    // LQIP is a ~600 byte blur that ships in the page, so a cover has a
+    // picture before any request.
+    "coverPoster": coalesce(
+      coverMedia.poster,
+      select(gallery[0].video.asset._ref == coverMedia.video.asset._ref => gallery[0].poster)
+    ),
+    "coverLqip": coalesce(
+      coverMedia.poster.asset->metadata.lqip,
+      select(gallery[0].video.asset._ref == coverMedia.video.asset._ref => gallery[0].poster.asset->metadata.lqip)
+    ),
     homeLayout,
     homeTextAlign,
     palette,
@@ -151,6 +162,26 @@ export const PROJECT_BY_SLUG_QUERY = defineQuery(`
     }
   }
 `);
+
+// The capsule bar on every page (src/sanity/lib/bar.ts): only what the Work
+// and About panels show, in the same order as PROJECTS_QUERY and
+// JOURNAL_POSTS_QUERY. Cached under its own tag ("bar"), so a publish that
+// leaves these fields alone doesn't mark every page on the site stale.
+export const BAR_QUERY = defineQuery(`{
+  "projects": *[_type == "project" && defined(slug.current)] | order(order asc, _id asc) {
+    title,
+    slug,
+    shortDescription,
+    coverMedia
+  },
+  "posts": *[_type == "journalPost" && defined(slug.current)] | order(publishedAt desc) {
+    title,
+    slug,
+    excerpt,
+    coverImage
+  },
+  "about": *[_type == "about"][0] { bio, email, linkedinUrl, githubUrl }
+}`);
 
 export const JOURNAL_PAGE_QUERY = defineQuery(`
   *[_type == "journalPage"][0] { description }
