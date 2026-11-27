@@ -27,7 +27,7 @@ import { useGSAP } from "@gsap/react";
 import { EASE_OUT_CSS, dur, ease, stagger } from "@/lib/motion";
 import NextProjectPreview from "@/components/project/NextProjectPreview";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
-import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
+import { adoptableVideo, cloneClockTime, handoffTime, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
 import PhonesRow, { PHONE_ASPECT } from "@/components/PhonesRow";
 import MediaFrame from "@/components/MediaFrame";
@@ -174,12 +174,38 @@ export default function ProjectStage({
   const firstVideoRef = useRef<HTMLVideoElement | null>(null);
   // Project → project: card 1 takes the live <video> the clone carries when
   // it is the same file (see adoptVideo.ts).
-  const { isTransitioning, inPlace, sourceVideoElement } = usePageTransition();
+  const { isTransitioning, inPlace, sourceVideoElement, sourceTime, sourceSrc } = usePageTransition();
+  // Home → project: card 1 picks the cover's clip up where it was (same
+  // file only), read once for the transition this page arrived with.
+  const [handoff] = useState(() =>
+    isTransitioning ? { sourceTime, sourceSrc, inPlace } : null,
+  );
   const [adopted] = useState(() => {
     const first = gallery[0];
     const ref = first?._type === "galleryVideo" ? galleryClip(first, isDesktop).ref : undefined;
     return adoptableVideo(sourceVideoElement, inPlace, ref ? fileUrl(ref) : undefined);
   });
+  // While the clone still covers it, card 1 follows the clone's clip: both
+  // start on the cover's frame but load at different moments, so card 1 is
+  // nudged onto the clone's time (at most every 400 ms, a seek takes a
+  // moment) and the clone leaves on the frame card 1 is showing.
+  useEffect(() => {
+    if (!handoff || !isTransitioning) return;
+    let raf = 0;
+    let last = 0;
+    const tick = (now: number) => {
+      const v = firstVideoRef.current;
+      const src = v ? v.currentSrc || v.src : undefined;
+      const t = v ? cloneClockTime(src) : null;
+      if (v && t !== null && !v.seeking && now - last > 400 && Math.abs(v.currentTime - t) > 0.08) {
+        last = now;
+        v.currentTime = t + 0.05;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [handoff, isTransitioning]);
   const adoptHostRef = useRef<HTMLDivElement>(null);
   useLayoutEffect(() => {
     const host = adoptHostRef.current;
@@ -1319,9 +1345,15 @@ export default function ProjectStage({
                     playsInline
                     preload="metadata"
                     autoPlay={i === 0}
-                    onLoadedMetadata={(e) =>
-                      setVideoAspect(`${item._key}:${clip.ref}`, videoAspect(e.currentTarget))
-                    }
+                    onLoadedMetadata={(e) => {
+                      const v = e.currentTarget;
+                      if (i === 0 && handoff) {
+                        const src = v.currentSrc || v.src;
+                        const t = cloneClockTime(src) ?? handoffTime(handoff, src, v.duration);
+                        if (t !== null) v.currentTime = t;
+                      }
+                      setVideoAspect(`${item._key}:${clip.ref}`, videoAspect(v));
+                    }}
                   />
                 )}
               </>
