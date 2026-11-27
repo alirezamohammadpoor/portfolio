@@ -200,7 +200,7 @@ export default function PhoneCarousel({ projects, contact, rootRef }: CarouselPr
             </span>
             <span
               key={`${shown._id}-line`}
-              className="mt-1 line-clamp-2 min-h-[2lh] animate-[carousel-fade_420ms_cubic-bezier(0.23,1,0.32,1)_60ms_both] text-sub text-primary"
+              className="mt-1 min-h-[2lh] animate-[carousel-fade_420ms_cubic-bezier(0.23,1,0.32,1)_60ms_both] text-sub text-primary"
             >
               {shown.shortDescription}
             </span>

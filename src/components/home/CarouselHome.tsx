@@ -207,7 +207,7 @@ export default function CarouselHome({ projects, contact, rootRef }: CarouselPro
           {held && (
             <>
               <p className="text-h3">{held.title}</p>
-              <p className="mt-1 line-clamp-2 text-body text-primary">{held.shortDescription}</p>
+              <p className="mt-1 text-body text-primary">{held.shortDescription}</p>
             </>
           )}
         </div>
