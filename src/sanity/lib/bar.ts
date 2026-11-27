@@ -1,11 +1,15 @@
+import { cacheLife, cacheTag } from "next/cache";
 import type { PortableTextBlock } from "next-sanity";
-import { getAbout, getJournalPosts, getProjects } from "./data";
+import { sanityFetch } from "./live";
+import { BAR_QUERY } from "./queries";
 import { cropImageUrl, fileUrl, imageUrl } from "./image";
 
 // What the capsule bar needs on every page, flattened on the server: the
 // Work index (names, cover still and clip, one line) and the About text.
-// Each read is the cached, tagged one the pages use, so a publish in Studio
-// refreshes the bar with them.
+// One lean read under its own tag, "bar": every page renders the bar, so if
+// it shared the pages' "project" / "journalPost" / "about" tags, any publish
+// of any document would mark the whole site stale. /api/revalidate refreshes
+// "bar" only when the webhook says a field shown here changed.
 
 export type BarRow = {
   href: string;
@@ -31,12 +35,19 @@ type Cover = { type?: string; image?: Img; poster?: Img; video?: { asset?: { _re
 
 const still = (img: Img) => (img?.asset?._ref ? imageUrl(img as never, 1280) : null);
 
+async function fetchBar() {
+  "use cache";
+  cacheLife("max");
+  cacheTag("bar");
+  const { data } = await sanityFetch({ query: BAR_QUERY, perspective: "published", stega: false });
+  return data;
+}
+
 export async function getBarData(): Promise<BarData> {
-  const [projects, posts, about] = await Promise.all([
-    getProjects().catch(() => []),
-    getJournalPosts().catch(() => []),
-    getAbout().catch(() => null),
-  ]);
+  const data = await fetchBar().catch(() => null);
+  const projects = data?.projects ?? [];
+  const posts = data?.posts ?? [];
+  const about = data?.about ?? null;
   return {
     projects: projects
       .filter((p) => p.slug?.current)

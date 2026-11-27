@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import HomeReel from "@/components/home/HomeReel";
+import { ringIntro } from "./ringIntro";
 import { getReelState, setReelState } from "@/lib/reel";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import {
@@ -141,7 +142,7 @@ export default function HomeLayoutsLab({
               projects={projects}
               pageRef={rootRef}
               coverSizes={projects.map(() => variant.sizes)}
-              landing={variant.landing}
+              build={ringIntro(variant.landing)}
               heroOverride={newClips && variant.Component !== CarouselHome ? labHero : undefined}
             />
             <Component

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { draftMode } from "next/headers";
+import { PortableText, type PortableTextBlock } from "next-sanity";
 import { getAbout } from "@/sanity/lib/data";
 import AboutContent from "@/components/about/AboutContent";
 import { OPEN_GRAPH_BASE, SITE_OG_IMAGE } from "@/lib/site";
@@ -28,8 +29,7 @@ export default async function AboutPage() {
     <div>
       <AboutContent
         heading={about?.heading}
-        bio={about?.bio ?? []}
-        portrait={about?.portrait}
+        bio={<PortableText value={(about?.bio ?? []) as PortableTextBlock[]} />}
         email={about?.email}
         linkedinUrl={about?.linkedinUrl}
         githubUrl={about?.githubUrl}

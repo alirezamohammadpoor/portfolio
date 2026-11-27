@@ -1,10 +1,14 @@
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import type { PortableTextBlock } from "next-sanity";
 import { PortableText } from "next-sanity";
 import { imageUrl } from "@/sanity/lib/image";
 import GlossaryTerm from "@/components/journal/GlossaryTerm";
-import RichPreview from "@/components/journal/RichPreview";
-import VideoPlayer from "@/components/player/VideoPlayer";
+
+// Split out: most posts have no clip or hover preview, so the player (and
+// the preview card) load only on a post that renders one.
+const RichPreview = dynamic(() => import("@/components/journal/RichPreview"));
+const VideoPlayer = dynamic(() => import("@/components/player/VideoPlayer"));
 
 export const portableTextComponents = {
   marks: {
