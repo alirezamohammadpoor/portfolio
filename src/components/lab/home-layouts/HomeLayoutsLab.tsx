@@ -14,7 +14,8 @@ import {
 } from "./shared";
 import IndexHome from "./IndexHome";
 import SplitHome from "./SplitHome";
-import CarouselHome from "./CarouselHome";
+// The carousel is the live home now; this lab shows it with the Sanity covers.
+import CarouselHome from "@/components/home/CarouselHome";
 import "./proto-picker.css";
 
 interface Variant {
@@ -141,7 +142,7 @@ export default function HomeLayoutsLab({
               pageRef={rootRef}
               coverSizes={projects.map(() => variant.sizes)}
               landing={variant.landing}
-              heroOverride={newClips ? labHero : undefined}
+              heroOverride={newClips && variant.Component !== CarouselHome ? labHero : undefined}
             />
             <Component
               key={`${current}-${mountKey}`}

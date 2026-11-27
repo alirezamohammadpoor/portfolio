@@ -4,15 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "@/lib/viewTransitions";
 import { getReelState } from "@/lib/reel";
 import { prefersReducedMotion } from "@/lib/motion";
-import { ClosingLine } from "@/components/home/ScatterHome";
+import { ClosingLine } from "./ClosingLine";
 import {
   Cover,
   STATEMENT,
   href,
   useEntrance,
   useOpenProject,
-  type VariantProps,
-} from "@/components/lab/home-layouts/shared";
+  type CarouselProps,
+} from "./carousel";
 
 // Slower than the laptop's 96 px/s: a phone screen is a third as wide, so
 // the same speed reads as a rush. A touch holds the row; it picks up again
@@ -34,19 +34,9 @@ const glideEase = (t: number) => 1 - Math.pow(1 - t, 4);
  * title and line sit above the row and swap as the next one takes its
  * place.
  */
-export default function PhoneCarousel({
-  projects,
-  contact,
-  rootRef,
-  entry = "glide",
-  gap = 0,
-}: VariantProps & {
-  /** Px between the windows (Ali 11-26 18:13: none, a pixel, less). */
-  gap?: number;
-  entry?: "glide" | "stagger";
-}) {
+export default function PhoneCarousel({ projects, contact, rootRef }: CarouselProps) {
   useEntrance(rootRef);
-  const open = useOpenProject(rootRef);
+  const open = useOpenProject();
   const count = projects.length;
   const items = [...projects, ...projects];
   const trackRef = useRef<HTMLDivElement>(null);
@@ -58,7 +48,7 @@ export default function PhoneCarousel({
     if (!track) return;
     const reduced = prefersReducedMotion();
     const top = reduced ? 0 : DRIFT;
-    const glideOn = !reduced && entry === "glide" && getReelState() === "off";
+    const glideOn = !reduced && getReelState() === "off";
     let x = 0;
     let speed = top;
     let last = performance.now();
@@ -116,9 +106,7 @@ export default function PhoneCarousel({
 
     const frame = (now: number) => {
       const reel = getReelState();
-      const entering = "entering" in document.documentElement.dataset;
-      if (entering) speed = 0;
-      if (reel === "waiting" || reel === "playing" || entering) {
+      if (reel === "waiting" || reel === "playing") {
         last = now;
         raf = requestAnimationFrame(frame);
         return;
@@ -177,7 +165,7 @@ export default function PhoneCarousel({
       track.removeEventListener("pointercancel", onUp);
       track.removeEventListener("wheel", onWheel);
     };
-  }, [entry, count]);
+  }, [count]);
 
   const shown = projects[lead] ?? projects[0];
 
@@ -226,7 +214,7 @@ export default function PhoneCarousel({
       <div data-item className="mt-3 h-[calc(90vw*0.625)] shrink-0 overflow-hidden">
         <div
           ref={trackRef}
-          data-reveal={entry === "glide" ? "" : undefined}
+          data-reveal
           data-lenis-prevent
           className="flex h-full w-max touch-pan-y select-none will-change-transform"
         >
@@ -239,7 +227,6 @@ export default function PhoneCarousel({
               tabIndex={i >= count ? -1 : undefined}
               draggable={false}
               className="block h-full w-[90vw] shrink-0"
-              style={gap ? { marginRight: gap } : undefined}
               onClick={(e) => {
                 if (dragged.current) {
                   dragged.current = false;
@@ -254,6 +241,7 @@ export default function PhoneCarousel({
                 mark={i < count}
                 priority={i === 0}
                 frame="bleed"
+                sizes="90vw"
                 className="pointer-events-none h-full w-full"
               />
             </Link>

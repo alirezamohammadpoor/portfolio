@@ -40,7 +40,7 @@ interface HomeReelProps {
   landing?: "dive" | "settle";
   /** Each cover's `sizes` on the page, so a hero image shares its file. */
   coverSizes: string[];
-  /** Lab only: builds the whole entry instead of the ring (/lab/home-intro). */
+  /** Builds the whole entry instead of the ring (the home: saturnIntro). */
   build?: IntroBuilder;
   /** Lab only: a project's stand-in cover file (re-recorded, not in Sanity). */
   heroOverride?: (
@@ -635,8 +635,8 @@ function HeroMedia({
     );
   }
   if (coverMedia?.type === "image" && coverMedia.image?.asset) {
-    // The same loader URL and srcset as the page's cover (ScatterHome
-    // CoverMedia), so the hero and the cover share one download.
+    // The same loader URL and srcset as the page's cover (carousel.tsx
+    // Cover), so the hero and the cover share one download.
     const { props } = getImageProps({
       src: imageUrl(coverMedia.image, 1600),
       alt: "",
