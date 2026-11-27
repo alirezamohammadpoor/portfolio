@@ -34,9 +34,38 @@ interface HomeReelProps {
   projects: PROJECTS_QUERY_RESULT;
   /** The home canvas: its `[data-cover]` boxes are where the heroes land. */
   pageRef: RefObject<HTMLElement | null>;
+  /** How the ring ends. "dive" (the home): the view dives into the first
+   *  project while the rest drift off. "settle" (a row of covers, lab
+   *  carousel): every project flies from the ring into its own slot. */
+  landing?: "dive" | "settle";
   /** Each cover's `sizes` on the page, so a hero image shares its file. */
   coverSizes: string[];
+  /** Lab only: builds the whole entry instead of the ring (/lab/home-intro). */
+  build?: IntroBuilder;
+  /** Lab only: a project's stand-in cover file (re-recorded, not in Sanity). */
+  heroOverride?: (
+    project: Project,
+  ) => { src: string; still?: boolean; poster?: string } | undefined;
+  /** Lab only (Ali 11-26, phone cards too big): the ring sizes its cards with
+   *  `ringFit`, so the whole oval stays on screen at any width. */
+  fit?: boolean;
 }
+
+export interface Rect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Fills the paused timeline: every hero starts placed on its cover's box
+ *  (left/top/width/height) and must end there with no transform left. */
+export type IntroBuilder = (
+  tl: gsap.core.Timeline,
+  heroes: HTMLElement[],
+  world: HTMLElement,
+  rects: Rect[],
+) => void;
 
 /**
  * Home entry: every project's cover flies out of the middle onto an oval,
@@ -48,11 +77,20 @@ interface HomeReelProps {
  * hero is a box the size of its cover on the page, so the landing is pixel
  * exact.
  */
-export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProps) {
+export default function HomeReel({
+  projects,
+  pageRef,
+  coverSizes,
+  landing = "dive",
+  build,
+  heroOverride,
+  fit = false,
+}: HomeReelProps) {
   const reel = useReelState();
   const stageRef = useRef<HTMLDivElement>(null);
   const worldRef = useRef<HTMLDivElement>(null);
   const [scrub, setScrub] = useState<gsap.core.Timeline | null>(null);
+  const [retry, setRetry] = useState(0);
   const showStage = reel === "waiting" || reel === "playing";
   // Lenis stands still under the reel: a wheel only skips it, it doesn't
   // also scroll the page away from the top the reel lands on.
@@ -67,6 +105,17 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
       const stage = stageRef.current;
       const world = worldRef.current;
       const page = pageRef.current;
+      // The page's ref can still be unset when the reel mounts inside it on a
+      // client-only render (lab phone): look again on the next frame.
+      if (!page && getReelState() === "waiting") {
+        if (retry < 3) {
+          const id = requestAnimationFrame(() => setRetry((n) => n + 1));
+          return () => cancelAnimationFrame(id);
+        }
+        // Still no page to land on: give up and show it.
+        setReelState("off");
+        return;
+      }
       if (!stage || !world || !page || getReelState() !== "waiting") return;
       const heroes = gsap.utils.toArray<HTMLElement>("[data-hero]", stage);
       const covers = gsap.utils.toArray<HTMLElement>("[data-cover]", page);
@@ -185,7 +234,8 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
         // `&n`: the extra heroes borrow the boxes of the covers they repeat.
         const rects = heroes.map((_, i) => coverRects[i % coverRects.length]);
         tl = gsap.timeline({ paused: true, onComplete: scrubbing ? undefined : finish });
-        ringTimeline(tl, heroes, world, rects);
+        if (build) build(tl, heroes, world, rects);
+        else ringTimeline(tl, heroes, world, rects, landing, fit);
 
         lenisRef.current?.stop();
         setIntroState("playing");
@@ -206,7 +256,7 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
     // revertOnUpdate: the cleanup also runs when the reel ends (showStage
     // flips), so the window listeners and the timeline go with the stage
     // instead of living on for the whole home visit.
-    { scope: stageRef, dependencies: [showStage], revertOnUpdate: true },
+    { scope: stageRef, dependencies: [showStage, retry], revertOnUpdate: true },
   );
 
   if (!showStage || typeof document === "undefined") return null;
@@ -223,6 +273,7 @@ export default function HomeReel({ projects, pageRef, coverSizes }: HomeReelProp
             >
               <HeroMedia
                 project={project}
+                override={heroOverride?.(project)}
                 sizes={coverSizes[i % projects.length] ?? "(min-width: 75rem) 66vw, 100vw"}
               />
             </div>
@@ -242,20 +293,13 @@ function stageProjects(projects: PROJECTS_QUERY_RESULT) {
   return Array.from({ length: n }, (_, i) => projects[i % projects.length]);
 }
 
-interface Rect {
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-}
-
 /**
  * An oval through the middle of a w × h box: equal arc-length steps around
  * it, so the covers are evenly spaced on screen (equal angles bunch them at
  * the ends of the long axis). `at(u)` gives the point at fraction u of the
  * way round, clockwise from 12 o'clock.
  */
-function ovalPath(a: number, b: number) {
+export function ovalPath(a: number, b: number) {
   const STEPS = 720;
   const ts: number[] = [];
   const lens: number[] = [0];
@@ -289,12 +333,70 @@ function ovalPath(a: number, b: number) {
  * While the field holds the oval turns, cards upright, carrying
  * the first project up to 12 o'clock, and the view dives into it from there.
  */
+/**
+ * The oval's cards, sized for any screen (lab, Ali 11-26: on the phone the
+ * cards were too big and ran off the sides). The old rule capped a card at
+ * 46% of the phone's width and then forced the oval at least a card wide,
+ * which pushed the side cards past the edge. Here the card is a share of the
+ * field (a quarter on the laptop, under a third on the phone), the oval is
+ * inset by half a card so every card stays whole, and the card shrinks
+ * until N of them clear each other by `gap` at every turn.
+ */
+export function ringFit({
+  fw,
+  fh,
+  N,
+  aspect,
+  gap,
+  laptop,
+}: {
+  fw: number;
+  fh: number;
+  N: number;
+  aspect: number;
+  gap: number;
+  laptop: boolean;
+}) {
+  const layout = (cw: number) => {
+    const ch = cw * aspect;
+    return { cw, ch, at: ovalPath(fw / 2 - cw / 2, fh / 2 - ch / 2) };
+  };
+  const clears = (cw: number) => {
+    const { ch, at } = layout(cw);
+    for (const shift of [0, 0.25, 0.5, 0.75]) {
+      const pts = Array.from({ length: N }, (_, i) => at((i + shift) / N));
+      for (let i = 0; i < N; i++)
+        for (let j = i + 1; j < N; j++)
+          if (Math.abs(pts[i].x - pts[j].x) < cw + gap && Math.abs(pts[i].y - pts[j].y) < ch + gap)
+            return false;
+    }
+    return true;
+  };
+  let lo = 8;
+  let hi = fw * (laptop ? 0.24 : 0.3);
+  if (clears(hi)) lo = hi;
+  else
+    for (let k = 0; k < 24; k++) {
+      const mid = (lo + hi) / 2;
+      if (clears(mid)) lo = mid;
+      else hi = mid;
+    }
+  return layout(lo);
+}
+
 function ringTimeline(
   tl: gsap.core.Timeline,
   heroes: HTMLElement[],
   world: HTMLElement,
   rects: Rect[],
+  landing: "dive" | "settle" = "dive",
+  fit = false,
 ) {
+  const settleAll = landing === "settle";
+  // Settle (Ali 11-26: "fall into place", subtle): instead of the oval the
+  // cards fly out into a loose row of small cards above the real row, in
+  // project order, then each drops a short way into its slot, 1, 2, 3. Both
+  // rows run in the same order, so no path crosses another.
   const VW = window.innerWidth;
   const VH = window.innerHeight;
   const laptop = window.matchMedia(DESKTOP_QUERY).matches;
@@ -308,48 +410,66 @@ function ringTimeline(
   const oy = top + fh / 2;
   // Every cover is 16:10 on the page; the card keeps its own cover's shape.
   const aspect = rects[0].h / rects[0].w;
-  // The middle stays open: on the laptop the card is at most a quarter of
-  // the field, on the phone just under half of it.
-  const maxW = laptop ? fw * 0.24 : fw * 0.46;
+  let cw: number;
+  let at: ReturnType<typeof ovalPath>;
+  if (fit) ({ cw, at } = ringFit({ fw, fh, N, aspect, gap, laptop }));
+  else {
+    // The middle stays open: on the laptop the card is at most a quarter of
+    // the field, on the phone just under half of it.
+    const maxW = laptop ? fw * 0.24 : fw * 0.46;
 
-  // The largest card for which N of them, evenly spaced, clear each other
-  // by `gap` at every turn of the oval.
-  function layout(cw: number) {
-    const ch = cw * aspect;
-    const a = Math.max(fw / 2 - cw / 2, cw);
-    const b = Math.max(fh / 2 - ch / 2, ch);
-    return { cw, ch, at: ovalPath(a, b) };
-  }
-  function clears(cw: number) {
-    const { ch, at } = layout(cw);
-    for (const shift of [0, 0.25, 0.5, 0.75]) {
-      const pts = Array.from({ length: N }, (_, i) => at((i + shift) / N));
-      for (let i = 0; i < N; i++) {
-        for (let j = i + 1; j < N; j++) {
-          if (Math.abs(pts[i].x - pts[j].x) < cw + gap && Math.abs(pts[i].y - pts[j].y) < ch + gap)
-            return false;
+    // The largest card for which N of them, evenly spaced, clear each other
+    // by `gap` at every turn of the oval.
+    const layout = (w: number) => {
+      const ch = w * aspect;
+      const a = Math.max(fw / 2 - w / 2, w);
+      const b = Math.max(fh / 2 - ch / 2, ch);
+      return { cw: w, ch, at: ovalPath(a, b) };
+    };
+    const clears = (w: number) => {
+      const { ch, at: path } = layout(w);
+      for (const shift of [0, 0.25, 0.5, 0.75]) {
+        const pts = Array.from({ length: N }, (_, i) => path((i + shift) / N));
+        for (let i = 0; i < N; i++) {
+          for (let j = i + 1; j < N; j++) {
+            if (Math.abs(pts[i].x - pts[j].x) < w + gap && Math.abs(pts[i].y - pts[j].y) < ch + gap)
+              return false;
+          }
         }
       }
-    }
-    return true;
+      return true;
+    };
+    let lo = 8;
+    let hi = maxW;
+    if (clears(hi)) lo = hi;
+    else
+      for (let k = 0; k < 24; k++) {
+        const mid = (lo + hi) / 2;
+        if (clears(mid)) lo = mid;
+        else hi = mid;
+      }
+    ({ cw, at } = layout(lo));
   }
-  let lo = 8;
-  let hi = maxW;
-  if (clears(hi)) lo = hi;
-  else
-    for (let k = 0; k < 24; k++) {
-      const mid = (lo + hi) / 2;
-      if (clears(mid)) lo = mid;
-      else hi = mid;
-    }
-  const { cw, at } = layout(lo);
 
   // The turn: the oval starts a little short of home and ends with the first
   // project at 12 o'clock. About two thirds of a step, at least ~25°.
   const turn = Math.max(0.66 / N, 0.07);
-  const ring = { u: -turn };
+  // Settle turns the other way (anticlockwise), so the cards reach the
+  // release point in project order: 1, 2, 3...
+  const ring = { u: settleAll ? turn : -turn };
   const fly = heroes.map(() => ({ p: 0 }));
   const dive = { p: 0 };
+  const settle = heroes.map(() => ({ p: 0 }));
+  // The hover row: N small cards across the field, centred in the band
+  // between the Pebble and the top of the real row.
+  const rowTop = Math.min(...rects.map((r) => r.y));
+  const hoverGap = 16;
+  const hoverW = Math.min(cw, (fw - hoverGap * (N - 1)) / N);
+  const hoverY = (top + rowTop) / 2;
+  const hoverX0 = VW / 2 - (N * hoverW + (N - 1) * hoverGap) / 2 + hoverW / 2;
+  const hover = heroes.map((_, i) => ({ x: hoverX0 + i * (hoverW + hoverGap), y: hoverY }));
+  const easeIn = gsap.parseEase("power2.in");
+  const easeInOut = gsap.parseEase(ease.inOut);
 
   const base = heroes.map((_, i) => {
     const { x, y, w, h } = rects[i];
@@ -377,13 +497,30 @@ function ringTimeline(
     heroes.forEach((hero, i) => {
       const { cx0, cy0, scale } = base[i];
       const spot = at(i / N + ring.u);
-      let cx = ox + spot.x;
-      let cy = oy + spot.y;
+      let cx = settleAll ? hover[i].x : ox + spot.x;
+      let cy = settleAll ? hover[i].y : oy + spot.y;
       const p = fly[i].p;
       // Out of the middle of the screen.
       cx = VW / 2 + (cx - VW / 2) * p;
       cy = VH / 2 + (cy - VH / 2) * p;
       let alpha = Math.min(1, p * 1.4);
+      if (settleAll) {
+        const small = (hoverW / rects[i].w) * (0.35 + 0.65 * p);
+        const f = settle[i].p;
+        // Falls: the drop speeds up like a weight, the sideways move eases.
+        const fx = easeInOut(f);
+        const fy = easeIn(f);
+        const fs = easeInOut(f);
+        gsap.set(hero, {
+          x: cx + (cx0 - cx) * fx - cx0,
+          y: cy + (cy0 - cy) * fy - cy0,
+          scale: small + (1 - small) * fs,
+          autoAlpha: alpha + (1 - alpha) * f,
+          // A card on its way down passes under the ones still waiting.
+          zIndex: f > 0 ? 1 : 2,
+        });
+        return;
+      }
       if (i > 0 && dive.p > 0) {
         // The rest drifts away from the first project and fades with the
         // camera (Ali 11-04: neighbours' edges at the hand-over, too sudden).
@@ -413,41 +550,76 @@ function ringTimeline(
     );
   });
   const holdAt = at0 + SCATTER_BEAT.scatter + SCATTER_BEAT.stagger * (N - 1);
-  const diveAt = holdAt + SCATTER_BEAT.hold;
+  const diveAt = holdAt + (settleAll ? SCATTER_BEAT.hold * 0.4 : SCATTER_BEAT.hold);
   // The oval turns from the moment the covers leave the middle and settles
   // just into the dive, so the hold never stands still and the first
   // project is home before the camera gets close.
   const turnStart = at0 + SCATTER_BEAT.scatter * 0.4;
-  const turnEnd = diveAt + SCATTER_BEAT.dive * 0.3;
+  const turnEnd = settleAll ? diveAt : diveAt + SCATTER_BEAT.dive * 0.3;
   tl.to(
     ring,
     { u: 0, duration: turnEnd - turnStart, ease: "power1.inOut", onUpdate: render },
     turnStart,
   );
-  tl.to(world, { x: dx, y: dy, scale: K, duration: SCATTER_BEAT.dive, ease: ease.inOut }, diveAt);
-  tl.to(dive, { p: 1, duration: SCATTER_BEAT.dive, ease: ease.inOut, onUpdate: render }, diveAt);
+  if (settleAll) {
+    heroes.forEach((_, i) => {
+      tl.to(settle[i], { p: 1, duration: 0.9, ease: "none", onUpdate: render }, diveAt + i * 0.12);
+    });
+  } else {
+    tl.to(world, { x: dx, y: dy, scale: K, duration: SCATTER_BEAT.dive, ease: ease.inOut }, diveAt);
+    tl.to(dive, { p: 1, duration: SCATTER_BEAT.dive, ease: ease.inOut, onUpdate: render }, diveAt);
+  }
   // The Pebble arrives with the first project (Ali 11-23): hidden over the
   // ring (globals.css), it settles in from just above as the dive lands.
-  const bar = document.querySelector<HTMLElement>("[data-site-bar]");
-  if (bar) {
-    tl.fromTo(
-      bar,
-      { autoAlpha: 0, y: -8, scale: 0.96 },
-      {
-        autoAlpha: 1,
-        y: 0,
-        scale: 1,
-        transformOrigin: "50% 0%",
-        duration: SCATTER_BEAT.barIn,
-        ease: ease.out,
-        clearProps: "opacity,visibility,transform",
-      },
-      diveAt + SCATTER_BEAT.dive - SCATTER_BEAT.barIn,
-    );
-  }
+  barEntrance(tl, diveAt + SCATTER_BEAT.dive);
 }
 
-function HeroMedia({ project, sizes }: { project: Project; sizes: string }) {
+/** The Pebble settles in from just above, landing at `end`. */
+export function barEntrance(tl: gsap.core.Timeline, end: number) {
+  const bar = document.querySelector<HTMLElement>("[data-site-bar]");
+  if (!bar) return;
+  tl.fromTo(
+    bar,
+    { autoAlpha: 0, y: -8, scale: 0.96 },
+    {
+      autoAlpha: 1,
+      y: 0,
+      scale: 1,
+      transformOrigin: "50% 0%",
+      duration: SCATTER_BEAT.barIn,
+      ease: ease.out,
+      clearProps: "opacity,visibility,transform",
+    },
+    end - SCATTER_BEAT.barIn,
+  );
+}
+
+function HeroMedia({
+  project,
+  sizes,
+  override,
+}: {
+  project: Project;
+  sizes: string;
+  override?: { src: string; still?: boolean; poster?: string };
+}) {
+  if (override) {
+    return override.still ? (
+      // eslint-disable-next-line @next/next/no-img-element -- lab stand-in
+      <img src={override.src} alt="" className="absolute inset-0 h-full w-full object-cover" />
+    ) : (
+      <video
+        src={override.src}
+        poster={override.poster}
+        className="absolute inset-0 h-full w-full object-cover"
+        muted
+        loop
+        playsInline
+        autoPlay
+        preload="auto"
+      />
+    );
+  }
   const coverMedia = project.coverMedia;
   if (coverMedia?.type === "video" && coverMedia.video?.asset?._ref) {
     return (

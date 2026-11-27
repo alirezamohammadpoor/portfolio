@@ -417,7 +417,7 @@ function CoverMedia({ project, aspect, priority = false, sizes }: CoverMediaProp
  * each channel the About document has. A missing channel drops out of the
  * sentence instead of leaving a dead word behind.
  */
-function ClosingLine({ contact }: { contact: Contact }) {
+export function ClosingLine({ contact }: { contact: Contact }) {
   // The journal's link style: a hairline under the word and a pistachio
   // sweep behind it on hover.
   const link = "link-highlight border-b border-primary";
