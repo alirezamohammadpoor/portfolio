@@ -186,7 +186,28 @@ export function Cover({
   const media = project.coverMedia;
   const url =
     media?.type === "video" && media.video?.asset?._ref ? fileUrl(media.video.asset._ref) : null;
-  const src = useSharedVideo(url, priority, Boolean(project.coverPoster?.asset));
+  const hasStill = Boolean(project.coverPoster?.asset);
+  // The clip's download waits for the still: on a phone connection the
+  // stills came in late behind 11 MB of clips, so the blur showed for long
+  // (Ali, 11-27: "still grey on mobile").
+  const [stillIn, setStillIn] = useState(false);
+  // Only clips on screen or a screen away download (a phone visitor no
+  // longer pulls every cover in full); once near, a cover stays wanted.
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [near, setNear] = useState(false);
+  useEffect(() => {
+    const box = boxRef.current;
+    if (!box || !url || near) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) setNear(true);
+      },
+      { rootMargin: "0px 100% 0px 100%" },
+    );
+    io.observe(box);
+    return () => io.disconnect();
+  }, [url, near]);
+  const src = useSharedVideo(url, priority, hasStill, stillIn && near);
   const [framed, setFramed] = useState<string | null>(null);
   const shown = Boolean(src) && framed === src;
 
@@ -242,7 +263,13 @@ export function Cover({
             clip once it plays and from the still before. */}
         {poster && !shown && (
           // eslint-disable-next-line @next/next/no-img-element -- getImageProps gives the srcset
-          <img {...poster} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <img
+            {...poster}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            onLoad={() => setStillIn(true)}
+            onError={() => setStillIn(true)}
+          />
         )}
         {src && (
           <video
@@ -290,6 +317,7 @@ export function Cover({
   return (
     <div
       {...markAttrs}
+      ref={boxRef}
       className={`relative overflow-hidden bg-tertiary bg-cover bg-center ${frame === "flush" ? "aspect-[16/10]" : ""} ${className}`}
       style={url && project.coverLqip ? { backgroundImage: `url(${project.coverLqip})` } : undefined}
     >
