@@ -67,7 +67,10 @@ export function cloneClockTime(src: string | undefined): number | null {
   return sameUrl(v.currentSrc || v.src, src) ? v.currentTime : null;
 }
 
+// Covers play their clip as a blob (sharedVideo); compare the files they stand for.
 function sameUrl(a: string, b: string): boolean {
+  a = originalSrc(a);
+  b = originalSrc(b);
   try {
     const base = typeof location === "undefined" ? "http://localhost/" : location.href;
     return new URL(a, base).href === new URL(b, base).href;

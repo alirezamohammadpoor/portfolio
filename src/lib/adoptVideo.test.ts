@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { afterAll, describe, expect, test } from "bun:test";
 import { handoffTime } from "./adoptVideo";
 
 const url = "https://cdn.sanity.io/files/v3d28bxo/production/abc.mp4";
@@ -20,5 +20,23 @@ describe("handoffTime", () => {
   test("unknown time or duration", () => {
     expect(handoffTime({ ...base, sourceTime: null }, url, 10)).toBeNull();
     expect(handoffTime(base, url, NaN)).toBeNull();
+  });
+});
+
+describe("handoffTime with a shared blob", () => {
+  const realFetch = globalThis.fetch;
+  afterAll(() => {
+    globalThis.fetch = realFetch;
+    delete (globalThis as { window?: unknown }).window;
+  });
+  test("a cover playing its clip as a blob still counts as the same file", async () => {
+    (globalThis as { window?: unknown }).window = globalThis;
+    globalThis.fetch = (async () =>
+      new Response(new Blob(["clip"], { type: "video/mp4" }))) as unknown as typeof fetch;
+    const { loadVideo } = await import("./sharedVideo");
+    const blob = await loadVideo(url);
+    expect(blob).toStartWith("blob:");
+    expect(handoffTime({ ...base, sourceSrc: blob }, url, 10)).toBe(4);
+    expect(handoffTime(base, blob, 10)).toBe(4);
   });
 });
