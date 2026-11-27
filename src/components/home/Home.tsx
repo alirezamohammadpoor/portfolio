@@ -54,7 +54,6 @@ export default function Home({
         projects={projects}
         pageRef={rootRef}
         coverSizes={projects.map(() => "90vw")}
-        landing="settle"
         build={saturnIntro}
       />
     </>
