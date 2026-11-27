@@ -870,6 +870,13 @@ export default function ProjectStage({
   // back to the visitor for this visit, and the clips loop as usual. Off under
   // reduced motion (no glides then).
   const inOrder = Boolean(project.playInOrder) && !reduceMotion;
+  // A gallery in order has no stills (see the poster below), so a card whose
+  // clip has no frame yet shows the project's media background, the ground
+  // its clips open on, instead of a black box (Ali, 11-27: black screens
+  // scrolling DevOps on a phone).
+  const inOrderGround = Boolean(project.playInOrder)
+    ? (resolveFrame(null, project, "landscape").background?.colour ?? null)
+    : null;
   const [auto, setAuto] = useState(true);
   const autoOn = inOrder && auto;
   useEffect(() => {
@@ -1273,7 +1280,9 @@ export default function ProjectStage({
                       if (i === 0) firstVideoRef.current = el;
                       // The still under the clip stays until the clip has
                       // presented a frame of its own (see revealOnFirstFrame).
-                      if (poster) revealOnFirstFrame(el);
+                      // A gallery that plays in order has no still: its clip
+                      // waits on the card's ground (inOrderGround) instead.
+                      if (poster || inOrderGround) revealOnFirstFrame(el);
                       return () => {
                         if (i === 0 && firstVideoRef.current === el) firstVideoRef.current = null;
                       };
@@ -1313,7 +1322,9 @@ export default function ProjectStage({
                       }),
                   ...(frame && !framed && frame.background?.colour
                     ? { backgroundColor: frame.background.colour }
-                    : null),
+                    : !framed && inOrderGround
+                      ? { backgroundColor: inOrderGround }
+                      : null),
                   boxShadow: i === index && !flat ? "0 8px 24px rgba(0,0,0,0.18)" : "none",
                   transition:
                     reduceMotion || scrolling || entering
