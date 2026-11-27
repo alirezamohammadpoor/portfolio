@@ -138,7 +138,11 @@ export default function Header({ bar }: { bar: BarData }) {
     return () => clearTimeout(t);
   }, [flightMode]);
 
-  useModalFocus(open !== null, rootRef, scrollRef, close);
+  // The Work panel's chunk can still be loading on a fast first open: focus
+  // moves in once it has mounted (scrollRef lives inside it), not before.
+  const [workMounted, setWorkMounted] = useState(false);
+  const onWorkMounted = useCallback(() => setWorkMounted(true), []);
+  useModalFocus(open !== null && (open !== "work" || workMounted), rootRef, scrollRef, close);
 
   useEffect(() => {
     const idle = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1500));
@@ -316,7 +320,12 @@ export default function Header({ bar }: { bar: BarData }) {
                   }
                 >
                   {showing === "work" ? (
-                    <WorkPanel bar={bar} scrollRef={scrollRef} onOpenProject={openProject} />
+                    <WorkPanel
+                      bar={bar}
+                      scrollRef={scrollRef}
+                      onOpenProject={openProject}
+                      onMounted={onWorkMounted}
+                    />
                   ) : showing === "details" ? (
                     <div
                       ref={scrollRef}

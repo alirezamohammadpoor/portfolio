@@ -22,13 +22,19 @@ export default function WorkPanel({
   bar,
   scrollRef,
   onOpenProject,
+  onMounted,
 }: {
   bar: BarData;
   scrollRef: RefObject<HTMLDivElement | null>;
   /** Takes over opening a project from the preview (the flight into card 1); true when it did. */
   onOpenProject?: (href: string, preview: HTMLElement | null) => boolean;
+  /** Mounted (its chunk loads on demand): scrollRef is set from here on. */
+  onMounted?: () => void;
 }) {
   const previewRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    onMounted?.();
+  }, [onMounted]);
   const desktop = useIsDesktop();
   const rows: (BarRow & { kind: "project" | "post" })[] = [
     ...bar.projects.map((r) => ({ ...r, kind: "project" as const })),

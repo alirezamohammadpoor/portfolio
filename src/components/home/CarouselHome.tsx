@@ -93,14 +93,26 @@ export default function CarouselHome({ projects, contact, rootRef }: CarouselPro
     ro.observe(track);
     let band: DOMRect | null = null;
     let mouse: { x: number; y: number } | null = null;
+    // Whether the row is what the cursor is on, not something over it (the
+    // open Work or About panel and its scrim): one elementFromPoint on each
+    // move and every OCCLUDE_MS, not every frame.
+    let onRow = false;
+    let checkedAt = 0;
+    const OCCLUDE_MS = 200;
+    const checkOnRow = (now: number) => {
+      checkedAt = now;
+      const el = mouse && document.elementFromPoint(mouse.x, mouse.y);
+      onRow = Boolean(el && track.contains(el));
+    };
     const onMove = (e: PointerEvent) => {
       if (e.pointerType !== "mouse") return;
       mouse = { x: e.clientX, y: e.clientY };
       band = track.parentElement?.getBoundingClientRect() ?? null;
+      checkOnRow(performance.now());
     };
     let shiftNow = 0;
     const cardAt = (px: number, py: number): number | null => {
-      if (!band || py < band.top || py >= band.bottom || px < band.left || px >= band.right) return null;
+      if (!onRow || !band || py < band.top || py >= band.bottom || px < band.left || px >= band.right) return null;
       const local = px - band.left - shiftNow;
       for (let k = 0; k < lefts.length; k++) {
         if (local >= lefts[k] && local < lefts[k] + widths[k]) return k;
@@ -172,6 +184,7 @@ export default function CarouselHome({ projects, contact, rootRef }: CarouselPro
       if (moving) {
         if (activeRef.current !== null) hold(null);
       } else if (mouse) {
+        if (now - checkedAt > OCCLUDE_MS) checkOnRow(now);
         const i = cardAt(mouse.x, mouse.y);
         // A card focused from the keyboard keeps the row held while the
         // cursor rests somewhere else.
