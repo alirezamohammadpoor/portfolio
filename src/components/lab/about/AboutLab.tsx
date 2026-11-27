@@ -11,7 +11,7 @@ import {
 } from "react";
 import { splitLead } from "@/lib/aboutLead";
 import { EASE_OUT_CSS } from "@/lib/motion";
-import { PANEL_H, panelSize } from "@/components/layout/bar/WorkPanel";
+import { PANEL_H, panelSize } from "@/components/layout/bar/panelSize";
 import type { BarData } from "@/sanity/lib/bar";
 import {
   Column,
