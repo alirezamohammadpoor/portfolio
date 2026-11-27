@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@/lib/viewTransitions";
 import { getReelState } from "@/lib/reel";
 import { prefersReducedMotion } from "@/lib/motion";
-import { ClosingLine } from "@/components/home/ScatterHome";
+import { ClosingLine } from "./ClosingLine";
 import {
   Cover,
   STATEMENT,
@@ -12,8 +12,8 @@ import {
   useEntrance,
   useOpenProject,
   type Project,
-  type VariantProps,
-} from "./shared";
+  type CarouselProps,
+} from "./carousel";
 
 // Drift speed in px/s (Ali 11-26: a bit faster than 64); the rate the row eases to a stop on hover (or back up
 // to speed after); a flick's friction; the px that turn a press into a drag.
@@ -32,30 +32,18 @@ const glideEase = (t: number) => 1 - Math.pow(1 - t, 4);
  * the bottom half that drifts left on a loop. Wheel, trackpad or a drag move
  * it; hover eases it to a stop, pauses the other clips and shows the held
  * project's line in one fixed spot top right. Click opens the project.
- * Ported from the parked carousel lab (11-17), now on the project window.
+ * The Saturn intro lands the first projects in their slots, then the row
+ * starts to drift.
  */
-export default function CarouselHome({
-  projects,
-  contact,
-  rootRef,
-  entry = "glide",
-  gap = 0,
-}: VariantProps & {
-  /** Px between the recordings (Ali 11-26 18:13: none, a pixel, less). */
-  gap?: number;
-  /** With no entry ring: "glide" slides the row in from the right; "stagger"
-   *  leaves the row in place for the caller to bring the cards in one by one
-   *  (/lab/home-intro, Ali 11-26). */
-  entry?: "glide" | "stagger";
-}) {
+export default function CarouselHome({ projects, contact, rootRef }: CarouselProps) {
   useEntrance(rootRef);
-  const open = useOpenProject(rootRef);
+  const open = useOpenProject();
   const count = projects.length;
   // The recordings run flush and touching, down to the bottom edge (Ali
-  // 11-26: no gap), whatever the lab's frame switch says.
+  // 11-26: no gap).
   // Two copies: one set is wider than any screen, so the second covers the
   // gap while the first wraps round. Only the first set carries the marks
-  // the entry ring and the morph look for.
+  // the intro looks for.
   const items = [...projects, ...projects];
   const trackRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<number | null>(null);
@@ -72,7 +60,7 @@ export default function CarouselHome({
     if (!track) return;
     const reduced = prefersReducedMotion();
     const top = reduced ? 0 : DRIFT;
-    const glideOn = !reduced && entry === "glide" && getReelState() === "off";
+    const glideOn = !reduced && getReelState() === "off";
     let x = 0;
     let speed = top;
     let last = performance.now();
@@ -140,12 +128,7 @@ export default function CarouselHome({
       // The row holds still under the entry ring, which lands every project
       // in its slot; it starts drifting once the ring has handed over.
       const reel = getReelState();
-      // Stagger entry (Ali 11-26): the row stands still until the last
-      // window has dropped in (the lab clears data-entering), then eases
-      // up to speed from rest.
-      const entering = "entering" in document.documentElement.dataset;
-      if (entering) speed = 0;
-      if (reel === "waiting" || reel === "playing" || entering) {
+      if (reel === "waiting" || reel === "playing") {
         last = now;
         raf = requestAnimationFrame(frame);
         return;
@@ -197,7 +180,7 @@ export default function CarouselHome({
       track.removeEventListener("pointerup", onUp);
       track.removeEventListener("pointercancel", onUp);
     };
-  }, [hold, entry, count]);
+  }, [hold, count]);
 
   const held: Project | null = active === null ? null : items[active];
 
@@ -233,7 +216,7 @@ export default function CarouselHome({
       <div data-item className="h-[60svh] shrink-0 overflow-hidden">
         <div
           ref={trackRef}
-          data-reveal={entry === "glide" ? "" : undefined}
+          data-reveal
           className="flex h-full w-max cursor-grab touch-none select-none will-change-transform active:cursor-grabbing"
         >
           {items.map((project, i) => (
@@ -245,7 +228,6 @@ export default function CarouselHome({
               tabIndex={i >= count ? -1 : undefined}
               draggable={false}
               className="block h-full shrink-0"
-              style={gap ? { marginRight: gap } : undefined}
               onFocus={() => hold(i)}
               onBlur={() => hold(null)}
               onClick={(e) => {
@@ -254,7 +236,6 @@ export default function CarouselHome({
                   e.preventDefault();
                   return;
                 }
-                // The second set opens from its twin in the first set.
                 open(e, project);
               }}
             >
@@ -264,6 +245,7 @@ export default function CarouselHome({
                 playing={active === null || active === i}
                 priority={i === 0}
                 frame="flush"
+                sizes="96vh"
                 className="pointer-events-none h-full w-auto"
               />
             </Link>
