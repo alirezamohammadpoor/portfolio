@@ -75,9 +75,7 @@ export function Now({ copy, size }: VariantProps) {
   return (
     <div className="flex min-h-full flex-col px-margin pb-6 desktop:grid-site desktop:grid-rows-[auto_1fr] desktop:items-baseline desktop:pb-8">
       <p className={`${t.lead} text-primary desktop:col-span-5`}>{copy.lead}</p>
-      <div
-        className={`mt-4 ${t.body} text-primary desktop:col-span-7 desktop:mt-0 [&_p+p]:mt-3`}
-      >
+      <div className={`mt-4 ${t.body} text-primary desktop:col-span-7 desktop:mt-0 [&_p+p]:mt-3`}>
         {copy.paras.map((p) => (
           <p key={p}>{p}</p>
         ))}
@@ -114,6 +112,30 @@ export function Rail({ copy, size }: VariantProps) {
             <p key={p}>{p}</p>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Column: everything in one column from the left edge, read top to bottom:
+ * the intro, the paragraphs under it on the same measure, the links at the
+ * panel's foot. Laptop: the left seven columns; phone: the full width.
+ */
+export function Column({ copy, size }: VariantProps) {
+  const t = TYPE[size];
+  return (
+    <div className="flex min-h-full flex-col px-margin pb-6 desktop:pb-8">
+      <div className="desktop:max-w-[calc((100%+var(--grid-gutter))*7/12-var(--grid-gutter))]">
+        <p className={`${t.lead} text-primary`}>{copy.lead}</p>
+        <div className={`mt-4 ${t.body} text-primary desktop:mt-6 [&_p+p]:mt-3`}>
+          {copy.paras.map((p) => (
+            <p key={p}>{p}</p>
+          ))}
+        </div>
+      </div>
+      <div className="mt-auto pt-5 text-sub text-primary desktop:text-body">
+        <Links about={copy.about} />
       </div>
     </div>
   );

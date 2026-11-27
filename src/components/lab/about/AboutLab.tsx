@@ -13,7 +13,7 @@ import { splitLead } from "@/lib/aboutLead";
 import { EASE_OUT_CSS } from "@/lib/motion";
 import { PANEL_H, panelSize } from "@/components/layout/bar/WorkPanel";
 import type { BarData } from "@/sanity/lib/bar";
-import { Now, Rail, type AboutCopy, type Size, type VariantProps } from "./variants";
+import { Column, Now, Rail, type AboutCopy, type Size, type VariantProps } from "./variants";
 import "../home-layouts/proto-picker.css";
 
 interface Variant {
@@ -24,6 +24,7 @@ interface Variant {
 const VARIANTS: Variant[] = [
   { name: "Now", Component: Now },
   { name: "Rail", Component: Rail },
+  { name: "Column", Component: Column },
 ];
 
 /** Intro rewrites to try in place of the bio's first sentence (I cycles them). */
@@ -120,7 +121,7 @@ export default function AboutLab({ bar, initial }: { bar: BarData; initial: numb
       <style>{"[data-site-bar]{display:none!important}"}</style>
       <main className="min-h-dvh px-margin pt-32">
         <p className="max-w-[48rem] text-h3 text-secondary">
-          The About panel, held open at its live size. Flip layouts with the picker, 1 and 2 or the
+          The About panel, held open at its live size. Flip layouts with the picker, 1 to 3 or the
           arrow keys; T changes the type size, I the intro, R closes and reopens it.
         </p>
       </main>
