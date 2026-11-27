@@ -29,6 +29,14 @@ const VARIANTS: Variant[] = [
   { name: "Poster", Component: Poster },
 ];
 
+/** Intro rewrites to try in place of the bio's first sentence (I cycles them). */
+const INTROS: (string | null)[] = [
+  null, // the live sentence from Sanity
+  "I'm Ali, a frontend developer in Stockholm building brand-first ecommerce, where product and design meet.",
+  "I'm Ali, a frontend developer in Stockholm. I build online stores that start from the brand and hold up in the details.",
+  "I'm Ali, a frontend developer in Stockholm who turns brands into fast, careful online stores.",
+];
+
 /** The live capsule's open widths (Header.tsx). */
 const LAPTOP_OPEN = "min(64rem, calc(100vw - 48px))";
 const PHONE_OPEN = "calc(100vw - 2 * var(--grid-margin))";
@@ -49,14 +57,16 @@ function plain(block: { children?: unknown }): string {
  */
 export default function AboutLab({ bar, initial }: { bar: BarData; initial: number }) {
   const about = bar.about!;
+  const [intro, setIntro] = useState(0);
+  const nextIntro = useCallback(() => setIntro((i) => (i + 1) % INTROS.length), []);
   const copy = useMemo<AboutCopy>(() => {
     const { lead, body } = splitLead(about.bio);
     return {
-      lead: lead ?? "",
+      lead: INTROS[intro] ?? lead ?? "",
       paras: body.map(plain).filter(Boolean),
       about,
     };
-  }, [about]);
+  }, [about, intro]);
 
   const [current, setCurrent] = useState(() =>
     initial >= 1 && initial <= VARIANTS.length ? initial - 1 : 0,
@@ -89,10 +99,11 @@ export default function AboutLab({ bar, initial }: { bar: BarData; initial: numb
       else if (e.key === "ArrowRight") select((current + 1) % VARIANTS.length);
       else if (e.key === "ArrowLeft") select((current - 1 + VARIANTS.length) % VARIANTS.length);
       else if (e.key === "r" || e.key === "R") replay();
+      else if (e.key === "i" || e.key === "I") nextIntro();
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [current, select, replay]);
+  }, [current, select, replay, nextIntro]);
 
   const { Component } = VARIANTS[current];
 
@@ -186,7 +197,13 @@ export default function AboutLab({ bar, initial }: { bar: BarData; initial: numb
         onClick={() => setOpen(false)}
         className={`fixed inset-0 z-[49] transition-colors duration-200 ${open ? "bg-black/10" : "pointer-events-none bg-transparent"}`}
       />
-      <Picker current={current} onSelect={select} onReplay={replay} />
+      <Picker
+        current={current}
+        onSelect={select}
+        onReplay={replay}
+        intro={intro}
+        onIntro={nextIntro}
+      />
     </>
   );
 }
@@ -196,10 +213,14 @@ function Picker({
   current,
   onSelect,
   onReplay,
+  intro,
+  onIntro,
 }: {
   current: number;
   onSelect: (i: number) => void;
   onReplay: () => void;
+  intro: number;
+  onIntro: () => void;
 }) {
   const navRef = useRef<HTMLElement>(null);
   const highlightRef = useRef<HTMLSpanElement>(null);
@@ -243,6 +264,16 @@ function Picker({
           {v.name}
         </button>
       ))}
+      <span className="proto-picker-divider" aria-hidden="true" />
+      {/* The intro switch (I): the live sentence or a rewrite. */}
+      <button
+        type="button"
+        className="proto-picker-item"
+        aria-label="Intro: live or a rewrite (I)"
+        onClick={onIntro}
+      >
+        {intro === 0 ? "Intro live" : `Intro ${String.fromCharCode(64 + intro)}`}
+      </button>
       <span className="proto-picker-divider" aria-hidden="true" />
       <button
         type="button"
