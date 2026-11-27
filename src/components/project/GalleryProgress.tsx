@@ -5,6 +5,7 @@ import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { EASE_OUT_CSS } from "@/lib/motion";
 import { GridIcon, ROUND_BUTTON } from "@/components/project/ProjectSwitcher";
+import type { NextInBar } from "@/lib/barProject";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 type GalleryItem = NonNullable<Project["gallery"]>[number];
@@ -16,6 +17,8 @@ type Props = {
   onEnd: boolean;
   /** The next project's preview card is centred: the row hands over to the pill. */
   atPreview: boolean;
+  /** "pill": the frost pill takes over; otherwise the Pebble offers the next project. */
+  nextInBar: NextInBar;
   nextProject: NextProject;
   title: string;
   isDesktop: boolean;
@@ -38,7 +41,7 @@ export default function GalleryProgress(props: Props) {
   return <Filmstrip {...props} />;
 }
 
-function thumbSrc(item: GalleryItem): { image?: string; video?: string } {
+export function thumbSrc(item: GalleryItem): { image?: string; video?: string } {
   if (item._type === "galleryImage" && item.image?.asset) return { image: imageUrl(item.image, 160) };
   // A video's poster (its first frame, from Sanity) is a 160 px image; the
   // clip itself is only the fallback, a metadata fetch per thumb.
@@ -53,7 +56,7 @@ function thumbSrc(item: GalleryItem): { image?: string; video?: string } {
   return {};
 }
 
-function Thumb({ src, label }: { src: { image?: string; video?: string }; label: string }) {
+export function Thumb({ src, label }: { src: { image?: string; video?: string }; label: string }) {
   if (src.image) return <Image src={src.image} alt="" fill sizes="64px" className="object-cover" />;
   if (src.video)
     // First frame only: a paused, muted element at 0.1 s with metadata preload.
@@ -61,7 +64,7 @@ function Thumb({ src, label }: { src: { image?: string; video?: string }; label:
   return null;
 }
 
-function Filmstrip({ gallery, index, onEnd, atPreview, nextProject, title, isDesktop, reduceMotion, onSelect, onNavigateNext, onOpenIndex, indexOpen }: Props) {
+function Filmstrip({ gallery, index, onEnd, atPreview, nextInBar, nextProject, title, isDesktop, reduceMotion, onSelect, onNavigateNext, onOpenIndex, indexOpen }: Props) {
   const next = nextProject?.firstMedia as GalleryItem | null | undefined;
   const nextSrc = next ? thumbSrc(next) : {};
   const hasNext = Boolean(nextProject?.slug?.current && onNavigateNext);
@@ -75,7 +78,11 @@ function Filmstrip({ gallery, index, onEnd, atPreview, nextProject, title, isDes
     ? "56px"
     : `min(40px, calc((100vw - 2 * var(--grid-margin) - ${hasNext ? 8 : 0}px - ${onOpenIndex ? 44 : 0}px - ${Math.max(0, shown - 1) * 6}px) / ${Math.max(1, shown)}))`;
   const thumbBox = { width: thumbW, aspectRatio: "56 / 35" };
-  const handOver = atPreview && hasNext;
+  // The strip gives way to the pill, or (countdown) to the Pebble alone;
+  // "swap" and "line" keep it, the next cover outlined as the current one.
+  const pill = nextInBar === "pill";
+  const handOver = atPreview && hasNext && (pill || nextInBar === "countdown");
+  const nextCurrent = atPreview && hasNext && !handOver;
   return (
     <div data-stage-chrome="film" className="invisible absolute inset-x-0 bottom-0 z-30 flex justify-center px-margin pb-11 desktop:pb-12">
       <div className="relative">
@@ -104,12 +111,12 @@ function Filmstrip({ gallery, index, onEnd, atPreview, nextProject, title, isDes
                 type="button"
                 onClick={() => onSelect(i)}
                 aria-label={`${title}, ${i + 1} of ${gallery.length}`}
-                aria-current={i === index ? "true" : undefined}
+                aria-current={i === index && !nextCurrent ? "true" : undefined}
                 className="relative shrink-0 cursor-pointer overflow-hidden rounded-[2px] bg-tertiary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.96]"
                 style={{
                   ...thumbBox,
-                  opacity: i === index ? 1 : 0.6,
-                  outline: i === index ? "1.5px solid var(--color-primary)" : "1.5px solid transparent",
+                  opacity: i === index && !nextCurrent ? 1 : 0.6,
+                  outline: i === index && !nextCurrent ? "1.5px solid var(--color-primary)" : "1.5px solid transparent",
                   outlineOffset: 1.5,
                   transition: reduceMotion ? "none" : `opacity ${ease}, outline-color ${ease}`,
                 }}
@@ -123,7 +130,14 @@ function Filmstrip({ gallery, index, onEnd, atPreview, nextProject, title, isDes
               onClick={onNavigateNext}
               aria-label={`Next project: ${nextProject?.title}`}
               className="relative ml-2 shrink-0 cursor-pointer overflow-hidden rounded-[2px] bg-tertiary active:scale-[0.96] desktop:ml-3"
-              style={{ ...thumbBox, opacity: onEnd ? 1 : 0.6, transition: reduceMotion ? "none" : `opacity ${ease}` }}
+              aria-current={nextCurrent ? "true" : undefined}
+              style={{
+                ...thumbBox,
+                opacity: onEnd ? 1 : 0.6,
+                outline: nextCurrent ? "1.5px solid var(--color-primary)" : "1.5px solid transparent",
+                outlineOffset: 1.5,
+                transition: reduceMotion ? "none" : `opacity ${ease}, outline-color ${ease}`,
+              }}
             >
               <Thumb src={nextSrc} label="" />
             </button>
@@ -133,7 +147,7 @@ function Filmstrip({ gallery, index, onEnd, atPreview, nextProject, title, isDes
             A): with the next project's card centred the row gives way to one
             pill on the same axis as the name pill, its cover as a round
             thumb, then its name. */}
-        {hasNext && (
+        {hasNext && pill && (
           <button
             type="button"
             onClick={onNavigateNext}

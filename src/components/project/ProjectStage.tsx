@@ -45,7 +45,7 @@ import ProjectDetailsOverlay, {
   ProjectDetailsText,
 } from "@/components/project/ProjectDetailsOverlay";
 import { setBarProject, useBarState } from "@/lib/barProject";
-import GalleryProgress from "@/components/project/GalleryProgress";
+import GalleryProgress, { thumbSrc } from "@/components/project/GalleryProgress";
 import ClipMeter from "@/components/project/ClipMeter";
 import TestReplay from "@/components/project/TestReplay";
 
@@ -347,7 +347,7 @@ export default function ProjectStage({
   // row carries the title and the centred clip's test or label, and the name
   // pill on the stage steps aside. The label holds while the details are
   // open (the bar still says what you are looking at).
-  const { chrome } = useBarState();
+  const { chrome, nextInBar } = useBarState();
   const capsule = chrome !== "pill";
   const barTest =
     !atPreview && current?._type === "galleryPhones" ? (current.testName ?? null) : null;
@@ -358,46 +358,6 @@ export default function ProjectStage({
       ? current.label?.trim() || null
       : null;
   const barLabel = barTest ? `A/B test – ${barTest}` : barClipLabel;
-  const barEnded = Boolean(current && endedKey === current._key);
-  useEffect(() => {
-    if (!capsule || hidden) {
-      setBarProject(null);
-      return;
-    }
-    setBarProject({
-      title: project.title ?? "Project",
-      label: barLabel,
-      replay: barTest ? (
-        <TestReplay
-          key={current?._key}
-          name={barTest}
-          ended={barEnded}
-          reduceMotion={reduceMotion}
-          getVideo={() =>
-            itemRefs.current[index]?.querySelector<HTMLVideoElement>("video[data-once]") ?? null
-          }
-          onReplay={() => setReplay((r) => r + 1)}
-        />
-      ) : null,
-      detailsOpen,
-      toggleDetails,
-      closeDetails,
-      details: <ProjectDetailsText project={project} compact />,
-    });
-  }, [
-    capsule,
-    hidden,
-    project,
-    barLabel,
-    barTest,
-    barEnded,
-    current?._key,
-    reduceMotion,
-    index,
-    detailsOpen,
-    toggleDetails,
-    closeDetails,
-  ]);
   useEffect(() => () => setBarProject(null), []);
   // While the finger is down the cards track scroll 1:1 (no CSS transition
   // fighting the per-frame transform); the 200 ms settle applies once idle.
@@ -757,6 +717,68 @@ export default function ProjectStage({
     }, AUTO_NEXT_MS);
     return () => window.clearTimeout(t);
   }, [atPreview, scrolling, covered, hidden, onNavigateNext]);
+
+  // The next project in the Pebble (/lab/next-pebble): with its cover
+  // centred the row names it and carries the way there.
+  const nextFirst = nextProject?.firstMedia as Parameters<typeof thumbSrc>[0] | null | undefined;
+  const barEnded = Boolean(current && endedKey === current._key);
+  useEffect(() => {
+    if (!capsule || hidden) {
+      setBarProject(null);
+      return;
+    }
+    setBarProject({
+      title: project.title ?? "Project",
+      label: barLabel,
+      replay: barTest ? (
+        <TestReplay
+          key={current?._key}
+          name={barTest}
+          ended={barEnded}
+          reduceMotion={reduceMotion}
+          getVideo={() =>
+            itemRefs.current[index]?.querySelector<HTMLVideoElement>("video[data-once]") ?? null
+          }
+          onReplay={() => setReplay((r) => r + 1)}
+        />
+      ) : null,
+      detailsOpen,
+      toggleDetails,
+      closeDetails,
+      details: <ProjectDetailsText project={project} compact />,
+      next:
+        nextInBar !== "pill" && atPreview && hasPreview && onNavigateNext
+          ? {
+              title: nextProject?.title ?? "Next project",
+              cover: nextFirst ? thumbSrc(nextFirst) : {},
+              holding: !scrolling && !covered && !hidden,
+              holdMs: AUTO_NEXT_MS,
+              go: onNavigateNext,
+            }
+          : null,
+    });
+  }, [
+    capsule,
+    hidden,
+    project,
+    barLabel,
+    barTest,
+    barEnded,
+    current?._key,
+    reduceMotion,
+    index,
+    detailsOpen,
+    toggleDetails,
+    closeDetails,
+    nextInBar,
+    atPreview,
+    hasPreview,
+    onNavigateNext,
+    nextProject?.title,
+    nextFirst,
+    scrolling,
+    covered,
+  ]);
 
   // Phone: a swipe on the next project's card opens it (Ali, 11-05: at the
   // end of the strip a swipe did nothing, only a tap or the hold moved on).
@@ -1401,6 +1423,7 @@ export default function ProjectStage({
         index={index}
         onEnd={onEnd}
         atPreview={atPreview && hasPreview}
+        nextInBar={nextInBar}
         nextProject={nextProject}
         title={project.title ?? "Project"}
         isDesktop={isDesktop}
