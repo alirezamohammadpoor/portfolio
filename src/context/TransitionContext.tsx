@@ -46,6 +46,13 @@ interface TransitionState {
   mediaType: MediaType | null;
   imageUrl: string | null;
   sourceVideoElement: HTMLVideoElement | null;
+  /**
+   * Where the source clip was when the morph started (the frame the clone
+   * shows) and its URL. The landing page's first item picks the same clip
+   * up from there (see handoffTime) instead of starting it again from 0.
+   */
+  sourceTime: number | null;
+  sourceSrc: string | null;
   sourceRect: Rect | null;
   targetRect: Rect | null;
 }
@@ -77,6 +84,8 @@ const initial: TransitionState = {
   mediaType: null,
   imageUrl: null,
   sourceVideoElement: null,
+  sourceTime: null,
+  sourceSrc: null,
   sourceRect: null,
   targetRect: null,
 };
@@ -108,6 +117,8 @@ export function TransitionProvider({ children }: { children: React.ReactNode }) 
       mediaType: args.mediaType,
       imageUrl: args.imageUrl ?? null,
       sourceVideoElement: args.sourceVideoElement ?? null,
+      sourceTime: args.sourceVideoElement?.currentTime ?? null,
+      sourceSrc: args.sourceVideoElement ? args.sourceVideoElement.currentSrc || args.sourceVideoElement.src : null,
       sourceRect: args.sourceRect,
       targetRect: null,
     }));
