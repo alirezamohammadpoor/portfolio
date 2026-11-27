@@ -13,7 +13,7 @@ import { splitLead } from "@/lib/aboutLead";
 import { EASE_OUT_CSS } from "@/lib/motion";
 import { PANEL_H, panelSize } from "@/components/layout/bar/WorkPanel";
 import type { BarData } from "@/sanity/lib/bar";
-import { Now, Poster, Rail, Rows, Steps, type AboutCopy, type VariantProps } from "./variants";
+import { Now, Rail, type AboutCopy, type Size, type VariantProps } from "./variants";
 import "../home-layouts/proto-picker.css";
 
 interface Variant {
@@ -23,19 +23,20 @@ interface Variant {
 
 const VARIANTS: Variant[] = [
   { name: "Now", Component: Now },
-  { name: "Rows", Component: Rows },
-  { name: "Steps", Component: Steps },
   { name: "Rail", Component: Rail },
-  { name: "Poster", Component: Poster },
 ];
 
 /** Intro rewrites to try in place of the bio's first sentence (I cycles them). */
 const INTROS: (string | null)[] = [
   null, // the live sentence from Sanity
-  "I'm Ali, a frontend developer in Stockholm building brand-first ecommerce, where product and design meet.",
-  "I'm Ali, a frontend developer in Stockholm. I build online stores that start from the brand and hold up in the details.",
-  "I'm Ali, a frontend developer in Stockholm who turns brands into fast, careful online stores.",
+  "I'm Ali, a frontend developer in Stockholm building ecommerce for brands, where design meets development.",
+  "I'm Ali, a frontend developer in Stockholm. I design and build ecommerce that starts from the brand.",
+  "I'm Ali, a frontend developer in Stockholm building brand-first ecommerce, from design to code.",
 ];
+
+/** Type sizes (T cycles them): today's, a heading-size intro, a bigger one. */
+const SIZES: Size[] = ["live", "l", "xl"];
+const SIZE_NAME: Record<Size, string> = { live: "Type live", l: "Type L", xl: "Type XL" };
 
 /** The live capsule's open widths (Header.tsx). */
 const LAPTOP_OPEN = "min(64rem, calc(100vw - 48px))";
@@ -58,6 +59,11 @@ function plain(block: { children?: unknown }): string {
 export default function AboutLab({ bar, initial }: { bar: BarData; initial: number }) {
   const about = bar.about!;
   const [intro, setIntro] = useState(0);
+  const [size, setSize] = useState<Size>("l");
+  const nextSize = useCallback(
+    () => setSize((z) => SIZES[(SIZES.indexOf(z) + 1) % SIZES.length]),
+    [],
+  );
   const nextIntro = useCallback(() => setIntro((i) => (i + 1) % INTROS.length), []);
   const copy = useMemo<AboutCopy>(() => {
     const { lead, body } = splitLead(about.bio);
@@ -100,10 +106,11 @@ export default function AboutLab({ bar, initial }: { bar: BarData; initial: numb
       else if (e.key === "ArrowLeft") select((current - 1 + VARIANTS.length) % VARIANTS.length);
       else if (e.key === "r" || e.key === "R") replay();
       else if (e.key === "i" || e.key === "I") nextIntro();
+      else if (e.key === "t" || e.key === "T") nextSize();
     }
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [current, select, replay, nextIntro]);
+  }, [current, select, replay, nextIntro, nextSize]);
 
   const { Component } = VARIANTS[current];
 
@@ -113,8 +120,8 @@ export default function AboutLab({ bar, initial }: { bar: BarData; initial: numb
       <style>{"[data-site-bar]{display:none!important}"}</style>
       <main className="min-h-dvh px-margin pt-32">
         <p className="max-w-[48rem] text-h3 text-secondary">
-          The About panel, held open at its live size. Flip layouts with the picker, 1 to 5 or the
-          arrow keys; R closes and reopens it.
+          The About panel, held open at its live size. Flip layouts with the picker, 1 and 2 or the
+          arrow keys; T changes the type size, I the intro, R closes and reopens it.
         </p>
       </main>
       <header
@@ -185,7 +192,7 @@ export default function AboutLab({ bar, initial }: { bar: BarData; initial: numb
                 }
               >
                 <div data-lenis-prevent className={`${PANEL_H} overflow-y-auto overscroll-contain`}>
-                  <Component key={current} copy={copy} />
+                  <Component key={current} copy={copy} size={size} />
                 </div>
               </div>
             )}
@@ -203,6 +210,8 @@ export default function AboutLab({ bar, initial }: { bar: BarData; initial: numb
         onReplay={replay}
         intro={intro}
         onIntro={nextIntro}
+        size={size}
+        onSize={nextSize}
       />
     </>
   );
@@ -215,12 +224,16 @@ function Picker({
   onReplay,
   intro,
   onIntro,
+  size,
+  onSize,
 }: {
   current: number;
   onSelect: (i: number) => void;
   onReplay: () => void;
   intro: number;
   onIntro: () => void;
+  size: Size;
+  onSize: () => void;
 }) {
   const navRef = useRef<HTMLElement>(null);
   const highlightRef = useRef<HTMLSpanElement>(null);
@@ -265,6 +278,15 @@ function Picker({
         </button>
       ))}
       <span className="proto-picker-divider" aria-hidden="true" />
+      {/* The type switch (T): today's sizes, or a heading-size intro over smaller paragraphs. */}
+      <button
+        type="button"
+        className="proto-picker-item"
+        aria-label="Type size (T)"
+        onClick={onSize}
+      >
+        {SIZE_NAME[size]}
+      </button>
       {/* The intro switch (I): the live sentence or a rewrite. */}
       <button
         type="button"
