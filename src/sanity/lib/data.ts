@@ -4,8 +4,10 @@ import {
   ABOUT_QUERY,
   JOURNAL_PAGE_QUERY,
   JOURNAL_POST_BY_SLUG_QUERY,
+  JOURNAL_POST_SLUGS_QUERY,
   JOURNAL_POSTS_QUERY,
   PROJECT_BY_SLUG_QUERY,
+  PROJECT_SLUGS_QUERY,
   PROJECTS_QUERY,
 } from "./queries";
 
@@ -99,4 +101,34 @@ export async function getAbout(perspective: Perspective = "published") {
     stega: false,
   });
   return data;
+}
+
+// The published slugs, for turning a made-up URL away before it costs a
+// Sanity query and a cache entry of its own (a crawler guessing paths).
+export async function getProjectSlugs(): Promise<string[]> {
+  "use cache";
+  cacheLife("max");
+  cacheTag("project");
+  const { data } = await sanityFetch({ query: PROJECT_SLUGS_QUERY, perspective: "published", stega: false });
+  return data.map((d) => d.slug).filter((s): s is string => Boolean(s));
+}
+
+export async function getJournalPostSlugs(): Promise<string[]> {
+  "use cache";
+  cacheLife("max");
+  cacheTag("journalPost");
+  const { data } = await sanityFetch({ query: JOURNAL_POST_SLUGS_QUERY, perspective: "published", stega: false });
+  return data.map((d) => d.slug).filter((s): s is string => Boolean(s));
+}
+
+/** Whether `slug` can have a page: any slug in draft mode (a new draft has
+ *  none published yet), otherwise only a published one. */
+export async function isKnownSlug(
+  kind: "project" | "journalPost",
+  slug: string,
+  perspective: Perspective,
+): Promise<boolean> {
+  if (perspective === "drafts") return true;
+  const slugs = await (kind === "project" ? getProjectSlugs() : getJournalPostSlugs());
+  return slugs.includes(slug);
 }
