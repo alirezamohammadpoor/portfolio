@@ -1,4 +1,7 @@
-import { getJournalPost } from "@/sanity/lib/data";
+import { notFound } from "next/navigation";
+import { client } from "@/sanity/lib/client";
+import { JOURNAL_POST_SLUGS_QUERY } from "@/sanity/lib/queries";
+import { getJournalPost, isKnownSlug } from "@/sanity/lib/data";
 import { cropImageUrl } from "@/sanity/lib/image";
 import { palette } from "@/lib/palette";
 import { OG_SIZE, ogResponse } from "@/lib/og";
@@ -6,6 +9,13 @@ import { OG_SIZE, ogResponse } from "@/lib/og";
 export const alt = "Ali Reza Mohammad Poor — Journal";
 export const size = OG_SIZE;
 export const contentType = "image/png";
+
+// Drawn at build for every published slug, like the page: an image route
+// does not inherit the page's params, and without its own it runs Satori
+// on every crawler or link-preview request.
+export async function generateStaticParams() {
+  return client.fetch(JOURNAL_POST_SLUGS_QUERY);
+}
 
 // The post's cover fills the right third of the card, cut around its hotspot
 // and served as a JPEG (Satori decodes no WebP or AVIF); a post without one
@@ -18,6 +28,7 @@ export default async function JournalOgImage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  if (!(await isKnownSlug("journalPost", slug, "published"))) notFound();
   // The page's own cached, tagged fetcher: no uncached round trip per share.
   const post = await getJournalPost(slug);
 

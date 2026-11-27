@@ -98,7 +98,6 @@ export const ABOUT_QUERY = defineQuery(`
   *[_type == "about"][0] {
     heading,
     bio,
-    portrait,
     email,
     linkedinUrl,
     githubUrl
@@ -163,6 +162,26 @@ export const PROJECT_BY_SLUG_QUERY = defineQuery(`
     }
   }
 `);
+
+// The capsule bar on every page (src/sanity/lib/bar.ts): only what the Work
+// and About panels show, in the same order as PROJECTS_QUERY and
+// JOURNAL_POSTS_QUERY. Cached under its own tag ("bar"), so a publish that
+// leaves these fields alone doesn't mark every page on the site stale.
+export const BAR_QUERY = defineQuery(`{
+  "projects": *[_type == "project" && defined(slug.current)] | order(order asc, _id asc) {
+    title,
+    slug,
+    shortDescription,
+    coverMedia
+  },
+  "posts": *[_type == "journalPost" && defined(slug.current)] | order(publishedAt desc) {
+    title,
+    slug,
+    excerpt,
+    coverImage
+  },
+  "about": *[_type == "about"][0] { bio, email, linkedinUrl, githubUrl }
+}`);
 
 export const JOURNAL_PAGE_QUERY = defineQuery(`
   *[_type == "journalPage"][0] { description }

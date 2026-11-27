@@ -8,9 +8,12 @@ import { VisualEditing } from "next-sanity/visual-editing";
  * explicit: no token reaches the browser (defineLive browserToken: false),
  * so there is no live draft connection, and the default handler ignores
  * mutations. Each edit burst re-renders the draft page through
- * router.refresh(); the 1 s promise throttles it the way next-sanity's own
- * manual refresh does.
+ * router.refresh(), throttled to one every 2.5 s: draft mode skips every
+ * cache, so each refresh is a full server render, and a typing burst should
+ * cost one or two of them, not one a second.
  */
+const REFRESH_THROTTLE_MS = 2500;
+
 export default function DraftVisualEditing() {
   const router = useRouter();
   return (
@@ -18,7 +21,7 @@ export default function DraftVisualEditing() {
       refresh={(payload) => {
         if (payload.source === "manual" || payload.source === "mutation") {
           router.refresh();
-          return new Promise((resolve) => setTimeout(resolve, 1000));
+          return new Promise((resolve) => setTimeout(resolve, REFRESH_THROTTLE_MS));
         }
         return false;
       }}

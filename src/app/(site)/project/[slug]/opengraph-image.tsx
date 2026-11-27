@@ -1,4 +1,7 @@
-import { getProject } from "@/sanity/lib/data";
+import { notFound } from "next/navigation";
+import { client } from "@/sanity/lib/client";
+import { PROJECT_SLUGS_QUERY } from "@/sanity/lib/queries";
+import { getProject, isKnownSlug } from "@/sanity/lib/data";
 import { palette } from "@/lib/palette";
 import { OG_SIZE, ogResponse } from "@/lib/og";
 
@@ -6,12 +9,20 @@ export const alt = "Ali Reza Mohammad Poor — Project";
 export const size = OG_SIZE;
 export const contentType = "image/png";
 
+// Drawn at build for every published slug, like the page: an image route
+// does not inherit the page's params, and without its own it runs Satori
+// on every crawler or link-preview request.
+export async function generateStaticParams() {
+  return client.fetch(PROJECT_SLUGS_QUERY);
+}
+
 export default async function ProjectOgImage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  if (!(await isKnownSlug("project", slug, "published"))) notFound();
   // The page's own cached, tagged fetcher: no uncached round trip per share.
   const project = await getProject(slug);
 
