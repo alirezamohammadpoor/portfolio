@@ -8,11 +8,22 @@ import { ENGLISH_NAME, SHORT_NAME } from "@/lib/name";
 import { useModalFocus } from "@/hooks/useModalFocus";
 import { EASE_OUT_CSS } from "@/lib/motion";
 import type { BarData } from "@/sanity/lib/bar";
-import WorkPanel, { PANEL_H, panelSize } from "./bar/WorkPanel";
-import AboutBody from "./bar/AboutBody";
+import dynamic from "next/dynamic";
+import { PANEL_H, panelSize } from "./bar/panelSize";
 import ProjectRowLayout from "./bar/ProjectRow";
 import { useBarState, type WorkOpen } from "@/lib/barProject";
 import { usePageTransition } from "@/context/TransitionContext";
+
+// The panels load on their own, off the first page load: fetched when the
+// browser is idle, or as soon as a pointer or focus reaches their button.
+const loadWork = () => import("./bar/WorkPanel");
+const loadAbout = () => import("./bar/AboutBody");
+const WorkPanel = dynamic(loadWork);
+const AboutBody = dynamic(loadAbout);
+const preloadPanels = () => {
+  void loadWork();
+  void loadAbout();
+};
 
 type Panel = "work" | "about";
 type Shown = Panel | "details";
@@ -129,6 +140,13 @@ export default function Header({ bar }: { bar: BarData }) {
 
   useModalFocus(open !== null, rootRef, scrollRef, close);
 
+  useEffect(() => {
+    const idle = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 1500));
+    const cancel = window.cancelIdleCallback ?? window.clearTimeout;
+    const id = idle(preloadPanels);
+    return () => cancel(id);
+  }, []);
+
   // Unmount after the fold even when its transitionend never comes (a
   // route change during a view transition, reduced motion).
   useEffect(() => {
@@ -198,6 +216,8 @@ export default function Header({ bar }: { bar: BarData }) {
             <button
               type="button"
               onClick={() => toggle("work")}
+              onPointerEnter={preloadPanels}
+              onFocus={preloadPanels}
               aria-expanded={open === "work"}
               aria-controls="bar-panel"
               className={`${ITEM} justify-self-start ${tone("work")}`}
@@ -217,6 +237,8 @@ export default function Header({ bar }: { bar: BarData }) {
               href="/about"
               aria-expanded={open === "about"}
               aria-controls="bar-panel"
+              onPointerEnter={preloadPanels}
+              onFocus={preloadPanels}
               onClick={(e) => {
                 if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
                 e.preventDefault();

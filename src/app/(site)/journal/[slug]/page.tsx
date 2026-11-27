@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { client } from "@/sanity/lib/client";
 import { draftMode } from "next/headers";
-import { getJournalPost as getPost } from "@/sanity/lib/data";
+import { getJournalPost as getPost, isKnownSlug } from "@/sanity/lib/data";
 import { JOURNAL_POST_SLUGS_QUERY } from "@/sanity/lib/queries";
 
+import { PortableText, type PortableTextBlock } from "next-sanity";
 import JournalPost from "@/components/journal/JournalPost";
+import { portableTextComponents } from "@/components/portableText/components";
 import HoverTrace from "@/components/journal/HoverTrace";
 import JsonLd from "@/components/seo/JsonLd";
 import { ogImageUrl } from "@/sanity/lib/image";
@@ -25,7 +27,9 @@ export async function generateMetadata({
   const { slug } = await params;
   // The preview tab shows the draft's title and description too.
   const { isEnabled: isDraft } = await draftMode();
-  const post = await getPost(slug, isDraft ? "drafts" : "published");
+  const perspective = isDraft ? "drafts" : "published";
+  if (!(await isKnownSlug("journalPost", slug, perspective))) return { title: "Post Not Found" };
+  const post = await getPost(slug, perspective);
   if (!post) return { title: "Post Not Found" };
 
   const canonicalPath = `/journal/${post.slug?.current ?? slug}`;
@@ -73,12 +77,16 @@ export default async function JournalPostPage({
 }: JournalPostPageProps) {
   const { slug } = await params;
   const { isEnabled: isDraft } = await draftMode();
-  const post = await getPost(slug, isDraft ? "drafts" : "published");
+  const perspective = isDraft ? "drafts" : "published";
+  if (!(await isKnownSlug("journalPost", slug, perspective))) notFound();
+  const post = await getPost(slug, perspective);
 
   if (!post) {
     notFound();
   }
 
+  // The body is rendered here, on the server; the client shell gets the rest.
+  const { body, relatedPosts, ...meta } = post;
   const canonicalPath = `/journal/${post.slug?.current ?? slug}`;
   const canonicalUrl = `${siteUrl}${canonicalPath}`;
 
@@ -106,7 +114,16 @@ export default async function JournalPostPage({
   return (
     <>
       <JsonLd data={blogPostingLd} />
-      <JournalPost key={post._id} post={post} relatedPosts={post.relatedPosts ?? []} />
+      <JournalPost
+        key={post._id}
+        post={meta}
+        body={
+          body ? (
+            <PortableText value={body as PortableTextBlock[]} components={portableTextComponents} />
+          ) : null
+        }
+        relatedPosts={relatedPosts ?? []}
+      />
       <HoverTrace />
     </>
   );
