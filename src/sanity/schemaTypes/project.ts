@@ -331,6 +331,14 @@ export const project = defineType({
           options: { accept: "video/*" },
           hidden: ({ parent }) => parent?.type !== "video",
         }),
+        defineField({
+          name: "poster",
+          title: "Poster",
+          description:
+            "The video's first frame as a still (same size, JPEG). It shows, blurred and then sharp, while the clip loads, so a cover is never an empty box. Left empty, the cover uses the first gallery clip's poster when it is the same video.",
+          type: "image",
+          hidden: ({ parent }) => parent?.type !== "video",
+        }),
         defineField({ name: "frame", title: "Background", type: "mediaFrame" }),
       ],
     }),

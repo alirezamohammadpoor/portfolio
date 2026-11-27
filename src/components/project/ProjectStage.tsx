@@ -1258,6 +1258,10 @@ export default function ProjectStage({
                     src={poster}
                     unoptimized
                     alt=""
+                    // The cards either side load their still up front: a
+                    // lazy one only started when it slid in, so a swipe met
+                    // a grey card (Ali, 11-27).
+                    loading={near ? "eager" : "lazy"}
                     fill
                     className="object-cover"
                     sizes={LANDING_SIZES.stage}

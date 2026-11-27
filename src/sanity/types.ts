@@ -222,6 +222,13 @@ export type Project = {
       media?: unknown;
       _type: "file";
     };
+    poster?: {
+      asset?: SanityImageAssetReference;
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    };
     frame?: MediaFrame;
   };
   palette?: Array<{
@@ -824,7 +831,7 @@ export type ABOUT_QUERY_RESULT = {
 
 // Source: src/sanity/lib/queries.ts
 // Variable: PROJECTS_QUERY
-// Query: *[_type == "project" && defined(slug.current)] | order(order asc, _id asc) {    _id,    title,    slug,    shortDescription,    coverMedia,    homeLayout,    homeTextAlign,    palette,    mediaBackground  }
+// Query: *[_type == "project" && defined(slug.current)] | order(order asc, _id asc) {    _id,    title,    slug,    shortDescription,    coverMedia,    // A cover clip's still: its own poster, else the first gallery clip's    // when that is the same file (a cover that is also slide one). The    // LQIP is a ~600 byte blur that ships in the page, so a cover has a    // picture before any request.    "coverPoster": coalesce(      coverMedia.poster,      select(gallery[0].video.asset._ref == coverMedia.video.asset._ref => gallery[0].poster)    ),    "coverLqip": coalesce(      coverMedia.poster.asset->metadata.lqip,      select(gallery[0].video.asset._ref == coverMedia.video.asset._ref => gallery[0].poster.asset->metadata.lqip)    ),    homeLayout,    homeTextAlign,    palette,    mediaBackground  }
 export type PROJECTS_QUERY_RESULT = Array<{
   _id: string;
   title: string | null;
@@ -844,8 +851,23 @@ export type PROJECTS_QUERY_RESULT = Array<{
       media?: unknown;
       _type: "file";
     };
+    poster?: {
+      asset?: SanityImageAssetReference;
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
+    };
     frame?: MediaFrame;
   } | null;
+  coverPoster: {
+    asset?: SanityImageAssetReference;
+    media?: unknown;
+    hotspot?: SanityImageHotspot;
+    crop?: SanityImageCrop;
+    _type: "image";
+  } | null;
+  coverLqip: string | null;
   homeLayout:
     | "centre"
     | "full"
@@ -963,6 +985,13 @@ export type PROJECT_BY_SLUG_QUERY_RESULT = {
       asset?: SanityFileAssetReference;
       media?: unknown;
       _type: "file";
+    };
+    poster?: {
+      asset?: SanityImageAssetReference;
+      media?: unknown;
+      hotspot?: SanityImageHotspot;
+      crop?: SanityImageCrop;
+      _type: "image";
     };
     frame?: MediaFrame;
   } | null;
@@ -1695,7 +1724,7 @@ import "@sanity/client";
 declare module "@sanity/client" {
   interface SanityQueries {
     '\n  *[_type == "about"][0] {\n    heading,\n    bio,\n    portrait,\n    email,\n    linkedinUrl,\n    githubUrl\n  }\n': ABOUT_QUERY_RESULT;
-    '\n  *[_type == "project" && defined(slug.current)] | order(order asc, _id asc) {\n    _id,\n    title,\n    slug,\n    shortDescription,\n    coverMedia,\n    homeLayout,\n    homeTextAlign,\n    palette,\n    mediaBackground\n  }\n': PROJECTS_QUERY_RESULT;
+    '\n  *[_type == "project" && defined(slug.current)] | order(order asc, _id asc) {\n    _id,\n    title,\n    slug,\n    shortDescription,\n    coverMedia,\n    // A cover clip\'s still: its own poster, else the first gallery clip\'s\n    // when that is the same file (a cover that is also slide one). The\n    // LQIP is a ~600 byte blur that ships in the page, so a cover has a\n    // picture before any request.\n    "coverPoster": coalesce(\n      coverMedia.poster,\n      select(gallery[0].video.asset._ref == coverMedia.video.asset._ref => gallery[0].poster)\n    ),\n    "coverLqip": coalesce(\n      coverMedia.poster.asset->metadata.lqip,\n      select(gallery[0].video.asset._ref == coverMedia.video.asset._ref => gallery[0].poster.asset->metadata.lqip)\n    ),\n    homeLayout,\n    homeTextAlign,\n    palette,\n    mediaBackground\n  }\n': PROJECTS_QUERY_RESULT;
     '\n  *[_type == "project" && slug.current == $slug][0] {\n    \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  shortDescription,\n  fullDescription,\n  techStack,\n  siteUrl,\n  sitePassword,\n  caseStudy->{ _id, slug },\n  coverMedia,\n  heroLayout,\n  palette,\n  mediaBackground,\n  playInOrder,\n  gallery[]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  },\n  chapters[]{\n    _key,\n    _type,\n    title,\n    _type == "chapter" => {\n      text,\n      caption,\n      layout,\n      side,\n      media {\n        type,\n        video,\n        poster,\n        image { ..., asset-> { ..., metadata { dimensions } } },\n        phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },\n        frame\n      }\n    },\n    _type == "testSwitcher" => {\n      tests[]{\n        _key,\n        label,\n        title,\n        status,\n        text,\n        hypothesis,\n        metric,\n        result,\n        decision,\n        caption,\n        media {\n          type,\n          video,\n          poster,\n          image { ..., asset-> { ..., metadata { dimensions } } },\n          phones[]{ _key, type, video, poster, image { ..., asset-> { ..., metadata { dimensions } } } },\n          frame\n        }\n      }\n    }\n  },\n  order,\n  seo { title, description, ogImage, noIndex }\n,\n    "nextProject": coalesce(\n      *[_type == "project" && _id != ^._id && (coalesce(order, 1e9) > coalesce(^.order, 1e9) || (coalesce(order, 1e9) == coalesce(^.order, 1e9) && _id > ^._id))] | order(coalesce(order, 1e9) asc, _id asc) [0] { title, slug, heroLayout, "hasChapters": count(chapters) > 0, \n  "firstMedia": gallery[_type != "galleryPhones"][0]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  }\n },\n      *[_type == "project" && _id != ^._id] | order(coalesce(order, 1e9) asc, _id asc) [0] { title, slug, heroLayout, "hasChapters": count(chapters) > 0, \n  "firstMedia": gallery[_type != "galleryPhones"][0]{\n    ...,\n    _type == "galleryImage" => {\n      ...,\n      image { ..., asset-> { ..., metadata { dimensions } } }\n    }\n  }\n }\n    ),\n    "allProjects": *[_type == "project" && defined(slug.current)] | order(coalesce(order, 1e9) asc, _id asc) {\n      _id,\n      title,\n      slug,\n      "first": gallery[0]{ _type, poster, image, "phone": phones[0]{ poster, image } }\n    }\n  }\n': PROJECT_BY_SLUG_QUERY_RESULT;
     '\n  *[_type == "journalPage"][0] { description }\n': JOURNAL_PAGE_QUERY_RESULT;
     '\n  *[_type == "journalPost"] | order(publishedAt desc) { \n  _id,\n  _updatedAt,\n  title,\n  slug,\n  excerpt,\n  coverImage,\n  tags,\n  publishedAt,\n  relatedProject->{ _id, title, slug },\n  seo { title, description, ogImage, noIndex }\n }\n': JOURNAL_POSTS_QUERY_RESULT;

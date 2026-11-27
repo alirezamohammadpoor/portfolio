@@ -9,6 +9,7 @@ import { useGSAP } from "@gsap/react";
 import { useLenis } from "lenis/react";
 import type { PROJECTS_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
+import { useSharedVideo } from "@/lib/sharedVideo";
 import { ease } from "@/lib/motion";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import { DESKTOP_QUERY } from "@/hooks/useIsDesktop";
@@ -269,7 +270,8 @@ export default function HomeReel({
             <div
               key={`${project._id}-${i}`}
               data-hero
-              className="absolute left-0 top-0 overflow-hidden bg-tertiary will-change-transform"
+              className="absolute left-0 top-0 overflow-hidden bg-tertiary bg-cover bg-center will-change-transform"
+              style={project.coverLqip ? { backgroundImage: `url(${project.coverLqip})` } : undefined}
             >
               <HeroMedia
                 project={project}
@@ -594,6 +596,39 @@ export function barEntrance(tl: gsap.core.Timeline, end: number) {
   );
 }
 
+/**
+ * The intro's copy of a cover clip: the same one download as the row's
+ * (sharedVideo.ts), its still until that is in.
+ */
+function HeroClip({ project, url, sizes }: { project: Project; url: string; sizes: string }) {
+  const src = useSharedVideo(url, true, Boolean(project.coverPoster?.asset));
+  // With a still, the intro starts on it (it waits for the first card's
+  // img or video); without one, on the clip's first frame, as before.
+  if (!src && project.coverPoster?.asset) {
+    const { props } = getImageProps({
+      src: imageUrl(project.coverPoster, 1600),
+      alt: "",
+      fill: true,
+      sizes,
+      loading: "eager",
+      fetchPriority: "high",
+    });
+    // eslint-disable-next-line @next/next/no-img-element -- getImageProps gives the srcset
+    return <img {...props} alt="" className="absolute inset-0 h-full w-full object-cover" />;
+  }
+  return (
+    <video
+      src={src}
+      className="absolute inset-0 h-full w-full object-cover"
+      muted
+      loop
+      playsInline
+      autoPlay
+      preload="auto"
+    />
+  );
+}
+
 function HeroMedia({
   project,
   sizes,
@@ -622,17 +657,7 @@ function HeroMedia({
   }
   const coverMedia = project.coverMedia;
   if (coverMedia?.type === "video" && coverMedia.video?.asset?._ref) {
-    return (
-      <video
-        src={fileUrl(coverMedia.video.asset._ref)}
-        className="absolute inset-0 h-full w-full object-cover"
-        muted
-        loop
-        playsInline
-        autoPlay
-        preload="auto"
-      />
-    );
+    return <HeroClip project={project} url={fileUrl(coverMedia.video.asset._ref)} sizes={sizes} />;
   }
   if (coverMedia?.type === "image" && coverMedia.image?.asset) {
     // The same loader URL and srcset as the page's cover (carousel.tsx

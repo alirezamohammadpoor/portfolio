@@ -6,6 +6,7 @@ import { useIsDesktop } from "@/hooks/useIsDesktop";
 import { isPlainLeftClick } from "@/lib/clicks";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
 import type { BarData, BarRow } from "@/sanity/lib/bar";
+import { readySrc } from "@/lib/sharedVideo";
 
 const FINE_HOVER = "(hover: hover) and (pointer: fine)";
 
@@ -244,7 +245,10 @@ export default function WorkPanel({
  * until then the still underneath shows (or, with no still, the layer
  * waits and the previous preview keeps playing).
  */
-function LayerVideo({ src, onReady }: { src: string; onReady: () => void }) {
+function LayerVideo({ src: url, onReady }: { src: string; onReady: () => void }) {
+  // The home's download of this cover if it is in (sharedVideo.ts): its
+  // frame is there at once. Else the file streams as before.
+  const [src] = useState(() => readySrc(url));
   const [shown, setShown] = useState(false);
   const ref = useRef<HTMLVideoElement>(null);
   const readyRef = useRef(onReady);
