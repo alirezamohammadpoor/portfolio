@@ -12,7 +12,6 @@
   --color-tertiary: #e2e2e2;
   --color-pistachio: #bedcaa;
   --color-lightpistachio: #d8eacc;
-  --color-spotify: #1db954;
 
   /* Frost (11-04): translucent fill + backdrop blur for UI that floats over
      the gallery. Strong is the full-page details overlay (page grey); soft is
@@ -195,49 +194,6 @@
 
 }
 
-/* Spotify marquee animation for long track names */
-.spotify-marquee-active {
-  animation: marquee-scroll var(--marquee-duration, 10s) linear infinite;
-}
-
-@keyframes marquee-scroll {
-  0%,
-  15% {
-    transform: translateX(0);
-  }
-  45%,
-  55% {
-    transform: translateX(var(--marquee-offset));
-  }
-  85%,
-  100% {
-    transform: translateX(0);
-  }
-}
-
-.spotify-marquee-left-fade {
-  opacity: 0;
-}
-
-.spotify-marquee-active ~ .spotify-marquee-left-fade {
-  animation: marquee-left-fade var(--marquee-duration, 10s) ease-in-out infinite;
-}
-
-@keyframes marquee-left-fade {
-  0%,
-  15% {
-    opacity: 0;
-  }
-  19%,
-  80% {
-    opacity: 1;
-  }
-  85%,
-  100% {
-    opacity: 0;
-  }
-}
-
 /* Link underline animation — slides in from left, out to right. In the
    components layer, so a display, padding or transition utility on the same
    element wins; the press uses `scale`, the property the active:scale-*
@@ -334,11 +290,6 @@
   ::view-transition-group(*),
   ::view-transition-old(*),
   ::view-transition-new(*) {
-    animation: none;
-  }
-  /* The long-title marquee rests; the title clips under the right fade. */
-  .spotify-marquee-active,
-  .spotify-marquee-active ~ .spotify-marquee-left-fade {
     animation: none;
   }
 }
