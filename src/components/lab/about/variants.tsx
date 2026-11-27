@@ -118,24 +118,43 @@ export function Rail({ copy, size }: VariantProps) {
 }
 
 /**
- * Column: everything in one column from the left edge, read top to bottom:
- * the intro, the paragraphs under it on the same measure, the links at the
- * panel's foot. Laptop: the left seven columns; phone: the full width.
+ * Column: everything in one column, centred in the panel and read top to
+ * bottom: the intro, the paragraphs under it on the same measure, the links
+ * at the panel's foot, all left aligned. Laptop: seven of the twelve
+ * columns, centred; phone: the full width.
  */
 export function Column({ copy, size }: VariantProps) {
+  return (
+    <OneColumn
+      copy={copy}
+      size={size}
+      width="desktop:mx-auto desktop:w-[calc((100%+var(--grid-gutter))*7/12-var(--grid-gutter))]"
+    />
+  );
+}
+
+/**
+ * Narrow: the same column, with the panel itself drawn in to its width
+ * (40rem on a laptop), so the window is the column.
+ */
+export function Narrow({ copy, size }: VariantProps) {
+  return <OneColumn copy={copy} size={size} width="" />;
+}
+
+function OneColumn({ copy, size, width }: VariantProps & { width: string }) {
   const t = TYPE[size];
   return (
     <div className="flex min-h-full flex-col px-margin pb-6 desktop:pb-8">
-      <div className="desktop:max-w-[calc((100%+var(--grid-gutter))*7/12-var(--grid-gutter))]">
+      <div className={`flex flex-1 flex-col ${width}`}>
         <p className={`${t.lead} text-primary`}>{copy.lead}</p>
         <div className={`mt-4 ${t.body} text-primary desktop:mt-6 [&_p+p]:mt-3`}>
           {copy.paras.map((p) => (
             <p key={p}>{p}</p>
           ))}
         </div>
-      </div>
-      <div className="mt-auto pt-5 text-sub text-primary desktop:text-body">
-        <Links about={copy.about} />
+        <div className="mt-auto pt-5 text-sub text-primary desktop:text-body">
+          <Links about={copy.about} />
+        </div>
       </div>
     </div>
   );

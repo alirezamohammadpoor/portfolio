@@ -13,18 +13,29 @@ import { splitLead } from "@/lib/aboutLead";
 import { EASE_OUT_CSS } from "@/lib/motion";
 import { PANEL_H, panelSize } from "@/components/layout/bar/WorkPanel";
 import type { BarData } from "@/sanity/lib/bar";
-import { Column, Now, Rail, type AboutCopy, type Size, type VariantProps } from "./variants";
+import {
+  Column,
+  Narrow,
+  Now,
+  Rail,
+  type AboutCopy,
+  type Size,
+  type VariantProps,
+} from "./variants";
 import "../home-layouts/proto-picker.css";
 
 interface Variant {
   name: string;
   Component: (props: VariantProps) => React.ReactNode;
+  /** Laptop panel width when open, if not the live 64rem. */
+  width?: string;
 }
 
 const VARIANTS: Variant[] = [
   { name: "Now", Component: Now },
   { name: "Rail", Component: Rail },
   { name: "Column", Component: Column },
+  { name: "Narrow", Component: Narrow, width: "min(40rem, calc(100vw - 48px))" },
 ];
 
 /** Intro rewrites to try in place of the bio's first sentence (I cycles them). */
@@ -114,6 +125,7 @@ export default function AboutLab({ bar, initial }: { bar: BarData; initial: numb
   }, [current, select, replay, nextIntro, nextSize]);
 
   const { Component } = VARIANTS[current];
+  const laptopOpen = VARIANTS[current].width ?? LAPTOP_OPEN;
 
   return (
     <>
@@ -121,7 +133,7 @@ export default function AboutLab({ bar, initial }: { bar: BarData; initial: numb
       <style>{"[data-site-bar]{display:none!important}"}</style>
       <main className="min-h-dvh px-margin pt-32">
         <p className="max-w-[48rem] text-h3 text-secondary">
-          The About panel, held open at its live size. Flip layouts with the picker, 1 to 3 or the
+          The About panel, held open at its live size. Flip layouts with the picker, 1 to 4 or the
           arrow keys; T changes the type size, I the intro, R closes and reopens it.
         </p>
       </main>
@@ -129,7 +141,7 @@ export default function AboutLab({ bar, initial }: { bar: BarData; initial: numb
         className="fixed left-1/2 top-[calc(env(safe-area-inset-top)+12px)] z-50 flex w-[var(--bar-w-m)] -translate-x-1/2 flex-col overflow-hidden text-sub shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_2px_rgb(0_0_0/0.06),0_10px_24px_-6px_rgb(0_0_0/0.14),0_28px_56px_-12px_rgb(0_0_0/0.16)] motion-safe:transition-[width,border-radius] desktop:top-[calc(env(safe-area-inset-top)+16px)] desktop:w-[var(--bar-w)] desktop:text-body"
         style={
           {
-            "--bar-w": open ? LAPTOP_OPEN : "16rem",
+            "--bar-w": open ? laptopOpen : "16rem",
             "--bar-w-m": open ? PHONE_OPEN : "16rem",
             "--panel-max": "calc(100dvh - 96px)",
             borderRadius: open ? "var(--bar-r-open)" : "var(--bar-r)",
@@ -185,7 +197,7 @@ export default function AboutLab({ bar, initial }: { bar: BarData; initial: numb
                 className="relative left-1/2 w-[var(--panel-w-m)] -translate-x-1/2 pt-4 desktop:w-[var(--panel-w)] desktop:pt-6"
                 style={
                   {
-                    "--panel-w": LAPTOP_OPEN,
+                    "--panel-w": laptopOpen,
                     "--panel-w-m": PHONE_OPEN,
                     opacity: open ? 1 : 0,
                     transition: `opacity ${open ? 200 : 120}ms ${EASE_OUT_CSS}`,
