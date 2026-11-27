@@ -275,6 +275,7 @@ export default function Header({ bar }: { bar: BarData }) {
                   dim={Boolean(userOpen)}
                   controls={chrome === "overlay" ? "project-details" : "bar-panel"}
                   onToggle={toggleDetails}
+                  next={barProject.next}
                 />
               )}
             </div>

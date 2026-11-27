@@ -14,7 +14,7 @@ type Props = {
   gallery: GalleryItem[];
   index: number;
   onEnd: boolean;
-  /** The next project's preview card is centred: the row hands over to the pill. */
+  /** The next project's preview card is centred: the row steps aside for the Pebble. */
   atPreview: boolean;
   nextProject: NextProject;
   title: string;
@@ -31,14 +31,14 @@ type Props = {
  * The gallery's progress (Figma "Gallery · progress ideas", 11-04, Ali picked
  * F): a filmstrip of tiny thumbnails at the bottom centre, the current one
  * outlined, the next project's cover last. Every thumbnail jumps to its
- * clip; the last one hands off, and so does the pill that replaces the row
- * once the next project's card is centred.
+ * clip; the last one hands off. Once the next project's card is centred
+ * the row steps aside and the Pebble offers that project.
  */
 export default function GalleryProgress(props: Props) {
   return <Filmstrip {...props} />;
 }
 
-function thumbSrc(item: GalleryItem): { image?: string; video?: string } {
+export function thumbSrc(item: GalleryItem): { image?: string; video?: string } {
   if (item._type === "galleryImage" && item.image?.asset) return { image: imageUrl(item.image, 160) };
   // A video's poster (its first frame, from Sanity) is a 160 px image; the
   // clip itself is only the fallback, a metadata fetch per thumb.
@@ -53,7 +53,7 @@ function thumbSrc(item: GalleryItem): { image?: string; video?: string } {
   return {};
 }
 
-function Thumb({ src, label }: { src: { image?: string; video?: string }; label: string }) {
+export function Thumb({ src, label }: { src: { image?: string; video?: string }; label: string }) {
   if (src.image) return <Image src={src.image} alt="" fill sizes="64px" className="object-cover" />;
   if (src.video)
     // First frame only: a paused, muted element at 0.1 s with metadata preload.
@@ -75,6 +75,9 @@ function Filmstrip({ gallery, index, onEnd, atPreview, nextProject, title, isDes
     ? "56px"
     : `min(40px, calc((100vw - 2 * var(--grid-margin) - ${hasNext ? 8 : 0}px - ${onOpenIndex ? 44 : 0}px - ${Math.max(0, shown - 1) * 6}px) / ${Math.max(1, shown)}))`;
   const thumbBox = { width: thumbW, aspectRatio: "56 / 35" };
+  // With the next project's cover centred the strip steps aside: the
+  // Pebble names that project and carries the way there (Ali picked C,
+  // 11-27, "Next project in the Pebble").
   const handOver = atPreview && hasNext;
   return (
     <div data-stage-chrome="film" className="invisible absolute inset-x-0 bottom-0 z-30 flex justify-center px-margin pb-11 desktop:pb-12">
@@ -129,30 +132,6 @@ function Filmstrip({ gallery, index, onEnd, atPreview, nextProject, title, isDes
             </button>
           )}
         </div>
-        {/* The hand-over (Figma "Next project · layout · 11-05", Ali picked
-            A): with the next project's card centred the row gives way to one
-            pill on the same axis as the name pill, its cover as a round
-            thumb, then its name. */}
-        {hasNext && (
-          <button
-            type="button"
-            onClick={onNavigateNext}
-            tabIndex={handOver ? 0 : -1}
-            aria-hidden={!handOver}
-            className={`frost-soft absolute top-1/2 left-1/2 inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center gap-2 rounded-full pr-4 pl-1 text-sub desktop:text-body whitespace-nowrap text-primary select-none ${handOver ? "cursor-pointer" : "pointer-events-none"}`}
-            style={{
-              translate: "-50% -50%",
-              opacity: handOver ? 1 : 0,
-              scale: handOver || reduceMotion ? "1" : "0.96",
-              transition: reduceMotion ? "none" : `opacity ${ease}, scale ${ease}`,
-            }}
-          >
-            <span className="relative h-7 w-11 shrink-0 overflow-hidden rounded-full bg-tertiary">
-              <Thumb src={nextSrc} label="" />
-            </span>
-            <span className="truncate">Next project – {nextProject?.title}</span>
-          </button>
-        )}
       </div>
     </div>
   );
