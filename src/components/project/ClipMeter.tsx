@@ -7,9 +7,13 @@
  * a 3 px pistachio line on the clip's bottom edge over a faint dark track
  * (the seconds-left label went, Ali 11-25: "remove the seconds").
  *
- * ProjectStage writes the centred clip's progress (0 to 1, measured to the
- * glide) as `--clip-p` on its root each frame, the centred card's box as
- * `--card-x/y/w/h`, so nothing re-renders per frame. Handed back to the visitor, the meter fades out.
+ * Ali 11-27: "it should show on all projects and videos", so it sits under
+ * every centred clip, not only while a gallery plays in order.
+ *
+ * ProjectStage writes the centred clip's progress (0 to 1; to the glide while
+ * playing in order, else through the loop) as `--clip-p` on its root each
+ * frame, `--clip-on` (1 when the centred card has a clip) and the card's box
+ * as `--card-x/y/w/h`, so nothing re-renders per frame.
  */
 const WEIGHT = 3;
 
@@ -29,7 +33,8 @@ export default function ClipMeter({
         left: "var(--card-x, 0px)",
         width: "var(--card-w, 0px)",
         top: `calc(${bottom} - ${WEIGHT}px)`,
-        opacity: shown ? 1 : 0,
+        // Hidden on a card without a clip (ProjectStage sets --clip-on).
+        opacity: shown ? "var(--clip-on, 0)" : 0,
         transition: reduceMotion ? "none" : "opacity 240ms cubic-bezier(0.23,1,0.32,1)",
       }}
     >
