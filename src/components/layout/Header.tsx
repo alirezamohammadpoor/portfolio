@@ -32,7 +32,8 @@ type Shown = Panel | "details";
 const WIDTH: Record<Shown | "none", string> = {
   none: "16rem",
   work: "min(64rem, calc(100vw - 48px))",
-  about: "min(64rem, calc(100vw - 48px))",
+  // About is one column (Narrow, 11-27): the capsule draws in to it.
+  about: "min(40rem, calc(100vw - 48px))",
   details: "40rem",
 };
 
