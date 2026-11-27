@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { draftMode } from "next/headers";
-import ScatterHome from "@/components/home/ScatterHome";
+import Home from "@/components/home/Home";
 import { getAbout, getProjects } from "@/sanity/lib/data";
 import { OPEN_GRAPH_BASE, SITE_OG_IMAGE } from "@/lib/site";
 
@@ -29,7 +29,7 @@ export default async function HomePage() {
   return (
     <>
       <h1 className="sr-only">Ali Reza Mohammad Poor — Frontend developer at the intersection of product and design</h1>
-      <ScatterHome projects={projects} contact={about} />
+      <Home projects={projects} contact={about} />
     </>
   );
 }

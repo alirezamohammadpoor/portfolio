@@ -15,7 +15,7 @@ import { cloneSourceFromElement } from "@/lib/cloneSource";
 import { restoreVideoPosition, saveVideoPosition } from "@/lib/videoPosition";
 import { getIntroState, useIntroState } from "@/lib/intro";
 import { getReelState } from "@/lib/reel";
-import { ClosingLine } from "@/components/home/ScatterHome";
+import { ClosingLine } from "@/components/home/ClosingLine";
 
 export type Project = PROJECTS_QUERY_RESULT[number];
 export type Contact = Pick<NonNullable<ABOUT_QUERY_RESULT>, "email" | "linkedinUrl" | "githubUrl">;

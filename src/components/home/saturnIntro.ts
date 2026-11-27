@@ -2,7 +2,7 @@ import gsap from "gsap";
 import { SCATTER_BEAT } from "@/lib/reel";
 import { ease, registerMotion } from "@/lib/motion";
 import { DESKTOP_QUERY } from "@/hooks/useIsDesktop";
-import { barEntrance, type IntroBuilder, type Rect } from "@/components/home/HomeReel";
+import { barEntrance, type IntroBuilder, type Rect } from "./HomeReel";
 
 /**
  * The carousel home's intro (Ali 11-26 picked Saturn and cleared the other
