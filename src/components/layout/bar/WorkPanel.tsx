@@ -27,7 +27,8 @@ export function panelSize(bar: BarData) {
   const laptop = `${Math.ceil(Math.max(403.34 + 8 + 96 + 32, 32 + 24 + (bar.posts.length ? 56 : 0) + 28 * count))}px`;
   return { "--panel-h": phone, "--panel-h-desk": laptop } as Record<string, string>;
 }
-export const PANEL_H = "h-[min(var(--panel-h),var(--panel-max))] desktop:h-[min(var(--panel-h-desk),var(--panel-max))]";
+export const PANEL_H =
+  "h-[min(var(--panel-h),var(--panel-max))] desktop:h-[min(var(--panel-h-desk),var(--panel-max))]";
 
 /**
  * Work (Work A, Ali 11-16): the names and a preview that follows. With a
@@ -95,38 +96,68 @@ export default function WorkPanel({
 
   const preview = (
     <div>
-      {/* 16:9 on a phone (one screen with every name), 16:10 on a laptop. */}
-      <div ref={previewRef} className="relative aspect-video overflow-hidden bg-tertiary desktop:aspect-[16/10]">
-        {layers.map((l, k) => {
-          const r = rows[l.i];
-          const current = k === layers.length - 1;
-          const top = layers[layers.length - 1];
-          const state = !l.ready ? "wait" : current ? (l.id === 0 && !r?.video ? "rest" : "in") : top.ready ? "out" : "rest";
-          return (
-            <div
-              key={l.id}
-              className="work-layer absolute inset-0"
-              data-state={state}
-              data-current={current ? "" : undefined}
-              onAnimationEnd={(e) => {
-                if (current && l.ready && e.target === e.currentTarget) setLayers((ls) => ls.slice(-1));
-              }}
-            >
-              {r?.still && (
-                // eslint-disable-next-line @next/next/no-img-element -- a layer's still under its clip, no layout
-                <img
-                  src={r.still}
-                  alt=""
-                  decoding="sync"
-                  data-lead={current ? "" : undefined}
-                  className={`absolute inset-0 h-full w-full object-cover ${r.video ? "opacity-0" : ""}`}
-                />
-              )}
-              {r?.video && <LayerVideo src={r.video} onReady={() => markReady(l.id)} />}
-            </div>
-          );
-        })}
-      </div>
+      {/* 16:9 on a phone (one screen with every name), 16:10 on a laptop.
+          The picture opens what it shows (Ali 11-26), the same way its row
+          does: a project flies into card 1, a post is a plain link. The
+          row is the one in the tab order; this is a second way in. */}
+      <Link
+        href={lead?.href ?? "/"}
+        tabIndex={-1}
+        aria-label={lead?.title}
+        onClick={(e) => {
+          if (
+            lead?.kind === "project" &&
+            isPlainLeftClick(e) &&
+            onOpenProject?.(lead.href, previewRef.current)
+          )
+            e.preventDefault();
+        }}
+        className="block"
+      >
+        <div
+          ref={previewRef}
+          className="relative aspect-video overflow-hidden bg-tertiary desktop:aspect-[16/10]"
+        >
+          {layers.map((l, k) => {
+            const r = rows[l.i];
+            const current = k === layers.length - 1;
+            const top = layers[layers.length - 1];
+            const state = !l.ready
+              ? "wait"
+              : current
+                ? l.id === 0 && !r?.video
+                  ? "rest"
+                  : "in"
+                : top.ready
+                  ? "out"
+                  : "rest";
+            return (
+              <div
+                key={l.id}
+                className="work-layer absolute inset-0"
+                data-state={state}
+                data-current={current ? "" : undefined}
+                onAnimationEnd={(e) => {
+                  if (current && l.ready && e.target === e.currentTarget)
+                    setLayers((ls) => ls.slice(-1));
+                }}
+              >
+                {r?.still && (
+                  // eslint-disable-next-line @next/next/no-img-element -- a layer's still under its clip, no layout
+                  <img
+                    src={r.still}
+                    alt=""
+                    decoding="sync"
+                    data-lead={current ? "" : undefined}
+                    className={`absolute inset-0 h-full w-full object-cover ${r.video ? "opacity-0" : ""}`}
+                  />
+                )}
+                {r?.video && <LayerVideo src={r.video} onReady={() => markReady(l.id)} />}
+              </div>
+            );
+          })}
+        </div>
+      </Link>
       {/* A fixed box for the line: three lines on a phone, four on a laptop
           (the longest line on the site), so a longer one never moves the list. */}
       <p
@@ -154,7 +185,13 @@ export default function WorkPanel({
             setActive(i);
             return;
           }
-          if (r.kind === "project" && i === active && isPlainLeftClick(e) && onOpenProject?.(r.href, previewRef.current)) e.preventDefault();
+          if (
+            r.kind === "project" &&
+            i === active &&
+            isPlainLeftClick(e) &&
+            onOpenProject?.(r.href, previewRef.current)
+          )
+            e.preventDefault();
         }}
         onPointerEnter={(e) => {
           if (e.pointerType === "mouse") setActive(i);
@@ -174,7 +211,12 @@ export default function WorkPanel({
 
   if (desktop) {
     return (
-      <div ref={scrollRef} tabIndex={-1} data-lenis-prevent className={`${PANEL_H} overflow-y-auto overscroll-contain outline-none`}>
+      <div
+        ref={scrollRef}
+        tabIndex={-1}
+        data-lenis-prevent
+        className={`${PANEL_H} overflow-y-auto overscroll-contain outline-none`}
+      >
         <div className="grid-site px-margin pb-8">
           <div className="col-span-4">{list}</div>
           <div className="sticky top-0 col-span-8 col-start-5 self-start">{preview}</div>
@@ -183,7 +225,12 @@ export default function WorkPanel({
     );
   }
   return (
-    <div ref={scrollRef} tabIndex={-1} data-lenis-prevent className={`${PANEL_H} overflow-y-auto overscroll-contain px-margin pb-3 outline-none`}>
+    <div
+      ref={scrollRef}
+      tabIndex={-1}
+      data-lenis-prevent
+      className={`${PANEL_H} overflow-y-auto overscroll-contain px-margin pb-3 outline-none`}
+    >
       {preview}
       <div className="mt-6">{list}</div>
     </div>
