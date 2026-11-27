@@ -6,10 +6,11 @@ import { EASE_OUT_CSS } from "@/lib/motion";
 const PRESS =
   "transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98]";
 
-/** The replay slot fills from white to pistachio as the test plays (Ali, 11-17).
- * A hairline keeps the white part of the pill visible on the white Pebble. */
+/** The replay button is pistachio all the time (Ali, 11-27: "it can be
+ * pistachio all the time"); the clip meter under the card shows the test's
+ * progress, so the slot no longer fills as the test plays. */
 const REPLAY_FILL =
-  "[&>button]:bg-white [&>button]:outline [&>button]:outline-1 [&>button]:-outline-offset-1 [&>button]:outline-black/10 [&>button>span]:bg-pistachio [&>button>svg]:mix-blend-normal [&>button>svg]:stroke-primary";
+  "[&>button]:bg-pistachio [&>button>span]:hidden [&>button>svg]:mix-blend-normal [&>button>svg]:stroke-primary";
 
 function Chevron({ open, className = "" }: { open: boolean; className?: string }) {
   return (
@@ -93,8 +94,8 @@ export default function ProjectRowLayout({
           </span>
           <Chevron open={detailsOpen} className={tone} />
         </button>
-        {/* Ali 11-17: only the button takes the pistachio here; it fills
-            from white to pistachio as the test plays. */}
+        {/* Only the button takes the pistachio here (Ali 11-17), solid
+            since 11-27. */}
         {replay && <span className={`flex ${REPLAY_FILL}`}>{replay}</span>}
       </div>
     </div>

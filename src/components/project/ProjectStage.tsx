@@ -893,20 +893,23 @@ export default function ProjectStage({
     v.addEventListener("timeupdate", onTime);
     return () => v.removeEventListener("timeupdate", onTime);
   }, [autoOn, index, covered, hidden, last]);
-  // The clip meter (ClipMeter, Ali picked it 11-25): the centred
-  // clip's progress up to the glide, and its card's box, as CSS variables on
-  // the root, per frame while the stage plays in order. Handed back, the
-  // meter fades where it stands.
+  // The clip meter (ClipMeter, Ali picked it 11-25; on every project and
+  // every clip since 11-27): the centred clip's progress and its card's box,
+  // as CSS variables on the root, per frame, so nothing re-renders. While a
+  // gallery plays in order the line fills up to the glide; otherwise it
+  // follows the loop. `--clip-on` is 0 on a card with no playing clip.
   useEffect(() => {
     const root = rootRef.current;
-    if (!autoOn || covered || hidden || !root) return;
+    if (covered || hidden || !root) return;
     let raf = 0;
     const tick = () => {
       const card = itemRefs.current[index];
       const v = card?.querySelector("video");
-      const end = v && Number.isFinite(v.duration) ? v.duration - IN_ORDER_EARLY_S : 0;
+      const d = v && Number.isFinite(v.duration) ? v.duration : 0;
+      const end = autoOn ? d - IN_ORDER_EARLY_S : d;
       const p = v && end > 0 ? Math.min(1, v.currentTime / end) : 0;
       root.style.setProperty("--clip-p", p.toFixed(4));
+      root.style.setProperty("--clip-on", d > 0 ? "1" : "0");
       if (card) {
         const r = card.getBoundingClientRect();
         const o = root.getBoundingClientRect();
@@ -1379,7 +1382,7 @@ export default function ProjectStage({
         {single ? "" : `${index + 1} of ${gallery.length}`}
       </p>
 
-      {inOrder && <ClipMeter shown={autoOn} reduceMotion={reduceMotion} />}
+      <ClipMeter shown={!covered && !atPreview} reduceMotion={reduceMotion} />
 
       {/* Progress: a filmstrip at the bottom centre (Ali, 11-04). */}
       <GalleryProgress
