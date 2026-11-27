@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, type RefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import { getImageProps } from "next/image";
 import gsap from "gsap";
@@ -14,6 +14,8 @@ import { dur, ease, prefersReducedMotion, stagger } from "@/lib/motion";
 import { isPlainLeftClick } from "@/lib/clicks";
 import { cloneSourceFromElement } from "@/lib/cloneSource";
 import { restoreVideoPosition, saveVideoPosition } from "@/lib/videoPosition";
+import { onFirstVideoFrame } from "@/lib/firstFrame";
+import { useSharedVideo } from "@/lib/sharedVideo";
 import { getIntroState, useIntroState } from "@/lib/intro";
 import { getReelState } from "@/lib/reel";
 import type { Contact } from "./ClosingLine";
@@ -164,6 +166,11 @@ interface CoverProps {
 /**
  * A project's Sanity cover, edge to edge in its window. Videos play while in
  * view (or when `playing` says so) and keep their position across visits.
+ *
+ * A clip is one shared download (sharedVideo.ts): every copy of a cover
+ * plays the same blob. Until its first frame is up the box shows the clip's
+ * still, the inline blur first and then the poster itself, so the row never
+ * shows an empty box while the files come in (Ali, 11-27).
  */
 export function Cover({
   project,
@@ -177,12 +184,15 @@ export function Cover({
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlled = playing !== undefined;
   const media = project.coverMedia;
-  const src =
+  const url =
     media?.type === "video" && media.video?.asset?._ref ? fileUrl(media.video.asset._ref) : null;
+  const src = useSharedVideo(url, priority, Boolean(project.coverPoster?.asset));
+  const [framed, setFramed] = useState<string | null>(null);
+  const shown = Boolean(src) && framed === src;
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !src) return;
     let io: IntersectionObserver | null = null;
     if (!controlled) {
       io = new IntersectionObserver(
@@ -194,12 +204,15 @@ export function Cover({
       );
       io.observe(video);
     }
+    const stop =
+      video.readyState >= 2 ? (setFramed(src), () => {}) : onFirstVideoFrame(video, () => setFramed(src));
     return () => {
+      stop();
       io?.disconnect();
-      saveVideoPosition(video, video.getAttribute("src") ?? "");
+      if (url) saveVideoPosition(video, url);
       video.pause();
     };
-  }, [controlled, src]);
+  }, [controlled, src, url]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -209,22 +222,43 @@ export function Cover({
   }, [controlled, playing, src]);
 
   let body: React.ReactNode;
-  if (src) {
+  if (url) {
+    const poster = project.coverPoster?.asset
+      ? getImageProps({
+          src: imageUrl(project.coverPoster, 1600),
+          alt: "",
+          fill: true,
+          sizes,
+          // Every cover's still comes in up front: the row is one screen
+          // and drifts, so a lazy still would be late exactly when it shows.
+          loading: "eager",
+          fetchPriority: priority ? "high" : "auto",
+        }).props
+      : null;
     body = (
-      <video
-        ref={videoRef}
-        key={src}
-        src={src}
-        className="absolute inset-0 h-full w-full object-cover"
-        aria-label={`${project.title ?? ""} cover video`}
-        muted
-        loop
-        playsInline
-        preload={priority ? "auto" : "metadata"}
-        onLoadedMetadata={(e) =>
-          restoreVideoPosition(e.currentTarget, e.currentTarget.getAttribute("src") ?? "")
-        }
-      />
+      <>
+        {/* Under the clip until its first frame is up, then gone, so the
+            morph (cloneSource: the first img or video) starts from the
+            clip once it plays and from the still before. */}
+        {poster && !shown && (
+          // eslint-disable-next-line @next/next/no-img-element -- getImageProps gives the srcset
+          <img {...poster} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        )}
+        {src && (
+          <video
+            ref={videoRef}
+            key={src}
+            src={src}
+            className={`absolute inset-0 h-full w-full object-cover ${shown ? "" : "opacity-0"}`}
+            aria-label={`${project.title ?? ""} cover video`}
+            muted
+            loop
+            playsInline
+            preload="auto"
+            onLoadedMetadata={(e) => restoreVideoPosition(e.currentTarget, url)}
+          />
+        )}
+      </>
     );
   } else if (media?.type === "image" && media.image?.asset) {
     // The same loader URL and srcset as the intro's card (HomeReel), so
@@ -256,7 +290,8 @@ export function Cover({
   return (
     <div
       {...markAttrs}
-      className={`relative overflow-hidden bg-tertiary ${frame === "flush" ? "aspect-[16/10]" : ""} ${className}`}
+      className={`relative overflow-hidden bg-tertiary bg-cover bg-center ${frame === "flush" ? "aspect-[16/10]" : ""} ${className}`}
+      style={url && project.coverLqip ? { backgroundImage: `url(${project.coverLqip})` } : undefined}
     >
       {body}
     </div>

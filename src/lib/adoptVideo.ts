@@ -1,3 +1,5 @@
+import { originalSrc } from "./sharedVideo";
+
 /**
  * Project → project: the clone carries the preview's live <video> across the
  * route swap. When the landing page's first item is the same file, it takes
@@ -12,7 +14,7 @@ export function adoptableVideo(
 ): HTMLVideoElement | null {
   if (!inPlace || !source || !src || typeof location === "undefined") return null;
   try {
-    const a = new URL(source.currentSrc || source.src, location.href).href;
+    const a = new URL(originalSrc(source.currentSrc || source.src), location.href).href;
     const b = new URL(src, location.href).href;
     return a === b ? source : null;
   } catch {

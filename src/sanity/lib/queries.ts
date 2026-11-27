@@ -119,6 +119,18 @@ export const PROJECTS_QUERY = defineQuery(`
     slug,
     shortDescription,
     coverMedia,
+    // A cover clip's still: its own poster, else the first gallery clip's
+    // when that is the same file (a cover that is also slide one). The
+    // LQIP is a ~600 byte blur that ships in the page, so a cover has a
+    // picture before any request.
+    "coverPoster": coalesce(
+      coverMedia.poster,
+      select(gallery[0].video.asset._ref == coverMedia.video.asset._ref => gallery[0].poster)
+    ),
+    "coverLqip": coalesce(
+      coverMedia.poster.asset->metadata.lqip,
+      select(gallery[0].video.asset._ref == coverMedia.video.asset._ref => gallery[0].poster.asset->metadata.lqip)
+    ),
     homeLayout,
     homeTextAlign,
     palette,
