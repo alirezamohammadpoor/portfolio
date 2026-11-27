@@ -874,7 +874,7 @@ export default function ProjectStage({
   // clip has no frame yet shows the project's media background, the ground
   // its clips open on, instead of a black box (Ali, 11-27: black screens
   // scrolling DevOps on a phone).
-  const inOrderGround = Boolean(project.playInOrder)
+  const inOrderGround = project.playInOrder
     ? (resolveFrame(null, project, "landscape").background?.colour ?? null)
     : null;
   const [auto, setAuto] = useState(true);
