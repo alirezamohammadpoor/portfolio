@@ -6,6 +6,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { usePageTransition } from "@/context/TransitionContext";
 import { dur, ease, prefersReducedMotion } from "@/lib/motion";
+import { handoffTime } from "@/lib/adoptVideo";
 
 /** Progress of the morph at which the destination text starts masking in. */
 export const REVEAL_AT = 0.4;
@@ -35,6 +36,9 @@ export default function TransitionOverlay() {
     mediaType,
     imageUrl,
     sourceVideoElement,
+    sourceTime,
+    sourceSrc,
+    startedAt,
     sourceRect,
     targetRect,
     targetReady,
@@ -287,6 +291,14 @@ export default function TransitionOverlay() {
     transformOrigin: "50% 50%",
   };
 
+  const fillStyle: React.CSSProperties = {
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  };
+
   // Video: paint the source video's current frame onto a canvas. Avoids
   // the clone <video>'s decode pipeline (which paints black for
   // 100–500ms on mobile after a route transition) and gives us an
@@ -303,14 +315,32 @@ export default function TransitionOverlay() {
       aria-hidden="true"
     />
   ) : mediaType === "video" ? (
-      <canvas
-        ref={(el) => {
-          mediaRef.current = el;
-          canvasRef.current = el;
-        }}
-        style={mediaStyle}
-        aria-hidden="true"
-      />
+      // The still holds the frame the cover was on; over it the same file
+      // plays on from that point once it can, so the clip keeps moving
+      // through the morph and the landing page's first item (same file,
+      // same clock, see handoffTime) takes over on the same frame.
+      <div ref={mediaRef as React.RefObject<HTMLDivElement>} style={mediaStyle} aria-hidden="true">
+        <canvas ref={canvasRef} style={fillStyle} />
+        {sourceSrc && sourceTime !== null && (
+          <video
+            src={sourceSrc}
+            muted
+            playsInline
+            preload="auto"
+            style={{ ...fillStyle, opacity: 0 }}
+            onLoadedMetadata={(e) => {
+              const v = e.currentTarget;
+              const t = handoffTime({ sourceTime, sourceSrc, startedAt, inPlace: false }, sourceSrc, v.duration, performance.now());
+              if (t !== null) v.currentTime = t;
+              const p = v.play();
+              if (p && typeof p.catch === "function") p.catch(() => {});
+            }}
+            onPlaying={(e) => {
+              e.currentTarget.style.opacity = "1";
+            }}
+          />
+        )}
+      </div>
     ) : mediaType === "image" && imageUrl ? (
       // eslint-disable-next-line @next/next/no-img-element
       <img

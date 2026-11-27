@@ -27,7 +27,7 @@ import { useGSAP } from "@gsap/react";
 import { EASE_OUT_CSS, dur, ease, stagger } from "@/lib/motion";
 import NextProjectPreview from "@/components/project/NextProjectPreview";
 import { onFirstVideoFrame } from "@/lib/firstFrame";
-import { adoptableVideo, mountAdoptedVideo } from "@/lib/adoptVideo";
+import { adoptableVideo, handoffTime, mountAdoptedVideo } from "@/lib/adoptVideo";
 import { usePageTransition } from "@/context/TransitionContext";
 import PhonesRow, { PHONE_ASPECT } from "@/components/PhonesRow";
 import MediaFrame from "@/components/MediaFrame";
@@ -174,7 +174,12 @@ export default function ProjectStage({
   const firstVideoRef = useRef<HTMLVideoElement | null>(null);
   // Project → project: card 1 takes the live <video> the clone carries when
   // it is the same file (see adoptVideo.ts).
-  const { isTransitioning, inPlace, sourceVideoElement } = usePageTransition();
+  const { isTransitioning, inPlace, sourceVideoElement, sourceTime, sourceSrc, startedAt } = usePageTransition();
+  // Home → project: card 1 picks the cover's clip up where it was (same
+  // file only), read once for the transition this page arrived with.
+  const [handoff] = useState(() =>
+    isTransitioning ? { sourceTime, sourceSrc, startedAt, inPlace } : null,
+  );
   const [adopted] = useState(() => {
     const first = gallery[0];
     const ref = first?._type === "galleryVideo" ? galleryClip(first, isDesktop).ref : undefined;
@@ -1282,9 +1287,14 @@ export default function ProjectStage({
                     playsInline
                     preload="metadata"
                     autoPlay={i === 0}
-                    onLoadedMetadata={(e) =>
-                      setVideoAspect(`${item._key}:${clip.ref}`, videoAspect(e.currentTarget))
-                    }
+                    onLoadedMetadata={(e) => {
+                      const v = e.currentTarget;
+                      if (i === 0 && handoff) {
+                        const t = handoffTime(handoff, v.currentSrc || v.src, v.duration, performance.now());
+                        if (t !== null) v.currentTime = t;
+                      }
+                      setVideoAspect(`${item._key}:${clip.ref}`, videoAspect(v));
+                    }}
                   />
                 )}
               </>
