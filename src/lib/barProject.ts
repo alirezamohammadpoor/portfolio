@@ -10,18 +10,6 @@ import { useSyncExternalStore, type ReactNode } from "react";
 
 export type StageChrome = "pill" | "docked" | "title" | "overlay";
 
-/**
- * Where the next project is offered once its cover is centred
- * (/lab/next-pebble, 11-27). "pill" is today's frost pill under the card;
- * the others move it into the Pebble's project row:
- *  swap:      the row names the next project, grey "Next project" under it
- *  countdown: swap, and the arrow fills over the hold before the page moves
- *             on; the thumbnail strip steps aside
- *  carry:     the row keeps this project, grey "Next – name" under it
- *  line:      the next project's name and a grey "Next project" on one line
- */
-export type NextInBar = "pill" | "swap" | "countdown" | "carry" | "line";
-
 /** The next project, while its cover is centred on the stage. */
 export type BarNext = {
   title: string;
@@ -44,7 +32,7 @@ export type BarProject = {
   closeDetails: () => void;
   /** The project's text, for a bar that opens the details inside itself. */
   details: ReactNode;
-  /** Set while the next project's cover is centred and nextInBar isn't "pill". */
+  /** Set while the next project's cover is centred: the row names it. */
   next: BarNext | null;
 };
 
@@ -57,21 +45,16 @@ export type BarProject = {
  */
 export type WorkOpen = "shrink" | "hold" | "fade" | null;
 
-type State = {
-  chrome: StageChrome;
-  project: BarProject | null;
-  workOpen: WorkOpen;
-  nextInBar: NextInBar;
-};
+type State = { chrome: StageChrome; project: BarProject | null; workOpen: WorkOpen };
 
-let state: State = { chrome: "docked", project: null, workOpen: "fade", nextInBar: "pill" };
+let state: State = { chrome: "docked", project: null, workOpen: "fade" };
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 const subscribe = (l: () => void) => {
   listeners.add(l);
   return () => listeners.delete(l);
 };
-const SERVER: State = { chrome: "docked", project: null, workOpen: "fade", nextInBar: "pill" };
+const SERVER: State = { chrome: "docked", project: null, workOpen: "fade" };
 
 export function setBarProject(project: BarProject | null) {
   state = { ...state, project };
@@ -81,12 +64,6 @@ export function setBarProject(project: BarProject | null) {
 export function setStageChrome(chrome: StageChrome) {
   if (state.chrome === chrome) return;
   state = { ...state, chrome };
-  emit();
-}
-
-export function setNextInBar(nextInBar: NextInBar) {
-  if (state.nextInBar === nextInBar) return;
-  state = { ...state, nextInBar };
   emit();
 }
 

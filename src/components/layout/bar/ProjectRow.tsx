@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { EASE_OUT_CSS } from "@/lib/motion";
-import type { BarNext, NextInBar } from "@/lib/barProject";
+import type { BarNext } from "@/lib/barProject";
 import { Thumb } from "@/components/project/GalleryProgress";
 
 const PRESS =
@@ -49,27 +49,25 @@ function Arrow() {
   );
 }
 
-/** The way to the next project, where the replay button sits. "countdown"
- * fills it with pistachio over the hold before the page moves on. */
-function GoButton({ next, countdown }: { next: BarNext; countdown: boolean }) {
-  const run = countdown && next.holding;
+/** The way to the next project, where the replay button sits. It fills
+ * with pistachio over the hold before the page moves on by itself. */
+function GoButton({ next }: { next: BarNext }) {
+  const run = next.holding;
   return (
     <button
       type="button"
       onClick={next.go}
       aria-label={`Open ${next.title}`}
-      className={`relative isolate inline-flex h-7 w-11 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full active:scale-[0.94] ${countdown ? "bg-tertiary" : "bg-pistachio"} transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)]`}
+      className={`relative isolate inline-flex h-7 w-11 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-full bg-tertiary active:scale-[0.94] transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)]`}
     >
-      {countdown && (
-        <span
-          aria-hidden
-          className="absolute inset-0 origin-left bg-pistachio"
-          style={{
-            transform: run ? "scaleX(1)" : "scaleX(0)",
-            transition: run ? `transform ${next.holdMs}ms linear` : "transform 160ms ease-out",
-          }}
-        />
-      )}
+      <span
+        aria-hidden
+        className="absolute inset-0 origin-left bg-pistachio"
+        style={{
+          transform: run ? "scaleX(1)" : "scaleX(0)",
+          transition: run ? `transform ${next.holdMs}ms linear` : "transform 160ms ease-out",
+        }}
+      />
       <Arrow />
     </button>
   );
@@ -78,7 +76,9 @@ function GoButton({ next, countdown }: { next: BarNext; countdown: boolean }) {
 /**
  * The project row in the Pebble (List, picked by Ali 11-17): a hairline
  * under Work · name · About, then what it is on the left (title over the
- * test) and what you can do on the right (chevron, replay).
+ * test) and what you can do on the right (chevron, replay). With the next
+ * project's cover centred it names that project instead, its cover in
+ * front and an arrow on the right (Ali picked C, 11-27).
  */
 export default function ProjectRowLayout({
   title,
@@ -89,7 +89,6 @@ export default function ProjectRowLayout({
   controls,
   onToggle,
   next = null,
-  nextMode = "pill",
 }: {
   title: string;
   label: string | null;
@@ -98,20 +97,10 @@ export default function ProjectRowLayout({
   dim: boolean;
   controls: string;
   onToggle: () => void;
-  /** The next project, while its cover is centred (/lab/next-pebble). */
+  /** The next project, while its cover is centred. */
   next?: BarNext | null;
-  nextMode?: NextInBar;
 }) {
-  const label = !next
-    ? clipLabel
-    : nextMode === "line"
-      ? null
-      : nextMode === "carry"
-        ? `Next – ${next.title}`
-        : "Next project";
-  // Swap and countdown name the next project and show its cover.
-  const named = Boolean(next) && nextMode !== "carry";
-  const thumb = named && nextMode !== "line";
+  const label = next ? "Next project" : clipLabel;
   // The test line opens and folds like the Pebble's rows (320ms, same
   // ease) instead of snapping, and keeps its last name while it folds.
   const [shownLabel, setShownLabel] = useState(label);
@@ -132,28 +121,23 @@ export default function ProjectRowLayout({
           {...(next ? { type: "button" as const, onClick: next.go } : toggle)}
           className={`flex min-w-0 flex-1 items-center text-left ${PRESS}`}
         >
-          {/* The next project's cover opens in front of its name (swap). */}
+          {/* The next project's cover opens in front of its name. */}
           <span
             aria-hidden
             className="relative h-7 shrink-0 overflow-hidden rounded-full bg-tertiary motion-safe:transition-[width,margin,opacity]"
             style={{
-              width: thumb ? 44 : 0,
-              marginLeft: thumb ? -8 : 0,
-              marginRight: thumb ? 12 : 0,
-              opacity: thumb ? 1 : 0,
+              width: next ? 44 : 0,
+              marginLeft: next ? -8 : 0,
+              marginRight: next ? 12 : 0,
+              opacity: next ? 1 : 0,
               transitionDuration: "320ms",
               transitionTimingFunction: EASE_OUT_CSS,
             }}
           >
-            {next && thumb && <Thumb src={next.cover} label="" />}
+            {next && <Thumb src={next.cover} label="" />}
           </span>
           <span className="flex min-w-0 flex-1 flex-col">
-            <span className={`truncate ${tone}`}>
-              {next && named ? next.title : title}
-              {next && nextMode === "line" && (
-                <span className="ml-2 text-secondary">Next project</span>
-              )}
-            </span>
+            <span className={`truncate ${tone}`}>{next ? next.title : title}</span>
             <span
               aria-hidden={!label}
               className="grid motion-safe:transition-[grid-template-rows,opacity]"
@@ -178,7 +162,7 @@ export default function ProjectRowLayout({
         {/* Only the button takes the pistachio here (Ali 11-17), solid
             since 11-27. */}
         {next ? (
-          <GoButton next={next} countdown={nextMode === "countdown"} />
+          <GoButton next={next} />
         ) : (
           replay && <span className={`flex ${REPLAY_FILL}`}>{replay}</span>
         )}

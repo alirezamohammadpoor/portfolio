@@ -5,7 +5,6 @@ import type { PROJECT_BY_SLUG_QUERY_RESULT } from "@/sanity/types";
 import { imageUrl, fileUrl } from "@/sanity/lib/image";
 import { EASE_OUT_CSS } from "@/lib/motion";
 import { GridIcon, ROUND_BUTTON } from "@/components/project/ProjectSwitcher";
-import type { NextInBar } from "@/lib/barProject";
 
 type Project = NonNullable<PROJECT_BY_SLUG_QUERY_RESULT>;
 type GalleryItem = NonNullable<Project["gallery"]>[number];
@@ -15,10 +14,8 @@ type Props = {
   gallery: GalleryItem[];
   index: number;
   onEnd: boolean;
-  /** The next project's preview card is centred: the row hands over to the pill. */
+  /** The next project's preview card is centred: the row steps aside for the Pebble. */
   atPreview: boolean;
-  /** "pill": the frost pill takes over; otherwise the Pebble offers the next project. */
-  nextInBar: NextInBar;
   nextProject: NextProject;
   title: string;
   isDesktop: boolean;
@@ -34,8 +31,8 @@ type Props = {
  * The gallery's progress (Figma "Gallery · progress ideas", 11-04, Ali picked
  * F): a filmstrip of tiny thumbnails at the bottom centre, the current one
  * outlined, the next project's cover last. Every thumbnail jumps to its
- * clip; the last one hands off, and so does the pill that replaces the row
- * once the next project's card is centred.
+ * clip; the last one hands off. Once the next project's card is centred
+ * the row steps aside and the Pebble offers that project.
  */
 export default function GalleryProgress(props: Props) {
   return <Filmstrip {...props} />;
@@ -64,7 +61,7 @@ export function Thumb({ src, label }: { src: { image?: string; video?: string };
   return null;
 }
 
-function Filmstrip({ gallery, index, onEnd, atPreview, nextInBar, nextProject, title, isDesktop, reduceMotion, onSelect, onNavigateNext, onOpenIndex, indexOpen }: Props) {
+function Filmstrip({ gallery, index, onEnd, atPreview, nextProject, title, isDesktop, reduceMotion, onSelect, onNavigateNext, onOpenIndex, indexOpen }: Props) {
   const next = nextProject?.firstMedia as GalleryItem | null | undefined;
   const nextSrc = next ? thumbSrc(next) : {};
   const hasNext = Boolean(nextProject?.slug?.current && onNavigateNext);
@@ -78,11 +75,10 @@ function Filmstrip({ gallery, index, onEnd, atPreview, nextInBar, nextProject, t
     ? "56px"
     : `min(40px, calc((100vw - 2 * var(--grid-margin) - ${hasNext ? 8 : 0}px - ${onOpenIndex ? 44 : 0}px - ${Math.max(0, shown - 1) * 6}px) / ${Math.max(1, shown)}))`;
   const thumbBox = { width: thumbW, aspectRatio: "56 / 35" };
-  // The strip gives way to the pill, or (countdown) to the Pebble alone;
-  // "swap" and "line" keep it, the next cover outlined as the current one.
-  const pill = nextInBar === "pill";
-  const handOver = atPreview && hasNext && (pill || nextInBar === "countdown");
-  const nextCurrent = atPreview && hasNext && !handOver;
+  // With the next project's cover centred the strip steps aside: the
+  // Pebble names that project and carries the way there (Ali picked C,
+  // 11-27, "Next project in the Pebble").
+  const handOver = atPreview && hasNext;
   return (
     <div data-stage-chrome="film" className="invisible absolute inset-x-0 bottom-0 z-30 flex justify-center px-margin pb-11 desktop:pb-12">
       <div className="relative">
@@ -111,12 +107,12 @@ function Filmstrip({ gallery, index, onEnd, atPreview, nextInBar, nextProject, t
                 type="button"
                 onClick={() => onSelect(i)}
                 aria-label={`${title}, ${i + 1} of ${gallery.length}`}
-                aria-current={i === index && !nextCurrent ? "true" : undefined}
+                aria-current={i === index ? "true" : undefined}
                 className="relative shrink-0 cursor-pointer overflow-hidden rounded-[2px] bg-tertiary transition-[scale] duration-[160ms] ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.96]"
                 style={{
                   ...thumbBox,
-                  opacity: i === index && !nextCurrent ? 1 : 0.6,
-                  outline: i === index && !nextCurrent ? "1.5px solid var(--color-primary)" : "1.5px solid transparent",
+                  opacity: i === index ? 1 : 0.6,
+                  outline: i === index ? "1.5px solid var(--color-primary)" : "1.5px solid transparent",
                   outlineOffset: 1.5,
                   transition: reduceMotion ? "none" : `opacity ${ease}, outline-color ${ease}`,
                 }}
@@ -130,43 +126,12 @@ function Filmstrip({ gallery, index, onEnd, atPreview, nextInBar, nextProject, t
               onClick={onNavigateNext}
               aria-label={`Next project: ${nextProject?.title}`}
               className="relative ml-2 shrink-0 cursor-pointer overflow-hidden rounded-[2px] bg-tertiary active:scale-[0.96] desktop:ml-3"
-              aria-current={nextCurrent ? "true" : undefined}
-              style={{
-                ...thumbBox,
-                opacity: onEnd ? 1 : 0.6,
-                outline: nextCurrent ? "1.5px solid var(--color-primary)" : "1.5px solid transparent",
-                outlineOffset: 1.5,
-                transition: reduceMotion ? "none" : `opacity ${ease}, outline-color ${ease}`,
-              }}
+              style={{ ...thumbBox, opacity: onEnd ? 1 : 0.6, transition: reduceMotion ? "none" : `opacity ${ease}` }}
             >
               <Thumb src={nextSrc} label="" />
             </button>
           )}
         </div>
-        {/* The hand-over (Figma "Next project · layout · 11-05", Ali picked
-            A): with the next project's card centred the row gives way to one
-            pill on the same axis as the name pill, its cover as a round
-            thumb, then its name. */}
-        {hasNext && pill && (
-          <button
-            type="button"
-            onClick={onNavigateNext}
-            tabIndex={handOver ? 0 : -1}
-            aria-hidden={!handOver}
-            className={`frost-soft absolute top-1/2 left-1/2 inline-flex h-9 max-w-[calc(100vw-2*var(--grid-margin))] items-center gap-2 rounded-full pr-4 pl-1 text-sub desktop:text-body whitespace-nowrap text-primary select-none ${handOver ? "cursor-pointer" : "pointer-events-none"}`}
-            style={{
-              translate: "-50% -50%",
-              opacity: handOver ? 1 : 0,
-              scale: handOver || reduceMotion ? "1" : "0.96",
-              transition: reduceMotion ? "none" : `opacity ${ease}, scale ${ease}`,
-            }}
-          >
-            <span className="relative h-7 w-11 shrink-0 overflow-hidden rounded-full bg-tertiary">
-              <Thumb src={nextSrc} label="" />
-            </span>
-            <span className="truncate">Next project – {nextProject?.title}</span>
-          </button>
-        )}
       </div>
     </div>
   );

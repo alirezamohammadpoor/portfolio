@@ -61,7 +61,7 @@ interface ProjectStageProps {
   onFirstReady?: () => void;
   /** The next project's preview card at the end of the strip: its media rect. */
   previewRef?: RefObject<HTMLDivElement | null>;
-  /** Run the in-place next-project transition (preview tap or pill). */
+  /** Run the in-place next-project transition (preview tap or the Pebble's arrow). */
   onNavigateNext?: () => void;
   /** Laptop layout: equal-height cards, flat neighbours, wheel steps. */
   isDesktop?: boolean;
@@ -195,7 +195,7 @@ export default function ProjectStage({
   // Key of the test clip holding its last frame (the pill's icon brightens).
   const [endedKey, setEndedKey] = useState<string | null>(null);
   // The next project's preview card is centred (it is not in `index`, which
-  // counts gallery clips only): the filmstrip hands over to the next pill.
+  // counts gallery clips only): the filmstrip steps aside and the Pebble names the next project.
   const [atPreview, setAtPreview] = useState(false);
   const current = gallery[index];
   // Video ratios as they report metadata (by item key); images carry theirs.
@@ -347,7 +347,7 @@ export default function ProjectStage({
   // row carries the title and the centred clip's test or label, and the name
   // pill on the stage steps aside. The label holds while the details are
   // open (the bar still says what you are looking at).
-  const { chrome, nextInBar } = useBarState();
+  const { chrome } = useBarState();
   const capsule = chrome !== "pill";
   const barTest =
     !atPreview && current?._type === "galleryPhones" ? (current.testName ?? null) : null;
@@ -718,8 +718,8 @@ export default function ProjectStage({
     return () => window.clearTimeout(t);
   }, [atPreview, scrolling, covered, hidden, onNavigateNext]);
 
-  // The next project in the Pebble (/lab/next-pebble): with its cover
-  // centred the row names it and carries the way there.
+  // The next project in the Pebble (Ali picked C, 11-27): with its cover
+  // centred the row names it, and its arrow fills over the hold.
   const nextFirst = nextProject?.firstMedia as Parameters<typeof thumbSrc>[0] | null | undefined;
   const barEnded = Boolean(current && endedKey === current._key);
   useEffect(() => {
@@ -747,7 +747,7 @@ export default function ProjectStage({
       closeDetails,
       details: <ProjectDetailsText project={project} compact />,
       next:
-        nextInBar !== "pill" && atPreview && hasPreview && onNavigateNext
+        atPreview && hasPreview && onNavigateNext
           ? {
               title: nextProject?.title ?? "Next project",
               cover: nextFirst ? thumbSrc(nextFirst) : {},
@@ -770,7 +770,6 @@ export default function ProjectStage({
     detailsOpen,
     toggleDetails,
     closeDetails,
-    nextInBar,
     atPreview,
     hasPreview,
     onNavigateNext,
@@ -1423,7 +1422,6 @@ export default function ProjectStage({
         index={index}
         onEnd={onEnd}
         atPreview={atPreview && hasPreview}
-        nextInBar={nextInBar}
         nextProject={nextProject}
         title={project.title ?? "Project"}
         isDesktop={isDesktop}

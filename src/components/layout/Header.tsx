@@ -64,7 +64,7 @@ export default function Header({ bar }: { bar: BarData }) {
   // A project page can dock its title in the capsule's second row
   // (/lab/project); "docked" and "title" open the details inside the
   // capsule too, "overlay" keeps the stage's own frost overlay.
-  const { chrome, project: barProject, workOpen, nextInBar } = useBarState();
+  const { chrome, project: barProject, workOpen } = useBarState();
   // A project opened from Work flies its preview into card 1 (Fade, Ali 11-17);
   // `flight` is what the capsule does meanwhile, until the page is up.
   const router = useRouter();
@@ -275,7 +275,6 @@ export default function Header({ bar }: { bar: BarData }) {
                   controls={chrome === "overlay" ? "project-details" : "bar-panel"}
                   onToggle={toggleDetails}
                   next={barProject.next}
-                  nextMode={nextInBar}
                 />
               )}
             </div>
