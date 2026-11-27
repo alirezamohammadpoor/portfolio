@@ -6,7 +6,7 @@ import gsap from "gsap";
 import { useGSAP } from "@gsap/react";
 import { usePageTransition } from "@/context/TransitionContext";
 import { dur, ease, prefersReducedMotion } from "@/lib/motion";
-import { handoffTime } from "@/lib/adoptVideo";
+import { handoffTime, setCloneClock } from "@/lib/adoptVideo";
 
 /** Progress of the morph at which the destination text starts masking in. */
 export const REVEAL_AT = 0.4;
@@ -38,7 +38,6 @@ export default function TransitionOverlay() {
     sourceVideoElement,
     sourceTime,
     sourceSrc,
-    startedAt,
     sourceRect,
     targetRect,
     targetReady,
@@ -267,6 +266,10 @@ export default function TransitionOverlay() {
     return () => window.clearTimeout(grace);
   }, [isTransitioning, landed, targetReady, revealPage, clearTransition]);
 
+  useEffect(() => {
+    if (!isTransitioning) setCloneClock(null);
+  }, [isTransitioning]);
+
   if (!isTransitioning || !sourceRect) return null;
 
   const windowStyle: React.CSSProperties = {
@@ -316,9 +319,9 @@ export default function TransitionOverlay() {
     />
   ) : mediaType === "video" ? (
       // The still holds the frame the cover was on; over it the same file
-      // plays on from that point once it can, so the clip keeps moving
-      // through the morph and the landing page's first item (same file,
-      // same clock, see handoffTime) takes over on the same frame.
+      // plays on from that frame once it can, so the clip keeps moving
+      // through the morph, and the landing page's first item (same file)
+      // takes over at the time the clone has reached (see cloneClockTime).
       <div ref={mediaRef as React.RefObject<HTMLDivElement>} style={mediaStyle} aria-hidden="true">
         <canvas ref={canvasRef} style={fillStyle} />
         {sourceSrc && sourceTime !== null && (
@@ -330,13 +333,14 @@ export default function TransitionOverlay() {
             style={{ ...fillStyle, opacity: 0 }}
             onLoadedMetadata={(e) => {
               const v = e.currentTarget;
-              const t = handoffTime({ sourceTime, sourceSrc, startedAt, inPlace: false }, sourceSrc, v.duration, performance.now());
+              const t = handoffTime({ sourceTime, sourceSrc, inPlace: false }, sourceSrc, v.duration);
               if (t !== null) v.currentTime = t;
               const p = v.play();
               if (p && typeof p.catch === "function") p.catch(() => {});
             }}
             onPlaying={(e) => {
               e.currentTarget.style.opacity = "1";
+              setCloneClock(e.currentTarget);
             }}
           />
         )}

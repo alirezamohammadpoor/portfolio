@@ -32,24 +32,37 @@ export function mountAdoptedVideo(host: HTMLElement, video: HTMLVideoElement, la
 }
 
 /**
- * Home → project: the morph carries a still of the cover, not its <video>,
- * so when the landing page's first item is the same file it starts where
- * the cover was plus the time the morph has taken, instead of from 0. The
- * clone plays the same file from the same point (TransitionOverlay), so the
- * two land on the same frame. Returns null when the files differ, the time
- * is unknown, or the move is in place (that path adopts the element itself).
+ * Home → project: the morph carries a still of the cover, not its <video>.
+ * When the landing page's first item is the same file it starts on that
+ * frame instead of from 0, and so does the clone's own copy of the clip
+ * (TransitionOverlay), which then plays on through the morph. Returns null
+ * when the files differ, the time is unknown, or the move is in place (that
+ * path adopts the element itself).
  */
 export function handoffTime(
-  handoff: { sourceTime: number | null; sourceSrc: string | null; startedAt: number; inPlace: boolean },
+  handoff: { sourceTime: number | null; sourceSrc: string | null; inPlace: boolean },
   src: string | undefined,
   duration: number,
-  now: number,
 ): number | null {
-  const { sourceTime, sourceSrc, startedAt, inPlace } = handoff;
+  const { sourceTime, sourceSrc, inPlace } = handoff;
   if (inPlace || sourceTime === null || !sourceSrc || !src || !(duration > 0)) return null;
   if (!sameUrl(sourceSrc, src)) return null;
-  const t = sourceTime + Math.max(0, now - startedAt) / 1000;
-  return t % duration;
+  return sourceTime % duration;
+}
+
+/**
+ * The clone's own <video> (home → project), while it plays. The landing
+ * item reads its time once it plays, so the page lands on the frame the
+ * clone is showing when the clone goes.
+ */
+let cloneClock: HTMLVideoElement | null = null;
+export function setCloneClock(video: HTMLVideoElement | null): void {
+  cloneClock = video;
+}
+export function cloneClockTime(src: string | undefined): number | null {
+  const v = cloneClock;
+  if (!v || !src || v.paused || !v.isConnected) return null;
+  return sameUrl(v.currentSrc || v.src, src) ? v.currentTime : null;
 }
 
 function sameUrl(a: string, b: string): boolean {
