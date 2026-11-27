@@ -312,31 +312,62 @@ export function barEntrance(tl: gsap.core.Timeline, end: number) {
  * (sharedVideo.ts), its still until that is in.
  */
 function HeroClip({ project, url, sizes }: { project: Project; url: string; sizes: string }) {
-  const src = useSharedVideo(url, true, Boolean(project.coverPoster?.asset));
+  const hasStill = Boolean(project.coverPoster?.asset);
+  // Stills first: the clip's download waits for its still (see Cover).
+  const [stillIn, setStillIn] = useState(false);
+  const [framed, setFramed] = useState<string | null>(null);
+  const src = useSharedVideo(url, true, hasStill, stillIn);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v || !src || !hasStill) return;
+    if (v.readyState >= 2) {
+      setFramed(src);
+      return;
+    }
+    return onFirstVideoFrame(v, () => setFramed(src));
+  }, [src, hasStill]);
+  const shown = !hasStill || (Boolean(src) && framed === src);
+  const still =
+    hasStill && !shown
+      ? getImageProps({
+          src: imageUrl(project.coverPoster!, 1600),
+          alt: "",
+          fill: true,
+          sizes,
+          loading: "eager",
+          fetchPriority: "high",
+        }).props
+      : null;
   // With a still, the intro starts on it (it waits for the first card's
-  // img or video); without one, on the clip's first frame, as before.
-  if (!src && project.coverPoster?.asset) {
-    const { props } = getImageProps({
-      src: imageUrl(project.coverPoster, 1600),
-      alt: "",
-      fill: true,
-      sizes,
-      loading: "eager",
-      fetchPriority: "high",
-    });
-    // eslint-disable-next-line @next/next/no-img-element -- getImageProps gives the srcset
-    return <img {...props} alt="" className="absolute inset-0 h-full w-full object-cover" />;
-  }
+  // img or video, and the still comes first in the box); without one, on
+  // the clip's first frame, as before. The still stays under the clip
+  // until the clip has a frame.
   return (
-    <video
-      src={src}
-      className="absolute inset-0 h-full w-full object-cover"
-      muted
-      loop
-      playsInline
-      autoPlay
-      preload="auto"
-    />
+    <>
+      {still && (
+        // eslint-disable-next-line @next/next/no-img-element -- getImageProps gives the srcset
+        <img
+          {...still}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          onLoad={() => setStillIn(true)}
+          onError={() => setStillIn(true)}
+        />
+      )}
+      {(src || !hasStill) && (
+        <video
+          ref={videoRef}
+          src={src}
+          className={`absolute inset-0 h-full w-full object-cover ${shown ? "" : "opacity-0"}`}
+          muted
+          loop
+          playsInline
+          autoPlay
+          preload="auto"
+        />
+      )}
+    </>
   );
 }
 

@@ -64,7 +64,9 @@ export function loadVideo(url: string, first = false): Promise<string> {
   if (shouldStream()) return Promise.resolve(url);
   const p = new Promise<string>((resolve) => {
     const start = () => {
-      fetch(url)
+      // Low priority: the stills (images) go first on a busy phone
+      // connection; a clip only replaces a still that is already up.
+      fetch(url, { priority: "low" } as RequestInit)
         .then((r) => {
           if (!r.ok) throw new Error(String(r.status));
           return r.blob();
@@ -121,12 +123,14 @@ function subscribe(l: () => void) {
  * in (show the still meanwhile), then the blob. Kicks the download off.
  * Data saver or a failed fetch gives the URL itself. A clip with no still
  * (`hasStill` false) streams from its URL instead of waiting on a grey box,
- * unless its blob is already in.
+ * unless its blob is already in. `start` false holds the download back
+ * (the caller's still has not loaded yet).
  */
 export function useSharedVideo(
   url: string | null,
   first = false,
   hasStill = true,
+  start = true,
 ): string | undefined {
   const src = useSyncExternalStore(
     subscribe,
@@ -134,7 +138,7 @@ export function useSharedVideo(
     () => undefined,
   );
   useEffect(() => {
-    if (url && hasStill) void loadVideo(url, first);
-  }, [url, first, hasStill]);
+    if (url && hasStill && start) void loadVideo(url, first);
+  }, [url, first, hasStill, start]);
   return src;
 }
